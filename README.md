@@ -18,11 +18,9 @@ Notable implementations:
 
 #### Key code entry points: 
 
-Weighted-survey: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/components/survey
+2D canvas: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/canvas-engine 
 
-2D canvas: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/canvas 
-
-3D scene: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/components/dotGraph
+3D scene: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/graph-runtime
 
 <br />
 
