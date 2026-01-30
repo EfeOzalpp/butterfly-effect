@@ -23,27 +23,3 @@ Notable implementations:
 
 3D scene: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/graph-runtime
 
-<br />
-
-Each step below corresponds to the screenshots shown from left to right.
-<br />
-Onboarding | Questionnaire | "Your city" button toggled state
-<br />
-<p>
-  <img src="./screenshots+gifs/mobile1.png" width="25%" />
-  <img src="./screenshots+gifs/mobile3.png" width="25%" />
-  <img src="./screenshots+gifs/mobile4.png" width="25%" />
-</p>
-
-<br />
-
-3D scene entered from "explore answers" or 3D scene entered through survey completion | 
-<br />
-Solo mode and dark mode toggled separately
-<br />
-<p>
-  <img src="./screenshots+gifs/mobile5.png" width="25%" />
-  <img src="./screenshots+gifs/mobile8.png" width="25%" />
-  <img src="./screenshots+gifs/mobile9.png" width="25%" />
-</p>
-
