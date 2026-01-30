@@ -1,20 +1,21 @@
 ### Butterfly Effect
-Web application built with React, Canvas, and Three.js.
+
+A weight-based questionnaire feeds continuous input into a deterministic 2D rendering system, whose output is reused as sprite textures in a Three.js scene visualizing both personalized and previous responses. 
+
+The system is intentionally divided between a generation phase and a real-time visualization phase.
 
 <p>
   <img src="./screenshots+gifs/survey.gif" width="49%" />
   <img src="./screenshots+gifs/visualization.gif" width="49%" />
 </p>
 
-A weight-based questionnaire feeds continuous input into a deterministic 2D rendering system, whose output is reused as sprite textures in a Three.js scene visualizing both personalized and previous responses. 
-
 Live at: https://butterflyeff3ct.online/
 
 Notable implementations:
-- Stores survey results together with user category (visitor, student, staff/faculty) in a Sanity.io schema and uses this data after completion for sorting and visualization.
-- Uses a grid-based layout system for 2D canvas rendering to manage sprite placement and prevent overlap with other UI elements.
-- Renders graphics as reusable off-screen sprite textures, including snapshotting particle-based visuals after a short simulation step.
-- Maintains performance and scalability by limiting the number of render variants, reusing cached textures, preventing duplicate texture generation on first load, and preparing textures off-screen for smoother initial rendering.
+- 2D rendering pipeline used to generate reproducible visuals from continuous survey input.
+- Grid-based layout system enforcing spatial constraints and preventing overlap with UI elements.
+- Off-screen canvas rendering reused as sprite textures inside a Three.js scene.
+- Texture caching and variant limiting to control GPU cost and avoid redundant generation.
 
 #### Key code entry points: 
 
@@ -45,11 +46,4 @@ Solo mode and dark mode toggled separately
   <img src="./screenshots+gifs/mobile8.png" width="25%" />
   <img src="./screenshots+gifs/mobile9.png" width="25%" />
 </p>
-
-#### Tech used
-- React 18
-- Three.js / React Three Fiber  
-- HTML Canvas  
-- TypeScript  
-- Sanity.io (CMS) 
 
