@@ -5,9 +5,9 @@ import {
   clientToSvg,
   makeRingPath as makeRingPathRaw,
   triPointsPath,
-} from './geometry.ts';
-import { usePointerDrag } from './usePointerDrag.ts';
-import { clamp, easeFn, colorForFactory } from './colors.ts';
+} from './geometry';
+import { usePointerDrag } from './usePointerDrag';
+import { clamp, easeFn, colorForFactory } from './colors';
 
 type ShapeKey = 'triangle' | 'circle' | 'square' | 'diamond';
 type Weights = Record<ShapeKey, number>;

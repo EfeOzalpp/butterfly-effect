@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { useAppState } from "../app-context/appStateContext.tsx";
+import { useAppState } from "../app/appState";
 
 /**
  * DarkModeToggle (simplified with icon)

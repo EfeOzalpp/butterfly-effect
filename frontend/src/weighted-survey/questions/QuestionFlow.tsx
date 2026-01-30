@@ -1,9 +1,9 @@
 // src/components/survey/questions/QuestionFlow.tsx
 import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
-import type { Question } from "../types.ts";
-import SelectionMap from "./SelectionMap.tsx";
-import AnswersList, { ShapeKey } from "./AnswersList.tsx";
-import { useAppState, DEFAULT_AVG } from "../../app-context/appStateContext.tsx";
+import type { Question } from "../types";
+import SelectionMap from "./SelectionMap";
+import AnswersList, { ShapeKey } from "./AnswersList";
+import { useAppState, DEFAULT_AVG } from "../../app/appState";
 
 const SHAPE_ORDER: ShapeKey[] = ["circle", "square", "triangle", "diamond"];
 const shapeForIndex = (idx: number): ShapeKey => SHAPE_ORDER[idx % SHAPE_ORDER.length];

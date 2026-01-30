@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import type { DotPoint, DotPointsOptions, SurveyResponseLike } from '../utils/dotPoints.ts';
-import { computeDotPoints } from '../utils/dotPoints.ts';
+import type { DotPoint, DotPointsOptions, SurveyResponseLike } from '../utils/dotPoints';
+import { computeDotPoints } from '../utils/dotPoints';
 
 type ArrayCall = [SurveyResponseLike[], DotPointsOptions?];
 type ObjectCall = [{ data?: SurveyResponseLike[] } & DotPointsOptions];

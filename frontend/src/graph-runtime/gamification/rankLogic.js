@@ -1,15 +1,12 @@
 // src/components/dotGraph/utils/rankLogic.js
 
-import { avgWeightOf } from '../../utils-hooks/useRelativeScore.ts';
-
+import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
 
 /**
- * ---- WHY THIS CHANGE? -----------------------------------------------
- * Your UI rounds to an integer display percent (e.g., 53),
+ * UI rounds to an integer display percent (e.g., 53),
  * but old tie logic compared raw averages (e.g., 0.532 vs 0.534).
  * Now we compute a *display key* per entry (the same integer the UI shows)
  * and do *all* tie comparisons on that key.
- * ---------------------------------------------------------------------
  */
 
 /**

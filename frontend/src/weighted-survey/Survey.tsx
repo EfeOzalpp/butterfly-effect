@@ -2,14 +2,14 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
-import { useAppState } from '../app-context/appStateContext.tsx';
-import '../static-assets/styles/survey.css';
+import { useAppState } from "../app/appState";
+import "../assets/styles/survey.css";
 
-import { ROLE_SECTIONS } from './section-picker/sections.js';
-import QuestionFlow from './questions/QuestionFlow.tsx';
-import { WEIGHTED_QUESTIONS } from './questions/questions.ts';
+import { ROLE_SECTIONS } from "./section-picker/sections";
+import QuestionFlow from "./questions/QuestionFlow";
+import { WEIGHTED_QUESTIONS } from "./questions/questions";
 
-import { saveUserResponse } from '../utils-hooks/saveUserResponse.ts';
+import { saveUserResponse } from "../services/sanity/saveUserResponse";
 
 type Audience = 'student' | 'staff' | 'visitor' | '';
 
@@ -25,10 +25,13 @@ type SectionOption = {
 };
 type SectionItem = SectionHeader | SectionOption;
 
-const RoleStep = React.lazy(() => import('./role-picker/RoleStep.jsx'));
-const SectionPickerIntro = React.lazy(() => import('./section-picker/sectionPicker.tsx'));
-const DoneOverlayR3F = React.lazy(() => import('./R3F-button/DoneOverlayR3F.jsx'));
-
+const RoleStep = React.lazy(() => import("./role-picker/RoleStep"));
+const SectionPickerIntro = React.lazy(
+  () => import("./section-picker/sectionPicker")
+);
+const DoneOverlayR3F = React.lazy(
+  () => import("./R3F-button/DoneOverlayR3F")
+);
 
 export default function Survey({
   setAnimationVisible,
@@ -200,6 +203,7 @@ export default function Survey({
     setSection(surveySection);
     setMySection(surveySection);
     setHasCompletedSurvey(true);
+    openGraph();
     setSurveyActive(false);
     setAnimationVisible(true);
     setSurveyWrapperClass('complete-active');
@@ -252,7 +256,7 @@ export default function Survey({
     setAudience(role);
     setError('');
 
-    // ✅ Only index ROLE_SECTIONS when role is student/staff
+    // Only index ROLE_SECTIONS when role is student/staff
     const allowed = role === 'staff'
       ? [...(ROLE_SECTIONS.student || []), ...(ROLE_SECTIONS.staff || [])].map((s) => s.value)
       : isRoleKey(role)
@@ -278,7 +282,7 @@ export default function Survey({
     );
   }
 
-  // ⬇️ After submit, show Exit overlay (graph remains visible behind it)
+  // After submit, show Exit overlay (graph remains visible behind it)
   if (showCompleteButton) {
     return (
       <Suspense fallback={null}>

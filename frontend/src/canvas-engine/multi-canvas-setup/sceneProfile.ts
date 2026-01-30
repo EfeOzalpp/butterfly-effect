@@ -1,12 +1,12 @@
 // src/canvas-engine/multi-canvas-setup/sceneProfile.ts
 
-import type { DeviceType } from "../shared/responsiveness.ts";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding.ts";
-import type { ShapeBands } from "../adjustable-rules/placementRules.ts";
-import type { ConditionKind } from "../condition/domain.ts";
-import type { QuotaAnchor } from "../adjustable-rules/quotaSpecification.ts";
+import type { DeviceType } from "../shared/responsiveness";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { ShapeBands } from "../adjustable-rules/placementRules";
+import type { ConditionKind } from "../condition/domain";
+import type { QuotaAnchor } from "../adjustable-rules/quotaSpecification";
 
-import type { PoolSizes } from "../adjustable-rules/poolSizes.ts";
+import type { PoolSizes } from "../adjustable-rules/poolSizes";
 
 // Shared
 export type ShapeMeta = {

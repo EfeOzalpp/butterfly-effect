@@ -1,7 +1,7 @@
 // src/canvas-engine/adjustable-rules/quotaSpecification.ts
 // Condition related adjustable
 
-import type { ConditionKind, ShapeName } from "./shapeCatalog.ts";
+import type { ConditionKind, ShapeName } from "./shapeCatalog";
 
 export type CurveSet = "default" | "overlay";
 

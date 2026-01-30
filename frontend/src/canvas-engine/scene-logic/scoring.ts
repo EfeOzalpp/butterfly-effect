@@ -1,7 +1,7 @@
 // src/canvas-engine/scene-logic/scoring.ts
 
-import { rand01Keyed } from "../shared/hash32.ts";
-import type { ShapeName } from "../adjustable-rules/shapeCatalog.ts";
+import { rand01Keyed } from "../shared/hash32";
+import type { ShapeName } from "../adjustable-rules/shapeCatalog";
 
 export type PlacedFoot = {
   r0: number;

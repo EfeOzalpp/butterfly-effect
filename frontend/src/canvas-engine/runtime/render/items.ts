@@ -1,8 +1,8 @@
 // src/canvas-engine/runtime/render/items.ts
 
-import type { EngineFieldItem } from "../types.ts";
-import type { Ghost } from "./ghosts.ts";
-import { clamp01, easeOutCubic } from "../util/easing.ts";
+import type { EngineFieldItem } from "../types";
+import type { Ghost } from "./ghosts";
+import { clamp01, easeOutCubic } from "../util/easing";
 
 export type LiveState = {
   shapeKey: string;

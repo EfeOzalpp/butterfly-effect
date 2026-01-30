@@ -1,8 +1,8 @@
 // canvas-engine/modifiers/color-modifiers/gradient.ts
 
-import type { RGB, Stop } from "./types.ts";
-import { clamp01 } from "./math.ts";
-import { mixRGB } from "./colorspace.ts";
+import type { RGB, Stop } from "./types";
+import { clamp01 } from "./math";
+import { mixRGB } from "./colorspace";
 
 export function rgbToCss(c: RGB): string {
   return `rgb(${c.r}, ${c.g}, ${c.b})`;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useSelectionState } from './selection-hooks/useSelectionState.ts';
-import { HOVER_EVT, type HoverEvtDetail, type ShapeKey } from './hoverBus.ts';
+import { useSelectionState } from './selection/useSelectionState';
+import { HOVER_EVT, type HoverEvtDetail, type ShapeKey } from './hoverBus';
 
 const SET_WEIGHT_EVT = 'gp:list-set-weight';
 

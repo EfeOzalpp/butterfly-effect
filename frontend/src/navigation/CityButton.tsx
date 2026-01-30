@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAppState } from '../app-context/appStateContext.tsx';
-import "../static-assets/styles/city.css";
+import { useAppState } from '../app/appState';
+import "../assets/styles/city.css";
 
 export default function CityButton({
   isOpen,

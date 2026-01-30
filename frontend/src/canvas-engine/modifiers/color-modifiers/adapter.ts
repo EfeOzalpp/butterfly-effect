@@ -1,6 +1,6 @@
 // canvas-engine/modifiers/color-modifiers/adapter.ts
 
-import type { RGB } from "./types.ts";
+import type { RGB } from "./types";
 
 /**
  * Convert a CSS color string into numeric RGB using the canvas engine's p-style context.

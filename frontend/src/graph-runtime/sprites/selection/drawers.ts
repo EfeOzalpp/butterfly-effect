@@ -13,7 +13,7 @@ import {
   drawSea,
   drawBus,
   drawTrees,
-} from '../../../canvas-engine/shapes/index.js';
+} from '../../../canvas-engine/shapes/index';
 
 export type DrawerFn = (p: any, x: number, y: number, size: number, opts?: any) => void;
 

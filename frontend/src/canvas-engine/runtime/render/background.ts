@@ -1,6 +1,6 @@
 // src/canvas-engine/runtime/render/background.ts
 
-import type { PLike } from "../p/makeP.ts";
+import type { PLike } from "../p/makeP";
 
 export function drawBackground(p: PLike) {
   const BG = "#b4e4fdff";

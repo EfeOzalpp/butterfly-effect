@@ -5,7 +5,7 @@ import {
   particleCacheSet,
   particleCacheClear,
   particleCacheSize,
-} from './particleLRU.ts';
+} from './particleLRU';
 
 const FAILED_KEYS = new Set<string>();
 const INFLIGHT = new Set<string>();

@@ -1,6 +1,6 @@
 // src/canvas/layout/grid-layout/layoutCentered.ts
 
-import { resolveCols } from "./resolveCols.ts";
+import { resolveCols } from "./resolveCols";
 
 export type Pt = { x: number; y: number };
 export type MakeCenteredGridOpts = {

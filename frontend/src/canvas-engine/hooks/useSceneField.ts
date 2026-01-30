@@ -2,19 +2,19 @@
 
 import { useEffect, useRef } from "react";
 
-import { composeField } from "../scene-logic/composeField.ts";
-import type { PoolItem as ScenePoolItem } from "../scene-logic/types.ts";
+import { composeField } from "../scene-logic/composeField";
+import type { PoolItem as ScenePoolItem } from "../scene-logic/types";
 
-import type { HostId } from "../multi-canvas-setup/hostDefs.ts";
-import { HOST_DEFS } from "../multi-canvas-setup/hostDefs.ts";
+import type { HostId } from "../multi-canvas-setup/hostDefs";
+import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 
-import { resolveSceneMode } from "../adjustable-rules/resolveSceneMode.ts";
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts";
+import { resolveSceneMode } from "../adjustable-rules/resolveSceneMode";
+import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
 
-import { targetPoolSize } from "../adjustable-rules/poolSizes.ts";
-import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding.ts";
+import { targetPoolSize } from "../adjustable-rules/poolSizes";
+import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding";
 
-import { getViewportSize } from "../shared/responsiveness.ts"; 
+import { getViewportSize } from "../shared/responsiveness"; 
 
 type Engine = {
   ready: React.RefObject<boolean>;

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { computeHoverViewportClass } from '../utils/hoverViewport.ts';
+import { computeHoverViewportClass } from '../utils/hoverViewport';
 
 export type DotLike = {
   _id: string;

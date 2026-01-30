@@ -1,8 +1,8 @@
 // canvas-engine/modifiers/color-modifiers/effects.ts
 
-import type { RGB } from "./types.ts";
-import { clamp01 } from "./math.ts";
-import { hslToRgb, linToSrgb, rgbToHsl, srgbToLin } from "./colorspace.ts";
+import type { RGB } from "./types";
+import { clamp01 } from "./math";
+import { hslToRgb, linToSrgb, rgbToHsl, srgbToLin } from "./colorspace";
 
 export function oscillateSaturation(
   base: RGB,

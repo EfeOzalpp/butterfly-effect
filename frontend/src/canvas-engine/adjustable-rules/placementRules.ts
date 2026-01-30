@@ -1,7 +1,7 @@
 // src/canvas-engine/adjustable-rules/placementRules.ts
 
-import type { DeviceType } from "../shared/responsiveness.ts";
-import type { ShapeName } from "./shapeCatalog.ts";
+import type { DeviceType } from "../shared/responsiveness";
+import type { ShapeName } from "./shapeCatalog";
 
 export type Band = { topK: number; botK: number };
 export type ShapeBandsMode = "start" | "questionnaire" | "overlay";

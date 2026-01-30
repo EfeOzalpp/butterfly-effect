@@ -1,5 +1,5 @@
 // navigation/CityOverlay.tsx
-import { EngineHost } from "../canvas-engine/EngineHost.tsx";
+import { EngineHost } from "../canvas-engine/EngineHost";
 
 type CityOverlayProps = {
   open: boolean;

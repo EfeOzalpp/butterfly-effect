@@ -1,14 +1,14 @@
 // sceneRuleSets.ts
-import type { SceneProfile } from "../multi-canvas-setup/sceneProfile.ts";
+import type { SceneProfile } from "../multi-canvas-setup/sceneProfile";
 
-import { CANVAS_PADDING } from "./canvasPadding.ts";
-import { SHAPE_BANDS } from "./placementRules.ts";
-import { SHAPE_META } from "./shapeMeta.ts";
+import { CANVAS_PADDING } from "./canvasPadding";
+import { SHAPE_BANDS } from "./placementRules";
+import { SHAPE_META } from "./shapeMeta";
 
-import { POOL_SIZES } from "./poolSizes.ts";
-import { QUOTA_CURVES } from "./quotaSpecification.ts";
+import { POOL_SIZES } from "./poolSizes";
+import { QUOTA_CURVES } from "./quotaSpecification";
 
-import { defineRuleSet } from "../validation/index.ts";
+import { defineRuleSet } from "../validation/index";
 
 // Register number of adjustable-rule instances
 export const SCENE_MODES = ["start", "questionnaire", "overlay"] as const;

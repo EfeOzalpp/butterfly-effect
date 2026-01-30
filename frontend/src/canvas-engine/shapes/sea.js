@@ -10,7 +10,7 @@ import {
   oscillateSaturation,
   stepAndDrawPuffs,
   applyShapeMods,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 // base palettes
 export const SEA_BASE_PALETTE = {

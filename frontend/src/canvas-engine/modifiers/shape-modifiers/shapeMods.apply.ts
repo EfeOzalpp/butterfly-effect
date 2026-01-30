@@ -1,7 +1,7 @@
 // modifiers/shape-modifiers/shapeMods.apply.ts
-import { clamp01 } from "./useLerp.ts";
-import type { ApplyShapeModsOpts } from "./shapeMods.types.ts";
-import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./shapeMods.math.ts";
+import { clamp01 } from "./useLerp";
+import type { ApplyShapeModsOpts } from "./shapeMods.types";
+import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./shapeMods.math";
 
 /**
  * Apply modular shape modifiers.

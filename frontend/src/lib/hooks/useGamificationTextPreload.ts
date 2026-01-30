@@ -1,5 +1,5 @@
 // src/utils/GamificationCopyPreloader.tsx
-import { useGeneralPools, usePersonalizedPools } from './useGamificationPools.ts';
+import { useGeneralPools, usePersonalizedPools } from './useGamificationPools';
 
 export default function GamificationCopyPreloader() {
   // just mounting these hooks triggers the initial Sanity fetch + live subscription

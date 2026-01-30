@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/render/palette.ts
 
-import { Stop } from "../../modifiers/color-modifiers/stops.ts";
-import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index.ts";
+import { Stop } from "../../modifiers/color-modifiers/stops";
+import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index";
 
 export type RGB = { r: number; g: number; b: number };
 

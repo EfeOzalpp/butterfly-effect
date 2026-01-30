@@ -1,7 +1,7 @@
 // src/canvas-engine/condition/conditions.ts
 
-import type { ConditionKind, ShapeKind } from "./shapeCatalog.ts";
-import { CONDITION_KINDS, SHAPES } from "./shapeCatalog.ts";
+import type { ConditionKind, ShapeKind } from "./shapeCatalog";
+import { CONDITION_KINDS, SHAPES } from "./shapeCatalog";
 
 export { CONDITION_KINDS, SHAPES };
 export type { ConditionKind };

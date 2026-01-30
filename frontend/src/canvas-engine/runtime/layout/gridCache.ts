@@ -1,8 +1,8 @@
 // src/canvas-engine/runtime/layout/gridCache.ts
 
-import type { PLike } from "../p/makeP.ts";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding.ts";
-import { makeCenteredSquareGrid } from "../../grid-layout/layoutCentered.ts";
+import type { PLike } from "../p/makeP";
+import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
+import { makeCenteredSquareGrid } from "../../grid-layout/layoutCentered";
 
 export type GridCacheState = {
   w: number;

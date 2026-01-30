@@ -1,19 +1,20 @@
-// ─────────────────────────────────────────────────────────────
+
 // src/graph-runtime/VisualizationPage.tsx
 // Graph page: loads DotGraph + draggable BarGraph overlay
-// ─────────────────────────────────────────────────────────────
-
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, Suspense } from 'react';
 
-import { useAppState } from '../app-context/appStateContext.tsx';
+import { useAppState } from "../app/appState";
 
-import '../static-assets/styles/graph.css';
+import "../assets/styles/graph.css";
 
-const Graph = React.lazy(() => import(/* webpackChunkName: "graph" */ './dotgraph/index.tsx'));
-
-const BarGraph = React.lazy(
-  () => import(/* webpackChunkName: "bar-graph" */ './bargraph/BarGraph.tsx')
+const Graph = React.lazy(() =>
+  import(/* webpackChunkName: "graph" */ "./dotgraph/index")
 );
+
+const BarGraph = React.lazy(() =>
+  import(/* webpackChunkName: "bar-graph" */ "./bargraph/BarGraph")
+);
+
 
 type XY = { x: number; y: number };
 

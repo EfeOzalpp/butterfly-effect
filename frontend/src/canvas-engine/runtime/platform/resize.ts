@@ -1,10 +1,10 @@
 // src/canvas-engine/runtime/layout/resize.ts
 
 // D: Declaration code and E: execution code
-import type { PLike } from "../p/makeP.ts";          // (D) type-only import (erased at runtime)
-import type { DprMode } from "./viewport.ts";       // (D) type-only import (erased at runtime)
-import { resolvePixelDensity } from "./viewport.ts"; // (D+E*) import binding declared; module loader may execute that module once
-import { applyCanvasStyle } from "./mount.ts";       // (D+E*) same note as above
+import type { PLike } from "../p/makeP";          // (D) type-only import (erased at runtime)
+import type { DprMode } from "./viewport";       // (D) type-only import (erased at runtime)
+import { resolvePixelDensity } from "./viewport"; // (D+E*) import binding declared; module loader may execute that module once
+import { applyCanvasStyle } from "./mount";       // (D+E*) same note as above
 
 export type ResizeCleanup = () => void; // (D) type alias only
 

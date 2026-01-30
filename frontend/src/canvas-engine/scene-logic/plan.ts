@@ -1,17 +1,17 @@
 // src/canvas-engine/scene-logic/plan.ts
 
-import type { QuotaCurvesByKind } from '../condition/conditionPlanner.ts';
-import type { ConditionKind, ShapeName, Size } from '../condition/types.ts';
+import type { QuotaCurvesByKind } from '../condition/conditionPlanner';
+import type { ConditionKind, ShapeName, Size } from '../condition/types';
 
 import {
   countsFromSlider,
   adjustConditionsStable,
-} from '../condition/conditionMix.ts';
+} from '../condition/conditionMix';
 
 import {
   planForBucket,
   type PoolItem as PlannerPoolItem,
-} from '../condition/conditionPlanner.ts';
+} from '../condition/conditionPlanner';
 
 export type PlannedPoolItem = PlannerPoolItem & {
   shape?: ShapeName;

@@ -4,40 +4,47 @@
 // ─────────────────────────────────────────────────────────────
 
 import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
+
 import { Html, Line } from '@react-three/drei';
 
-import CompleteButton from '../../weighted-survey/R3F-button/CompleteButton.jsx';
+import CompleteButton from "../../weighted-survey/R3F-button/CompleteButton";
 
-import GamificationPersonalized from '../gamification/GamificationPersonalized.jsx';
-import GamificationGeneral from '../gamification/GamificationGeneral.jsx';
+import GamificationPersonalized from "../gamification/GamificationPersonalized";
+import GamificationGeneral from "../gamification/GamificationGeneral";
 
-import { useAppState } from '../../app-context/appStateContext.tsx';
+import { useAppState } from "../../app/appState";
 
-import { useRealMobileViewport } from '../../utils-hooks/real-mobile.ts';
-import { sampleStops, rgbString } from '../../utils-hooks/hooks.ts';
-import { useRelativeScores, avgWeightOf } from '../../utils-hooks/useRelativeScore.ts';
-import { useAbsoluteScore } from '../../utils-hooks/useAbsoluteScore.ts';
+import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
+import { sampleStops, rgbString } from "../../lib/utils/color-and-interpolation";
+import { useRelativeScores, avgWeightOf } from "../../lib/hooks/useRelativeScore";
+import { useAbsoluteScore } from "../../lib/hooks/useAbsoluteScore";
 
 // DotGraph internals (feature-owned) — use public surface
-import { useOrbitController } from './event-handlers/index.ts';
-import useDotPoints from './hooks/useDotPoints.ts';
-import useHoverBubble from './hooks/useHoverBubble.ts';
-import useObserverDelay from './hooks/useObserverDelay.ts';
+import { useOrbitController } from "./event-handlers";
+import useDotPoints from "./hooks/useDotPoints";
+import useHoverBubble from "./hooks/useHoverBubble";
+import useObserverDelay from "./hooks/useObserverDelay";
 
-import { getTieStats, classifyPosition } from '../gamification/rankLogic.js';
+import { getTieStats, classifyPosition } from "../gamification/rankLogic";
 
 import {
   SpriteShape,
   prewarmSpriteTextures,
   useTextureQueueProgress,
-} from '../sprites/entry.ts';
+} from "../sprites/entry";
 
-import { shapeForAvg } from '../sprites/selection/shapeForAvg.ts';
-import { FOOTPRINTS as SHAPE_FOOTPRINT } from '../sprites/selection/footprints.ts';
+import { shapeForAvg } from "../sprites/selection/shapeForAvg";
+import { FOOTPRINTS as SHAPE_FOOTPRINT } from "../sprites/selection/footprints";
 
-import { nonlinearLerp, boostColor } from './utils/colorBoost.ts';
-import { ROLE, normSection, deriveRoleFromSectionId, allowPersonalInSection } from './dotgraph.scoping.ts';
-import useObserverSpotlight from './hooks/useObserverSpotlight.ts';
+import { nonlinearLerp, boostColor } from "./utils/colorBoost";
+import {
+  ROLE,
+  normSection,
+  deriveRoleFromSectionId,
+  allowPersonalInSection,
+} from "./dotgraph.scoping";
+import useObserverSpotlight from "./hooks/useObserverSpotlight";
+
 
 // Minimal props typing (tighten later)
 type DotGraphProps = {

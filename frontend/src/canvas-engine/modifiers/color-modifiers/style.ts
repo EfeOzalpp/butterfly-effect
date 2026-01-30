@@ -1,9 +1,9 @@
 // canvas-engine/modifiers/color-modifiers/style.ts
 
-import { clamp01 } from "./math.ts";
-import { gradientColor } from "./gradient.ts";
-import { applyExposureContrast } from "./effects.ts";
-import { BRAND_STOPS_VIVID } from "./stops.ts";
+import { clamp01 } from "./math";
+import { gradientColor } from "./gradient";
+import { applyExposureContrast } from "./effects";
+import { BRAND_STOPS_VIVID } from "./stops";
 
 export type VisualStyle = {
   rgb: { r: number; g: number; b: number };

@@ -1,33 +1,33 @@
 // src/canvas-engine/runtime/index.ts
 
-import type { EngineControls, EngineFieldItem, StartCanvasEngineOpts } from "./types.ts";
+import type { EngineControls, EngineFieldItem, StartCanvasEngineOpts } from "./types";
 
-import { registerEngineInstance, stopCanvasEngine, isCanvasRunning, stopAllCanvasEngines } from "./engine/registry.ts";
-import { createEngineTicker } from "./engine/loop.ts";
-import { registerEngineFrame, unregisterEngineFrame } from "./engine/scheduler.ts";
+import { registerEngineInstance, stopCanvasEngine, isCanvasRunning, stopAllCanvasEngines } from "./engine/registry";
+import { createEngineTicker } from "./engine/loop";
+import { registerEngineFrame, unregisterEngineFrame } from "./engine/scheduler";
 
-import { ensureMount, applyCanvasStyle } from "./platform/mount.ts";
-import { makeP, type PLike } from "./p/makeP.ts";
+import { ensureMount, applyCanvasStyle } from "./platform/mount";
+import { makeP, type PLike } from "./p/makeP";
 
-import { clamp01 } from "./util/easing.ts";
+import { clamp01 } from "./util/easing";
 
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding.ts";
+import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
 
-import { resolveBounds } from "./layout/bounds.ts";
-import { createGridCache, invalidateGridCache } from "./layout/gridCache.ts";
-import { installResizeHandlers } from "./platform/resize.ts";
+import { resolveBounds } from "./layout/bounds";
+import { createGridCache, invalidateGridCache } from "./layout/gridCache";
+import { installResizeHandlers } from "./platform/resize";
 
-import { createPaletteCache } from "./render/palette.ts";
-import { type LiveState, defaultShapeKeyOfItem } from "./render/items.ts";
+import { createPaletteCache } from "./render/palette";
+import { type LiveState, defaultShapeKeyOfItem } from "./render/items";
 
-import { Z_INDEX } from "./shapes/zIndex.ts";
-import { createDefaultShapeRegistry, type ShapeRegistry } from "./shapes/registry.ts";
+import { Z_INDEX } from "./shapes/zIndex";
+import { createDefaultShapeRegistry, type ShapeRegistry } from "./shapes/registry";
 
-import { BRAND_STOPS_VIVID } from "../modifiers/color-modifiers/stops.ts";
-import { DEBUG_DEFAULT, type DebugFlags } from "./debug/flags.ts";
+import { BRAND_STOPS_VIVID } from "../modifiers/color-modifiers/stops";
+import { DEBUG_DEFAULT, type DebugFlags } from "./debug/flags";
 
-export type { EngineControls as CanvasEngineControls } from "./types.ts";
+export type { EngineControls as CanvasEngineControls } from "./types";
 
 /**
  * STYLE = knobs/config that change rendering but are not "signals".

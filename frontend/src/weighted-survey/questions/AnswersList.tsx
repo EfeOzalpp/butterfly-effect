@@ -1,7 +1,7 @@
 // src/components/survey/questions/AnswersList.tsx
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
-import type { Question } from '../types.ts';
-import { HOVER_EVT, type ShapeKey } from './hoverBus.ts';
+import type { Question } from '../types';
+import { HOVER_EVT, type ShapeKey } from './hoverBus';
 
 export type ShapeKeyLocal = 'circle' | 'square' | 'triangle' | 'diamond';
 

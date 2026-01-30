@@ -7,14 +7,14 @@ import {
   clampSaturation,
   applyShapeMods,
   stepAndDrawPuffs,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 import {
   drawCarAsset,
   fitScaleToRectWidth,
   beginFitScale,
   endFitScale,
-} from './car.js';
+} from './car';
 
 /* palette */
 export const CAR_FACTORY_BASE_PALETTE = {

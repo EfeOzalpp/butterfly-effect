@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/layout/bounds.ts
 
-import type { CanvasBounds } from "../../multi-canvas-setup/hostDefs.ts";
-import { getViewportSize } from "../platform/viewport.ts";
+import type { CanvasBounds } from "../../multi-canvas-setup/hostDefs";
+import { getViewportSize } from "../platform/viewport";
 
 /**
  * Resolve canvas pixel size from bounds policy.

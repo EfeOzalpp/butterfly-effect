@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 
-import '../../static-assets/styles/gamification.css';
+import '../../assets/styles/gamification.css';
 
 import {
   useGradientColor,
   DEFAULT_COLOR_OPTS,
-} from '../../utils-hooks/hooks.ts';
+} from "../../lib/utils/color-and-interpolation";
 
-import { useGeneralPools } from '../../utils-hooks/useGamificationPools.ts';
-
+import { useGeneralPools } from "../../lib/hooks/useGamificationPools";
 
 const NEUTRAL = 'rgba(255,255,255,0.95)';
 

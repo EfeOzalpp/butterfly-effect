@@ -1,6 +1,6 @@
 // canvas-engine/CanvasEntry.tsx
 
-import { EngineHost } from "../canvas-engine/EngineHost.tsx";
+import { EngineHost } from "../canvas-engine/EngineHost";
 
 export default function CanvasEntry({
   visible = true,

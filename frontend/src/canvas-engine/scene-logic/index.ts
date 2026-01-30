@@ -7,7 +7,7 @@ export type {
   ComposeOpts,
   ComposeMeta,
   ComposeResult,
-} from './types.ts';
+} from './types';
 
-export { composeField } from './composeField.ts';
-export { targetPoolSize  } from '../adjustable-rules/poolSizes.ts';
+export { composeField } from './composeField';
+export { targetPoolSize  } from '../adjustable-rules/poolSizes';

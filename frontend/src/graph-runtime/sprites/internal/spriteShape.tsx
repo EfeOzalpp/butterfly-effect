@@ -2,22 +2,22 @@
 import * as React from 'react';
 import * as THREE from 'three';
 
-import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style.ts";
+import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
-import type { ShapeKey } from '../selection/types.ts';
-import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy.ts';
+import type { ShapeKey } from '../selection/types';
+import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
 
-import { DRAWERS } from '../selection/drawers.ts';
-import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES } from '../selection/footprints.ts';
+import { DRAWERS } from '../selection/drawers';
+import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES } from '../selection/footprints';
 
-import { textureRegistry } from '../textures/registry.ts';
+import { textureRegistry } from '../textures/registry';
 
 import {
   getStaticTexture,
   getFrozenTexture,
   requestStaticTexture,
   requestFrozenTexture,
-} from '../internal/spriteRuntime.ts';
+} from '../internal/spriteRuntime';
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));

@@ -1,6 +1,6 @@
 // src/canvas-engine/runtime/util/transform.ts
 
-import type { PLike } from "../p/makeP.ts";
+import type { PLike } from "../p/makeP";
 
 /**
  * At the start of a frame, normalize the canvas transform so drawing code

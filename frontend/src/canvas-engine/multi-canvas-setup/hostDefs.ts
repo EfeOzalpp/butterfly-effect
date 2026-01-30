@@ -1,9 +1,8 @@
-// multi-canvas-setup/hostDefs.ts
-import { SCENE_RULESETS } from "../adjustable-rules/sceneRuleSets.ts";
-import type { SceneRuleSet } from "./types.ts";
+// src/multi-canvas-setup/hostDefs.ts
+import { SCENE_RULESETS } from "../adjustable-rules/sceneRuleSets";
+import type { SceneRuleSet } from "./types";
 import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts"
-
-export type DprMode = "auto" | "cap2" | "cap1_5" | "fixed1";
+import type { DprMode } from "../runtime/platform/viewport";
 
 // questionnaire exists as a state change withn start canvas, 
 // therefore it is excluded from Scene Mode (start, overlay).

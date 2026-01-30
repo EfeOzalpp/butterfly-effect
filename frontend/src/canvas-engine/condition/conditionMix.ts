@@ -1,6 +1,6 @@
 // src/canvas/condition/conditionMix.ts
 
-import type { ConditionKind } from "./domain.ts";
+import type { ConditionKind } from "./domain";
 
 export type Mix4 = readonly [number, number, number, number];
 export type Mix4Int = [number, number, number, number];

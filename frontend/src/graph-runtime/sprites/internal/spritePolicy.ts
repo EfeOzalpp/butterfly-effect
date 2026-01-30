@@ -1,5 +1,5 @@
 // graph-runtime/sprites/internal/spritePolicy.ts
-import { shapeForAvg, type ShapeKey } from '../selection/shapeForAvg.ts';
+import { shapeForAvg, type ShapeKey } from '../selection/shapeForAvg';
 
 export const SPRITE_TINT_BUCKETS = 10;
 

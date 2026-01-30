@@ -1,13 +1,13 @@
 // src/canvas-engine/runtime/types.ts
 
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding.ts";
-import type { EngineLayoutMode } from "./platform/mount.ts";
-import type { DprMode } from "./platform/viewport.ts";
-import type { CanvasBounds } from "../multi-canvas-setup/hostDefs.ts";
-import type { ShapeRegistry } from "./shapes/registry.ts";
-import type { DebugFlags } from "./debug/flags.ts";
-import type { EngineTick } from "./engine/scheduler.ts";
+import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { EngineLayoutMode } from "./platform/mount";
+import type { DprMode } from "./platform/viewport";
+import type { CanvasBounds } from "../multi-canvas-setup/hostDefs";
+import type { ShapeRegistry } from "./shapes/registry";
+import type { DebugFlags } from "./debug/flags";
+import type { EngineTick } from "./engine/scheduler";
 
 /**
  * Payload item consumed by the runtime renderer.

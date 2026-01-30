@@ -1,6 +1,6 @@
 // src/canvas-engine/runtime/engine/scheduler.ts
 
-import type { Entry } from "../types.ts";
+import type { Entry } from "../types";
 
 export type EngineTick = (now: number) => void;
 

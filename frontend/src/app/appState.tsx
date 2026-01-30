@@ -2,8 +2,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { unstable_batchedUpdates as batched } from "react-dom";
-import { subscribeSurveyData } from "../utils-hooks/sanityAPI.js";
-import useSectionCounts from "../utils-hooks/useSectionCounts.ts";
+import { subscribeSurveyData } from "../services/sanity/api";
+import useSectionCounts from "../lib/hooks/useSectionCounts";
 
 export type Mode = "relative" | "absolute";
 

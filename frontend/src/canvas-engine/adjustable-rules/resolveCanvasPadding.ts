@@ -1,7 +1,7 @@
 // src/canvas-engine/adjustable-rules/resolveCanvasPadding.ts
 
-import { deviceType, type DeviceType } from "../shared/responsiveness.ts";
-import type { CanvasPaddingSpec } from "./canvasPadding.ts";
+import { deviceType, type DeviceType } from "../shared/responsiveness";
+import type { CanvasPaddingSpec } from "./canvasPadding";
 
 export function resolveCanvasPaddingSpec(
   w: number,

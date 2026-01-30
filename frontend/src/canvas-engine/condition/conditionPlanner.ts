@@ -1,6 +1,6 @@
 // src/canvas-engine/condition/conditionPlanner.ts
 
-import { hash32 } from "../shared/hash32.ts";
+import { hash32 } from "../shared/hash32";
 import type {
   ConditionKind,
   ShapeName,
@@ -10,9 +10,9 @@ import type {
   Limits,
   QuotaAnchor,
   QuotaCurvesByKind
-} from "./domain.ts";
-import type { PoolItem, PlanEntry } from "./types.ts";
-import { CONDITIONS } from "./domain.ts";
+} from "./domain";
+import type { PoolItem, PlanEntry } from "./types";
+import { CONDITIONS } from "./domain";
 
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));

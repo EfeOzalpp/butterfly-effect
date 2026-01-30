@@ -1,5 +1,5 @@
 // utils/sanityAPI.js
-import { cdnClient, liveClient } from './sanityClient';
+import { liveClient } from './client';
 
 // --- section ids (unchanged) ---
 const STUDENT_IDS = [

@@ -1,7 +1,7 @@
 // src/canvas-engine/adjustable-rules/canvasPadding.ts
 
-import { makeRowForbidden } from '../grid-layout/forbidden.ts';
-import type { DeviceType } from '../shared/responsiveness.ts';
+import { makeRowForbidden } from '../grid-layout/forbidden';
+import type { DeviceType } from '../shared/responsiveness';
 
 export type CanvasPaddingSpec = {
   rows: number;

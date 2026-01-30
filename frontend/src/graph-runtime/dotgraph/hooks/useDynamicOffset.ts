@@ -1,6 +1,6 @@
 // src/components/dotgraph/hooks/useDynamicOffset.ts
 import { useEffect, useState } from 'react';
-import { computeDynamicOffset } from '../utils/dynamicOffset.ts';
+import { computeDynamicOffset } from '../utils/dynamicOffset';
 
 export const useDynamicOffset = (): number => {
   const [dynamicOffset, setDynamicOffset] = useState<number>(10);

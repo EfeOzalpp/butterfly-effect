@@ -1,12 +1,12 @@
 // src/canvas-engine/shape/bus.js
-import { applyShapeMods, blendRGB, clampBrightness, clamp01, val } from "../modifiers/index.ts";
+import { applyShapeMods, blendRGB, clampBrightness, clamp01, val } from "../modifiers/index";
 
 // reuse fit helpers from car.js so behavior matches car exactly
 import {
   fitScaleToRectWidth,
   beginFitScale,
   endFitScale,
-} from './car.js';
+} from './car';
 
 export const BUS_BASE_PALETTE = {
   grass: [

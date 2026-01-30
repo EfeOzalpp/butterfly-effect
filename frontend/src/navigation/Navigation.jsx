@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 
-import Logo from '../static-assets/static/left.jsx';
+import Logo from './visual/left';
 
-import InfoPanel from './InfoPanel.jsx';
-import InfoGraph from './InfoGraph.jsx';
-import GraphPicker from './GraphPicker.jsx';
-import Darkmode from './DarkmodeToggle.jsx';
+import InfoPanel from './InfoPanel';
+import InfoGraph from './InfoGraph';
+import GraphPicker from './GraphPicker';
+import Darkmode from './DarkmodeToggle';
 
-import { useAppState } from '../app-context/appStateContext.tsx';
+import { useAppState } from '../app/appState';
 
-import '../static-assets/styles/navigation.css';
-import '../static-assets/styles/info-graph.css';
+import '../assets/styles/navigation.css';
+import '../assets/styles/info-graph.css';
 
 
 const DEFAULT_SECTION = "fine-arts";

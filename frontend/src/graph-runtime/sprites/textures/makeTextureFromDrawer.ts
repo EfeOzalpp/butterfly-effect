@@ -1,6 +1,6 @@
 // graph-runtime/sprites/textures/makeTextureFromDrawer.ts
 import * as THREE from 'three';
-import { makeCanvasFacade } from './canvasFacade.ts';
+import { makeCanvasFacade } from './canvasFacade';
 
 type Drawer = (p: any, x: number, y: number, r: number, opts?: any) => void;
 

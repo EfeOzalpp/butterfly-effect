@@ -1,9 +1,9 @@
 // graph-runtime/sprites/entry.ts
-export { SpriteShape } from './api/spriteShape.ts';
+export { SpriteShape } from './api/spriteShape';
 
-export * from './api/keys.ts';
-export * from './api/prewarm.ts';
-export * from './api/dispose.ts';
+export * from './api/keys';
+export * from './api/prewarm';
+export * from './api/dispose';
 
-export { default as useTextureQueueProgress } from './textures/useQueueProgress.ts';
-export * from './textures/queue.ts';
+export { default as useTextureQueueProgress } from './textures/useQueueProgress';
+export * from './textures/queue';

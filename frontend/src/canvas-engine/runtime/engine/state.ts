@@ -1,12 +1,12 @@
 // src/canvas-engine/runtime/engine/state.ts
-import type { PLike } from "../p/makeP.ts";
-import type { EngineFieldItem } from "../types.ts";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding.ts";
+import type { PLike } from "../p/makeP";
+import type { EngineFieldItem } from "../types";
+import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
 
-import type { GridCacheState } from "../layout/gridCache.ts";
-import type { LiveState } from "../render/items.ts";
-import type { Ghost } from "../render/ghosts.ts";
-import type { DebugFlags } from "../debug/flags.ts";
+import type { GridCacheState } from "../layout/gridCache";
+import type { LiveState } from "../render/items";
+import type { Ghost } from "../render/ghosts";
+import type { DebugFlags } from "../debug/flags";
 
 export type EngineStyle = {
   r: number;

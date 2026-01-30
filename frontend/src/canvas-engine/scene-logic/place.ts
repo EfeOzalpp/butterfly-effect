@@ -1,25 +1,25 @@
 // src/canvas-engine/scene-logic/place.ts
 
-import { createOccupancy } from "../grid-layout/occupancy.ts";
-import { cellCenterToPx2 } from "../grid-layout/coords.ts";
-import { PlacementBands } from "../grid-layout/placementBands.ts";
+import { createOccupancy } from "../grid-layout/occupancy";
+import { cellCenterToPx2 } from "../grid-layout/coords";
+import { PlacementBands } from "../grid-layout/placementBands";
 
-import type { DeviceType } from "../shared/responsiveness.ts";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding.ts";
+import type { DeviceType } from "../shared/responsiveness";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
 
-import type { PoolItem, PlacedItem, FootRect } from "./types.ts";
-import { buildFallbackCells } from "./candidates.ts";
+import type { PoolItem, PlacedItem, FootRect } from "./types";
+import { buildFallbackCells } from "./candidates";
 import {
   cellForbiddenFromSpec,
   allowedSegmentsForRow,
   footprintAllowed,
-} from "./constraints.ts";
+} from "./constraints";
 
-import type { ShapeName } from "../adjustable-rules/shapeCatalog.ts";
-import type { ShapeBands } from "../adjustable-rules/placementRules.ts";
-import type { ShapeMeta } from "../adjustable-rules/shapeMeta.ts";
+import type { ShapeName } from "../adjustable-rules/shapeCatalog";
+import type { ShapeBands } from "../adjustable-rules/placementRules";
+import type { ShapeMeta } from "../adjustable-rules/shapeMeta";
 
-import { scoreCandidateGeneric } from "./scoring.ts";
+import { scoreCandidateGeneric } from "./scoring";
 
 export function placePoolItems(opts: {
   pool: PoolItem[];

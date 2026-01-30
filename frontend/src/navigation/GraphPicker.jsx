@@ -1,9 +1,9 @@
 // graphPicker.jsx
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 
-import { ROLE_SECTIONS } from '../weighted-survey/section-picker/sections.js';
-import useSectionCounts from '../utils-hooks/useSectionCounts.js';
-import { useAppState } from '../app-context/appStateContext.tsx';
+import { ROLE_SECTIONS } from "../weighted-survey/section-picker/sections";
+import useSectionCounts from "../lib/hooks/useSectionCounts";
+import { useAppState } from "../app/appState";
 
 
 const SPECIAL = [

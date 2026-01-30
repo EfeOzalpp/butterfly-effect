@@ -1,6 +1,6 @@
-import type { PLike } from "../p/makeP.ts";
-import type { EngineFieldItem } from "../types.ts";
-import type { ShapeRegistry } from "./registry.ts";
+import type { PLike } from "../p/makeP";
+import type { EngineFieldItem } from "../types";
+import type { ShapeRegistry } from "./registry";
 
 export function drawItemFromRegistry(registry: ShapeRegistry, p: PLike, it: EngineFieldItem, rEff: number, opts: any) {
   const fn = registry.get(it.shape);

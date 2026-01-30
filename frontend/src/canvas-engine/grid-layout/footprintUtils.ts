@@ -1,6 +1,6 @@
 // src/canvas/layout/grid-layout/footprintUtils.ts
 
-import type { Anchor } from "../modifiers/shape-modifiers/shapeMods.types.ts";
+import type { Anchor } from "../modifiers/shape-modifiers/shapeMods.types";
 
 export type CellSize = { cellW: number; cellH: number; ox?: number; oy?: number };
 

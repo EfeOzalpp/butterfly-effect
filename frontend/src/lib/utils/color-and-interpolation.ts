@@ -1,7 +1,5 @@
-// =============================================
-// utils/hooks.ts
+// @/lib/utils/hooks.ts
 // Centralized gradient + interpolation helpers used across components
-// =============================================
 import { useMemo } from 'react';
 
 export type RGB = { r: number; g: number; b: number };

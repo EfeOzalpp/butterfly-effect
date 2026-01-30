@@ -1,5 +1,5 @@
 // graph-runtime/sprites/textures/canvasFacade.ts
-import { makePFromCanvas } from '../../../canvas-engine/runtime/index.ts';
+import { makePFromCanvas } from '../../../canvas-engine/runtime/index';
 
 export type CanvasFacade = any;
 

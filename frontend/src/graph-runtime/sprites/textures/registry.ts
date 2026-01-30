@@ -1,7 +1,7 @@
 // graph-runtime/sprites/textures/registry.ts
 import * as THREE from 'three';
-import { makeTextureFromDrawer } from './makeTextureFromDrawer.ts';
-import { enqueueTexture } from './queue.ts';
+import { makeTextureFromDrawer } from './makeTextureFromDrawer';
+import { enqueueTexture } from './queue';
 
 export type DrawerFn = (p: any, x: number, y: number, r: number, opts?: any) => void;
 

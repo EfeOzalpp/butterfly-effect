@@ -1,6 +1,6 @@
-import type { Vec3, GeneratePositionsOptions } from './positions.ts';
-import { generatePositions } from './positions.ts';
-import { sampleStops, rgbString } from '../../../utils-hooks/hooks.ts';
+import type { Vec3, GeneratePositionsOptions } from "./positions";
+import { generatePositions } from "./positions";
+import { sampleStops, rgbString } from "../../../lib/utils/color-and-interpolation";
 
 export type SurveyResponseLike = {
   _id?: string;

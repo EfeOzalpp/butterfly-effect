@@ -13,7 +13,7 @@ const LottieOption = ({ onClick, selected }) => {
   useEffect(() => {
     let alive = true;
     import(
-      /* webpackChunkName:"lottie-radio" */ "./radio-button.json"
+      /* webpackChunkName:"lottie-radio" */ "../../assets/lottie/radio-button.json"
     ).then((mod) => {
       if (alive) setAnimationData(mod.default || mod);
     });

@@ -1,8 +1,8 @@
 // src/canvas-engine/grid-layout/placementBands.ts
 
-import type { DeviceType } from "../shared/responsiveness.ts";
-import type { ShapeName } from "../adjustable-rules/shapeCatalog.ts";
-import type { Band, ShapeBands } from "../adjustable-rules/placementRules.ts";
+import type { DeviceType } from "../shared/responsiveness";
+import type { ShapeName } from "../adjustable-rules/shapeCatalog";
+import type { Band, ShapeBands } from "../adjustable-rules/placementRules";
 
 function clampBandToRows(topK: number, botK: number, usedRows: number, hCell = 1) {
   topK = Math.max(0, Math.min(1, topK));

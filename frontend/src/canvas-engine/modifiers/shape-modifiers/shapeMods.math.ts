@@ -1,6 +1,6 @@
 // modifiers/shape-modifiers/shapeMods.math.ts
-import { clamp01 } from "./useLerp.ts";
-import type { Anchor } from "./shapeMods.types.ts";
+import { clamp01 } from "./useLerp";
+import type { Anchor } from "./shapeMods.types";
 
 export function applyAnchorShiftForScale(
   anchor: Anchor,

@@ -1,7 +1,7 @@
 // canvas-engine/modifiers/color-modifiers/colorspace.ts
 
-import type { RGB } from "./types.ts";
-import { clamp01, lerp } from "./math.ts";
+import type { RGB } from "./types";
+import { clamp01, lerp } from "./math";
 
 /** sRGB [0..255] -> linear [0..1] */
 export function srgbToLin(u8: number): number {

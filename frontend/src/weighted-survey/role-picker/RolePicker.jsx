@@ -1,6 +1,4 @@
-import React from "react";
-
-import LottieOption from "../../static-assets/lottie/lottieOption";
+import LottieOption from "./lottieOption";
 
 const OPTIONS = [
   { val: "visitor", label: "Visitor" },

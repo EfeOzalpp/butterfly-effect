@@ -7,7 +7,7 @@ import {
   stepAndDrawPuffs,
   clampBrightness,
   oscillateSaturation,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 /* Exposure/contrast helper (channel-space, gentle defaults) */
 function applyExposureContrast(rgb, exposure = 1, contrast = 1) {

@@ -1,8 +1,8 @@
 // src/canvas-engine/runtime/shapes/registry.ts
 
-import type { PLike } from "../p/makeP.ts";
-import type { EngineFieldItem } from "../types.ts";
-import { deviceType } from "../../shared/responsiveness.ts";
+import type { PLike } from "../p/makeP";
+import type { EngineFieldItem } from "../types";
+import { deviceType } from "../../shared/responsiveness";
 
 // NOTE: JS in repo today
 import {
@@ -17,7 +17,7 @@ import {
   drawSea,
   drawBus,
   drawTrees,
-} from "../../shapes/index.js";
+} from "../../shapes/index";
 
 export type DrawFn = (p: PLike, it: EngineFieldItem, rEff: number, opts: any) => void;
 

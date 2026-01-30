@@ -1,19 +1,19 @@
 // graph-runtime/sprites/internal/spriteRuntime.ts
 import * as THREE from 'three';
 
-import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style.ts";
+import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
-import type { ShapeKey } from '../selection/types.ts';
-import { DRAWERS } from '../selection/drawers.ts';
+import type { ShapeKey } from '../selection/types';
+import { DRAWERS } from '../selection/drawers';
 import {
   FOOTPRINTS,
   BLEED,
   PARTICLE_SHAPES,
-} from '../selection/footprints.ts';
+} from '../selection/footprints';
 
-import { makeFrozenTextureFromDrawer } from '../textures/animatedTexture.ts';
-import { textureRegistry, type MakeArgs } from '../textures/registry.ts';
-import { enqueueTexture } from '../textures/queue.ts';
+import { makeFrozenTextureFromDrawer } from '../textures/animatedTexture';
+import { textureRegistry, type MakeArgs } from '../textures/registry';
+import { enqueueTexture } from '../textures/queue';
 
 import {
   frozenGet,
@@ -25,7 +25,7 @@ import {
   frozenIsInflight,
   frozenClearAll,
   frozenSize,
-} from '../cache/frozenRegistry.ts';
+} from '../cache/frozenRegistry';
 
 import {
   chooseShape,
@@ -35,7 +35,7 @@ import {
   makeFrozenKey,
   resolveDpr,
   DEFAULT_VARIANT_SLOTS,
-} from './spritePolicy.ts';
+} from './spritePolicy';
 
 /* texture tracking */
 const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();

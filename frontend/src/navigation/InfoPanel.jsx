@@ -1,6 +1,6 @@
 // InfoPanel.jsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import RadialBackground from "../static-assets/static/radialBackground";
+import RadialBackground from "./visual/radialBackground";
 
 const TRANSITION_MS = 240;
 const MENU_EVT = "gp:menu-open";

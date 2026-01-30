@@ -11,7 +11,7 @@ import {
   clamp01,
   val,
   applyShapeMods,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 /* ───────────────── Palettes ───────────────── */
 export const CLOUDS_BASE_PALETTE = {

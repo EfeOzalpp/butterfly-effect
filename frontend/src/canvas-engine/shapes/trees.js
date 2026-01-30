@@ -7,7 +7,7 @@ import {
   clampSaturation,
   oscillateSaturation,
   applyShapeMods,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 /* ───────────────────────────────────────────────────────────
    Exposure/contrast helper

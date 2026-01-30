@@ -8,7 +8,7 @@ import {
   driveSaturation,
   stepAndDrawPuffs,
   applyShapeMods,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
   const e = Math.max(0.1, Math.min(3, exposure));

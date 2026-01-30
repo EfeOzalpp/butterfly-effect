@@ -1,9 +1,9 @@
 // src/canvas-engine/condition/pickConditionVariants.ts
 
-import { hash32 } from "../shared/hash32.ts";
+import { hash32 } from "../shared/hash32";
 
-import type { ConditionKind, Variant } from "./domain.ts";
-import { CONDITIONS } from "./domain.ts";
+import type { ConditionKind, Variant } from "./domain";
+import { CONDITIONS } from "./domain";
 
 export function pickVariant(kind: ConditionKind, id: number, salt = 0): Variant {
   const spec = CONDITIONS[kind];

@@ -1,8 +1,8 @@
 // src/canvas-engine/runtime/render/ghosts.ts
 
-import type { EngineFieldItem } from "../types.ts";
-import { clamp01, easeOutCubic } from "../util/easing.ts";
-import type { PLike } from "../p/makeP.ts";
+import type { EngineFieldItem } from "../types";
+import { clamp01, easeOutCubic } from "../util/easing";
+import type { PLike } from "../p/makeP";
 
 export type Ghost = {
   dieAtMs: number;

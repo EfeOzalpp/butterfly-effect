@@ -8,14 +8,19 @@ import { Canvas } from '@react-three/fiber';
 import { AdaptiveDpr, AdaptiveEvents, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 
-import DotGraph from './DotGraph.tsx';
+import DotGraph from "./DotGraph";
 
-import { useAppState } from '../../app-context/appStateContext.tsx';
-import { useRealMobileViewport } from '../../utils-hooks/real-mobile.ts';
+import { useAppState } from "../../app/appState";
+import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
 
-import { bumpGeneration, resetQueue, disposeAllSpriteTextures } from '../sprites/entry.ts';
+import {
+  bumpGeneration,
+  resetQueue,
+  disposeAllSpriteTextures,
+} from "../sprites/entry";
 
-import '../../static-assets/styles/graph.css';
+
+import '../../assets/styles/graph.css';
 
 // --- iOS detector (incl. iPadOS 13+ on MacIntel) ---
 const isIOS = (() => {

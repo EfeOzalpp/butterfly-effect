@@ -3,18 +3,18 @@ import { useMemo, useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { Camera, Group } from 'three';
 
-import useActivity from './hooks/useActivity.ts';
-import useZoom from './hooks/useZoom.ts';
-import useRotation from './hooks/useRotation.ts';
-import useIdleDrift from './hooks/useIdleDrift.ts';
-import usePixelOffsets from './hooks/usePixelOffsets.ts';
+import useActivity from './hooks/useActivity';
+import useZoom from './hooks/useZoom';
+import useRotation from './hooks/useRotation';
+import useIdleDrift from './hooks/useIdleDrift';
+import usePixelOffsets from './hooks/usePixelOffsets';
 
-import { useDynamicOffset } from '../hooks/useDynamicOffset.ts';
-import { createGestureState } from './shared/sharedGesture.ts';
+import { useDynamicOffset } from '../hooks/useDynamicOffset';
+import { createGestureState } from './shared/sharedGesture';
 
-import { useEdgeCueController } from './controller/edgeCue.controller.ts';
-import { computeTooltipOffsetPx } from './compute/tooltipOffset.ts';
-import { computeInitialZoomTarget } from './compute/zoomTarget.ts';
+import { useEdgeCueController } from './controller/edgeCue.controller';
+import { computeTooltipOffsetPx } from './compute/tooltipOffset';
+import { computeInitialZoomTarget } from './compute/zoomTarget';
 
 /** ---------- Types (minimal but useful) ---------- */
 export type OrbitLayout = {

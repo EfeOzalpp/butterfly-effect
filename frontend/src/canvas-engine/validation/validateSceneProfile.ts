@@ -1,7 +1,7 @@
 // src/canvas-engine/validation/validateSceneProfile.ts
-import type { SceneProfile } from "../multi-canvas-setup/sceneProfile.ts";
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts";
-import { invariant } from "./invariant.ts";
+import type { SceneProfile } from "../multi-canvas-setup/sceneProfile";
+import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
+import { invariant } from "./invariant";
 
 const KINDS = ["A", "B", "C", "D"] as const;
 

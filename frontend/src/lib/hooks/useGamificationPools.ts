@@ -1,7 +1,7 @@
 // src/utils/useGamificationPools.ts
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import { cdnClient, liveClient } from './sanityClient';
-import { storageKeyFor, safeSession, bucketForPercent } from './hooks.ts';
+import { cdnClient, liveClient } from '../../services/sanity/client';
+import { storageKeyFor, safeSession, bucketForPercent } from '../utils/color-and-interpolation';
 
 type Doc = {
   _id: string;

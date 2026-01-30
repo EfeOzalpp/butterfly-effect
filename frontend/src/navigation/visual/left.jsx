@@ -1,6 +1,6 @@
 // src/components/static/left/index.jsx (a.k.a. Logo.jsx)
 import React from "react";
-import { useAppState } from "../../app-context/appStateContext.tsx";
+import { useAppState } from "../../app/appState";
 
 const Logo = () => {
   const { observerMode, hasCompletedSurvey, darkMode, navPanelOpen } = useAppState();

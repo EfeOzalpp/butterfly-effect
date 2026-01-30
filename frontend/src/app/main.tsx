@@ -1,31 +1,26 @@
 // pages/Frontpage.tsx
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 
-import { AppProvider, useAppState } from "../app-context/appStateContext.tsx";
+import { AppProvider, useAppState } from "../app/appState";
 
-import Survey from "../weighted-survey/Survey.tsx";
+import Survey from "../weighted-survey/Survey";
+import Navigation from "../navigation/Navigation";
+import CityButton from "../navigation/CityButton";
+import DataVisualization from "../graph-runtime";
 
-import Navigation from "../navigation/Navigation.jsx";
-import CityButton from "../navigation/CityButton.tsx";
+import { useDynamicMargin } from "../lib/hooks/useDynamicMargin";
+import GamificationCopyPreloader from "../lib/hooks/useGamificationTextPreload";
+import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
 
-import DataVisualization from "../graph-runtime/index.tsx"; // Contains the graph visualizations
+import RadialBackground from "../navigation/visual/radialBackground";
 
-import { useDynamicMargin } from "../utils-hooks/dynamicMargin.ts";
+import "../assets/styles/global-styles.css";
 
-import GamificationCopyPreloader from "../utils-hooks/gamificationCopyPreloader.tsx";
-
-import { usePreventPageZoomOutsideZones } from "../utils-hooks/usePreventPageZoom.ts";
-import RadialBackground from "../static-assets/static/radialBackground.jsx";
-import "../static-assets/styles/global-styles.css";
-
-const CanvasEntry = React.lazy(() => import("../weighted-survey/CanvasEntry.tsx"));
-
-const CityOverlay = React.lazy(() => import("../navigation/CityOverlay.tsx"));
-
-const EdgeCue = React.lazy(() => import("../navigation/DarkMode.jsx"));
-
-const ModeToggle = React.lazy(() => import("../navigation/nav-bottom/ModeToggle.jsx"));
+const CanvasEntry = React.lazy(() => import("../weighted-survey/CanvasEntry"));
+const CityOverlay = React.lazy(() => import("../navigation/CityOverlay"));
+const EdgeCue = React.lazy(() => import("../navigation/DarkMode"));
+const ModeToggle = React.lazy(() => import("../navigation/nav-bottom/ModeToggle"));
 
 function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
@@ -41,6 +36,7 @@ function DeferredGamificationPreloader() {
 
   return start ? <GamificationCopyPreloader /> : null;
 }
+
 const AppInner: React.FC = () => {
   useDynamicMargin();
 
@@ -48,33 +44,26 @@ const AppInner: React.FC = () => {
   const [surveyWrapperClass, setSurveyWrapperClass] = useState<string>("");
   const [cityPanelOpen, setCityPanelOpen] = useState<boolean>(false);
 
-  const {
-    vizVisible,
-    observerMode,
-    hasCompletedSurvey,
-    questionnaireOpen,
-    liveAvg,
-    allocAvg,
-  } = useAppState();
+  const { vizVisible, questionnaireOpen, liveAvg, allocAvg } = useAppState();
 
-  // Extracted global zoom prevention policy
+  // Global zoom prevention policy
   usePreventPageZoomOutsideZones({
-    allowWithin: [".graph-container", ".dot-graph-container", "#canvas-root", "#city-canvas-root"],
+    allowWithin: [
+      ".graph-container",
+      ".dot-graph-container",
+      "#canvas-root",
+      "#city-canvas-root",
+    ],
   });
-  
-  // Heavy viz allowed when visible AND (observer or completed survey)
-  const readyForViz = useMemo<boolean>(
-    () => vizVisible && (observerMode || hasCompletedSurvey),
-    [vizVisible, observerMode, hasCompletedSurvey]
-  );
 
-  // Idle prefetch of the canvas chunk if we aren't ready for viz yet
+  // Optional: idle prefetch of CanvasEntry while user is in the heavy viz
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (readyForViz) return;
+    if (!vizVisible) return;
 
     const prefetch = () => {
-      import("../weighted-survey/CanvasEntry.tsx");};
+      import("../weighted-survey/CanvasEntry");
+    };
 
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(prefetch, { timeout: 1500 });
@@ -82,19 +71,17 @@ const AppInner: React.FC = () => {
       const t = setTimeout(prefetch, 0);
       return () => clearTimeout(t);
     }
-  }, [readyForViz]);
+  }, [vizVisible]);
 
   // Keep city overlay closed if questionnaire closes
   useEffect(() => {
     if (!questionnaireOpen && cityPanelOpen) setCityPanelOpen(false);
   }, [questionnaireOpen, cityPanelOpen]);
 
-  const showModeToggle = readyForViz;
-
   return (
     <div className="app-content">
-      {/* Defer HUD mount until viz is shown & allowed */}
-      {readyForViz && (
+      {/* HUD mounts only when viz is visible */}
+      {vizVisible && (
         <Suspense fallback={null}>
           <EdgeCue />
         </Suspense>
@@ -105,18 +92,22 @@ const AppInner: React.FC = () => {
 
       {/* City button appears only while questionnaire is open */}
       {questionnaireOpen && (
-        <CityButton isOpen={cityPanelOpen} onToggle={() => setCityPanelOpen((o) => !o)} shown />
+        <CityButton
+          isOpen={cityPanelOpen}
+          onToggle={() => setCityPanelOpen((o) => !o)}
+          shown
+        />
       )}
 
-      {/* Intro canvas UNMOUNTED while city overlay is open or while animation overlay is on */}
-      {!readyForViz && !animationVisible && !cityPanelOpen && (
+      {/* Intro canvas mounts only when viz is NOT visible and overlays are not blocking */}
+      {!vizVisible && !animationVisible && !cityPanelOpen && (
         <Suspense fallback={null}>
-        <CanvasEntry
-          liveAvg={liveAvg}
-          allocAvg={allocAvg}
-          questionnaireOpen={questionnaireOpen}
-          visible={true}
-        />
+          <CanvasEntry
+            liveAvg={liveAvg}
+            allocAvg={allocAvg}
+            questionnaireOpen={questionnaireOpen}
+            visible={true}
+          />
         </Suspense>
       )}
 
@@ -127,8 +118,8 @@ const AppInner: React.FC = () => {
         </Suspense>
       )}
 
-      {/* Heavy viz mounts only when fully allowed */}
-      {readyForViz && (
+      {/* Heavy viz mounts only when vizVisible */}
+      {vizVisible && (
         <div className={`graph-wrapper ${vizVisible ? "visible" : ""}`}>
           <DataVisualization />
         </div>
@@ -141,7 +132,8 @@ const AppInner: React.FC = () => {
         />
       </div>
 
-      {showModeToggle && (
+      {/* Mode toggle is only meaningful when viz is mounted */}
+      {vizVisible && (
         <Suspense fallback={null}>
           <ModeToggle />
         </Suspense>

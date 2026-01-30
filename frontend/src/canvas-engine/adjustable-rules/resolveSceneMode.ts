@@ -1,5 +1,5 @@
 // src/canvas-engine/adjustable-rules/resolveSceneMode.ts
-import type { SceneMode } from "./sceneRuleSets.ts";
+import type { SceneMode } from "./sceneRuleSets";
 
 export function resolveSceneMode(
   signals: { questionnaireOpen: boolean },

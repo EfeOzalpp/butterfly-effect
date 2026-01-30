@@ -1,17 +1,18 @@
 // src/canvas-engine/hooks/useCanvasEngine.ts
 
 import { useEffect, useRef, useState } from "react";
-import type { CanvasBounds } from "../multi-canvas-setup/hostDefs.ts";
+import type { CanvasBounds } from "../multi-canvas-setup/hostDefs";
+import type { DprMode } from "../runtime/platform/viewport";
 import {
   startCanvasEngine,
   stopCanvasEngine,
   type CanvasEngineControls,
-} from "../runtime/index.ts";
+} from "../runtime/index";
 
 type EngineOpts = {
   enabled?: boolean;
   visible?: boolean;
-  dprMode?: "fixed1" | "cap2" | "cap1_5" | "auto";
+  dprMode?: DprMode;
   mount?: string;
   zIndex?: number;
   bounds?: CanvasBounds;
@@ -48,7 +49,7 @@ export function useCanvasEngine(opts: EngineOpts = {}) {
   const {
     enabled = true,
     visible = true,
-    dprMode = "cap2",
+    dprMode = "cap3",
     mount = "#canvas-root",
     zIndex = 2,
     bounds,

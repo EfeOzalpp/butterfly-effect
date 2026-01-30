@@ -1,13 +1,13 @@
 // src/canvas-engine/scene-logic/types.ts
 
-import type { DeviceType } from "../shared/responsiveness.ts";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding.ts";
-import type { Place } from "../grid-layout/occupancy.ts";
-import type { QuotaCurvesByKind } from "../adjustable-rules/quotaSpecification.ts";
-import type { ConditionKind, ShapeName, Size } from "../condition/domain.ts";
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts";
-import type { ShapeBands } from "../adjustable-rules/placementRules.ts";
-import type { ShapeMeta } from "../adjustable-rules/shapeMeta.ts"; 
+import type { DeviceType } from "../shared/responsiveness";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { Place } from "../grid-layout/occupancy";
+import type { QuotaCurvesByKind } from "../adjustable-rules/quotaSpecification";
+import type { ConditionKind, ShapeName, Size } from "../condition/domain";
+import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
+import type { ShapeBands } from "../adjustable-rules/placementRules";
+import type { ShapeMeta } from "../adjustable-rules/shapeMeta"; 
 
 export type FootRect = Place;
 

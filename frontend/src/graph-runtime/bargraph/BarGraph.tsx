@@ -5,12 +5,12 @@
 
 import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, Suspense } from 'react';
 
-import { useAppState } from '../../app-context/appStateContext.tsx';
-import { useRelativeScores, avgWeightOf } from '../../utils-hooks/useRelativeScore.ts';
+import { useAppState } from "../../app/appState";
+import { useRelativeScores, avgWeightOf } from "../../lib/hooks/useRelativeScore";
 
-import EmptyStateArt from './EmptyArt.tsx';
+import EmptyStateArt from "./EmptyArt";
 
-import '../../static-assets/styles/graph.css';
+import '../../assets/styles/graph.css';
 
 const Lottie = React.lazy(() => import(/* webpackChunkName: "lottie-react" */ 'lottie-react'));
 
@@ -191,7 +191,7 @@ export default function BarGraph() {
       <div className="empty-center">
         <div className={`empty-card ${darkMode ? 'is-dark' : 'is-light'}`}>
           <EmptyStateArt className="empty-icon floaty" />
-          <h3>Nothing Here...</h3>
+          <h3>Nothing Yet...</h3>
         </div>
       </div>
     );
@@ -262,7 +262,7 @@ export default function BarGraph() {
         <TreeIcon
           jsonLoader={() =>
             import(
-              /* webpackChunkName:"lottie-tree1" */ '../../static-assets/lottie/tree1.json'
+              /* webpackChunkName:"lottie-tree1" */ '../../assets/lottie/tree1.json'
             )
           }
           speed={0.3}
@@ -271,7 +271,7 @@ export default function BarGraph() {
         <TreeIcon
           jsonLoader={() =>
             import(
-              /* webpackChunkName:"lottie-tree2" */ '../../static-assets/lottie/tree2.json'
+              /* webpackChunkName:"lottie-tree2" */ '../../assets/lottie/tree2.json'
             )
           }
           speed={0.2}
@@ -280,7 +280,7 @@ export default function BarGraph() {
         <TreeIcon
           jsonLoader={() =>
             import(
-              /* webpackChunkName:"lottie-tree3" */ '../../static-assets/lottie/tree3.json'
+              /* webpackChunkName:"lottie-tree3" */ '../../assets/lottie/tree3.json'
             )
           }
           speed={0.5}

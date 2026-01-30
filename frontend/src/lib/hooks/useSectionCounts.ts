@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { subscribeSectionCounts } from "./sanityAPI";
+import { subscribeSectionCounts } from "../../services/sanity/api";
 
 /**
  * Hook to get live per-section submission counts.

@@ -6,7 +6,7 @@ import {
   clampBrightness,
   clampSaturation,
   applyShapeMods,
-} from "../modifiers/index.ts";
+} from "../modifiers/index";
 
 /* Exposure/contrast helper */
 function applyExposureContrast(rgb, exposure = 1, contrast = 1) {

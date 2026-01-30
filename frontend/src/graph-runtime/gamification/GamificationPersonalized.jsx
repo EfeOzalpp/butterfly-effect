@@ -1,15 +1,13 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 
-import '../../static-assets/styles/gamification.css';
+import '../../assets/styles/gamification.css';
 
 import {
   useGradientColor,
-  BRAND_STOPS,
   DEFAULT_COLOR_OPTS,
-} from '../../utils-hooks/hooks.ts';
+} from "../../lib/utils/color-and-interpolation";
 
-import { usePersonalizedPools } from '../../utils-hooks/useGamificationPools.ts';
-
+import { usePersonalizedPools } from "../../lib/hooks/useGamificationPools";
 
 const FADE_MS = 200;
 const PROX_THRESHOLD = 0.02;

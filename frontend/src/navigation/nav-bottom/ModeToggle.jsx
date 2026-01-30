@@ -1,10 +1,10 @@
 // src/components/nav-bottom/ModeToggle.jsx
 import React, { useMemo } from "react";
 
-import { useAppState } from '../../app-context/appStateContext.tsx';
-import { avgWeightOf } from '../../utils-hooks/useRelativeScore.ts';
-import { useAbsoluteScore } from '../../utils-hooks/useAbsoluteScore.ts';
-import '../../static-assets/styles/nav-bottom.css';
+import { useAppState } from "../../app/appState";
+import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
+import { useAbsoluteScore } from "../../lib/hooks/useAbsoluteScore";
+import '../../assets/styles/nav-bottom.css';
 
 export default function ModeToggle() {
   const { mode, setMode, data, myEntryId, observerMode } = useAppState();

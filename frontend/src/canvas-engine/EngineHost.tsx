@@ -2,12 +2,12 @@
 // View CanvasEntry to see how a canvas is imported via EngineHost API
 
 import React from "react";
-import { useCanvasEngine } from "./hooks/useCanvasEngine.ts";
-import { useViewportKey } from "./hooks/useViewportKey.ts";
-import { useSceneField } from "./hooks/useSceneField.ts";
-import { stopCanvasEngine } from "./runtime/index.ts";
+import { useCanvasEngine } from "./hooks/useCanvasEngine";
+import { useViewportKey } from "./hooks/useViewportKey";
+import { useSceneField } from "./hooks/useSceneField";
+import { stopCanvasEngine } from "./runtime/index";
 
-import { HOST_DEFS, type HostId, type HostDef } from "./multi-canvas-setup/hostDefs.ts";
+import { HOST_DEFS, type HostId, type HostDef } from "./multi-canvas-setup/hostDefs";
 
 export function EngineHost({
   id,

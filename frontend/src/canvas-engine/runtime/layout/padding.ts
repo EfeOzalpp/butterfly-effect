@@ -1,9 +1,9 @@
 // src/canvas-engine/runtime/layout/padding.ts
 
-import { CANVAS_PADDING } from "../../adjustable-rules/canvasPadding.ts";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding.ts";
-import type { SceneMode } from "../../adjustable-rules/sceneRuleSets.ts";
-import { resolveCanvasPaddingSpec } from "../../adjustable-rules/resolveCanvasPadding.ts";
+import { CANVAS_PADDING } from "../../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
+import type { SceneMode } from "../../adjustable-rules/sceneRuleSets";
+import { resolveCanvasPaddingSpec } from "../../adjustable-rules/resolveCanvasPadding";
 
 /**
  * Runtime padding policy.

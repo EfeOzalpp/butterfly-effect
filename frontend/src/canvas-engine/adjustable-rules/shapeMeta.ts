@@ -1,6 +1,6 @@
 // src/canvas-engine/shared/shapeMeta.ts
 
-import type { ShapeName } from './shapeCatalog.ts';
+import type { ShapeName } from './shapeCatalog';
 
 /**
  * Generic engine concepts:

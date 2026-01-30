@@ -1,7 +1,7 @@
 // src/canvas-engine/adjustable-rules/poolSizes.ts
 
-import { deviceType, type DeviceType } from "../shared/responsiveness.ts";
-import type { SceneMode } from "./sceneRuleSets.ts";
+import { deviceType, type DeviceType } from "../shared/responsiveness";
+import type { SceneMode } from "./sceneRuleSets";
 
 // types
 // device-level (mode-resolved)

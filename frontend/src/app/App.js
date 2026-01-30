@@ -1,5 +1,5 @@
 import React from 'react';
-import AppShell from './Frontpage.tsx';
+import AppShell from './main';
 
 function App() {
   return (
