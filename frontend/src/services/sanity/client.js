@@ -1,6 +1,9 @@
 // utils/sanityClient.js
 import { createClient } from '@sanity/client';
 
+// Sanity requires a token for write access.
+// This token is scoped and used only for non-sensitive demo data.
+// In a production setup, writes would be proxied through a server/serverless function.
 export const cdnClient = createClient({
   projectId: '2dnm6wwp',
   dataset: 'butterfly-habits',
