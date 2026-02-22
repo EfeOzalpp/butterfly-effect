@@ -17,7 +17,8 @@ import {
 
 import type { ShapeName } from "../adjustable-rules/shapeCatalog";
 import type { ShapeBands } from "../adjustable-rules/placementRules";
-import type { ShapeMeta } from "../adjustable-rules/shapeMeta";
+
+import type { SeparationMeta } from "../adjustable-rules/separationMeta";
 
 import { scoreCandidateGeneric } from "./scoring";
 
@@ -41,7 +42,9 @@ export function placePoolItems(opts: {
   salt: number;
 
   bands: ShapeBands;
-  shapeMeta: Record<ShapeName, ShapeMeta>;
+
+  // ✅ updated: now maps to simplified SeparationMeta
+  separationMeta: Record<ShapeName, SeparationMeta>;
 }): { placed: PlacedItem[]; nextPool: PoolItem[] } {
   const {
     pool,
@@ -57,7 +60,7 @@ export function placePoolItems(opts: {
     usedRows,
     salt,
     bands,
-    shapeMeta,
+    separationMeta,
   } = opts;
 
   const isForbidden = cellForbiddenFromSpec(spec, rows, cols);
@@ -83,7 +86,7 @@ export function placePoolItems(opts: {
   const outPlaced: PlacedItem[] = [];
   let cursor = 0;
 
-  const getMeta = (s?: ShapeName) => (s ? shapeMeta[s] : undefined);
+  const getMeta = (s?: ShapeName) => (s ? separationMeta[s] : undefined);
 
   for (let i = 0; i < nextPool.length; i++) {
     const item = nextPool[i];

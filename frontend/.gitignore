@@ -10,6 +10,7 @@
 
 # environmental
 .env
+/.vscode
 
 # production
 /build

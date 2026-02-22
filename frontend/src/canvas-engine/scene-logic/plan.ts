@@ -1,28 +1,19 @@
 // src/canvas-engine/scene-logic/plan.ts
 
-import type { QuotaCurvesByKind } from '../condition/conditionPlanner';
-import type { ConditionKind, ShapeName, Size } from '../condition/types';
+import type { QuotaSpecificationByKind } from "../condition/domain";
+import type { ConditionKind, ShapeName, Size } from "../condition/domain";
+import type { PoolItem as PlannerPoolItem } from "../condition/types";
 
-import {
-  countsFromSlider,
-  adjustConditionsStable,
-} from '../condition/conditionMix';
+import { countsFromSlider, adjustConditionsStable } from "../condition/conditionMix";
 
-import {
-  planForBucket,
-  type PoolItem as PlannerPoolItem,
-} from '../condition/conditionPlanner';
+import { planForBucket } from "../condition/conditionPlanner";
 
 export type PlannedPoolItem = PlannerPoolItem & {
   shape?: ShapeName;
   size?: Size;
 };
 
-export function retargetKindsStable(
-  pool: PlannedPoolItem[],
-  u: number,
-  desiredSize: number
-) {
+export function retargetKindsStable(pool: PlannedPoolItem[], u: number, desiredSize: number) {
   // pool-size-aware counts (already sums to desiredSize)
   const targetCounts = countsFromSlider(u, desiredSize);
 
@@ -38,7 +29,7 @@ export function assignShapesByPlanner(
   pool: PlannedPoolItem[],
   u: number,
   salt: number,
-  quotaCurves: QuotaCurvesByKind
+  quotaSpecification: QuotaSpecificationByKind
 ) {
   const byKind: Record<ConditionKind, PlannedPoolItem[]> = {
     A: [],
@@ -49,11 +40,11 @@ export function assignShapesByPlanner(
 
   for (const it of pool) byKind[it.cond].push(it);
 
-  (['A', 'B', 'C', 'D'] as ConditionKind[]).forEach((kind) => {
+  (["A", "B", "C", "D"] as const).forEach((kind) => {
     const items = byKind[kind];
     if (!items.length) return;
 
-    const map = planForBucket(kind, items, u, salt, quotaCurves);
+    const map = planForBucket(kind, items, u, salt, quotaSpecification);
 
     for (const p of items) {
       const asn = map.get(p.id);

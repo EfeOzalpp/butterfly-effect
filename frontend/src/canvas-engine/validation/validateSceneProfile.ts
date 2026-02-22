@@ -1,72 +1,63 @@
 // src/canvas-engine/validation/validateSceneProfile.ts
+
 import type { SceneProfile } from "../multi-canvas-setup/sceneProfile";
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
+import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
 import { invariant } from "./invariant";
 
 const KINDS = ["A", "B", "C", "D"] as const;
 
-function isCurvesBySet(x: any): x is Record<string, any> {
-  // old format usually has "default"/"overlay" keys
-  return !!x && typeof x === "object" && ("default" in x || "overlay" in x);
-}
-
-function validateCurvesByKind(id: string, curves: any) {
+function validateQuotaSpecificationByKind(id: string, curves: any) {
   invariant(
     !!curves && typeof curves === "object",
-    `[${id}] quotaCurves must be an object keyed by condition kinds (A,B,C,D)`
+    `[${id}] quotaSpecification must be an object keyed by condition kinds (A,B,C,D)`
   );
 
   for (const k of KINDS) {
+    const arr = curves[k];
+
     invariant(
-      Array.isArray(curves[k]),
-      `[${id}] quotaCurves missing kind "${k}". Available: ${Object.keys(curves).join(", ")}`
+      Array.isArray(arr),
+      `[${id}] quotaSpecification missing kind "${k}". Available: ${Object.keys(curves).join(", ")}`
     );
 
-    // Optional sanity: each anchor has {t, limits}
-    for (const a of curves[k]) {
+    for (const a of arr) {
       invariant(
         a && typeof a.t === "number" && a.limits && typeof a.limits === "object",
-        `[${id}] quotaCurves["${k}"] contains invalid anchor (expected { t:number, limits:object })`
+        `[${id}] quotaSpecification["${k}"] contains invalid anchor (expected { t:number, limits:object })`
       );
     }
   }
 }
 
-export function validateSceneProfile(id: string, mode: SceneMode, profile: SceneProfile) {
+export function validateSceneProfile(id: string, mode: SceneLookupKey, profile: SceneProfile) {
   invariant(!!profile, `[${id}] SceneProfile is missing`);
+
+  // padding table exists
   invariant(!!profile.padding, `[${id}] missing "padding" on SceneProfile`);
+
+  // bands
   invariant(!!profile.bands, `[${id}] missing "bands" on SceneProfile`);
-  invariant(!!profile.shapeMeta, `[${id}] missing "shapeMeta" on SceneProfile`);
-  invariant(!!profile.poolSizes, `[${id}] missing "poolSizes" on SceneProfile (define per mode)`);
 
-  // --- quotaCurves: support BOTH formats during migration ---
-  const qc: any = (profile as any).quotaCurves;
-  invariant(!!qc, `[${id}] missing "quotaCurves" on SceneProfile`);
+  // separation meta (by shape)
+  invariant(!!profile.separationMeta, `[${id}] missing "separationMeta" on SceneProfile`);
 
-  if (isCurvesBySet(qc)) {
-    // OLD format: { default: CurvesByKind, overlay: CurvesByKind }
-    const curveSet = (profile as any).curveSet ?? "default";
-    const selected = qc[curveSet];
-
-    invariant(
-      !!selected,
-      `[${id}] quotaCurves missing curveSet "${curveSet}". Available: ${Object.keys(qc).join(", ")}`
-    );
-
-    validateCurvesByKind(id, selected);
-  } else {
-    // NEW format: CurvesByKind directly
-    validateCurvesByKind(id, qc);
-  }
-
-  // Validate poolSizes is device-resolved
-  const ps: any = (profile as any).poolSizes;
-
+  // poolSizes must be device-resolved numbers
+  invariant(!!profile.poolSizes, `[${id}] missing "poolSizes" on SceneProfile`);
   invariant(
-    ps &&
-      typeof ps.mobile === "number" &&
-      typeof ps.tablet === "number" &&
-      typeof ps.laptop === "number",
+    typeof (profile as any).poolSizes.mobile === "number" &&
+      typeof (profile as any).poolSizes.tablet === "number" &&
+      typeof (profile as any).poolSizes.laptop === "number",
     `[${id}] poolSizes must define numeric values for mobile/tablet/laptop`
   );
+
+  // quotaSpecification (resolved in profile; should be CurvesByKind directly)
+  invariant(!!profile.quotaSpecification, `[${id}] missing "quotaSpecification" on SceneProfile`);
+  validateQuotaSpecificationByKind(id, profile.quotaSpecification);
+
+  // background
+  invariant(!!(profile as any).background, `[${id}] missing "background" on SceneProfile`);
+
+  // Optional sanity: if questionnaire mode, you may allow quotaSpecification to be reused/fallback.
+  // The profile should already be resolved, so we just keep `mode` for better error messages.
+  invariant(typeof mode === "string", `[${id}] invalid mode`);
 }

@@ -1,5 +1,5 @@
 // modifiers/shape-modifiers/appear.ts
-import type { ShapeMods, Anchor } from './shapeMods';
+import type { ShapeMods, Anchor } from './shapeMods.types';
 
 type Ease = 'linear' | 'cubic' | 'back';
 

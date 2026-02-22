@@ -20,7 +20,8 @@ export type AnimatedTextureParams = {
   generateMipmaps?: boolean;
   anisotropy?: number;
   minFilter?: THREE.TextureFilter;
-  magFilter?: THREE.TextureFilter;
+  // IMPORTANT: magFilter must be a MagnificationTextureFilter (Linear/Nearest only)
+  magFilter?: THREE.MagnificationTextureFilter;
 };
 
 function resolveCanvasSize(
@@ -43,8 +44,18 @@ function resolveCanvasSize(
 function makePainter(
   cnv: HTMLCanvasElement,
   {
-    drawer, dpr, alpha, gradientRGB, liveAvg, blend, tileSize,
-    wTiles, hTiles, bTop, bLeft, seedKey
+    drawer,
+    dpr,
+    alpha,
+    gradientRGB,
+    liveAvg,
+    blend,
+    tileSize,
+    wTiles,
+    hTiles,
+    bTop,
+    bLeft,
+    seedKey,
   }: {
     drawer: Drawer;
     dpr: number;
@@ -53,13 +64,16 @@ function makePainter(
     liveAvg: number;
     blend: number;
     tileSize: number;
-    wTiles: number; hTiles: number; bTop: number; bLeft: number;
+    wTiles: number;
+    hTiles: number;
+    bTop: number;
+    bLeft: number;
     seedKey?: string | number;
   }
 ) {
   const p = makeCanvasFacade(cnv, { dpr });
   const ctx = p.drawingContext as CanvasRenderingContext2D;
-  const centerX = cnv.width  / (2 * dpr);
+  const centerX = cnv.width / (2 * dpr);
   const centerY = cnv.height / (2 * dpr);
   const r = Math.min(cnv.width / dpr, cnv.height / dpr) * 0.8;
 
@@ -117,7 +131,7 @@ function makeCanvasTexture(
     generateMipmaps: boolean;
     anisotropy: number;
     minFilter: THREE.TextureFilter;
-    magFilter: THREE.TextureFilter;
+    magFilter: THREE.MagnificationTextureFilter;
   }
 ) {
   const tex = new THREE.CanvasTexture(cnv);
@@ -149,22 +163,38 @@ export function makeAnimatedTextureFromDrawer({
   minFilter = THREE.LinearFilter,
   magFilter = THREE.LinearFilter,
 }: AnimatedTextureParams) {
-  const { logicalW, logicalH, wTiles, hTiles, bTop, bLeft } =
-    resolveCanvasSize(tileSize, footprint, bleed);
+  const { logicalW, logicalH, wTiles, hTiles, bTop, bLeft } = resolveCanvasSize(
+    tileSize,
+    footprint,
+    bleed
+  );
 
   const cnv = document.createElement('canvas');
   cnv.style.width = `${logicalW}px`;
   cnv.style.height = `${logicalH}px`;
 
   const { paint } = makePainter(cnv, {
-    drawer, dpr, alpha, gradientRGB, liveAvg, blend, tileSize,
-    wTiles, hTiles, bTop, bLeft, seedKey
+    drawer,
+    dpr,
+    alpha,
+    gradientRGB,
+    liveAvg,
+    blend,
+    tileSize,
+    wTiles,
+    hTiles,
+    bTop,
+    bLeft,
+    seedKey,
   });
 
   paint(typeof performance !== 'undefined' ? performance.now() : 0);
 
   const texture = makeCanvasTexture(cnv, {
-    generateMipmaps, anisotropy, minFilter, magFilter,
+    generateMipmaps,
+    anisotropy,
+    minFilter,
+    magFilter,
   });
 
   const frameInterval = 1000 / Math.max(1, fps);
@@ -198,21 +228,34 @@ export function makeFrozenTextureFromDrawer({
   minFilter = THREE.LinearMipmapLinearFilter,
   magFilter = THREE.LinearFilter,
 }: AnimatedTextureParams & { simulateMs?: number; stepMs?: number }) {
-  const { logicalW, logicalH, wTiles, hTiles, bTop, bLeft } =
-    resolveCanvasSize(tileSize, footprint, bleed);
+  const { logicalW, logicalH, wTiles, hTiles, bTop, bLeft } = resolveCanvasSize(
+    tileSize,
+    footprint,
+    bleed
+  );
 
   const cnv = document.createElement('canvas');
   cnv.style.width = `${logicalW}px`;
   cnv.style.height = `${logicalH}px`;
 
   const { paint } = makePainter(cnv, {
-    drawer, dpr, alpha, gradientRGB, liveAvg, blend, tileSize,
-    wTiles, hTiles, bTop, bLeft, seedKey
+    drawer,
+    dpr,
+    alpha,
+    gradientRGB,
+    liveAvg,
+    blend,
+    tileSize,
+    wTiles,
+    hTiles,
+    bTop,
+    bLeft,
+    seedKey,
   });
 
   const start = typeof performance !== 'undefined' ? performance.now() : 0;
   const total = Math.max(0, simulateMs | 0);
-  const step  = Math.max(1, stepMs | 0);
+  const step = Math.max(1, stepMs | 0);
 
   paint(start);
 
@@ -222,10 +265,15 @@ export function makeFrozenTextureFromDrawer({
   }
 
   const texture = makeCanvasTexture(cnv, {
-    generateMipmaps, anisotropy, minFilter, magFilter,
+    generateMipmaps,
+    anisotropy,
+    minFilter,
+    magFilter,
   });
 
-  function redraw() { return false; }
+  function redraw() {
+    return false;
+  }
 
   return { texture, redraw };
 }

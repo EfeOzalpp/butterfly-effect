@@ -63,9 +63,9 @@ export function composeField(opts: ComposeOpts): ComposeResult {
     y: undefined,
   }));
 
-  // planner assigns sizes/shapes based on policy (quotaCurves etc.)
+  // planner assigns sizes/shapes based on policy (quotaSpecification etc.)
   retargetKindsStable(pool, u, desiredSize);
-  assignShapesByPlanner(pool, u, salt, opts.quotaCurves);
+  assignShapesByPlanner(pool, u, salt, opts.quotaSpecification);
 
   // placement consumes resolved rule data (bands) + derived layout info
     const { placed, nextPool } = placePoolItems({
@@ -82,7 +82,7 @@ export function composeField(opts: ComposeOpts): ComposeResult {
     usedRows,
     salt,
     bands: opts.bands,
-    shapeMeta: opts.shapeMeta,
+    separationMeta: opts.separationMeta,
   });
 
 

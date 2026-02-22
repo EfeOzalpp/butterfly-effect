@@ -1,4 +1,4 @@
-import { liveClient } from './client';
+import { getLiveClient } from './client';
 
 type Weights = { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number };
 
@@ -18,10 +18,8 @@ const computeAvg = (w: Weights) => {
 };
 
 /**
- * Saves a V3/V4 response with numeric q1..q5 (0..1, rounded to 3 decimals)
+ * Saves a VERSION response with numeric q1..q5 (0..1, rounded to 3 decimals)
  * and avgWeight (0..1, rounded to 3 decimals).
- *
- * NEW:
  * - stash a lightweight client snapshot in sessionStorage (gp.myDoc),
  * - set a one-time flag gp.justSubmitted for better initial section selection,
  * - dispatch 'gp:identity-updated' so GraphProvider can sync without remount.
@@ -48,6 +46,7 @@ export async function saveUserResponse(section: string, weights: Weights) {
     submittedAt: new Date().toISOString(),
   };
 
+  const liveClient = getLiveClient();
   const created = await liveClient.create(doc);
 
   if (typeof window !== 'undefined') {

@@ -2,7 +2,8 @@
 import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import type { Question } from "../types";
 import SelectionMap from "./SelectionMap";
-import AnswersList, { ShapeKey } from "./AnswersList";
+import AnswersList from "./AnswersList";
+import type { ShapeKey } from "./hoverBus";
 import { useAppState, DEFAULT_AVG } from "../../app/appState";
 
 const SHAPE_ORDER: ShapeKey[] = ["circle", "square", "triangle", "diamond"];

@@ -3,7 +3,7 @@
 import type { PLike } from "../p/makeP";
 import { normalizeDprTransform, reassertDprTransformIfMutated } from "../util/transform";
 
-import type { SceneMode } from "../../adjustable-rules/sceneRuleSets";
+import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
 
 import { getPaddingSpecForState } from "../layout/padding";
@@ -43,7 +43,7 @@ export type LoopDeps = {
   inputs: { liveAvg: number };
 
   // policy getters (so loop doesn't own policy vars)
-  getSceneMode: () => SceneMode;
+  getSceneLookup: () => SceneLookupKey;
   getPaddingSpecOverride: () => CanvasPaddingSpec | null;
 
   // caches
@@ -71,7 +71,7 @@ export function createEngineTicker(deps: LoopDeps) {
     hero,
     style,
     inputs,
-    getSceneMode,
+    getSceneLookup,
     getPaddingSpecOverride,
     gridCache,
     paletteCache,
@@ -115,7 +115,7 @@ export function createEngineTicker(deps: LoopDeps) {
 
     const spec = getPaddingSpecForState(
       p.width,
-      getSceneMode(),
+      getSceneLookup(),
       getPaddingSpecOverride()
     );
 

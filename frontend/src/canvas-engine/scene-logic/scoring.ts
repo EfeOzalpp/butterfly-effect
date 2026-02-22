@@ -11,7 +11,7 @@ export type PlacedFoot = {
   shape?: ShapeName;
 };
 
-export type ShapeMetaLike = {
+export type separationMetaLike = {
   group?: string;
   separation?: number; // in cells
 };
@@ -32,7 +32,7 @@ export function scoreCandidateGeneric(opts: {
   shape?: ShapeName;
 
   // pass data, don't import globals
-  getMeta?: (shape?: ShapeName) => ShapeMetaLike | undefined;
+  getMeta?: (shape?: ShapeName) => separationMetaLike | undefined;
 }) {
   const { r0, c0, wCell, hCell, cols, usedRows, placed, salt, shape, getMeta } = opts;
 

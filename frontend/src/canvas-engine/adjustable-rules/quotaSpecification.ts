@@ -1,21 +1,20 @@
 // src/canvas-engine/adjustable-rules/quotaSpecification.ts
-// Condition related adjustable
 
 import type { ConditionKind, ShapeName } from "./shapeCatalog";
-
-export type CurveSet = "default" | "overlay";
+import type { SceneLookupKey } from "./sceneMode";
 
 export type Quota = number | null;
 export type Limits = Partial<Record<ShapeName, Quota>>;
 
 export type QuotaAnchor = { t: number; limits: Limits };
-export type QuotaCurvesByKind = Record<ConditionKind, QuotaAnchor[]>;
 
-/**
- * Canonical table export (mirrors SHAPE_BANDS / CANVAS_PADDING style)
- */
-export const QUOTA_CURVES: Record<CurveSet, QuotaCurvesByKind> = {
-  default: {
+// readonly array so `as const` tables are assignable
+export type QuotaSpecificationByKind = Record<ConditionKind, readonly QuotaAnchor[]>;
+
+// ---------------- TABLE (by SceneLookupKey) ----------------
+// `null` means: no override / caller should fall back to base mode table.
+export const QUOTA_SPECIFICATION: Record<SceneLookupKey, QuotaSpecificationByKind | null> = {
+  start: {
     A: [
       { t: 0.0, limits: { sun: 1, bus: 0, clouds: null } },
       { t: 1.0, limits: { sun: 3, bus: 3, clouds: null } },
@@ -33,6 +32,8 @@ export const QUOTA_CURVES: Record<CurveSet, QuotaCurvesByKind> = {
       { t: 1.0, limits: { sea: 1, carFactory: 1, car: null } },
     ],
   },
+
+  questionnaire: null,
 
   overlay: {
     A: [
@@ -52,4 +53,4 @@ export const QUOTA_CURVES: Record<CurveSet, QuotaCurvesByKind> = {
       { t: 1.0, limits: { sea: 8, carFactory: 3, car: null } },
     ],
   },
-};
+} as const;

@@ -1,30 +1,26 @@
-// src/multi-canvas-setup/hostDefs.ts
-import { SCENE_RULESETS } from "../adjustable-rules/sceneRuleSets";
-import type { SceneRuleSet } from "./types";
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets.ts"
-import type { DprMode } from "../runtime/platform/viewport";
+// src/canvas-engine/multi-canvas-setup/hostDefs.ts
 
-// questionnaire exists as a state change withn start canvas, 
-// therefore it is excluded from Scene Mode (start, overlay).
-// If you have state changes within one canvas instance add them here.
-export type BaseSceneMode = Exclude<SceneMode, "questionnaire">; 
+import { SCENE_RULESETS } from "../adjustable-rules/ruleRegistry";
+import type { SceneRuleSet } from "./types";
+import type { BaseMode } from "../adjustable-rules/sceneMode";
+import type { DprMode } from "../runtime/platform/viewport";
 
 // give the canvas the size you want
 export type CanvasBounds =
-  | { kind: "viewport" }                         // current behavior
-  | { kind: "parent" }                           // allow canvas to fit parents dimensions
-  | { kind: "fixed"; w: number; h: number }      // exact pixels
+  | { kind: "viewport" }
+  | { kind: "parent" }
+  | { kind: "fixed"; w: number; h: number };
 
-// Base shape 
+// Base shape
 type HostDefBase = {
   mount: string;
   zIndex: number;
   dprMode: DprMode;
-  canvasDimensions?: CanvasBounds; 
-  stopOnOpen?: readonly string[]; 
+  canvasDimensions?: CanvasBounds;
+  stopOnOpen?: readonly string[];
   scene?: {
-    baseMode?: BaseSceneMode;
-    ruleset: SceneRuleSet;
+    baseMode?: BaseMode;   // "start" | "overlay"
+    ruleset: SceneRuleSet; // getProfile(SceneState)
   };
 };
 

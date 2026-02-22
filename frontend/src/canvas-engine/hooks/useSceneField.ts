@@ -8,13 +8,13 @@ import type { PoolItem as ScenePoolItem } from "../scene-logic/types";
 import type { HostId } from "../multi-canvas-setup/hostDefs";
 import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 
-import { resolveSceneMode } from "../adjustable-rules/resolveSceneMode";
-import type { SceneMode } from "../adjustable-rules/sceneRuleSets";
+import { resolveSceneState } from "../adjustable-rules/sceneMode";
+import type { BaseMode, SceneState, SceneLookupKey } from "../adjustable-rules/sceneMode";
 
 import { targetPoolSize } from "../adjustable-rules/poolSizes";
 import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding";
 
-import { getViewportSize } from "../shared/responsiveness"; 
+import { getViewportSize } from "../shared/responsiveness";
 
 type Engine = {
   ready: React.RefObject<boolean>;
@@ -26,7 +26,6 @@ const clamp01 = (v?: number) =>
 
 function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
   if (!canvas) {
-    // centralize window usage
     const { w, h } = getViewportSize();
     return { w, h };
   }
@@ -52,20 +51,13 @@ function makeDefaultPoolItem(id: number): ScenePoolItem {
 }
 
 function ensurePoolSize(
-  poolRef: React.RefObject<ScenePoolItem[] | null>,
+  poolRef: { current: ScenePoolItem[] | null },
   desired: number
 ) {
-  if (desired <= 0) {
-    poolRef.current = [];
-    return;
-  }
-
   const cur = poolRef.current;
 
   if (!cur) {
-    poolRef.current = Array.from({ length: desired }, (_, i) =>
-      makeDefaultPoolItem(i + 1)
-    );
+    poolRef.current = Array.from({ length: desired }, (_, i) => makeDefaultPoolItem(i + 1));
     return;
   }
 
@@ -79,9 +71,7 @@ function ensurePoolSize(
   const maxId = cur.reduce((m, p) => Math.max(m, p.id), 0);
   const toAdd = desired - cur.length;
 
-  const extra = Array.from({ length: toAdd }, (_, k) =>
-    makeDefaultPoolItem(maxId + k + 1)
-  );
+  const extra = Array.from({ length: toAdd }, (_, k) => makeDefaultPoolItem(maxId + k + 1));
   poolRef.current = cur.concat(extra);
 }
 
@@ -102,11 +92,21 @@ export function useSceneField(
   const ruleset = hostDef.scene?.ruleset;
   if (!ruleset) throw new Error(`[${hostId}] missing scene.ruleset`);
 
-  const baseMode = hostDef.scene?.baseMode ?? "start";
+  const baseMode: BaseMode = hostDef.scene?.baseMode ?? "start";
   const { questionnaireOpen } = signals;
-  const mode: SceneMode = resolveSceneMode({ questionnaireOpen }, { baseMode });
 
-  const profile = ruleset.getProfile(mode);
+  // Build the full scene state (base + modifiers)
+  const sceneState: SceneState = resolveSceneState(
+    { questionnaireOpen },
+    { baseMode }
+  );
+
+  // Ask the ruleset to resolve the effective profile from SceneState
+  // (ruleset should handle modifier overrides internally)
+  const profile = ruleset.getProfile(sceneState);
+
+  // Runtime "lookup key" for low-level rule lookups (if runtime needs it)
+  const sceneLookupKey: SceneLookupKey = questionnaireOpen ? "questionnaire" : sceneState.baseMode;
 
   const uRef = useRef(0.5);
   uRef.current = clamp01(allocAvg);
@@ -116,12 +116,11 @@ export function useSceneField(
   useEffect(() => {
     if (!engine?.ready?.current) return;
 
-    const canvas = engine.controls.current?.canvas as
-      | HTMLCanvasElement
-      | null
-      | undefined;
-
+    const canvas = engine.controls.current?.canvas as HTMLCanvasElement | null | undefined;
     const { w, h } = getCanvasLogicalSize(canvas);
+
+    // inform runtime about the current lookup key (used by ticker/renderer)
+    engine.controls.current?.setSceneMode?.(sceneLookupKey);
 
     const desired = targetPoolSize(profile.poolSizes, w);
     ensurePoolSize(poolRef, desired);
@@ -129,11 +128,12 @@ export function useSceneField(
     const pool = poolRef.current ?? [];
 
     const result = composeField({
-      mode,
+      // scene-logic composes layout using the base mode (start/overlay)
+      mode: sceneState.baseMode,
       padding: profile.padding,
       bands: profile.bands,
-      shapeMeta: profile.shapeMeta,
-      quotaCurves: profile.quotaCurves,
+      separationMeta: profile.separationMeta,
+      quotaSpecification: profile.quotaSpecification,
       allocAvg,
       viewportKey,
       canvas: { w, h },
@@ -142,15 +142,26 @@ export function useSceneField(
 
     poolRef.current = result.nextPool;
 
-    // resolve padding by device band from the profile’s already-mode-resolved table
+    // Let runtime compute forbidden/rows from the current profile padding
+    // and optionally override it (escape hatch)
     const spec = resolveCanvasPaddingSpec(w, profile.padding);
-
-    engine.controls.current?.setLayoutSpec?.({
-      rows: spec.rows,
-      useTopRatio: spec.useTopRatio,
-    });
+    engine.controls.current?.setPaddingSpec?.(spec);
 
     engine.controls.current?.setFieldItems?.(result.placed);
     engine.controls.current?.setFieldVisible?.(result.placed.length > 0);
-  }, [engine, allocAvg, questionnaireOpen, viewportKey, mode, profile]);
+  }, [
+    engine,
+    allocAvg,
+    questionnaireOpen,
+    viewportKey,
+    hostId,
+    baseMode,
+    // if ruleset identity can change
+    ruleset,
+    // if profile is a new object each render, this would cause extra effects.
+    // If that happens, resolve profile inside the effect instead.
+    sceneLookupKey,
+    sceneState.baseMode,
+    profile,
+  ]);
 }

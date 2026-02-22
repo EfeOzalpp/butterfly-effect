@@ -2,17 +2,22 @@ import { useMemo } from 'react';
 import type { DotPoint, DotPointsOptions, SurveyResponseLike } from '../utils/dotPoints';
 import { computeDotPoints } from '../utils/dotPoints';
 
-type ArrayCall = [SurveyResponseLike[], DotPointsOptions?];
-type ObjectCall = [{ data?: SurveyResponseLike[] } & DotPointsOptions];
+type ObjectArg = ({ data?: SurveyResponseLike[] } & DotPointsOptions);
 
-export default function useDotPoints(...args: ArrayCall | ObjectCall): DotPoint[] {
-  const isArrayCall = Array.isArray(args[0]);
-  const data = isArrayCall ? (args[0] as SurveyResponseLike[]) : (args[0]?.data ?? []);
-  const opts = isArrayCall ? (args[1] ?? {}) : (args[0] ?? {});
+// overload 1: (data, opts?)
+export default function useDotPoints(data: SurveyResponseLike[], opts?: DotPointsOptions): DotPoint[];
+// overload 2: ({data, ...opts})
+export default function useDotPoints(arg: ObjectArg): DotPoint[];
 
-  // useMemo is enough: this is pure + deterministic.
-  return useMemo(() => computeDotPoints(data, opts), [
-    data,
-    opts,
-  ]);
+// implementation
+export default function useDotPoints(
+  arg1: SurveyResponseLike[] | ObjectArg,
+  arg2?: DotPointsOptions
+): DotPoint[] {
+  const isArrayCall = Array.isArray(arg1);
+
+  const data: SurveyResponseLike[] = isArrayCall ? arg1 : (arg1.data ?? []);
+  const opts: DotPointsOptions = isArrayCall ? (arg2 ?? {}) : arg1;
+
+  return useMemo(() => computeDotPoints(data, opts), [data, opts]);
 }

@@ -1,5 +1,5 @@
-// utils/sanityAPI.js
-import { liveClient } from './client';
+// services/sanity/api.ts
+import { liveReadClient as liveClient } from './client';
 
 // --- section ids (unchanged) ---
 const STUDENT_IDS = [
