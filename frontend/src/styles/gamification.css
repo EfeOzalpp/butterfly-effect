@@ -1,5 +1,11 @@
 /* Gamification skeleton */
 
+/* ==========================================================================
+   JS-DRIVEN CORE: PANEL MOUNT + TOGGLE ICON (keep)
+   ==========================================================================
+   gp-root visibility and +/- icon transitions are controlled by JS state.
+   -------------------------------------------------------------------------- */
+
 .gp-root { opacity: 0; transition: opacity 200ms ease; }
 .gp-root.is-visible { opacity: 1; }
 
@@ -24,6 +30,11 @@
 .gp-toggle-icon.is-open .icon-plus { opacity: 0; transform: scale(0.85) rotate(90deg); }
 .gp-toggle-icon.is-open .icon-minus { opacity: 1; transform: scale(1) rotate(0deg); }
 
+/* ==========================================================================
+   JS-DRIVEN CORE: KNOB/ARROW POSITIONING (keep)
+   ==========================================================================
+   Arrow bottom/transition is updated by runtime values.
+   -------------------------------------------------------------------------- */
 .gam-knob-arrow,
 .knob-arrow {
   position: absolute;
@@ -31,7 +42,11 @@
   transition: bottom 0.3s ease;
 }
 
-/* Keep bar color treatment (independent from layout refactor) */
+/* ==========================================================================
+   BAR COLOR CORE (keep)
+   ==========================================================================
+   Intentional shared gradient for percentage bars.
+   -------------------------------------------------------------------------- */
 .percentage-bar,
 .gam-percentage-bar {
   border-radius: 6px;
@@ -51,6 +66,11 @@
   filter: saturate(0.8) brightness(1.2);
 }
 
+/* ==========================================================================
+   JS-DRIVEN CORE: CARD POSITION/EDGE CASES (keep)
+   ==========================================================================
+   --offset-px and positional classes are coupled to runtime placement logic.
+   -------------------------------------------------------------------------- */
 .personalized-result,
 .generalized-result {
   position: relative;
@@ -67,8 +87,14 @@
 .is-bottom .generalized-result,
 .is-left.is-bottom .generalized-result { transform: translateY(calc(-1 * var(--offset-px))); }
 
+/* Toggle button anchor used by JS-expanded state */
 .toggle-button.gp-toggle { position: absolute; z-index: 3; pointer-events: all; }
 
+/* ==========================================================================
+   RESPONSIVE POSITION CORE (keep)
+   ==========================================================================
+   Keep only geometry/offset behavior here; visual polish can change elsewhere.
+   -------------------------------------------------------------------------- */
 @media screen and (max-width: 767px) {
   .personalized-result { width: 210px; min-width: 210px; max-width: 210px; left: -8px; }
   .gamification-text { width: 70%; max-width: 70%; min-width: 70%; }
@@ -131,6 +157,11 @@
   .is-left.is-bottom .generalized-result { width: 250px !important; min-width: 250px !important; max-width: 260px !important; top: -28px; left: 0; min-height: 180px !important; max-height: 180px !important; }
 }
 
+/* ==========================================================================
+   THEME WIRING (editable)
+   ==========================================================================
+   Safe to tune tokens/colors while preserving layout/indicator core above.
+   -------------------------------------------------------------------------- */
 /* Theme wiring: gamification */
 .gp-root,
 .gp-toggle,

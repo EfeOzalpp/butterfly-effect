@@ -1,5 +1,11 @@
 /* Graph skeleton */
 
+/* ==========================================================================
+   JS-DRIVEN MOTION CORE (keep)
+   ==========================================================================
+   These animation class names are toggled/relied on by runtime logic.
+   -------------------------------------------------------------------------- */
+
 .green-animation { animation: greenFluctuation 3.6s ease-in-out infinite; }
 .yellow-animation { animation: yellowFluctuation 3.6s ease-in-out infinite; }
 .red-animation { animation: redFluctuation 3.6s ease-in-out infinite; }
@@ -41,6 +47,11 @@
 
 .floaty { animation: floaty 3s ease-in-out infinite; }
 
+/* ==========================================================================
+   GRAPH WRAPPER VISIBILITY CORE (keep)
+   ==========================================================================
+   Visibility is managed by JS with .visible/.hidden.
+   -------------------------------------------------------------------------- */
 .graph-wrapper {
   opacity: 0;
   transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
@@ -51,6 +62,11 @@
 .graph-wrapper.visible { opacity: 1; pointer-events: all; display: block; }
 .graph-wrapper.hidden { display: none; }
 
+/* ==========================================================================
+   STRUCTURE LAYOUT CORE (keep)
+   ==========================================================================
+   These define geometry/flex scaffolding for graph internals.
+   -------------------------------------------------------------------------- */
 .toggle-button,
 .toggle-icon,
 .graph-container,
@@ -135,6 +151,11 @@
   );
 }
 
+/* ==========================================================================
+   JS-DRIVEN INDICATOR/POSITION CORE (keep)
+   ==========================================================================
+   Percentage indicator + divider alignment rules.
+   -------------------------------------------------------------------------- */
 .bar-icon { filter: brightness(1.4); }
 .bar-icon:nth-child(3) { filter: saturate(1); }
 
@@ -160,6 +181,11 @@
   }
 }
 
+/* ==========================================================================
+   RESPONSIVE INDICATOR/LAYOUT CORE (keep)
+   ==========================================================================
+   Preserve these dimensions/positions for stable JS indicator placement.
+   -------------------------------------------------------------------------- */
 @media screen and (max-width: 768px) {
   .draggable-container { height: 375px; width: 225px; pointer-events: none; }
   .draggable-bar-graph { width: 180px; height: 100%; flex-direction: column; align-items: center; pointer-events: auto; }
@@ -194,6 +220,11 @@
   .draggable-container { height: 500px; width: 250px; pointer-events: none; }
 }
 
+/* ==========================================================================
+   THEME WIRING (editable)
+   ==========================================================================
+   Safe to tune tokens/colors without breaking JS positioning behavior.
+   -------------------------------------------------------------------------- */
 /* Theme wiring: graph */
 .graph-wrapper,
 .graph-container,

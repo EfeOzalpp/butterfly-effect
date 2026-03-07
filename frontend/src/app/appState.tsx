@@ -233,3 +233,5 @@ export const useAppState = () => {
   }
   return ctx;
 };
+
+export const useOptionalAppState = () => useContext(AppCtx);

@@ -8,7 +8,7 @@ import {
 } from "../../lib/utils/color-and-interpolation";
 
 import { usePersonalizedPools } from "../../lib/hooks/useGamificationPools";
-import { useAppState } from "../../app/appState";
+import { useOptionalAppState } from "../../app/appState";
 
 const FADE_MS = 200;
 const PROX_THRESHOLD = 0.02;
@@ -60,7 +60,8 @@ export default function GamificationPersonalized({
 
   selectedSectionId,
 }) {
-  const { darkMode } = useAppState();
+  const appState = useOptionalAppState();
+  const darkMode = !!appState?.darkMode;
 
   // Title removed — keep CMS contract stable but do not render it
   const [selectedTitle, setSelectedTitle] = useState('');
