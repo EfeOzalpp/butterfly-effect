@@ -3,7 +3,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
 import { useAppState } from "../app/appState";
-import "../assets/styles/survey.css";
+import "../styles/survey.css";
 
 import { ROLE_SECTIONS } from "./section-picker/sections";
 import QuestionFlow from "./questions/QuestionFlow";
@@ -68,6 +68,7 @@ export default function Survey({
     setNavVisible,
     hasCompletedSurvey,
     setQuestionnaireOpen,
+    setSectionOpen,
   } = useAppState();
 
   // Keep questionnaireOpen in sync with our stage (and finished latch)
@@ -77,6 +78,12 @@ export default function Survey({
       setQuestionnaireOpen(false);
     };
   }, [stage, observerMode, finished, setQuestionnaireOpen]);
+
+  // Ensure sectionOpen resets whenever we leave the section stage
+  useEffect(() => {
+    if (stage !== 'section') setSectionOpen(false);
+    return () => { setSectionOpen(false); };
+  }, [stage, setSectionOpen]);
 
   // Phone detection
   const [isPhone, setIsPhone] = useState(() =>
@@ -308,6 +315,7 @@ export default function Survey({
               sections={availableSections}
               placeholderOverride={audience === 'student' ? 'Your Major...' : undefined}
               titleOverride={audience === 'student' ? 'Select Your Major' : undefined}
+              onOpenChange={setSectionOpen}
             />
           )}
 

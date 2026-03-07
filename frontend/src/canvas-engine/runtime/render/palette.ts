@@ -14,6 +14,17 @@ export function createPaletteCache(BRAND_STOPS_VIVID: Stop[]): PaletteCache {
   return { lastU: NaN, cachedGradient: null };
 }
 
+export type CondPaletteCaches = Record<'A' | 'B' | 'C' | 'D', PaletteCache>;
+
+export function createCondPaletteCaches(stops: Stop[]): CondPaletteCaches {
+  return {
+    A: createPaletteCache(stops),
+    B: createPaletteCache(stops),
+    C: createPaletteCache(stops),
+    D: createPaletteCache(stops),
+  };
+}
+
 export function getGradientRGB(params: {
   liveAvg: number;
   override: RGB | null;

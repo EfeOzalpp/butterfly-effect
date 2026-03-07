@@ -20,7 +20,8 @@ export type EngineStyle = {
   debug: DebugFlags;
 };
 
-export type EngineInputs = { liveAvg: number };
+export type CondAvgs = Partial<Record<'A' | 'B' | 'C' | 'D', number>>;
+export type EngineInputs = { liveAvg: number; condAvgs: CondAvgs };
 
 export type EngineField = { items: EngineFieldItem[]; visible: boolean; epoch: number };
 export type Hero = { x: number | null; y: number | null; visible: boolean };

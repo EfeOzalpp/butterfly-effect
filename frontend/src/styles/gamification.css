@@ -1,0 +1,162 @@
+/* Gamification skeleton */
+
+.gp-root { opacity: 0; transition: opacity 200ms ease; }
+.gp-root.is-visible { opacity: 1; }
+
+.gp-toggle,
+.gp-toggle-icon,
+.personalized-result,
+.gam-general,
+.gam-general-description,
+.gam-visualization,
+.gamification-text,
+.gamification-knob,
+.gamification-bar,
+.generalized-result {
+  display: flex;
+}
+
+.gp-toggle { align-items: center; justify-content: center; }
+.gp-toggle-icon { position: relative; width: 18px; height: 18px; line-height: 0; }
+.gp-toggle-icon svg { position: absolute; inset: 0; transition: transform 0.15s ease-out, opacity 0.15s ease-out; }
+.gp-toggle-icon.is-closed .icon-plus { opacity: 1; transform: scale(1) rotate(0deg); }
+.gp-toggle-icon.is-closed .icon-minus { opacity: 0; transform: scale(0.85) rotate(-90deg); }
+.gp-toggle-icon.is-open .icon-plus { opacity: 0; transform: scale(0.85) rotate(90deg); }
+.gp-toggle-icon.is-open .icon-minus { opacity: 1; transform: scale(1) rotate(0deg); }
+
+.gam-knob-arrow,
+.knob-arrow {
+  position: absolute;
+  bottom: 0;
+  transition: bottom 0.3s ease;
+}
+
+/* Keep bar color treatment (independent from layout refactor) */
+.percentage-bar,
+.gam-percentage-bar {
+  border-radius: 6px;
+  background: linear-gradient(
+    in oklch to bottom,
+    oklch(0.85 0.17 148) 0%,
+    oklch(0.83 0.13 150) 20%,
+    oklch(0.88 0.08 124.6) 40%,
+    oklch(0.85 0.15 75) 62%,
+    oklch(0.80 0.18 40) 81%,
+    oklch(0.68 0.18 25) 100%
+  );
+}
+
+.knob-arrow,
+.gam-knob-arrow {
+  filter: saturate(0.8) brightness(1.2);
+}
+
+.personalized-result,
+.generalized-result {
+  position: relative;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.personalized-result { pointer-events: all; transform: translateX(var(--offset-px)); }
+.generalized-result { transform: translateX(var(--offset-px)); }
+
+.is-top .generalized-result { transform: translateY(var(--offset-px)) !important; }
+.is-right .generalized-result,
+.is-mid .generalized-result { transform: translateX(calc(1 - var(--offset-px))); }
+.is-bottom .generalized-result,
+.is-left.is-bottom .generalized-result { transform: translateY(calc(-1 * var(--offset-px))); }
+
+.toggle-button.gp-toggle { position: absolute; z-index: 3; pointer-events: all; }
+
+@media screen and (max-width: 767px) {
+  .personalized-result { width: 210px; min-width: 210px; max-width: 210px; left: -8px; }
+  .gamification-text { width: 70%; max-width: 70%; min-width: 70%; }
+  .gamification-bar { width: 15%; }
+  .gam-general { width: 100%; align-items: center; flex-wrap: nowrap; }
+  .gam-general-description { width: 80%; }
+  .gam-visualization { width: 20%; position: relative; }
+  .generalized-result { width: 180px; min-width: 180px; max-width: 180px; left: -20px; }
+  .is-top .generalized-result { width: 200px !important; min-width: 200px !important; max-width: 200px !important; top: -16px !important; left: 0 !important; }
+  .is-right .generalized-result,
+  .is-mid .generalized-result { left: -110px; top: 0; }
+  .is-bottom .generalized-result,
+  .is-left.is-bottom .generalized-result { width: 200px !important; min-width: 200px !important; max-width: 200px !important; top: 14px; left: 0; }
+  .toggle-button.gp-toggle { top: -44px; right: 49px; }
+  .toggle-button.gp-toggle[aria-expanded="false"] { top: 0; right: -24px; position: relative; }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .personalized-result { width: 280px; min-width: 280px; max-width: 280px; left: 165px; }
+  .gamification-text { width: 70%; max-width: 70%; min-width: 70%; }
+  .gamification-bar { width: 10%; }
+  .gam-general { width: 100%; height: 100%; align-items: center; flex-wrap: nowrap; }
+  .gam-general-description { width: 70%; }
+  .gam-visualization { width: 30%; position: relative; }
+  .generalized-result { width: 240px; min-width: 240px; max-width: 240px; left: 65px; }
+  .is-top .generalized-result { top: 52px !important; left: 0 !important; min-height: 200px !important; max-height: 200px !important; }
+  .is-right .generalized-result,
+  .is-mid .generalized-result { left: -148px; top: 0; }
+  .is-bottom .generalized-result,
+  .is-left.is-bottom .generalized-result { top: -57px; left: 0; width: 280px !important; min-width: 280px !important; max-width: 280px !important; }
+  .toggle-button.gp-toggle { top: -67px; right: 47px; }
+  .toggle-button.gp-toggle[aria-expanded="false"] { top: -2px; right: -24px; position: relative; }
+}
+
+@media screen and (min-width: 1025px) {
+  .gam-general { width: 100%; align-items: center; flex-wrap: nowrap; }
+  .gam-general-description { width: 70%; }
+  .gam-visualization { width: 30%; position: relative; }
+  .personalized-result { width: 280px; min-width: 280px; max-width: 280px; left: 160px; }
+  .toggle-button.gp-toggle { top: -48px; right: 76px; }
+  .toggle-button.gp-toggle[aria-expanded="false"] { top: -2px; right: -24px; position: relative; }
+}
+
+@media screen and (min-width: 1025px) and (max-width: 1320px) {
+  .generalized-result { width: 160px; min-width: 160px; max-width: 160px; left: 30px; }
+  .is-top .generalized-result { top: 32px !important; left: 0 !important; min-height: 160px !important; max-height: 160px !important; }
+  .is-right .generalized-result,
+  .is-mid .generalized-result { left: -108px; top: 0; }
+  .is-bottom .generalized-result,
+  .is-left.is-bottom .generalized-result { top: -30px; left: 0; min-height: 160px !important; max-height: 160px !important; }
+  .personalized-result { width: 200px; min-width: 200px; max-width: 200px; left: 125px; }
+}
+
+@media screen and (min-width: 1320px) {
+  .generalized-result { width: 220px; min-width: 220px; max-width: 220px; left: 50px; }
+  .is-top .generalized-result { width: 250px !important; min-width: 250px !important; max-width: 260px !important; top: 25px !important; left: 0 !important; min-height: 180px !important; max-height: 180px !important; }
+  .is-right .generalized-result,
+  .is-mid .generalized-result { left: -140px; top: 0; }
+  .is-bottom .generalized-result,
+  .is-left.is-bottom .generalized-result { width: 250px !important; min-width: 250px !important; max-width: 260px !important; top: -28px; left: 0; min-height: 180px !important; max-height: 180px !important; }
+}
+
+/* Theme wiring: gamification */
+.gp-root,
+.gp-toggle,
+.gp-toggle-icon,
+.personalized-result,
+.gam-general,
+.gam-general-description,
+.gam-visualization,
+.gamification-text,
+.gamification-knob,
+.gamification-bar,
+.generalized-result,
+.toggle-button.gp-toggle {
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+}
+
+.personalized-result,
+.gam-general,
+.gam-general-description,
+.gam-visualization,
+.gamification-text,
+.gamification-knob,
+.gamification-bar,
+.generalized-result,
+.toggle-button.gp-toggle {
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+}

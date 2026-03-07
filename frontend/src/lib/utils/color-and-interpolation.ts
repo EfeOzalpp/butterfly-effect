@@ -105,7 +105,7 @@ const applyGamma = (t: number, gamma = 1) => (gamma !== 1 ? Math.pow(t, gamma) :
 const applyContrast = (t: number, k = 0) => (k ? (t - 0.5) * (1 + k) + 0.5 : t);
 
 export type UseGradientOpts = {
-  skew?: [number, number, number, number];
+  skew?: readonly [number, number, number, number];
   stops?: Stop[];
   gamma?: number;     // >1 darkens mid, <1 brightens mid
   contrast?: number;  // 0..3 recommended; raises separation from 0.5
@@ -119,7 +119,7 @@ export type UseGradientOpts = {
  */
 export const colorFromPercent = (
   pct: number,
-  opts?: { skew?: [number, number, number, number]; stops?: Stop[]; gamma?: number; contrast?: number }
+  opts?: { skew?: readonly [number, number, number, number]; stops?: Stop[]; gamma?: number; contrast?: number }
 ) => {
   const stops = opts?.stops ?? BRAND_STOPS;
   const t0 = clamp(pct / 100);

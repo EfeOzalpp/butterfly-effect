@@ -10,6 +10,7 @@ import {
 } from "./engine/registry";
 import { createEngineTicker } from "./engine/loop";
 import { registerEngineFrame, unregisterEngineFrame } from "./engine/scheduler";
+import { reconcileLiveStatesOnFieldUpdate } from "./engine/itemLifecycle";
 
 import { ensureMount, applyCanvasStyle } from "./platform/mount";
 import { makeP, type PLike } from "./p/makeP";
@@ -20,12 +21,13 @@ import { clamp01 } from "./util/easing";
 import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
 
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
 
 import { resolveBounds } from "./layout/bounds";
 import { createGridCache, invalidateGridCache } from "./layout/gridCache";
 import { installResizeHandlers } from "./platform/resize";
 
-import { createPaletteCache } from "./render/palette";
+import { createPaletteCache, createCondPaletteCaches } from "./render/palette";
 import { type LiveState, defaultShapeKeyOfItem } from "./render/items";
 
 import { Z_INDEX } from "./shapes/zIndex";
@@ -63,7 +65,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   const style = { ...REG_STYLE_DEFAULT, debug: { ...REG_STYLE_DEFAULT.debug } };
 
   // inputs/signals
-  const inputs = { liveAvg: 0.5 };
+  const inputs = { liveAvg: 0.5, condAvgs: {} as import('./engine/state').CondAvgs };
 
   const field = { items: [] as EngineFieldItem[], visible: false, epoch: 0 };
   const hero = { x: null as number | null, y: null as number | null, visible: false };
@@ -76,6 +78,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // runtime policy inputs
   let sceneLookupKey: SceneLookupKey = "start";
   let paddingSpecOverride: CanvasPaddingSpec | null = null;
+  let backgroundSpecOverride: BackgroundSpec | null = null;
 
   // live/ghost state storage (owned by runtime)
   const liveStates = new Map<string, LiveState>();
@@ -99,6 +102,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // ───────────────────────────────────────────────────────────
   const gridCache = createGridCache();
   const paletteCache = createPaletteCache(BRAND_STOPS_VIVID);
+  const condPaletteCaches = createCondPaletteCaches(BRAND_STOPS_VIVID);
 
   const cleanupResize = installResizeHandlers({
     parentEl,
@@ -133,8 +137,10 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     inputs,
     getSceneLookup: () => sceneLookupKey,
     getPaddingSpecOverride: () => paddingSpecOverride,
+    getBackgroundSpecOverride: () => backgroundSpecOverride,
     gridCache,
     paletteCache,
+    condPaletteCaches,
     liveStates,
     ghostsRef,
     shapeRegistry,
@@ -180,11 +186,29 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
   function setInputs(args: any = {}) {
     if (typeof args.liveAvg === "number") inputs.liveAvg = clamp01(args.liveAvg);
+    if ("condAvgs" in args) {
+      // Replace instead of merge to avoid stale per-condition values carrying over.
+      inputs.condAvgs = {} as import('./engine/state').CondAvgs;
+      if (args.condAvgs && typeof args.condAvgs === "object") {
+        for (const k of ["A", "B", "C", "D"] as const) {
+          if (typeof args.condAvgs[k] === "number") inputs.condAvgs[k] = clamp01(args.condAvgs[k]);
+        }
+      }
+    }
   }
 
   function setFieldItems(nextItems: EngineFieldItem[] = []) {
+    const safeNextItems = Array.isArray(nextItems) ? nextItems : [];
+    reconcileLiveStatesOnFieldUpdate({
+      prevItems: field.items,
+      nextItems: safeNextItems,
+      liveStates,
+      nowMs: p ? p.millis() : performance.now(),
+      shapeKeyOfItem: defaultShapeKeyOfItem,
+    });
+
     field.epoch++;
-    field.items = Array.isArray(nextItems) ? nextItems : [];
+    field.items = safeNextItems;
   }
 
   function setFieldStyle(args: any = {}) {
@@ -249,6 +273,10 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     invalidateGridCache(gridCache);
   }
 
+  function setBackgroundSpec(spec: BackgroundSpec | null) {
+    backgroundSpecOverride = spec ?? null;
+  }
+
   const controls: EngineControls = {
     setInputs,
     setFieldItems,
@@ -258,6 +286,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     setVisible: setVisibleCanvas,
     setSceneMode,
     setPaddingSpec,
+    setBackgroundSpec,
     stop,
     setDebug,
     get canvas() {

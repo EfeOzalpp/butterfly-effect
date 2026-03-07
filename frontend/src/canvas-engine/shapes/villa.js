@@ -149,6 +149,8 @@ function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1) {
 
 export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f = opts?.footprint;
   if (!cell || !f) return;
 
@@ -159,10 +161,10 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   const opaque = 255;
   const u = clamp01(opts?.liveAvg ?? 0.5);
 
-  const pxX = f.c0 * cell;
-  const pxY = f.r0 * cell;
-  const pxW = f.w * cell;
-  const pxH = f.h * cell;
+  const pxX = f.c0 * cellW;
+  const pxY = f.r0 * cellH;
+  const pxW = f.w * cellW;
+  const pxH = f.h * cellH;
 
   // Stable per-instance seed (independent of offscreen center)
   const seedKey = (opts.seedKey ?? opts.seed) ?? `villa|${f.r0}:${f.c0}|${f.w}x${f.h}`;

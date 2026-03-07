@@ -183,6 +183,8 @@ function pickBodyTintVariantFromKey(key, gradientRGB, ex, ct) {
 /* Draw */
 export function drawPower(p, cx, cy, r, opts = {}) {
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f    = opts?.footprint;
   const u    = clamp01(opts?.liveAvg ?? 0.5);
   const ex   = typeof opts?.exposure === 'number' ? opts.exposure : 1;
@@ -195,10 +197,10 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   // Resolve pixel rect
   let pxX, pxY, pxW, pxH;
   if (cell && f) {
-    pxX = f.c0 * cell;
-    pxY = f.r0 * cell;
-    pxW = f.w * cell;
-    pxH = f.h * cell;
+    pxX = f.c0 * cellW;
+    pxY = f.r0 * cellH;
+    pxW = f.w * cellW;
+    pxH = f.h * cellH;
   } else {
     pxW = (cell || r * 2) * 1;
     pxH = (cell || r * 2) * 3;

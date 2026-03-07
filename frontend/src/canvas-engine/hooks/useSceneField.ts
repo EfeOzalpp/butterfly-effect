@@ -13,8 +13,10 @@ import type { BaseMode, SceneState, SceneLookupKey } from "../adjustable-rules/s
 
 import { targetPoolSize } from "../adjustable-rules/poolSizes";
 import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding";
+import { backgroundForTheme } from "../adjustable-rules/backgrounds";
 
 import { getViewportSize } from "../shared/responsiveness";
+import { useAppState } from "../../app/appState";
 
 type Engine = {
   ready: React.RefObject<boolean>;
@@ -77,6 +79,7 @@ function ensurePoolSize(
 
 export type SceneSignals = {
   questionnaireOpen: boolean;
+  sectionOpen?: boolean;
 };
 
 export function useSceneField(
@@ -88,16 +91,17 @@ export function useSceneField(
 ) {
   const hostDef = HOST_DEFS[hostId];
   if (!hostDef) throw new Error(`Unknown hostId "${hostId}"`);
+  const { darkMode } = useAppState();
 
   const ruleset = hostDef.scene?.ruleset;
   if (!ruleset) throw new Error(`[${hostId}] missing scene.ruleset`);
 
   const baseMode: BaseMode = hostDef.scene?.baseMode ?? "start";
-  const { questionnaireOpen } = signals;
+  const { questionnaireOpen, sectionOpen } = signals;
 
   // Build the full scene state (base + modifiers)
   const sceneState: SceneState = resolveSceneState(
-    { questionnaireOpen },
+    { questionnaireOpen, sectionOpen },
     { baseMode }
   );
 
@@ -105,7 +109,8 @@ export function useSceneField(
   // (ruleset should handle modifier overrides internally)
   const profile = ruleset.getProfile(sceneState);
 
-  // Runtime "lookup key" for low-level rule lookups (if runtime needs it)
+  // Runtime "lookup key" for low-level rule lookups (if runtime needs it).
+  // sectionOpen stays as baseMode — shapes/quota are unchanged, only padding overrides.
   const sceneLookupKey: SceneLookupKey = questionnaireOpen ? "questionnaire" : sceneState.baseMode;
 
   const uRef = useRef(0.5);
@@ -146,6 +151,7 @@ export function useSceneField(
     // and optionally override it (escape hatch)
     const spec = resolveCanvasPaddingSpec(w, profile.padding);
     engine.controls.current?.setPaddingSpec?.(spec);
+    engine.controls.current?.setBackgroundSpec?.(backgroundForTheme(sceneLookupKey, darkMode));
 
     engine.controls.current?.setFieldItems?.(result.placed);
     engine.controls.current?.setFieldVisible?.(result.placed.length > 0);
@@ -153,6 +159,7 @@ export function useSceneField(
     engine,
     allocAvg,
     questionnaireOpen,
+    sectionOpen,
     viewportKey,
     hostId,
     baseMode,
@@ -163,5 +170,6 @@ export function useSceneField(
     sceneLookupKey,
     sceneState.baseMode,
     profile,
+    darkMode,
   ]);
 }

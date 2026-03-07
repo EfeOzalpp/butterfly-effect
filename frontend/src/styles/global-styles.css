@@ -1,0 +1,192 @@
+/* Global skeleton + variables */
+
+:root {
+  --font-body: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-title: "Roboto Serif", Georgia, "Times New Roman", serif;
+  --font-ui-weight: 450;
+
+  --type-h1-size: clamp(2rem, 1.6rem + 1.4vw, 3rem);
+  --type-h2-size: clamp(1.6rem, 1.35rem + 0.9vw, 2.2rem);
+  --type-h3-size: clamp(1.3rem, 1.2rem + 0.6vw, 1.8rem);
+  --type-h4-size: clamp(1.1rem, 1.04rem + 0.35vw, 1.35rem);
+  --type-p-size: 1rem;
+  --type-small-size: 0.875rem;
+  --type-label-size: 0.95rem;
+
+  --type-h-line: 1.12;
+  --type-body-line: 1.45;
+  --type-tight-line: 1.25;
+
+  --color-text-strong: #414141;
+  --color-text-muted: #5f6a74;
+  --color-surface: #f9fefb;
+  --color-surface-strong: #ffffff;
+  --color-border-soft: #d6dee6;
+  --color-border-strong: #414141;
+  --color-accent-green: rgb(214 237 214);
+
+  --survey-text-strong: var(--color-text-strong);
+  --survey-text-muted: var(--color-text-muted);
+  --survey-surface: var(--color-surface);
+  --survey-surface-strong: var(--color-surface-strong);
+  --survey-border-soft: 1px solid var(--color-border-soft);
+  --survey-border-strong: 1px solid var(--color-border-strong);
+  --survey-border-subtle: 1px solid rgba(138, 138, 138, 0.2);
+
+  --survey-radius-sm: 6px;
+  --survey-radius-md: 8px;
+  --survey-radius-lg: 12px;
+
+  --survey-space-sm: 8px;
+  --survey-space-md: 16px;
+  --survey-space-lg: 24px;
+
+  --survey-btn-bg: linear-gradient(to right, var(--color-accent-green) 0%, #f7fff3 84%, var(--color-accent-green) 100%);
+  --survey-btn-green: var(--color-accent-green);
+  --survey-btn-bg-soft: #f7fff377;
+
+  /* global ui theme tokens */
+  --ui-bg-page: #e7f7ff;
+  --ui-bg-surface: #ffffff;
+  --ui-bg-muted: #f4f7fa;
+  --ui-text: #1f2937;
+  --ui-text-muted: #4b5563;
+  --ui-border: #cbd5e1;
+  --ui-border-strong: #64748b;
+  --ui-radio-icon: #212121;
+
+  --btn-radius: 10px;
+  --btn-padding-y: 0.72rem;
+  --btn-padding-x: 1rem;
+  --btn-font-weight: 500;
+  --btn-border-width: 1px;
+  --btn-hover-scale: 1.02;
+
+  --btn-primary-bg: linear-gradient(to right, var(--color-accent-green) 0%, #f7fff3 84%, var(--color-accent-green) 100%);
+  --btn-primary-text: var(--ui-text);
+  --btn-primary-border: var(--ui-border-strong);
+
+  --btn-secondary-bg: var(--color-accent-green);
+  --btn-secondary-text: #213129;
+  --btn-secondary-border: #86a98f;
+
+  --btn-tertiary-bg: var(--ui-bg-muted);
+  --btn-tertiary-text: var(--ui-text);
+  --btn-tertiary-border: var(--ui-border-strong);
+}
+
+:root[data-theme="dark"] {
+  --ui-bg-page: #0f1720;
+  --ui-bg-surface: #1a2430;
+  --ui-bg-muted: #243140;
+  --ui-text: #e5edf5;
+  --ui-text-muted: #b8c6d6;
+  --ui-border: #3b4a5d;
+  --ui-border-strong: #64748b;
+  --ui-radio-icon: #edf3fa;
+
+  --btn-primary-bg: linear-gradient(to right, #2a3f32 0%, #304b3b 84%, #2a3f32 100%);
+  --btn-primary-text: #eef6f1;
+  --btn-primary-border: #5c7a69;
+
+  --btn-secondary-bg: #355444;
+  --btn-secondary-text: #ecf5ef;
+  --btn-secondary-border: #5c7a69;
+
+  --btn-tertiary-bg: #223142;
+  --btn-tertiary-text: var(--ui-text);
+  --btn-tertiary-border: #506074;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--ui-bg-page);
+  color: var(--ui-text);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-title);
+  font-optical-sizing: auto;
+  font-variation-settings: "wdth" 112.5, "GRAD" 0;
+}
+
+button,
+input,
+select,
+textarea {
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+}
+
+a { text-decoration: none; }
+
+canvas { touch-action: none !important; }
+
+.radio-button svg [fill] { fill: var(--ui-radio-icon) !important; }
+.radio-button svg [stroke] { stroke: var(--ui-radio-icon) !important; }
+
+/* Shared responsive icon sizing */
+.ui-icon {
+  display: inline-block;
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 767px) {
+  .ui-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .ui-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .ui-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+#butterfly-habits {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.q5Canvas { z-index: 2; }
+
+#decoy-container,
+#decoy-container canvas,
+.radial-background,
+.edge-cue,
+.edge-mode-hint {
+  pointer-events: none !important;
+}
+
+.graph-wrapper:not(.visible) {
+  pointer-events: none;
+}

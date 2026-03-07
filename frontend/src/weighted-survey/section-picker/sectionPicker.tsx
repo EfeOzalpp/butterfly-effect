@@ -1,5 +1,6 @@
 // src/components/survey/sectionPicker/sectionPicker.tsx
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import LottieOption from '../../assets/lottie/LottieOption';
 
 export type SectionHeader = { type: 'header'; id: string; label: string };
 
@@ -20,6 +21,7 @@ type Props = {
   sections?: SectionItem[];
   placeholderOverride?: string;
   titleOverride?: string;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export default function SectionPickerIntro({
@@ -30,6 +32,7 @@ export default function SectionPickerIntro({
   sections = [],
   placeholderOverride, // e.g., "Your Major..."
   titleOverride, // e.g., "Select Your Major"
+  onOpenChange,
 }: Props) {
   const hasHeaders = useMemo(
     () => Array.isArray(sections) && sections.some((s) => s && (s as any).type === 'header'),
@@ -127,6 +130,10 @@ export default function SectionPickerIntro({
   }, [renderedFocusable.length]);
 
   useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
+  useEffect(() => {
     const onDoc = (e: MouseEvent | TouchEvent) => {
       if (!wrapperRef.current) return;
       const t = e.target as Node | null;
@@ -187,8 +194,13 @@ export default function SectionPickerIntro({
       const opt = renderedFocusable[focusIdx];
       if (!opt) return;
       onChange(opt.value);
-      if (source === 'pointer') setSearch('');
-      setOpen(false);
+      if (source === 'pointer') {
+        setSearch('');
+        // Delay close so the Lottie selection animation (frames 0→15) can play
+        setTimeout(() => setOpen(false), 260);
+      } else {
+        setOpen(false);
+      }
     },
     [renderedFocusable, onChange]
   );
@@ -199,8 +211,9 @@ export default function SectionPickerIntro({
   const placeholderText = placeholderOverride ?? (current ? current.label : 'MassArt Dept...');
 
   return (
-    <div className="surveyStart" ref={wrapperRef}>
-      {!open && <h3 className="begin-title3">{titleOverride ?? 'Select Your Department'}</h3>}
+    <section className="survey survey-step survey-step--section" ref={wrapperRef}>
+      <div className="continue">
+        {!open && <h3 className="begin-title3">{titleOverride ?? 'Select Your Department'}</h3>}
 
       <div className="section-picker">
         <div
@@ -267,7 +280,7 @@ export default function SectionPickerIntro({
             spellCheck={false}
           />
           <span className="section-chevron" aria-hidden>
-            <svg className="section-chevron-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor">
+            <svg className="section-chevron-svg ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <polyline points="6 9 12 15 18 9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
@@ -333,7 +346,9 @@ export default function SectionPickerIntro({
                   className={'section-option' + (isActive ? ' is-active' : '') + (selected ? ' is-selected' : '')}
                   onMouseEnter={() => {
                     const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
-                    if (focusIdx >= 0) setActiveIndex(focusIdx);
+                    if (focusIdx !== -1 && focusIdx !== activeIndex) {
+                      setActiveIndex(focusIdx);
+                    }
                   }}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
@@ -341,7 +356,7 @@ export default function SectionPickerIntro({
                     if (focusIdx >= 0) chooseIndex(focusIdx, 'pointer');
                   }}
                 >
-                  <span className={'section-dot' + (selected ? ' is-selected' : '')} />
+                  <LottieOption selected={selected} isActive={isActive} />
                   <span className="section-label">{item.label}</span>
                 </div>
               );
@@ -357,9 +372,24 @@ export default function SectionPickerIntro({
         </div>
       )}
 
-      <button className="begin-button" onClick={onBegin}>
-        <span>Next</span>
+      <button className="next-button" onClick={onBegin}>
+        <span>Continue</span>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="continue-icon ui-icon"
+        >
+          <path
+            d="M12 16L16 12M16 12L12 8M16 12H8M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
-    </div>
+      </div>
+    </section>
   );
 }

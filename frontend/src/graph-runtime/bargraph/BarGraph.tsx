@@ -10,7 +10,7 @@ import { useRelativeScores, avgWeightOf } from "../../lib/hooks/useRelativeScore
 
 import EmptyStateArt from "./EmptyArt";
 
-import '../../assets/styles/graph.css';
+import '../../styles/graph.css';
 
 const Lottie = React.lazy(() => import(/* webpackChunkName: "lottie-react" */ 'lottie-react'));
 

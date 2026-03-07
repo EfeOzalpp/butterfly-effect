@@ -1,16 +1,6 @@
-// ─────────────────────────────────────────────────────────────
-// src/components/dotGraph/DotGraph.tsx
 // DotGraph scene composition + interaction wiring
-// ─────────────────────────────────────────────────────────────
 
 import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
-
-import { Html, Line } from '@react-three/drei';
-
-import CompleteButton from "../../weighted-survey/R3F-button/CompleteButton";
-
-import GamificationPersonalized from "../gamification/GamificationPersonalized";
-import GamificationGeneral from "../gamification/GamificationGeneral";
 
 import { useAppState } from "../../app/appState";
 
@@ -28,22 +18,24 @@ import useObserverDelay from "./hooks/useObserverDelay";
 import { getTieStats, classifyPosition } from "../gamification/rankLogic";
 
 import {
-  SpriteShape,
   prewarmSpriteTextures,
   useTextureQueueProgress,
 } from "../sprites/entry";
 
-import { shapeForAvg } from "../sprites/selection/shapeForAvg";
-import { FOOTPRINTS as SHAPE_FOOTPRINT } from "../sprites/selection/footprints";
-
 import { nonlinearLerp, boostColor } from "./utils/colorBoost";
-import {
-  ROLE,
-  normSection,
-  deriveRoleFromSectionId,
-  allowPersonalInSection,
-} from "./dotgraph.scoping";
 import useObserverSpotlight from "./hooks/useObserverSpotlight";
+import useViewerScope from "./hooks/useViewerScope";
+import {
+  buildRankChainIds,
+  buildTieBuckets,
+  getHoveredRelativeIds,
+  getSelectedTieLinePoints,
+  getTieKeyForId,
+} from "./utils/tieGraph";
+import TopOverlays from "./components/TopOverlays";
+import PointsLayer from "./components/PointsLayer";
+import PersonalizedLayer from "./components/PersonalizedLayer";
+import HoveredLayer from "./components/HoveredLayer";
 
 
 // Minimal props typing (tighten later)
@@ -102,35 +94,10 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
   // ───────────────────────────────────────────────────────────
   // First-render safe identity + strict role derivation
   // ───────────────────────────────────────────────────────────
-  const effectiveMySection = useMemo(() => {
-    if (mySection && mySection !== '') return mySection;
-    if (typeof window !== 'undefined') {
-      const s = sessionStorage.getItem('gp.mySection');
-      if (s && s !== '') return s;
-    }
-    return '';
-  }, [mySection]);
-
-  const viewerRole = useMemo(
-    () => deriveRoleFromSectionId(effectiveMySection),
-    [effectiveMySection]
-  );
-
-  const shouldShowPersonalized = useMemo(() => {
-    const viewing =
-      section ||
-      (typeof window !== 'undefined' ? sessionStorage.getItem('gp.viewingSection') : null) ||
-      'all';
-
-    const ok = allowPersonalInSection(viewerRole, effectiveMySection, viewing);
-
-    // HARD GUARD: visitors only in Everyone & Visitors
-    if (viewerRole === ROLE.VISITOR) {
-      const v = normSection(viewing);
-      return v === 'all' || v === 'visitor';
-    }
-    return ok;
-  }, [viewerRole, effectiveMySection, section]);
+  const { shouldShowPersonalized } = useViewerScope({
+    mySection,
+    section,
+  });
 
   // Only skew under 768px and when we're actually showing the personalized card here
   const wantsSkew =
@@ -335,77 +302,31 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
   // global bottom→top chain, de-dup by linkKeyOf
   const rankChainIds = useMemo(() => {
     if (points.length < 2) return [];
-    const entries = safeData.map((d) => ({
-      id: d._id,
-      avg: avgWeightOf(d),
-      key: linkKeyOf(d),
-    }));
-    entries.sort((a, b) => a.avg - b.avg);
-
-    const seenKeys = new Set<number>();
-    const uniqueIds: string[] = [];
-    for (let i = 0; i < entries.length; i++) {
-      const k = entries[i].key;
-      if (!seenKeys.has(k)) {
-        uniqueIds.push(entries[i].id);
-        seenKeys.add(k);
-      }
-    }
-    return uniqueIds;
+    return buildRankChainIds(safeData, linkKeyOf, avgWeightOf);
   }, [points, safeData, linkKeyOf]);
-
-  const rankChainPoints = useMemo(
-    () => rankChainIds.map((id) => posById.get(id)).filter(Boolean),
-    [rankChainIds, posById]
-  );
 
   const rankChainIdSet = useMemo(() => new Set(rankChainIds), [rankChainIds]);
 
   // ============================ LINKING by ROUNDED RAW AVG ============================
-  const tieBuckets = useMemo(() => {
-    const m = new Map<number, string[]>();
-    if (!safeData.length) return m;
-    for (const d of safeData) {
-      const key = linkKeyOf(d);
-      const arr = m.get(key) || [];
-      arr.push(d._id);
-      m.set(key, arr);
-    }
-    for (const [k, arr] of m) if (!arr || arr.length <= 1) m.delete(k);
-    return m;
-  }, [safeData, linkKeyOf]);
+  const tieBuckets = useMemo(
+    () => buildTieBuckets(safeData, linkKeyOf),
+    [safeData, linkKeyOf]
+  );
 
-  const selectedTieLinePoints = useMemo(() => {
-    if (selectedTieKey == null || !tieBuckets.has(selectedTieKey)) return [];
-    const ids = (tieBuckets.get(selectedTieKey) || []).filter((id) => posById.has(id));
-    if (ids.length < 2) return [];
-    const pts = ids.map((id) => posById.get(id) as any);
-    let cx = 0, cy = 0, cz = 0;
-    for (const p of pts) {
-      cx += p[0]; cy += p[1]; cz += p[2];
-    }
-    cx /= pts.length; cy /= pts.length; cz /= pts.length;
-    return pts.slice().sort((a: any, b: any) => {
-      const aa = Math.atan2(a[2] - cz, a[0] - cx);
-      const bb = Math.atan2(b[2] - cz, b[0] - cx);
-      return aa - bb;
-    });
-  }, [selectedTieKey, tieBuckets, posById]);
+  const selectedTieLinePoints = useMemo(
+    () => getSelectedTieLinePoints(selectedTieKey, tieBuckets, posById),
+    [selectedTieKey, tieBuckets, posById]
+  );
 
-  const getTieKeyForId = (id: string): number | null => {
-    const entry = safeData.find((d) => d._id === id);
-    if (!entry) return null;
-    const key = linkKeyOf(entry);
-    const arr = tieBuckets.get(key);
-    return arr && arr.length > 1 ? key : null;
-  };
+  const tieKeyForId = useCallback(
+    (id: string): number | null =>
+      getTieKeyForId(id, safeData, tieBuckets, linkKeyOf),
+    [safeData, tieBuckets, linkKeyOf]
+  );
 
   const hoveredRelIds = useMemo(() => {
     if (mode !== 'relative' || !hoveredDot) return [];
-    const entry = safeData.find((d) => d._id === hoveredDot.dotId);
-    if (!entry) return [];
-    const key = linkKeyOf(entry);
-    return tieBuckets.get(key) || [];
+    return getHoveredRelativeIds(hoveredDot.dotId, safeData, tieBuckets, linkKeyOf);
   }, [mode, hoveredDot, safeData, tieBuckets, linkKeyOf]);
 
   const hoveredAbsEqualSet = useMemo(() => {
@@ -461,13 +382,6 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
   const myClass = classifyPosition(myStats);
 
-  const hoveredStats = useMemo(() => {
-    if (!hoveredDot) return { below: 0, equal: 0, above: 0, totalOthers: 0 };
-    return getTieStats({ data: safeData, targetId: hoveredDot.dotId });
-  }, [hoveredDot, safeData]);
-
-  const hoveredClass = classifyPosition(hoveredStats);
-
   // ------------------------- DYNAMIC SPRITE SCALE -------------------------
   const spriteScale = useMemo(() => {
     const denom = Math.max(1e-6, maxRadius - minRadius);
@@ -507,232 +421,61 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
   return (
     <>
-      {showCompleteUI && (
-        <Html zIndexRange={[2, 24]} style={{ pointerEvents: 'none' }}>
-          <div
-            className="z-index-respective"
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              alignItems: 'center',
-              height: '100vh',
-              pointerEvents: 'none',
-            }}
-          >
-            <CompleteButton />
-          </div>
-        </Html>
-      )}
-
-      {isBusy && (
-        <Html center zIndexRange={[200, 250]} style={{ pointerEvents: 'none' }}>
-          <div style={loaderCardStyle} className="loading-dots">
-            <span role="img" aria-label="city">
-              🌆
-            </span>
-            &nbsp; Community is loading…
-            {Number.isFinite(pending) ? ` (${pending})` : ''}
-          </div>
-        </Html>
-      )}
+      <TopOverlays
+        showCompleteUI={showCompleteUI}
+        isBusy={isBusy}
+        pending={pending}
+        loaderCardStyle={loaderCardStyle}
+      />
 
       <group ref={groupRef as any}>
-        {points.map((point, i) => {
-          const suppressHover = !!(myEntry && point._id === personalizedEntryId && showCompleteUI);
+        <PointsLayer
+          points={points}
+          mode={mode}
+          myEntry={myEntry}
+          personalizedEntryId={personalizedEntryId}
+          showCompleteUI={showCompleteUI}
+          onHoverStart={onHoverStart}
+          onHoverEnd={onHoverEnd}
+          tieKeyForId={tieKeyForId}
+          setSelectedTieKey={setSelectedTieKey}
+          selectedTieKey={selectedTieKey}
+          selectedTieLinePoints={selectedTieLinePoints}
+          hoveredAbsEqualSet={hoveredAbsEqualSet}
+          hoveredRelIds={hoveredRelIds}
+          rankChainIdSet={rankChainIdSet}
+          spriteScale={spriteScale}
+          bagSeed={bagSeed}
+          bleedOf={bleedOf}
+        />
 
-          const tieKey = getTieKeyForId(point._id);
-          const isInSelectedTie = selectedTieKey != null && tieKey === selectedTieKey;
+        <PersonalizedLayer
+          shouldRenderPersonalUI={shouldRenderPersonalUI}
+          shouldRenderExtraPersonalSprite={shouldRenderExtraPersonalSprite}
+          effectiveMyPoint={effectiveMyPoint}
+          effectiveMyEntry={effectiveMyEntry}
+          spriteScale={spriteScale}
+          bagSeed={bagSeed}
+          offsetPx={offsetPx}
+          myDisplayValue={myDisplayValue}
+          mode={mode}
+          section={section}
+          myStats={myStats}
+          myClass={myClass}
+          setPersonalOpen={setPersonalOpen}
+        />
 
-          const showAbsEqualHoverHover = mode === 'absolute' && hoveredAbsEqualSet.has(point._id);
-          const showRelEqualHoverHover =
-            mode === 'relative' && hoveredRelIds.length > 1 && hoveredRelIds.includes(point._id);
-
-          const _unused =
-            isInSelectedTie ||
-            showRelEqualHoverHover ||
-            showAbsEqualHoverHover ||
-            rankChainIdSet.has(point._id);
-          void _unused;
-
-          const avg = Number.isFinite(point.averageWeight) ? point.averageWeight : 0.5;
-
-          const chosenShape = shapeForAvg(avg, bagSeed, i);
-          const fp = (SHAPE_FOOTPRINT as any)[chosenShape] ?? { w: 1, h: 1 };
-          const aspect = fp.w / Math.max(0.0001, fp.h);
-
-          const b = bleedOf(chosenShape);
-          const sCompX = 1 / (1 + (b.left || 0) + (b.right || 0));
-          const sCompY = 1 / (1 + (b.top || 0) + (b.bottom || 0));
-
-          const sx = spriteScale * aspect * sCompX;
-          const sy = spriteScale * sCompY;
-
-          return (
-            <group
-              key={point._id ?? `${point.position?.[0]}-${point.position?.[1]}-${point.position?.[2]}`}
-              position={point.position as any}
-            >
-              <sprite
-                onPointerOver={(e) => {
-                  e.stopPropagation();
-                  if (!suppressHover) onHoverStart(point, e);
-                }}
-                onPointerOut={(e) => {
-                  e.stopPropagation();
-                  if (!suppressHover) onHoverEnd();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!suppressHover) onHoverStart(point, e);
-                  const key = getTieKeyForId(point._id);
-                  setSelectedTieKey((prev) => (prev === key ? null : (key ?? null)));
-                }}
-                scale={[sx, sy, 1]}
-              >
-                <spriteMaterial transparent opacity={0} depthWrite={false} depthTest={false} />
-              </sprite>
-
-              <SpriteShape
-                avg={avg}
-                position={[0, 0, 0]}
-                scale={spriteScale}
-                tileSize={128}
-                alpha={215}
-                blend={0.6}
-                seed={bagSeed}
-                orderIndex={i}
-                freezeParticles={true}
-                particleStepMs={33}
-                particleFrames={219}
-              />
-            </group>
-          );
-        })}
-
-        {selectedTieKey != null && selectedTieLinePoints.length >= 2 && (
-          <Line
-            points={selectedTieLinePoints as any}
-            color="#a3a3a3"
-            lineWidth={1.5}
-            dashed={false}
-            toneMapped={false}
-            transparent
-            opacity={0.75}
-          />
-        )}
-
-        {shouldRenderPersonalUI && (
-          <>
-            {shouldRenderExtraPersonalSprite && effectiveMyPoint && (
-              <group position={(effectiveMyPoint as any).position}>
-                <SpriteShape
-                  avg={
-                    Number.isFinite((effectiveMyEntry as any)?.avgWeight)
-                      ? Number((effectiveMyEntry as any).avgWeight)
-                      : 0.5
-                  }
-                  position={[0, 0, 0]}
-                  scale={spriteScale}
-                  tileSize={128}
-                  alpha={215}
-                  blend={0.6}
-                  seed={bagSeed}
-                  orderIndex={0}
-                  freezeParticles={true}
-                  particleStepMs={33}
-                  particleFrames={219}
-                />
-              </group>
-            )}
-
-            {effectiveMyPoint && (
-              <Html
-                position={(effectiveMyPoint as any).position}
-                center
-                zIndexRange={[110, 130]}
-                style={{
-                  pointerEvents: 'none',
-                  ['--offset-px' as any]: `${offsetPx}px`,
-                }}
-              >
-                <div>
-                  <GamificationPersonalized
-                    userData={effectiveMyEntry}
-                    percentage={myDisplayValue}
-                    color={(effectiveMyPoint as any).color}
-                    mode={mode}
-                    selectedSectionId={section}
-                    belowCountStrict={myStats.below}
-                    equalCount={myStats.equal}
-                    aboveCountStrict={myStats.above}
-                    positionClass={myClass.position}
-                    tieContext={myClass.tieContext}
-                    onOpenChange={setPersonalOpen}
-                  />
-                </div>
-              </Html>
-            )}
-          </>
-        )}
-
-        {hoveredDot &&
-          (() => {
-            const hoveredData = points.find((d) => d._id === hoveredDot.dotId);
-            if (!hoveredData) return null;
-
-            const hoveredEntry = safeData.find((d) => d._id === hoveredDot.dotId);
-            const hoveredAvg = hoveredEntry ? avgWeightOf(hoveredEntry) : undefined;
-
-            let displayPct = 0;
-            if (Number.isFinite(hoveredAvg as any)) {
-              try {
-                displayPct = Math.round(calcValueForAvg(hoveredAvg as number));
-              } catch {
-                displayPct = 0;
-              }
-            }
-
-            if (!Number.isFinite(displayPct) || displayPct < 0) {
-              displayPct =
-                mode === 'relative'
-                  ? getRelForId(hoveredDot.dotId)
-                  : (absScoreById.get(hoveredDot.dotId) ?? 0);
-            }
-
-            const hoveredStats2 = hoveredEntry
-              ? getTieStats({ data: safeData, targetId: hoveredEntry._id })
-              : { below: 0, equal: 0, above: 0, totalOthers: 0 };
-
-            const hoveredClass2 = classifyPosition(hoveredStats2);
-
-            return (
-              <Html
-                position={hoveredData.position as any}
-                center
-                zIndexRange={[120, 180]}
-                style={{
-                  pointerEvents: 'none',
-                  ['--offset-px' as any]: `${offsetPx}px`,
-                  opacity: 1,
-                }}
-                className={viewportClass}
-              >
-                <div>
-                  <GamificationGeneral
-                    dotId={hoveredDot.dotId}
-                    percentage={displayPct}
-                    color={hoveredData.color}
-                    mode={mode}
-                    belowCountStrict={hoveredStats2.below}
-                    equalCount={hoveredStats2.equal}
-                    aboveCountStrict={hoveredStats2.above}
-                    positionClass={hoveredClass2.position}
-                    tieContext={hoveredClass2.tieContext}
-                  />
-                </div>
-              </Html>
-            );
-          })()}
+        <HoveredLayer
+          hoveredDot={hoveredDot}
+          points={points}
+          safeData={safeData}
+          mode={mode}
+          offsetPx={offsetPx}
+          viewportClass={viewportClass}
+          calcValueForAvg={calcValueForAvg}
+          getRelForId={getRelForId}
+          absScoreById={absScoreById}
+        />
       </group>
     </>
   );

@@ -1,0 +1,98 @@
+/* Reusable typography + control system */
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-optical-sizing: auto;
+  font-variation-settings: "wdth" 112.5, "GRAD" 0;
+  color: var(--ui-text);
+}
+
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 560; }
+h2 { font-size: var(--type-h2-size); line-height: var(--type-h-line); font-weight: 540; }
+h3 { font-size: var(--type-h3-size); line-height: var(--type-tight-line); font-weight: 520; }
+h4 { font-size: var(--type-h4-size); line-height: var(--type-tight-line); font-weight: 510; }
+
+p,
+li,
+label,
+input,
+select,
+textarea,
+button {
+  font-family: var(--font-body);
+  font-size: var(--type-p-size);
+  line-height: var(--type-body-line);
+  font-weight: var(--font-ui-weight);
+  color: var(--ui-text);
+}
+
+small { font-size: var(--type-small-size); line-height: var(--type-tight-line); }
+
+/* shared button base */
+button.begin-button,
+button.next-button,
+button.begin-button2,
+button.begin-button3,
+button.begin-button4,
+.nav-toggle,
+.observe-results,
+.system-color,
+.info-close,
+.gp-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: var(--btn-padding-y) var(--btn-padding-x);
+  border-radius: var(--btn-radius);
+  border: var(--btn-border-width) solid var(--btn-tertiary-border);
+  background: var(--btn-tertiary-bg);
+  color: var(--btn-tertiary-text);
+  font-weight: var(--btn-font-weight);
+  line-height: 1;
+  text-decoration: none;
+  transition: transform 100ms ease;
+}
+
+button.begin-button:hover,
+button.next-button:hover,
+button.begin-button2:hover,
+button.begin-button3:hover,
+button.begin-button4:hover,
+.nav-toggle:hover,
+.observe-results:hover,
+.system-color:hover,
+.info-close:hover,
+.gp-trigger:hover {
+  transform: scale(var(--btn-hover-scale));
+}
+
+/* variants (existing class compatibility) */
+button.begin-button {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-border);
+}
+
+button.next-button,
+button.begin-button2,
+button.begin-button3 {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-color: var(--btn-secondary-border);
+}
+
+button.begin-button4,
+.nav-toggle,
+.observe-results,
+.system-color,
+.info-close,
+.gp-trigger {
+  background: var(--btn-tertiary-bg);
+  color: var(--btn-tertiary-text);
+  border-color: var(--btn-tertiary-border);
+}

@@ -2,6 +2,7 @@
 
 import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
 import type { EngineLayoutMode } from "./platform/mount";
 import type { DprMode } from "./platform/viewport";
 import type { CanvasBounds } from "../multi-canvas-setup/hostDefs";
@@ -37,7 +38,7 @@ export type EngineFieldStyle = Record<string, any>;
 
 export type EngineControls = {
   // inbound signals (values provided by outside of engine to drive movement on shapes)
-  setInputs: (args?: { liveAvg?: number }) => void;
+  setInputs: (args?: { liveAvg?: number; condAvgs?: Partial<Record<'A' | 'B' | 'C' | 'D', number>> }) => void;
 
   // field payload
   setFieldItems: (nextItems?: EngineFieldItem[]) => void;
@@ -52,6 +53,7 @@ export type EngineControls = {
    * If not set, runtime resolves from CANVAS_PADDING + scene lookup key.
    */
   setPaddingSpec: (spec: CanvasPaddingSpec | null) => void;
+  setBackgroundSpec: (spec: BackgroundSpec | null) => void;
 
   // visibility
   setHeroVisible: (v: boolean) => void;

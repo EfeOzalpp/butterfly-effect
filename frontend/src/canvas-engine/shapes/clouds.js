@@ -80,6 +80,8 @@ const WOBBLE = { ampScale: [0.8, 0.95] };
 /* ───────────────── Draw ───────────────── */
 export function drawClouds(p, _cx, _cy, _r, opts) {
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f = opts?.footprint;
   if (!cell || !f) return;
 
@@ -103,10 +105,10 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   const PARTICLE_PX_SCALE = pxK * pixelScale;
 
   /* ── Layout base ── */
-  const x0 = f.c0 * cell;
-  const y0 = f.r0 * cell;
-  const wTop = f.w * cell;
-  const hTop = cell;
+  const x0 = f.c0 * cellW;
+  const y0 = f.r0 * cellH;
+  const wTop = f.w * cellW;
+  const hTop = cellH;
 
   const anchorX = x0 + wTop / 2;
   const anchorY = y0 + hTop * 0.60;

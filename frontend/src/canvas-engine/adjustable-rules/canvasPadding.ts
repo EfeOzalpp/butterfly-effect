@@ -2,7 +2,7 @@
 
 import { makeRowForbidden } from '../grid-layout/forbidden';
 import type { DeviceType } from '../shared/responsiveness';
-import { SceneLookupKey } from "./sceneMode";
+import type { SceneLookupKey } from "./sceneMode";
 
 export type CanvasPaddingSpec = {
   rows: number;
@@ -18,7 +18,7 @@ const LR_0 = { left: '0%', right: '0%' } as const;
 export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPaddingSpec | null>> = {
   start: {
     mobile: {
-      rows: 18,
+      rows: 10,
       useTopRatio: 0.9,
       forbidden: makeRowForbidden([
         LR_0, LR_0, LR_0, LR_0, LR_0, LR_0, LR_0, LR_0,
@@ -28,37 +28,39 @@ export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPad
     },
     tablet: {
       rows: 17,
-      useTopRatio: 0.8,
+      useTopRatio: 0.0,
       forbidden: makeRowForbidden([
         CENTER_100, CENTER_100,
-        { left: '2%', right: '2%' }, { left: '2%', right: '2%' },
-        { left: '2%', right: '2%' }, { left: '2%', right: '2%' },
-        { left: '2%', right: '2%' }, { left: '2%', right: '2%' },
-        { left: '2%', right: '2%' }, { left: '2%', right: '2%' },
-        { left: '2%', right: '2%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' },
         CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
       ]),
     },
     laptop: {
-      rows: 12,
+      rows: 14,
       useTopRatio: 1,
-      forbidden: makeRowForbidden([
-        CENTER_100,
-        { left: '24%', right: '24%' },
-        { left: '14%', right: '14%' },
-        { left: '14%', right: '14%' },
-        { left: '8%', right: '8%' },
-        { left: '8%', right: '8%' },
-        { left: '8%', right: '8%', center: '30%' },
-        { left: '6%', right: '6%', center: '50%' },
-        CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
+      forbidden: makeRowForbidden([        
+        CENTER_100, CENTER_100, CENTER_100, 
+        { left: '4%', center: '40%', right: '4%' },
+        { left: '4%', center: '30%', right: '4%' },
+        { left: '4%', center: '30%', right: '4%' },
+        { left: '4%', center: '40%', right: '4%' },
+        { left: '4%', center: '40%', right: '4%' },
+        { left: '4%', center: '40%', right: '4%' },
+        { left: '4%', center: '40%', right: '4%' },
+        { left: '4%', center: '40%', right: '4%' },
+        { left: '4%', center: '40%', right: '4%' },
+        CENTER_100, CENTER_100, 
       ]),
     },
   },
 
   questionnaire: {
     mobile: {
-      rows: 20,
+      rows: 40,
       useTopRatio: 1,
       forbidden: makeRowForbidden([
         CENTER_100, CENTER_100, CENTER_100, CENTER_100,
@@ -69,16 +71,16 @@ export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPad
         { left: '0%', right: '0%', center: '50%' },
         { left: '0%', right: '0%', center: '50%' },
         { left: '0%', right: '0%', center: '60%' },
-        { left: '0%', right: '0%', center: '20%' },
-        { left: '0%', right: '0%', center: '20%' },
-        { left: '0%', right: '0%', center: '20%' },
-        { left: '0%', right: '0%', center: '20%' },
-        { left: '0%', right: '0%', center: '20%' },
-        { left: '0%', right: '0%', center: '20%' },
+        { left: '0%', right: '0%', center: '40%' },
+        { left: '0%', right: '0%', center: '40%' },
+        { left: '0%', right: '0%', center: '40%' },
+        { left: '0%', right: '0%', center: '40%' },
+        { left: '0%', right: '0%', center: '40%' },
+        { left: '0%', right: '0%', center: '40%' },
       ]),
     },
     tablet: {
-      rows: 22,
+      rows: 44,
       useTopRatio: 1,
       forbidden: makeRowForbidden([
         CENTER_100, CENTER_100, CENTER_100, CENTER_100,
@@ -96,36 +98,81 @@ export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPad
       ]),
     },
     laptop: {
-      rows: 13,
-      useTopRatio: 0.85,
+      rows: 14,
+      useTopRatio: 1,
       forbidden: makeRowForbidden([
         CENTER_100, 
-        { left: '5%', right: '5%' },
-        { left: '5%', right: '5%' },
-        { left: '5%', right: '5%' },
-        { left: '5%', right: '5%' },
-        { left: '5%', right: '5%', center: '40%' },
-        { left: '5%', right: '15%', center: '50%' },
-        { left: '5%', right: '15%', center: '50%' },
-        { left: '5%', right: '5%', center: '60%' },
-        { left: '5%', right: '5%', center: '65%' },
-        { left: '5%', right: '5%', center: '65%' },
-        { left: '5%', right: '5%', center: '65%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
+        { left: '5%', center: '40%', right: '5%' },
         CENTER_100, CENTER_100,
+      ]),
+    },
+  },
+
+  sectionOpen: {
+    mobile: {
+      rows: 10,
+      useTopRatio: 0.9,
+      forbidden: makeRowForbidden([
+        LR_0, LR_0, LR_0, LR_0, LR_0, LR_0, LR_0, LR_0,
+        CENTER_100, CENTER_100, CENTER_100, CENTER_100,
+        CENTER_100, CENTER_100, CENTER_100, CENTER_100,
+      ]),
+    },
+    tablet: {
+      rows: 17,
+      useTopRatio: 0.0,
+      forbidden: makeRowForbidden([
+        CENTER_100, CENTER_100,
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+        { left: '4%', right: '4%' },
+        CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
+      ]),
+    },
+    laptop: {
+      rows: 16,
+      useTopRatio: 1,
+      forbidden: makeRowForbidden([
+        CENTER_100, CENTER_100, CENTER_100,
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        { left: '4%', center: '35%', right: '4%' },
+        CENTER_100,
       ]),
     },
   },
 
   overlay: {
     mobile: {
-      rows: 24,
+      rows: 44,
       useTopRatio: 1,
-      forbidden: makeRowForbidden(Array.from({ length: 24 }, () => LR_0)),
+      forbidden: makeRowForbidden(Array.from({ length: 44 }, () => LR_0)),
     },
     tablet: {
-      rows: 22,
+      rows: 44,
       useTopRatio: 1,
-      forbidden: makeRowForbidden(Array.from({ length: 22 }, () => LR_0)),
+      forbidden: makeRowForbidden(Array.from({ length: 44 }, () => LR_0)),
     },
     laptop: {
       rows: 16,

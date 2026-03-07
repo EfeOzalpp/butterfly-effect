@@ -5,13 +5,14 @@ import { normalizeDprTransform, reassertDprTransformIfMutated } from "../util/tr
 
 import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
+import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 
 import { getPaddingSpecForState } from "../layout/padding";
 import { computeGridCached, type GridCacheState } from "../layout/gridCache";
 
 import { drawBackground } from "../render/background";
 import { drawGridOverlay } from "../render/gridOverlay";
-import { getGradientRGB, type PaletteCache } from "../render/palette";
+import { getGradientRGB, type PaletteCache, type CondPaletteCaches } from "../render/palette";
 import { drawGhosts, type Ghost } from "../render/ghosts";
 import { drawItems, type LiveState } from "../render/items";
 
@@ -20,6 +21,7 @@ import type { ShapeRegistry } from "../shapes/registry";
 
 import type { EngineFieldItem } from "../types";
 import type { DebugFlags } from "../debug/flags";
+import type { CondAvgs } from "./state";
 
 export type LoopDeps = {
   p: PLike;
@@ -40,15 +42,17 @@ export type LoopDeps = {
     debug: DebugFlags;
   };
 
-  inputs: { liveAvg: number };
+  inputs: { liveAvg: number; condAvgs: CondAvgs };
 
   // policy getters (so loop doesn't own policy vars)
   getSceneLookup: () => SceneLookupKey;
   getPaddingSpecOverride: () => CanvasPaddingSpec | null;
+  getBackgroundSpecOverride: () => BackgroundSpec | null;
 
   // caches
   gridCache: GridCacheState;
   paletteCache: PaletteCache;
+  condPaletteCaches: CondPaletteCaches;
 
   // lifecycle state
   liveStates: Map<string, LiveState>;
@@ -73,8 +77,10 @@ export function createEngineTicker(deps: LoopDeps) {
     inputs,
     getSceneLookup,
     getPaddingSpecOverride,
+    getBackgroundSpecOverride,
     gridCache,
     paletteCache,
+    condPaletteCaches,
     liveStates,
     ghostsRef,
     shapeRegistry,
@@ -92,8 +98,15 @@ export function createEngineTicker(deps: LoopDeps) {
   ) {
     p.push();
     try {
+      // Keep all shape rendering synchronized to one global liveAvg signal.
+      // This avoids per-condition color divergence (mixed red/green at the same moment).
+      const itemAvg = inputs.liveAvg;
+      const itemGradient = sharedOpts.gradientRGB;
+
       const opts2 = {
         ...sharedOpts,
+        liveAvg: itemAvg,
+        gradientRGB: itemGradient,
         rootAppearK,
         usedRows: gridCache.usedRows,
       };
@@ -111,7 +124,7 @@ export function createEngineTicker(deps: LoopDeps) {
     p.__tick(now);
 
     normalizeDprTransform(p);
-    drawBackground(p);
+    drawBackground(p, getSceneLookup(), getBackgroundSpecOverride());
 
     const spec = getPaddingSpecForState(
       p.width,
@@ -158,6 +171,8 @@ export function createEngineTicker(deps: LoopDeps) {
 
     const baseShared = {
       cell: grid.cell,
+      cellW: grid.cellW,
+      cellH: grid.cellH,
       gradientRGB,
       blend: style.blend,
       liveAvg: signal1,

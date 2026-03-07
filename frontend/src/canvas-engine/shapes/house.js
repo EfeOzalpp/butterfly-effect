@@ -104,6 +104,8 @@ function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
 
 export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f = opts?.footprint;
   if (!cell || !f) return;
 
@@ -114,10 +116,10 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const u = clamp01(opts?.liveAvg ?? 0.5);
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
-  const pxX = f.c0 * cell;
-  const pxY = f.r0 * cell;
-  const pxW = f.w * cell;
-  const pxH = f.h * cell;
+  const pxX = f.c0 * cellW;
+  const pxY = f.r0 * cellH;
+  const pxW = f.w * cellW;
+  const pxH = f.h * cellH;
 
   // --- Appear envelope anchored to bottom-center of footprint ---
   const anchorX = pxX + pxW / 2;

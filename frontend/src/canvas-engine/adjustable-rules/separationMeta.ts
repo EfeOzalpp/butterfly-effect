@@ -19,39 +19,40 @@ export type SeparationMetaByMode = Record<SceneLookupKey, SeparationMetaByShape 
 
 export const SEPARATION_META: SeparationMetaByMode = {
   start: {
-    sun: { separation: 1 },
-    clouds: { separation: 2 },
-    snow: { separation: 3 },
+    sun: { separation: 17 },
+    clouds: { separation: 7 },
+    snow: { separation: 5 },
 
-    house: { separation: 2 },
-    villa: { separation: 1 },
-    power: { separation: 1 },
-    carFactory: { separation: 2 },
+    house: { separation: 3 },
+    villa: { separation: 5 },
+    power: { separation: 3 },
+    carFactory: { separation: 5 },
 
-    car: { separation: 2 },
-    bus: { separation: 2 },
+    car: { separation: 5 },
+    bus: { separation: 5 },
 
-    sea: { separation: 0 },
-    trees: { separation: 1 },
+    sea: { separation: 5 },
+    trees: { separation: 5 },
   },
 
   questionnaire: null,
+  sectionOpen: null,
 
   overlay: {
     sun: { separation: 6 },
-    clouds: { separation: 4 },
-    snow: { separation: 4 },
+    clouds: { separation: 6 },
+    snow: { separation: 6 },
 
-    house: { separation: 3 },
-    villa: { separation: 3 },
-    power: { separation: 3 },
-    carFactory: { separation: 3 },
+    house: { separation: 7 },
+    villa: { separation: 7 },
+    power: { separation: 5 },
+    carFactory: { separation: 5 },
 
-    car: { separation: 2 },
-    bus: { separation: 2 },
+    car: { separation: 6 },
+    bus: { separation: 6 },
 
-    sea: { separation: 0 },
-    trees: { separation: 1 },
+    sea: { separation: 5 },
+    trees: { separation: 5 },
   },
 } as const;
 

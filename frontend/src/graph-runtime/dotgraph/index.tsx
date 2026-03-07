@@ -1,7 +1,4 @@
-// ─────────────────────────────────────────────────────────────
-// src/components/dotGraph/graph.tsx
-// WebGL Canvas wrapper for DotGraph (mount/unmount + perf guards)
-// ─────────────────────────────────────────────────────────────
+// DotGraph canvas wrapper (mount/unmount + perf guards)
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
@@ -20,7 +17,7 @@ import {
 } from "../sprites/entry";
 
 
-import '../../assets/styles/graph.css';
+import '../../styles/graph.css';
 
 // --- iOS detector (incl. iPadOS 13+ on MacIntel) ---
 const isIOS = (() => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppState } from '../app/appState';
-import "../assets/styles/city.css";
+import "../styles/navigation.css";
 
 export default function CityButton({
   isOpen,
@@ -34,13 +34,13 @@ export default function CityButton({
 }
 
 function Chevron({ className = '', isOpen = false }: { className?: string; isOpen?: boolean }) {
+  const iconClass = `${className} ui-icon`.trim();
+
   if (isOpen) {
     // "X" icon for close
     return (
       <svg
-        className={className}
-        width="20"
-        height="20"
+        className={iconClass}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -58,9 +58,7 @@ function Chevron({ className = '', isOpen = false }: { className?: string; isOpe
   // Default chevron-down for closed
   return (
     <svg
-      className={className}
-      width="20"
-      height="20"
+      className={iconClass}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

@@ -5,7 +5,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, Suspense 
 
 import { useAppState } from "../app/appState";
 
-import "../assets/styles/graph.css";
+import "../styles/graph.css";
 
 const Graph = React.lazy(() =>
   import(/* webpackChunkName: "graph" */ "./dotgraph/index")
@@ -257,7 +257,7 @@ export default function VisualizationPage() {
       >
         <div
           ref={buttonRef}
-          className="toggle-button"
+          className={`toggle-button${darkMode ? ' is-dark' : ''}`}
           style={{
             cursor: isDragging ? 'grabbing' : 'grab',
             left: '24px',
@@ -277,9 +277,8 @@ export default function VisualizationPage() {
           <span className={`toggle-icon ${isBarGraphVisible ? 'open' : 'closed'}`} aria-hidden>
             {isBarGraphVisible ? (
               <svg
+                className="ui-icon"
                 viewBox="0 0 24 24"
-                width="18"
-                height="18"
                 fill="none"
                 stroke="currentColor"
                 style={{ transition: 'transform 0.15s ease-out' }}
@@ -288,9 +287,8 @@ export default function VisualizationPage() {
               </svg>
             ) : (
               <svg
+                className="ui-icon"
                 viewBox="0 0 24 24"
-                width="18"
-                height="18"
                 fill="none"
                 stroke="currentColor"
                 style={{ transition: 'transform 0.15s ease-out' }}
@@ -307,8 +305,8 @@ export default function VisualizationPage() {
             className="draggable-bar-graph"
             style={{
               background: darkMode
-                ? 'linear-gradient(to bottom, rgba(45, 45, 45, 0.9) 10%, rgba(255, 255, 255, 0.85) 100%)'
-                : 'rgba(255, 255, 255, 0.4)',
+                ? 'linear-gradient(to bottom, rgb(34 35 33) 40%,rgb(52, 46, 46) 100%)'
+                : 'linear-gradient(to bottom, #f8f8f8c9 65%, rgba(227, 237, 227, 0.7) 100%)',
               transition: 'background 200ms ease',
             }}
           >

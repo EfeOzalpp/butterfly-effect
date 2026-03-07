@@ -179,6 +179,8 @@ function roundedRectPath(ctx, x, y, w, h, r) {
 
 export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const cell = opts?.cell, f = opts?.footprint;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   if (!cell || !f) return;
 
   // Sprite mode: auto when fitToFootprint (texture path) or explicit override.
@@ -190,10 +192,10 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const ct  = Number.isFinite(opts.contrast) ? opts.contrast : 1;
   const tMs = typeof opts.timeMs === 'number' ? opts.timeMs : p.millis?.();
 
-  const x0 = f.c0 * cell;
-  const y0 = f.r0 * cell;
-  const W  = f.w * cell;
-  const H  = f.h * cell;
+  const x0 = f.c0 * cellW;
+  const y0 = f.r0 * cellH;
+  const W  = f.w * cellW;
+  const H  = f.h * cellH;
 
   // appear (bottom-center)
   const anchorX = x0 + W / 2;

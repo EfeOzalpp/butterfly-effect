@@ -49,15 +49,16 @@ export function scoreCandidateGeneric(opts: {
   if (shape && getMeta) {
     const m = getMeta(shape);
     const sep = m?.separation ?? 0;
-    const g = m?.group;
+    const g = m?.group ?? shape; // default: no explicit group → same shape = same group
 
-    if (sep > 0 && g) {
+    if (sep > 0) {
       let minD = Infinity;
 
       for (const p of placed) {
         if (!p.shape) continue;
         const pm = getMeta(p.shape);
-        if (pm?.group !== g) continue;
+        const pg = pm?.group ?? p.shape;
+        if (pg !== g) continue;
 
         const pc = centerOf(p);
         const dx = cx - pc.x;

@@ -274,10 +274,12 @@ export function drawCar(p, cx, cy, r, opts = {}) {
 
   // Resolve tile rect
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f    = opts?.footprint;
   let tileX, tileY, tileW, tileH;
   if (cell && f) {
-    tileX = f.c0 * cell; tileY = f.r0 * cell; tileW = f.w * cell; tileH = f.h * cell;
+    tileX = f.c0 * cellW; tileY = f.r0 * cellH; tileW = f.w * cellW; tileH = f.h * cellH;
   } else {
     tileW = r * 3.0; tileH = r * 3.0; tileX = cx - tileW / 2; tileY = cy - tileH / 2;
   }

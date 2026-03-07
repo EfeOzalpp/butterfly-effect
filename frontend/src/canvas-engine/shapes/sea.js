@@ -194,6 +194,8 @@ function liveWindowK(u, a, b, s = 0) {
 
 export function drawSea(p, _x, _y, _r, opts = {}) {
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f = opts?.footprint;
   if (!cell || !f) return;
 
@@ -246,10 +248,10 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
   if (!isLeader) return;
 
   // tile rect
-  const x0 = f.c0 * cell;
-  const y0 = f.r0 * cell;
-  const w  = Math.max(f.w, spanTilesX) * cell;
-  const h  = f.h * cell;
+  const x0 = f.c0 * cellW;
+  const y0 = f.r0 * cellH;
+  const w  = Math.max(f.w, spanTilesX) * cellW;
+  const h  = f.h * cellH;
 
   const cx = x0 + w / 2;
   const bottomY = y0 + h;
@@ -403,8 +405,8 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
     if (wantClip) ctx.restore();
     const surfaceY = bottomY + Ttop0 * waterScaleY;
 
-    const rectW  = (T.capRect?.widthTiles ?? 0.90) * cell;
-    const rectH  = (T.capRect?.heightTiles ?? 0.45) * cell;
+    const rectW  = (T.capRect?.widthTiles ?? 0.90) * cellW;
+    const rectH  = (T.capRect?.heightTiles ?? 0.45) * cellH;
     const radius = Math.min(T.capRect?.cornerPx ?? 6, rectH / 2);
     const followOffset = T.capRect?.followOffsetPx ?? 0;
 
@@ -463,7 +465,7 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
 
       const isMobile = cell <= (T.spill.mobile?.cellMax ?? 28);
 
-      const globalShiftX = isSprite ? 0 : ((T.spill.offsetTilesX ?? 0) * cell);
+      const globalShiftX = isSprite ? 0 : ((T.spill.offsetTilesX ?? 0) * cellW);
 
       const waterTopY    = bottomY + Ttop0 * waterScaleY;
       const waterBottomY = bottomY + (Ttop0 + H0) * waterScaleY;

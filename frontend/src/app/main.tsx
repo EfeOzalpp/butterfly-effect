@@ -15,7 +15,9 @@ import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom"
 
 import RadialBackground from "../navigation/visual/radialBackground";
 
-import "../assets/styles/global-styles.css";
+import "../styles/fonts.css";
+import "../styles/global-styles.css";
+import "../styles/ui-system.css";
 
 const CanvasEntry = React.lazy(() => import("../weighted-survey/CanvasEntry"));
 const CityOverlay = React.lazy(() => import("../navigation/CityOverlay"));
@@ -44,7 +46,7 @@ const AppInner: React.FC = () => {
   const [surveyWrapperClass, setSurveyWrapperClass] = useState<string>("");
   const [cityPanelOpen, setCityPanelOpen] = useState<boolean>(false);
 
-  const { vizVisible, questionnaireOpen, liveAvg, allocAvg } = useAppState();
+  const { vizVisible, questionnaireOpen, sectionOpen, liveAvg, allocAvg, condAvgs } = useAppState();
 
   // Global zoom prevention policy
   usePreventPageZoomOutsideZones({
@@ -106,6 +108,8 @@ const AppInner: React.FC = () => {
             liveAvg={liveAvg}
             allocAvg={allocAvg}
             questionnaireOpen={questionnaireOpen}
+            sectionOpen={sectionOpen}
+            condAvgs={condAvgs}
             visible={true}
           />
         </Suspense>
@@ -125,7 +129,7 @@ const AppInner: React.FC = () => {
         </div>
       )}
 
-      <div className={`survey-section-wrapper3 ${surveyWrapperClass}`}>
+      <div className={`onboarding-wrapper ${surveyWrapperClass}`}>
         <Survey
           setAnimationVisible={setAnimationVisible}
           setSurveyWrapperClass={setSurveyWrapperClass}

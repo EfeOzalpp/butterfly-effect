@@ -164,6 +164,8 @@ function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed) {
    ─────────────────────────────────────────────────────────── */
 export function drawTrees(p, cx, cy, r, opts = {}) {
   const cell = opts?.cell;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   const f = opts?.footprint;
   if (!cell || !f) return;
 
@@ -179,10 +181,10 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   const seedKey = (opts && (opts.seedKey ?? opts.seed)) ?? `trees|${f.r0}|${f.c0}|${f.w}x${f.h}`;
 
   // Tile rect
-  const x0 = f.c0 * cell;
-  const y0 = f.r0 * cell;
-  const w  = f.w * cell;
-  const h  = f.h * cell;
+  const x0 = f.c0 * cellW;
+  const y0 = f.r0 * cellH;
+  const w  = f.w * cellW;
+  const h  = f.h * cellH;
 
   // Appear (bottom-center)
   const anchorX = x0 + w / 2;

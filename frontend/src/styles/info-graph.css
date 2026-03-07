@@ -1,0 +1,120 @@
+/* Info graph skeleton */
+
+.fade-in {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+}
+
+.fade-out {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  pointer-events: none;
+}
+
+.green-dot-animation { animation-name: greenDotFluctuation; }
+.yellow-dot-animation { animation-name: yellowDotFluctuation; }
+.red-dot-animation { animation-name: redDotFluctuation; }
+
+@keyframes greenDotFluctuation { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
+@keyframes yellowDotFluctuation { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
+@keyframes redDotFluctuation { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
+@keyframes greenFluctuationBackground { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+@keyframes yellowFluctuationBackground { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+@keyframes redFluctuationBackground { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+.graph-wrapper { opacity: 0; transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; pointer-events: none; position: relative; z-index: 2; }
+.graph-wrapper.visible { opacity: 1; pointer-events: all; display: block; }
+
+.info-overlay,
+.info-panel,
+.draggable-info-graph,
+.main-graph-divider,
+.divider,
+.text-divider,
+.info-body,
+.dot-text,
+.draggable-container2 {
+  display: flex;
+}
+
+.info-overlay,
+.info-panel {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 8;
+  pointer-events: auto;
+}
+
+.info-overlay { opacity: 0; pointer-events: none; transition: opacity 240ms ease; }
+.info-overlay.is-visible { opacity: 1; pointer-events: auto; }
+.info-panel { opacity: 0; transform: translateY(6px); transition: transform 240ms ease, opacity 240ms ease; }
+.info-overlay.is-visible .info-panel { opacity: 1; transform: translateY(0); }
+
+.draggable-info-graph { height: 100%; flex-direction: column; align-items: center; pointer-events: auto; }
+.draggable-container2 { pointer-events: none; }
+.main-graph-divider { flex-direction: column; position: relative; overflow: visible; }
+.divider { width: 100%; align-items: center; }
+.dot-text { flex-direction: column; }
+.info-body { flex-direction: column; }
+
+.dot {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 35px solid transparent;
+  position: relative;
+}
+
+@media screen and (max-width: 767px) {
+  .draggable-container2 { width: 325px; }
+  .divider { flex-direction: column; }
+  .text-divider { flex-direction: column; }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .draggable-container2 { width: 368px; }
+  .divider { flex-direction: row; }
+  .text-divider { flex-direction: column; }
+}
+
+@media screen and (min-width: 1025px) {
+  .draggable-container2 { width: 375px; }
+  .divider { flex-direction: row; }
+  .text-divider { flex-direction: column; }
+}
+
+/* Theme wiring: info graph */
+.info-overlay,
+.info-panel,
+.draggable-info-graph,
+.draggable-container2,
+.main-graph-divider,
+.divider,
+.dot-text,
+.text-divider,
+.info-body,
+.title-divider,
+.info-divider,
+.dot {
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+}
+
+.info-overlay,
+.info-panel,
+.draggable-info-graph,
+.main-graph-divider,
+.divider,
+.dot-text,
+.text-divider,
+.info-body {
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+}

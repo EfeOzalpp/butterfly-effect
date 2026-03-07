@@ -1,25 +1,47 @@
 // src/canvas-engine/runtime/render/background.ts
 
 import type { PLike } from "../p/makeP";
+import { BACKGROUNDS, type BackgroundSpec, type RadialGradientSpec } from "../../adjustable-rules/backgrounds";
+import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
 
-export function drawBackground(p: PLike) {
-  const BG = "rgb(229, 246, 255)";
-  p.background(BG);
+function resolveOuterRadius(p: PLike, outer: RadialGradientSpec["outer"]) {
+  if (outer === "diag") return Math.hypot(p.width, p.height);
+  return Math.max(1, outer.k) * Math.max(p.width, p.height);
+}
+
+function resolveBackgroundSpec(
+  sceneLookup: SceneLookupKey,
+  override: BackgroundSpec | null
+): BackgroundSpec {
+  return override ?? BACKGROUNDS[sceneLookup] ?? BACKGROUNDS.start;
+}
+
+export function drawBackground(
+  p: PLike,
+  sceneLookup: SceneLookupKey,
+  override: BackgroundSpec | null = null
+) {
+  const spec = resolveBackgroundSpec(sceneLookup, override);
+  p.background(spec.base);
+
+  const overlay = spec.overlay;
+  if (!overlay) return;
 
   const ctx = p.drawingContext;
-  const cx = p.width / 2;
-  const cy = p.height * 0.82;
-  const inner = Math.min(p.width, p.height) * 0.06;
-  const outer = Math.hypot(p.width, p.height);
+
+  if (overlay.kind === "solid") {
+    ctx.fillStyle = overlay.color;
+    ctx.fillRect(0, 0, p.width, p.height);
+    return;
+  }
+
+  const cx = p.width * overlay.center.xK;
+  const cy = p.height * overlay.center.yK;
+  const inner = Math.min(p.width, p.height) * overlay.innerK;
+  const outer = resolveOuterRadius(p, overlay.outer);
 
   const g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
-  g.addColorStop(0.0, "rgba(255,255,255,1.00)");
-  g.addColorStop(0.2, "rgba(255,255,255,0.90)");
-  g.addColorStop(0.4, "rgba(255,255,255,0.60)");
-  g.addColorStop(0.5, "rgba(255,255,255,0.30)");
-  g.addColorStop(0.65, "rgba(210,230,246,0.18)");
-  g.addColorStop(0.9, "rgba(190,229,253,0.10)");
-  g.addColorStop(1.0, "rgba(180,228,253,1.00)");
+  for (const stop of overlay.stops) g.addColorStop(stop.k, stop.rgba);
 
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, p.width, p.height);

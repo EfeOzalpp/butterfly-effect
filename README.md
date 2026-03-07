@@ -1,25 +1,34 @@
-### Butterfly Effect
+## Butterfly Effect
 
-A weight-based questionnaire feeds continuous input into a deterministic 2D rendering system, whose output is reused as sprite textures in a Three.js scene visualizing both personalized and previous responses. 
+This project connects a weighted questionnaire to a deterministic 2D rendering system.  
+That 2D output is then reused as sprite textures in a Three.js scene to visualize both personalized and previous responses.
 
-The system is intentionally divided between a generation phase and a real-time visualization phase.
+I built it around two phases:
+- generation (2D canvas + placement logic)
+- real-time visualization (3D graph scene)
 
 <p>
   <img src="./screenshots+gifs/survey.gif" width="49%" />
   <img src="./screenshots+gifs/visualization.gif" width="49%" />
 </p>
 
-Live at: https://butterflyeff3ct.online/
+Live: https://butterflyeff3ct.online/
 
-Notable implementations:
-- 2D rendering pipeline used to generate reproducible visuals from continuous survey input.
-- Grid-based layout system enforcing spatial constraints and preventing overlap with UI elements.
-- Off-screen canvas rendering reused as sprite textures inside a Three.js scene.
-- Texture caching and variant limiting to control GPU cost and avoid redundant generation.
+## What I implemented
 
-#### Key code entry points: 
+- A 2D rendering pipeline that generates reproducible visuals from continuous survey input.
+- A grid-based layout system with spatial constraints to avoid overlap with UI regions.
+- Off-screen canvas rendering reused as sprite textures in Three.js.
+- Texture caching + variant limiting to reduce GPU overhead and avoid redundant work.
 
-2D canvas: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/canvas-engine 
+## Key code entry points
 
-3D scene: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/graph-runtime
+- 2D canvas engine: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/canvas-engine
+- 3D graph runtime: https://github.com/EfeOzalpp/butterfly-effect/tree/main/frontend/src/graph-runtime
+
+## Run locally
+
+1. `cd frontend`
+2. `npm install`
+3. `npm start`
 

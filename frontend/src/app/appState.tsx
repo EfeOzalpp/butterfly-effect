@@ -1,75 +1,18 @@
-// src/context/appStateContext.tsx
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { unstable_batchedUpdates as batched } from "react-dom";
 import { subscribeSurveyData } from "../services/sanity/api";
 import useSectionCounts from "../lib/hooks/useSectionCounts";
-
-export type Mode = "relative" | "absolute";
-
-export type AppState = {
-  // data collecting and personalization
-  section: string;
-  setSection: (s: string) => void;
-
-  mySection: string | null;
-  setMySection: (s: string | null) => void;
-
-  myEntryId: string | null;
-  setMyEntryId: (id: string | null) => void;
-
-  myRole: string | null;
-  setMyRole: (r: string | null) => void;
-
-  data: any[];
-  loading: boolean;
-
-  // survey gating (broad survey-on/off)
-  isSurveyActive: boolean;
-  setSurveyActive: (v: boolean) => void;
-  hasCompletedSurvey: boolean;
-  setHasCompletedSurvey: (v: boolean) => void;
-
-  // specific: question flow currently visible?
-  questionnaireOpen: boolean;
-  setQuestionnaireOpen: (v: boolean) => void;
-
-  // observer mode
-  observerMode: boolean;
-  setObserverMode: (v: boolean) => void;
-
-  // graph and visualization visibility
-  vizVisible: boolean;
-  openGraph: () => void;
-  closeGraph: () => void;
-
-  // relative vs absolute scoring toggle
-  mode: Mode;
-  setMode: (m: Mode) => void;
-
-  // dark mode toggle
-  darkMode: boolean;
-  setDarkMode: (v: boolean) => void;
-
-  // nav panel open (controls logo gating)
-  navPanelOpen: boolean;
-  setNavPanelOpen: (v: boolean) => void;
-
-  // global nav visibility (hide/show entire nav in certain circumstances)
-  navVisible: boolean;
-  setNavVisible: (v: boolean) => void;
-
-  // live avg (continuous visuals)
-  liveAvg: number;
-  setLiveAvg: (avg?: number) => void;
-
-  // alloc avg (commit-only placement changes)
-  allocAvg: number;
-  commitAllocAvg: (avg?: number) => void;
-
-  // reset
-  resetToStart: () => void;
-};
+import type { AppState, CondAvgs, Mode } from "./types";
+import {
+  applyThemeToDocument,
+  getSessionItem,
+  readStoredDarkMode,
+  readStoredMode,
+  removeSessionItems,
+  setSessionItem,
+} from "./session";
+export type { AppState, Mode } from "./types";
 
 const AppCtx = createContext<AppState | null>(null);
 
@@ -82,18 +25,9 @@ function normalizeAvg(avg: unknown) {
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [section, setSection] = useState<string>("all");
-  const [mySection, setMySection] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("gp.mySection");
-  });
-  const [myEntryId, setMyEntryId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("gp.myEntryId");
-  });
-  const [myRole, setMyRole] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("gp.myRole");
-  });
+  const [mySection, setMySection] = useState<string | null>(() => getSessionItem("gp.mySection"));
+  const [myEntryId, setMyEntryId] = useState<string | null>(() => getSessionItem("gp.myEntryId"));
+  const [myRole, setMyRole] = useState<string | null>(() => getSessionItem("gp.myRole"));
 
   const { counts } = useSectionCounts();
 
@@ -104,32 +38,22 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(false);
 
   const [questionnaireOpen, setQuestionnaireOpen] = useState<boolean>(false);
+  const [sectionOpen, setSectionOpen] = useState<boolean>(false);
 
   const [observerMode, setObserverMode] = useState<boolean>(false);
   const [vizVisible, setVizVisible] = useState<boolean>(false);
   const openGraph = () => setVizVisible(true);
   const closeGraph = () => setVizVisible(false);
 
-  const [mode, setMode] = useState<Mode>(() => {
-    if (typeof window === "undefined") return "absolute";
-    const saved = sessionStorage.getItem("gp.mode") as Mode | null;
-    return saved === "absolute" || saved === "relative" ? saved : "relative";
-  });
+  const [mode, setMode] = useState<Mode>(() => readStoredMode("relative"));
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("gp.mode", mode);
-    }
+    setSessionItem("gp.mode", mode);
   }, [mode]);
 
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const saved = sessionStorage.getItem("gp.darkMode");
-    return saved === "true";
-  });
+  const [darkMode, setDarkMode] = useState<boolean>(() => readStoredDarkMode(false));
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("gp.darkMode", String(darkMode));
-    }
+    setSessionItem("gp.darkMode", String(darkMode));
+    applyThemeToDocument(darkMode);
   }, [darkMode]);
 
   const [navPanelOpen, setNavPanelOpen] = useState<boolean>(false);
@@ -140,9 +64,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   // - allocAvg: commit-only updates for layout/allocation
   const [liveAvgState, _setLiveAvgState] = useState<number>(DEFAULT_AVG);
   const [allocAvgState, _setAllocAvgState] = useState<number>(DEFAULT_AVG);
+  const [condAvgsState, _setCondAvgsState] = useState<CondAvgs>({});
 
   const setLiveAvg = (avg?: number) => {
     _setLiveAvgState(normalizeAvg(avg));
+  };
+
+  const setCondAvgs = (next: CondAvgs) => {
+    _setCondAvgsState((prev) => {
+      const changed = (["A", "B", "C", "D"] as const).some((k) => prev[k] !== next[k]);
+      return changed ? next : prev;
+    });
   };
 
   const commitAllocAvg = (avg?: number) => {
@@ -164,16 +96,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const onIdentityUpdated = () => {
       try {
-        const id = sessionStorage.getItem("gp.myEntryId");
-        const sec = sessionStorage.getItem("gp.mySection");
-        const role = sessionStorage.getItem("gp.myRole");
-        setMyEntryId(id);
-        setMySection(sec);
-        setMyRole(role);
+        setMyEntryId(getSessionItem("gp.myEntryId"));
+        setMySection(getSessionItem("gp.mySection"));
+        setMyRole(getSessionItem("gp.myRole"));
       } catch {}
     };
+
     window.addEventListener("gp:identity-updated", onIdentityUpdated);
     window.addEventListener("storage", onIdentityUpdated);
+
     return () => {
       window.removeEventListener("gp:identity-updated", onIdentityUpdated);
       window.removeEventListener("storage", onIdentityUpdated);
@@ -182,11 +113,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const justSubmitted = sessionStorage.getItem("gp.justSubmitted") === "1";
+    const justSubmitted = getSessionItem("gp.justSubmitted") === "1";
     if (!justSubmitted) return;
     if (!counts) return;
 
-    const effectiveMySection = mySection || sessionStorage.getItem("gp.mySection") || "";
+    const effectiveMySection = mySection || getSessionItem("gp.mySection") || "";
     if (!effectiveMySection) return;
 
     if (effectiveMySection === "visitor") {
@@ -199,16 +130,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (n < SMALL_SECTION_THRESHOLD) {
       setSection("all-massart");
       try {
-        sessionStorage.setItem("gp.openPersonalOnNext", "1");
+        setSessionItem("gp.openPersonalOnNext", "1");
       } catch {}
     }
 
     sessionStorage.removeItem("gp.justSubmitted");
   }, [counts, mySection]);
 
-  const resetToStart = () => {
+  const resetToStart = useCallback(() => {
     batched(() => {
-      closeGraph();
+      setVizVisible(false);
       setSurveyActive(true);
       setHasCompletedSurvey(false);
       setObserverMode(false);
@@ -221,14 +152,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       // reset averages too
       _setLiveAvgState(DEFAULT_AVG);
       _setAllocAvgState(DEFAULT_AVG);
+      _setCondAvgsState({});
     });
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("gp.myEntryId");
-      sessionStorage.removeItem("gp.mySection");
-      sessionStorage.removeItem("gp.myRole");
-      sessionStorage.removeItem("gp.myDoc");
-    }
-  };
+
+    removeSessionItems(["gp.myEntryId", "gp.mySection", "gp.myRole", "gp.myDoc"]);
+  }, []);
 
   const value = useMemo<AppState>(
     () => ({
@@ -248,6 +176,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setHasCompletedSurvey,
       questionnaireOpen,
       setQuestionnaireOpen,
+      sectionOpen,
+      setSectionOpen,
       observerMode,
       setObserverMode,
       vizVisible,
@@ -261,13 +191,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setNavPanelOpen,
       navVisible,
       setNavVisible,
-
       liveAvg: liveAvgState,
       setLiveAvg,
-
+      condAvgs: condAvgsState,
+      setCondAvgs,
       allocAvg: allocAvgState,
       commitAllocAvg,
-
       resetToStart,
     }),
     [
@@ -280,6 +209,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       isSurveyActive,
       hasCompletedSurvey,
       questionnaireOpen,
+      sectionOpen,
       observerMode,
       vizVisible,
       mode,
@@ -287,7 +217,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       navPanelOpen,
       navVisible,
       liveAvgState,
+      condAvgsState,
       allocAvgState,
+      resetToStart,
     ]
   );
 

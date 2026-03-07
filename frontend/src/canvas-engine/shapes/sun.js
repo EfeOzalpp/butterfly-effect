@@ -74,10 +74,11 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
   let x = xIn, y = yIn, r = rIn;
   if (opts.fitToFootprint && opts.cell && opts.footprint) {
     const { r0, c0, w, h } = opts.footprint;
-    const cell = opts.cell;
-    const cx = (c0 + w / 2) * cell;
-    const cy = (r0 + h / 2) * cell;
-    const diam = Math.min(w, h) * cell;
+    const cellW = opts.cellW ?? opts.cell;
+    const cellH = opts.cellH ?? opts.cell;
+    const cx = c0 * cellW + (w * cellW) / 2;
+    const cy = r0 * cellH + (h * cellH) / 2;
+    const diam = Math.min(w * cellW, h * cellH);
     x = cx; y = cy; r = diam;
   }
 

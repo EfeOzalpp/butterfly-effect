@@ -32,7 +32,7 @@ export function drawItems(params: {
 
   if (!visible || !items.length) return;
 
-  const sorted = items.slice().sort((a, b) => (Z[a.shape] ?? 9) - (Z[b.shape] ?? 9));
+  const sorted = items.slice().sort((a, b) => (Z[b.shape] ?? 9) - (Z[a.shape] ?? 9));
 
   for (const it of sorted) {
     let state = liveStates.get(it.id);

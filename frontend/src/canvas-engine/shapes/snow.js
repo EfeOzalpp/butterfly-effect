@@ -99,6 +99,8 @@ const SNOW = {
  */
 export function drawSnow(p, _x, _y, _r, opts = {}) {
   const cell = opts?.cell, f = opts?.footprint;
+  const cellW = opts?.cellW ?? cell;
+  const cellH = opts?.cellH ?? cell;
   if (!cell || !f) return;
 
   const exposure = Number.isFinite(opts?.exposure) ? opts.exposure : 1;
@@ -108,10 +110,10 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
   const u = clamp01(opts?.liveAvg ?? 0.5);
 
   // tile anchors
-  const x0 = f.c0 * cell;
-  const y0 = f.r0 * cell;
-  const wTop = f.w * cell;
-  const hTop = cell;
+  const x0 = f.c0 * cellW;
+  const y0 = f.r0 * cellH;
+  const wTop = f.w * cellW;
+  const hTop = cellH;
 
   // cloud visual center (also the local origin for appear transforms)
   const cx = x0 + wTop / 2;
@@ -149,7 +151,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     const baseH  = Math.max(4, Math.round(cell / 3));
     const kY     = val(SGROUND.scaleY, u);
     const stripH = Math.round(baseH * kY);
-    const bottomY = y0 + f.h * cell;
+    const bottomY = y0 + f.h * cellH;
     const topY    = bottomY - stripH;
 
     const gBlend  = val(SGROUND.blendK, u);
