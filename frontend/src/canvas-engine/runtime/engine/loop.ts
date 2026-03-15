@@ -39,6 +39,7 @@ export type LoopDeps = {
     contrast: number;
     appearMs: number;
     exitMs: number;
+    darkMode: boolean;
     debug: DebugFlags;
   };
 
@@ -90,6 +91,12 @@ export function createEngineTicker(deps: LoopDeps) {
 
   let running = true;
 
+  // Background crossfade state
+  const BG_TRANSITION_MS = 50;
+  let prevBgSpec: BackgroundSpec | null = null;
+  let bgFrom: BackgroundSpec | null = null;
+  let bgTransitionStart = -1;
+
   function renderOneSandboxed(
     it: EngineFieldItem,
     rEff: number,
@@ -124,7 +131,20 @@ export function createEngineTicker(deps: LoopDeps) {
     p.__tick(now);
 
     normalizeDprTransform(p);
-    drawBackground(p, getSceneLookup(), getBackgroundSpecOverride());
+    const currentBgSpec = getBackgroundSpecOverride();
+    const sceneLookup = getSceneLookup();
+    if (currentBgSpec !== prevBgSpec) {
+      if (prevBgSpec !== null) { bgFrom = prevBgSpec; bgTransitionStart = now; }
+      prevBgSpec = currentBgSpec;
+    }
+    if (bgFrom !== null) {
+      const t = Math.min(1, (now - bgTransitionStart) / BG_TRANSITION_MS);
+      drawBackground(p, sceneLookup, currentBgSpec);
+      drawBackground(p, sceneLookup, bgFrom, 1 - t);
+      if (t >= 1) bgFrom = null;
+    } else {
+      drawBackground(p, sceneLookup, currentBgSpec);
+    }
 
     const spec = getPaddingSpecForState(
       p.width,
@@ -180,6 +200,7 @@ export function createEngineTicker(deps: LoopDeps) {
       timeMs: tMs,
       exposure: style.exposure,
       contrast: style.contrast,
+      darkMode: style.darkMode,
       transport,
     };
 

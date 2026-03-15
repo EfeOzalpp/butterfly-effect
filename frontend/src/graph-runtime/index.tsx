@@ -3,7 +3,7 @@
 // Graph page: loads DotGraph + draggable BarGraph overlay
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, Suspense } from 'react';
 
-import { useAppState } from "../app/appState";
+import { useAppState } from "../app/store";
 
 import "../styles/graph.css";
 
@@ -12,7 +12,7 @@ const Graph = React.lazy(() =>
 );
 
 const BarGraph = React.lazy(() =>
-  import(/* webpackChunkName: "bar-graph" */ "./bargraph/BarGraph")
+  import(/* webpackChunkName: "bar-graph" */ "./bargraph/index")
 );
 
 
@@ -235,7 +235,7 @@ export default function VisualizationPage() {
   );
 
   return (
-    <div>
+    <>
       <Suspense fallback={pageLoadingFallback}>
         <Graph isDragging={isDragging} />
       </Suspense>
@@ -317,6 +317,6 @@ export default function VisualizationPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

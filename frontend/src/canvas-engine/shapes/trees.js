@@ -46,6 +46,26 @@ export const TREES_BASE_PALETTE = {
   ],
 };
 
+export const TREES_DARK_PALETTE = {
+  grass: [
+    { r: 42, g: 86,  b: 113  },
+    { r: 50, g: 97,  b: 133 },
+    { r: 39, g: 81,  b: 128  },
+  ],
+  asphalt: { r: 68, g: 79,  b: 96  },
+  trunk:   { r: 60, g: 54,  b: 46  },
+  foliage: [
+    { r: 31, g: 81,  b: 113  },
+    { r: 23, g: 72,  b: 82  },
+    { r: 36, g: 88,  b: 88 },
+    { r: 27, g: 65,  b: 72  },
+    { r: 42, g: 94,  b: 104 },
+    { r: 48, g: 102, b: 109 },
+    { r: 54, g: 110, b: 120 },
+    { r: 62, g: 118, b: 125 },
+  ],
+};
+
 /* ───────────────────────────────────────────────────────────
    Tunables
    ─────────────────────────────────────────────────────────── */
@@ -150,8 +170,8 @@ function pickFromKey(arr, key, tag) {
 }
 
 /* foliage tint: base → mix with grass → optional gradient → clamp → E/C */
-function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed) {
-  const base = pick(TREES_BASE_PALETTE.foliage, rSeed);
+function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal) {
+  const base = pick(pal.foliage, rSeed);
   let mixed = blendRGB(base, grassTint, 0.20 + 0.15 * u);
   if (gradientRGB) mixed = blendRGB(mixed, gradientRGB, val(TREES.foliage.colorBlend, u));
   mixed = clampSaturation(mixed, 0.0, 0.45, 1);
@@ -163,6 +183,7 @@ function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed) {
    drawTrees (1×1 tile) — with sprite-variant randomization
    ─────────────────────────────────────────────────────────── */
 export function drawTrees(p, cx, cy, r, opts = {}) {
+  const pal = opts?.darkMode ? TREES_DARK_PALETTE : TREES_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -172,7 +193,8 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   const ex = Number.isFinite(opts.exposure) ? opts.exposure : 1;
   const ct = Number.isFinite(opts.contrast) ? opts.contrast : 1;
   const u  = clamp01(opts?.liveAvg ?? 0.5);
-  const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 235;
+  // Keep trees fully opaque at rest; appear modifier still handles fade-in.
+  const alpha = 255;
 
   // Sprite hint (doesn’t change behavior; we key variety off seedKey)
   const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
@@ -212,8 +234,8 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
 
   /* ─── Ground: grass + asphalt (UNTRANSFORMED so it never shrinks) ─── */
   // Pick grass tones via seedKey (sprite-variant friendly). Fallback mixing kept.
-  let g1 = pickFromKey(TREES_BASE_PALETTE.grass, seedKey, 'grass1');
-  let g2 = pickFromKey(TREES_BASE_PALETTE.grass, seedKey, 'grass2');
+  let g1 = pickFromKey(pal.grass, seedKey, 'grass1');
+  let g2 = pickFromKey(pal.grass, seedKey, 'grass2');
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(TREES.grass.colorBlend, u));
   grassTint = clampSaturation(grassTint, TREES.grass.satRange[0], TREES.grass.satRange[1], 1);
@@ -225,7 +247,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   fillRgb(p, grassTint, drawAlpha);
   p.rect(x0, grassY, w, grassH, Math.round(cell * 0.04));
 
-  let asp = applyExposureContrast(TREES_BASE_PALETTE.asphalt, ex, ct);
+  let asp = applyExposureContrast(pal.asphalt, ex, ct);
   asp = clampBrightness(asp, val(TREES.asphalt.min, u), val(TREES.asphalt.max, u));
   const aspH = grassH * 0.28;
   const aspY = grassY + (grassH - aspH) / 2;
@@ -264,7 +286,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   // reduce step to push trees closer together (inter-tree overlap)
   const step = (usableW / Math.max(1, count)) * (TREES.layout.overlapK ?? 1) * (count === 3 ? 1.25 : 1);
 
-  const trunkTint = applyExposureContrast(TREES_BASE_PALETTE.trunk, ex, ct);
+  const trunkTint = applyExposureContrast(pal.trunk, ex, ct);
 
   // time (for osc)
   const timeSec = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis?.()) / 1000;
@@ -285,7 +307,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
     const phase     = rFromKey(k, 'windPhase') * TREES.wind.phaseSpread;
 
     // base foliage tint (sprite-friendly pick)
-    let leavesTint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rx);
+    let leavesTint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rx, pal);
 
     // saturation oscillation on leaves (gentle “breathing”)
     const satAmp   = val(TREES.foliage.satOscAmp,   u); // 0.08..0.16 across u

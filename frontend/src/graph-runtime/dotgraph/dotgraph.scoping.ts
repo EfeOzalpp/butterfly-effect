@@ -3,7 +3,7 @@
 // Role/section normalization + personalization visibility rules
 // ─────────────────────────────────────────────────────────────
 
-import { ROLE_SECTIONS } from '../../weighted-survey/section-picker/sections';
+import { ROLE_SECTIONS } from '../../onboarding/section-picker/sections';
 
 export const ROLE = {
   VISITOR: 'visitor',

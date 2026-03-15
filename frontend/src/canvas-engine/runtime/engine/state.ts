@@ -17,6 +17,7 @@ export type EngineStyle = {
   contrast: number;
   appearMs: number;
   exitMs: number;
+  darkMode: boolean;
   debug: DebugFlags;
 };
 

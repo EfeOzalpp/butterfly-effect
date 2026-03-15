@@ -5,9 +5,9 @@ import { Canvas } from '@react-three/fiber';
 import { AdaptiveDpr, AdaptiveEvents, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 
-import DotGraph from "./DotGraph";
+import DotGraph from "./dot-graph";
 
-import { useAppState } from "../../app/appState";
+import { useAppState } from "../../app/store";
 import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
 
 import {

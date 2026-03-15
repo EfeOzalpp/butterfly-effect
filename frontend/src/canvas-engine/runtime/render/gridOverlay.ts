@@ -33,11 +33,13 @@ export function drawGridOverlay(
   const ctx = p.drawingContext;
   const gridAlpha = debug.gridAlpha ?? 0.35;
   const forbAlpha = debug.forbiddenAlpha ?? 0.25;
+  const isDark = typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark";
+  const lineColor = isDark ? "rgba(199, 199, 199, 0.1)" : "rgba(0, 0, 0, 0.1)";
 
   ctx.save();
   ctx.globalAlpha = gridAlpha;
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(0,0,0,0.1)";
+  ctx.strokeStyle = lineColor;
 
   // verticals
   for (let c = 0; c <= cols; c++) {
@@ -67,7 +69,7 @@ export function drawGridOverlay(
     ctx.moveTo(0, y);
     ctx.lineTo(p.width, y);
     ctx.stroke();
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.strokeStyle = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
   }
 
   // forbidden

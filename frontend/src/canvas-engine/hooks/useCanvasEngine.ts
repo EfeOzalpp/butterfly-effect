@@ -8,6 +8,7 @@ import {
   stopCanvasEngine,
   type CanvasEngineControls,
 } from "../runtime/index";
+import { readStoredDarkMode } from "../../app/session";
 
 type EngineOpts = {
   enabled?: boolean;
@@ -16,6 +17,7 @@ type EngineOpts = {
   mount?: string;
   zIndex?: number;
   bounds?: CanvasBounds;
+  fpsCap?: number;
 };
 
 function safeCall(fn: unknown) {
@@ -53,6 +55,7 @@ export function useCanvasEngine(opts: EngineOpts = {}) {
     mount = "#canvas-root",
     zIndex = 2,
     bounds,
+    fpsCap,
   } = opts;
 
   const controlsRef = useRef<CanvasEngineControls | null>(null);
@@ -78,6 +81,8 @@ export function useCanvasEngine(opts: EngineOpts = {}) {
       dprMode,
       zIndex,
       bounds,
+      fpsCap,
+      initialDarkMode: readStoredDarkMode(true),
       onReady: () => {
         readyRef.current = true;
         setReadyTick((t) => t + 1);
@@ -93,7 +98,7 @@ export function useCanvasEngine(opts: EngineOpts = {}) {
       shutdownControls(controls, mount);
       disposeGlobalEngineResources();
     };
-  }, [enabled, dprMode, mount, zIndex, bounds]);
+  }, [enabled, dprMode, mount, zIndex, bounds, fpsCap]);
 
   useEffect(() => {
     safeCall(() => controlsRef.current?.setVisible?.(Boolean(visible)));

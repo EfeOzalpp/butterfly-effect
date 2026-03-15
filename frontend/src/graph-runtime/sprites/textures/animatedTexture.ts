@@ -15,6 +15,7 @@ export type AnimatedTextureParams = {
   footprint?: { w: number; h: number };
   bleed?: { top?: number; right?: number; bottom?: number; left?: number };
   seedKey?: string | number;
+  darkMode?: boolean;
 
   fps?: number;
   generateMipmaps?: boolean;
@@ -56,6 +57,7 @@ function makePainter(
     bTop,
     bLeft,
     seedKey,
+    darkMode,
   }: {
     drawer: Drawer;
     dpr: number;
@@ -69,6 +71,7 @@ function makePainter(
     bTop: number;
     bLeft: number;
     seedKey?: string | number;
+    darkMode?: boolean;
   }
 ) {
   const p = makeCanvasFacade(cnv, { dpr });
@@ -94,6 +97,7 @@ function makePainter(
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
     sizeOsc: { mode: 'none' },
+    darkMode: darkMode ?? false,
   };
 
   function clear() {
@@ -157,6 +161,7 @@ export function makeAnimatedTextureFromDrawer({
   footprint = { w: 1, h: 1 },
   bleed = {},
   seedKey,
+  darkMode = false,
   fps = 15,
   generateMipmaps = false,
   anisotropy = 1,
@@ -186,6 +191,7 @@ export function makeAnimatedTextureFromDrawer({
     bTop,
     bLeft,
     seedKey,
+    darkMode,
   });
 
   paint(typeof performance !== 'undefined' ? performance.now() : 0);
@@ -221,6 +227,7 @@ export function makeFrozenTextureFromDrawer({
   footprint = { w: 1, h: 1 },
   bleed = {},
   seedKey,
+  darkMode = false,
   simulateMs = 1200,
   stepMs = 33,
   generateMipmaps = false,
@@ -251,6 +258,7 @@ export function makeFrozenTextureFromDrawer({
     bTop,
     bLeft,
     seedKey,
+    darkMode,
   });
 
   const start = typeof performance !== 'undefined' ? performance.now() : 0;

@@ -18,8 +18,14 @@ export const SEA_BASE_PALETTE = {
   bottom: { r:  25, g: 124, b: 179 },
 };
 
+export const SEA_DARK_PALETTE = {
+  top:    { r: 76, g: 124, b: 179 },
+  bottom: { r: 14, g: 78,  b: 137 },
+};
+
 // grass for composite bowl
 export const GRASS_BASE = { r: 130, g: 180, b: 110 };
+export const GRASS_DARK  = { r: 25, g: 77, b: 156 };
 
 // tuning (override with opts.tuning)
 export const SEA_TUNING = {
@@ -193,6 +199,8 @@ function liveWindowK(u, a, b, s = 0) {
 }
 
 export function drawSea(p, _x, _y, _r, opts = {}) {
+  const pal = opts?.darkMode ? SEA_DARK_PALETTE : SEA_BASE_PALETTE;
+  const grassPal = opts?.darkMode ? GRASS_DARK : GRASS_BASE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -269,8 +277,8 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
   const blendTopK    = clamp01(opts.blendTopK    ?? val(T.gradient.blendTop,    u));
   const blendBottomK = clamp01(opts.blendBottomK ?? val(T.gradient.blendBottom, u));
   const blender = useGamma ? blendRGBGamma : blendRGB;
-  let topRGB    = opts.gradientRGB ? blender(SEA_BASE_PALETTE.top,    opts.gradientRGB, blendTopK)    : SEA_BASE_PALETTE.top;
-  let bottomRGB = opts.gradientRGB ? blender(SEA_BASE_PALETTE.bottom, opts.gradientRGB, blendBottomK) : SEA_BASE_PALETTE.bottom;
+  let topRGB    = opts.gradientRGB ? blender(pal.top,    opts.gradientRGB, blendTopK)    : pal.top;
+  let bottomRGB = opts.gradientRGB ? blender(pal.bottom, opts.gradientRGB, blendBottomK) : pal.bottom;
 
   const clampStrength = clamp01(T.colorClamp.strength);
   if (clampStrength > 0) {
@@ -613,7 +621,7 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
     const [satLo, satHi] = gb.satRange ?? [0.00, 0.35];
     const [briLo, briHi] = gb.brightRange ?? [0.35, 0.90];
 
-    let bowlRGB = T.bowl.color || GRASS_BASE;
+    let bowlRGB = grassPal || T.bowl.color;
     if (opts.gradientRGB) bowlRGB = blendRGB(bowlRGB, opts.gradientRGB, blendK);
     bowlRGB = clampSaturation(bowlRGB, satLo, satHi, 1);
     bowlRGB = clampBrightness(bowlRGB, briLo, briHi, 1);

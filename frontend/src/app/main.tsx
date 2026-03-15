@@ -2,27 +2,24 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 
-import { AppProvider, useAppState } from "../app/appState";
+import { AppProvider, useAppState } from "../app/store";
 
-import Survey from "../weighted-survey/Survey";
-import Navigation from "../navigation/Navigation";
-import CityButton from "../navigation/CityButton";
+import Survey from "../onboarding";
+import Navigation from "../navigation";
 import DataVisualization from "../graph-runtime";
 
 import { useDynamicMargin } from "../lib/hooks/useDynamicMargin";
 import GamificationCopyPreloader from "../lib/hooks/useGamificationTextPreload";
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
-
-import RadialBackground from "../navigation/visual/radialBackground";
+import { useMockSanityReadMode } from "../services/sanity/config";
 
 import "../styles/fonts.css";
 import "../styles/global-styles.css";
 import "../styles/ui-system.css";
 
-const CanvasEntry = React.lazy(() => import("../weighted-survey/CanvasEntry"));
-const CityOverlay = React.lazy(() => import("../navigation/CityOverlay"));
-const EdgeCue = React.lazy(() => import("../navigation/DarkMode"));
-const ModeToggle = React.lazy(() => import("../navigation/nav-bottom/ModeToggle"));
+const CanvasEntry = React.lazy(() => import("../canvas-instances/OnboardingEntry"));
+const CityOverlay = React.lazy(() => import("../canvas-instances/CityEntry"));
+const EdgeCue = React.lazy(() => import("../navigation/right/system-color"));
 
 function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
@@ -44,9 +41,21 @@ const AppInner: React.FC = () => {
 
   const [animationVisible, setAnimationVisible] = useState<boolean>(false);
   const [surveyWrapperClass, setSurveyWrapperClass] = useState<string>("");
-  const [cityPanelOpen, setCityPanelOpen] = useState<boolean>(false);
+  const [dismissedMockBanner, setDismissedMockBanner] = useState<boolean>(false);
 
-  const { vizVisible, questionnaireOpen, sectionOpen, liveAvg, allocAvg, condAvgs } = useAppState();
+  const { vizVisible, questionnaireOpen, cityPanelOpen, liveAvg, allocAvg, condAvgs } = useAppState();
+  const mockReadMode = useMockSanityReadMode();
+  const quotaResetMonth = React.useMemo(() => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return nextMonth.toLocaleString(undefined, { month: "long" });
+  }, []);
+
+  useEffect(() => {
+    if (!mockReadMode.runtimeFallback) {
+      setDismissedMockBanner(false);
+    }
+  }, [mockReadMode.runtimeFallback]);
 
   // Global zoom prevention policy
   usePreventPageZoomOutsideZones({
@@ -64,7 +73,7 @@ const AppInner: React.FC = () => {
     if (!vizVisible) return;
 
     const prefetch = () => {
-      import("../weighted-survey/CanvasEntry");
+      import("../canvas-instances/OnboardingEntry");
     };
 
     if ("requestIdleCallback" in window) {
@@ -75,13 +84,39 @@ const AppInner: React.FC = () => {
     }
   }, [vizVisible]);
 
-  // Keep city overlay closed if questionnaire closes
-  useEffect(() => {
-    if (!questionnaireOpen && cityPanelOpen) setCityPanelOpen(false);
-  }, [questionnaireOpen, cityPanelOpen]);
 
   return (
     <div className="app-content">
+      {mockReadMode.runtimeFallback && !mockReadMode.forced && !dismissedMockBanner && (
+        <div className="mock-read-banner" role="status" aria-live="polite">
+          <span>{`API quota exceeded. Demo data until ${quotaResetMonth} 1.`}</span>
+          <button
+            type="button"
+            className="mock-read-banner-close"
+            aria-label="Dismiss demo data notice"
+            onClick={() => setDismissedMockBanner(true)}
+          >
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M17 7L7 17M7 7L17 17"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* HUD mounts only when viz is visible */}
       {vizVisible && (
         <Suspense fallback={null}>
@@ -92,14 +127,6 @@ const AppInner: React.FC = () => {
       <DeferredGamificationPreloader />
       <Navigation />
 
-      {/* City button appears only while questionnaire is open */}
-      {questionnaireOpen && (
-        <CityButton
-          isOpen={cityPanelOpen}
-          onToggle={() => setCityPanelOpen((o) => !o)}
-          shown
-        />
-      )}
 
       {/* Intro canvas mounts only when viz is NOT visible and overlays are not blocking */}
       {!vizVisible && !animationVisible && !cityPanelOpen && (
@@ -108,7 +135,6 @@ const AppInner: React.FC = () => {
             liveAvg={liveAvg}
             allocAvg={allocAvg}
             questionnaireOpen={questionnaireOpen}
-            sectionOpen={sectionOpen}
             condAvgs={condAvgs}
             visible={true}
           />
@@ -129,21 +155,17 @@ const AppInner: React.FC = () => {
         </div>
       )}
 
-      <div className={`onboarding-wrapper ${surveyWrapperClass}`}>
+      <div className={`user-flow${questionnaireOpen ? ' questionnaire-active' : ''} ${surveyWrapperClass}`}>
         <Survey
           setAnimationVisible={setAnimationVisible}
           setSurveyWrapperClass={setSurveyWrapperClass}
         />
       </div>
 
-      {/* Mode toggle is only meaningful when viz is mounted */}
-      {vizVisible && (
-        <Suspense fallback={null}>
-          <ModeToggle />
-        </Suspense>
-      )}
 
-      <RadialBackground />
+      <div className="radial-background">
+        <div className="radial-gradient"></div>
+      </div>
     </div>
   );
 };

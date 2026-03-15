@@ -1,6 +1,6 @@
 // src/canvas-engine/hooks/useSceneField.ts
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { composeField } from "../scene-logic/composeField";
 import type { PoolItem as ScenePoolItem } from "../scene-logic/types";
@@ -16,11 +16,12 @@ import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPaddi
 import { backgroundForTheme } from "../adjustable-rules/backgrounds";
 
 import { getViewportSize } from "../shared/responsiveness";
-import { useAppState } from "../../app/appState";
+import { useAppState } from "../../app/store";
 
 type Engine = {
   ready: React.RefObject<boolean>;
   controls: React.RefObject<any>;
+  readyTick?: number;
 };
 
 const clamp01 = (v?: number) =>
@@ -79,7 +80,6 @@ function ensurePoolSize(
 
 export type SceneSignals = {
   questionnaireOpen: boolean;
-  sectionOpen?: boolean;
 };
 
 export function useSceneField(
@@ -89,6 +89,8 @@ export function useSceneField(
   signals: SceneSignals,
   viewportKey?: number | string
 ) {
+  const [canvasResizeTick, setCanvasResizeTick] = useState(0);
+
   const hostDef = HOST_DEFS[hostId];
   if (!hostDef) throw new Error(`Unknown hostId "${hostId}"`);
   const { darkMode } = useAppState();
@@ -97,11 +99,11 @@ export function useSceneField(
   if (!ruleset) throw new Error(`[${hostId}] missing scene.ruleset`);
 
   const baseMode: BaseMode = hostDef.scene?.baseMode ?? "start";
-  const { questionnaireOpen, sectionOpen } = signals;
+  const { questionnaireOpen } = signals;
 
   // Build the full scene state (base + modifiers)
   const sceneState: SceneState = resolveSceneState(
-    { questionnaireOpen, sectionOpen },
+    { questionnaireOpen },
     { baseMode }
   );
 
@@ -118,16 +120,50 @@ export function useSceneField(
 
   const poolRef = useRef<ScenePoolItem[] | null>(null);
 
+  // Recompose field when the actual canvas size changes, even if viewport size does not.
+  useEffect(() => {
+    if (!engine?.ready?.current) return;
+    const canvas = engine.controls.current?.canvas as HTMLCanvasElement | null | undefined;
+    if (!canvas) return;
+
+    let rafId: number | null = null;
+    const bump = () => {
+      if (rafId != null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setCanvasResizeTick((t) => t + 1);
+      });
+    };
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => bump());
+      ro.observe(canvas);
+    }
+
+    // Keep a fallback in case a browser misses an observer event.
+    const onWindowResize = () => bump();
+    window.addEventListener("resize", onWindowResize);
+
+    return () => {
+      if (rafId != null) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", onWindowResize);
+      ro?.disconnect();
+    };
+  }, [engine, hostId, engine.readyTick]);
+
   useEffect(() => {
     if (!engine?.ready?.current) return;
 
     const canvas = engine.controls.current?.canvas as HTMLCanvasElement | null | undefined;
     const { w, h } = getCanvasLogicalSize(canvas);
+    const viewportW = getViewportSize().w;
+    const ruleWidthPx =
+      hostId === "start" && !questionnaireOpen ? viewportW : w;
 
     // inform runtime about the current lookup key (used by ticker/renderer)
     engine.controls.current?.setSceneMode?.(sceneLookupKey);
 
-    const desired = targetPoolSize(profile.poolSizes, w);
+    const desired = targetPoolSize(profile.poolSizes, ruleWidthPx);
     ensurePoolSize(poolRef, desired);
 
     const pool = poolRef.current ?? [];
@@ -141,6 +177,7 @@ export function useSceneField(
       quotaSpecification: profile.quotaSpecification,
       allocAvg,
       viewportKey,
+      ruleWidthPx,
       canvas: { w, h },
       pool,
     });
@@ -149,9 +186,12 @@ export function useSceneField(
 
     // Let runtime compute forbidden/rows from the current profile padding
     // and optionally override it (escape hatch)
-    const spec = resolveCanvasPaddingSpec(w, profile.padding);
+    const spec = resolveCanvasPaddingSpec(ruleWidthPx, profile.padding);
     engine.controls.current?.setPaddingSpec?.(spec);
-    engine.controls.current?.setBackgroundSpec?.(backgroundForTheme(sceneLookupKey, darkMode));
+    engine.controls.current?.setBackgroundSpec?.(
+      backgroundForTheme(hostId === "city" ? "city" : "start", sceneLookupKey, darkMode)
+    );
+    engine.controls.current?.setFieldStyle?.({ darkMode });
 
     engine.controls.current?.setFieldItems?.(result.placed);
     engine.controls.current?.setFieldVisible?.(result.placed.length > 0);
@@ -159,8 +199,8 @@ export function useSceneField(
     engine,
     allocAvg,
     questionnaireOpen,
-    sectionOpen,
     viewportKey,
+    canvasResizeTick,
     hostId,
     baseMode,
     // if ruleset identity can change

@@ -129,6 +129,7 @@ export function placePoolItems(opts: {
       );
 
       for (const seg of segs) {
+        const effectiveCenterC = (seg.cStart + seg.cEnd) / 2;
         for (let c0 = seg.cStart; c0 <= seg.cEnd; c0++) {
           const score = scoreCandidateGeneric({
             r0,
@@ -141,6 +142,7 @@ export function placePoolItems(opts: {
             salt,
             shape,
             getMeta,
+            effectiveCenterC,
           });
           candidates.push({ r0, c0, score });
         }

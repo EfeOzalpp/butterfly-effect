@@ -11,23 +11,12 @@ export type EdgeCueState = {
   pinned: boolean;
 };
 
-export type EdgeDriveState = {
-  active: boolean;
-  nx: number;
-  ny: number;
-  strength: number;
-};
-
 export type UseEdgeCueControllerParams = {
   useDesktopLayout: boolean;
   menuOpenRef: React.RefObject<boolean>;
 };
 
 export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeCueControllerParams) {
-  // === Desktop edge bands ===
-  const edgeHotzoneRef = useRef(false);
-  const edgeDriveRef = useRef<EdgeDriveState>({ active: false, nx: 0, ny: 0, strength: 0 });
-
   // HUD state we expose/broadcast
   const edgeCueRef = useRef<EdgeCueState>({
     visible: false,
@@ -158,8 +147,6 @@ export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeC
     const onPointerMove = (e: PointerEvent) => {
       // While info panel is open, force edge-drive off and stop cues
       if (menuOpenRef.current) {
-        edgeHotzoneRef.current = false;
-        edgeDriveRef.current = { active: false, nx: 0, ny: 0, strength: 0 };
         if (!edgeCuePinnedRef.current) {
           const off: EdgeCueState = {
             visible: false,
@@ -177,8 +164,6 @@ export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeC
       const w = window.innerWidth || 0;
       const h = window.innerHeight || 0;
       if (w === 0 || h === 0) {
-        edgeHotzoneRef.current = false;
-        edgeDriveRef.current = { active: false, nx: 0, ny: 0, strength: 0 };
         if (!edgeCuePinnedRef.current) {
           const off: EdgeCueState = {
             visible: false,
@@ -202,38 +187,23 @@ export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeC
       const nearInsetX = insetX + NEAR_MARGIN_PX;
       const nearInsetY = insetY + NEAR_MARGIN_PX;
 
-      const CENTER_GAP_START = w * 0.38;
-      const CENTER_GAP_END = w * 0.62;
-      const inCenterGapX = x >= CENTER_GAP_START && x <= CENTER_GAP_END;
-
-      const nx = (x / w) * 2 - 1;
-      const ny = -((y / h) * 2 - 1);
-
       let sx = 0;
       if (x < insetX) sx = (insetX - x) / insetX;
       else if (x > w - insetX) sx = (x - (w - insetX)) / insetX;
 
-      let syTop = 0,
-        syBot = 0;
-      if (!inCenterGapX) {
-        if (y < insetY) syTop = (insetY - y) / insetY;
-        else if (y > h - insetY) syBot = (y - (h - insetY)) / insetY;
-      }
+      let syTop = 0, syBot = 0;
+      if (y < insetY) syTop = (insetY - y) / insetY;
+      else if (y > h - insetY) syBot = (y - (h - insetY)) / insetY;
       const sy = Math.max(syTop, syBot);
 
       const strength = Math.max(sx, sy);
       const inEdge = strength > 0;
 
-      const nearTop = !inCenterGapX && y < nearInsetY;
-      const nearBottom = !inCenterGapX && y > h - nearInsetY;
+      const nearTop = y < nearInsetY;
+      const nearBottom = y > h - nearInsetY;
       const nearLeft = x < nearInsetX;
       const nearRight = x > w - nearInsetX;
       const nearEdge = !inEdge && (nearTop || nearBottom || nearLeft || nearRight);
-
-      edgeHotzoneRef.current = inEdge;
-      edgeDriveRef.current = inEdge
-        ? { active: true, nx, ny, strength: Math.min(1, Math.max(0, strength)) }
-        : { active: false, nx: 0, ny: 0, strength: 0 };
 
       const candidate: EdgeCueState = {
         visible: inEdge || nearEdge,
@@ -282,9 +252,5 @@ export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeC
     return () => window.removeEventListener('pointermove', onPointerMove as any);
   }, [useDesktopLayout, menuOpenRef]);
 
-  return {
-    edgeHotzoneRef,
-    edgeDriveRef,
-    edgeCueRef,
-  };
+  void edgeCueRef;
 }

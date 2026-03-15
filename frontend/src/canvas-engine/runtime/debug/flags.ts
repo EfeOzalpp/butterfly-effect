@@ -6,6 +6,6 @@ export type DebugFlags = {
 
 export const DEBUG_DEFAULT: DebugFlags = {
   grid: false, // toggle grid visibility
-  gridAlpha: 0.35,
+  gridAlpha: 0.3,
   forbiddenAlpha: 0.25,
 };

@@ -18,6 +18,12 @@ export const CLOUDS_BASE_PALETTE = {
   default: { r: 236, g: 238, b: 242 },
   rain:    { r: 20,  g: 165, b: 255 },
 };
+
+export const CLOUDS_DARK_PALETTE = {
+  default: { r: 139, g: 140, b: 185 },
+  rain:    { r: 11,  g: 104, b: 195 },
+};
+
 const CLOUD_BASE = CLOUDS_BASE_PALETTE.default;
 
 /* ───────────────── Defaults (tweakable) ───────────────── */
@@ -28,8 +34,8 @@ const RAIN = {
 
   angleMin: Math.PI * 0.48,
   angleMax: Math.PI * 0.52,
-  speedMin: [280, 160],
-  speedMax: [360, 220],
+  speedMin: [260, 140],
+  speedMax: [300, 160],
   gravity: 0,
   accelX: 0,
   accelY: 0,
@@ -40,8 +46,8 @@ const RAIN = {
   count: [24, 18],
   sizeMin: [2, 2.1],
   sizeMax: [2.1, 2.3],
-  lengthMin: [3, 9],
-  lengthMax: [5, 12],
+  lengthMin: [3, 8],
+  lengthMax: [5, 11],
 
   lifeMin: 4,
   lifeMax: 5,
@@ -79,6 +85,7 @@ const WOBBLE = { ampScale: [0.8, 0.95] };
 
 /* ───────────────── Draw ───────────────── */
 export function drawClouds(p, _cx, _cy, _r, opts) {
+  const pal = opts?.darkMode ? CLOUDS_DARK_PALETTE : CLOUDS_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -134,7 +141,7 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   const baseTint =
     (typeof opts?.cloudCss === 'string' && opts.cloudCss.trim().length > 0)
       ? cssToRgbViaCanvas(p, opts.cloudCss)
-      : blendRGB(CLOUD_BASE, opts?.gradientRGB, cloudBlend);
+      : blendRGB(pal.default, opts?.gradientRGB, cloudBlend);
 
   const sMax = Math.max(0, Math.min(1, val(CLOUDS.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
@@ -201,7 +208,7 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     let rainTint =
       (typeof opts?.rainCss === 'string' && opts.rainCss.trim().length > 0)
         ? cssToRgbViaCanvas(p, opts.rainCss)
-        : blendRGB(CLOUDS_BASE_PALETTE.rain, opts?.gradientRGB, rainBlend);
+        : blendRGB(pal.rain, opts?.gradientRGB, rainBlend);
 
     const rainColor = { r: rainTint.r, g: rainTint.g, b: rainTint.b, a: syncedAlpha };
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { subscribeSectionCounts } from "../../services/sanity/api";
+import { useMockSanityReadMode } from "../../services/sanity/config";
 
 /**
  * Hook to get live per-section submission counts.
@@ -8,6 +9,7 @@ import { subscribeSectionCounts } from "../../services/sanity/api";
 export type SectionCounts = Record<string, number>;
 
 export default function useSectionCounts() {
+  const { active: mockReadMode } = useMockSanityReadMode();
   const [counts, setCounts] = useState<SectionCounts>({});
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -28,7 +30,7 @@ export default function useSectionCounts() {
         unsub?.();
       } catch {}
     };
-  }, []);
+  }, [mockReadMode]);
 
   return { counts, loading };
 }

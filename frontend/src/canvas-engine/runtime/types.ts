@@ -75,4 +75,6 @@ export type StartCanvasEngineOpts = {
   layout?: EngineLayoutMode;
   bounds?: CanvasBounds;
   shapeRegistry?: ShapeRegistry;
+  fpsCap?: number;
+  initialDarkMode?: boolean;
 };

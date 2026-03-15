@@ -72,6 +72,7 @@ export function makeSpriteKey(args: {
   particleStepMs: number;
   variantSlots?: number;
   variantSeed?: string | number;
+  darkMode?: boolean;
 }) {
   const { bucketId } = quantizeAvgWithDownshift(args.avg);
   const shape = chooseShape({ avg: args.avg, seed: args.seed, orderIndex: args.orderIndex });
@@ -97,6 +98,7 @@ export function makeSpriteKey(args: {
         stepMs: args.particleStepMs,
         bucketId,
         variant,
+        darkMode: args.darkMode,
       })
     : makeStaticKey({
         shape,
@@ -105,6 +107,7 @@ export function makeSpriteKey(args: {
         alpha: args.alpha,
         bucketId,
         variant,
+        darkMode: args.darkMode,
       });
 }
 
@@ -117,6 +120,7 @@ export function prewarmSpriteTextures(
     particleStepMs = 33,
     particleFrames = 36,
     maxCount = 32,
+    darkMode = false,
   }: {
     tileSize?: number;
     alpha?: number;
@@ -124,6 +128,7 @@ export function prewarmSpriteTextures(
     particleStepMs?: number;
     particleFrames?: number;
     maxCount?: number;
+    darkMode?: boolean;
   } = {}
 ) {
   const TILE = Math.min(tileSize, 128);
@@ -167,6 +172,7 @@ export function prewarmSpriteTextures(
         stepMs: particleStepMs,
         bucketId,
         variant,
+        darkMode,
       });
 
       if (!frozenGet(key) && !frozenIsFailed(key) && !frozenIsInflight(key)) {
@@ -185,6 +191,7 @@ export function prewarmSpriteTextures(
               footprint,
               bleed,
               seedKey: `${key}|seed:${shape}|${variant}`,
+              darkMode,
               simulateMs,
               stepMs: particleStepMs,
               generateMipmaps: true,
@@ -206,6 +213,7 @@ export function prewarmSpriteTextures(
               alpha: alphaUse,
               bucketId,
               variant,
+              darkMode,
             });
             if (!textureRegistry.get(sKey)) {
               textureRegistry.ensure({
@@ -221,6 +229,7 @@ export function prewarmSpriteTextures(
                 bleed,
                 seedKey: `${sKey}|seed:${shape}|${variant}`,
                 prio: 0,
+                darkMode,
               });
             }
           } finally {
@@ -236,6 +245,7 @@ export function prewarmSpriteTextures(
         alpha: alphaUse,
         bucketId,
         variant,
+        darkMode,
       });
       if (!textureRegistry.get(key2)) {
         jobs.push({
@@ -251,6 +261,7 @@ export function prewarmSpriteTextures(
           bleed,
           seedKey: `${key2}|seed:${shape}|${variant}`,
           prio: 0,
+          darkMode,
         });
       }
     }
@@ -303,6 +314,7 @@ export function requestFrozenTexture(args: {
   seedKey: string;
   simulateMs: number;
   stepMs: number;
+  darkMode?: boolean;
   onReady: (tex: THREE.CanvasTexture) => void;
   onFail: () => void;
 }) {
@@ -331,6 +343,7 @@ export function requestFrozenTexture(args: {
           footprint: args.footprint,
           bleed: args.bleed,
           seedKey: args.seedKey,
+          darkMode: args.darkMode,
           simulateMs: args.simulateMs,
           stepMs: args.stepMs,
           generateMipmaps: true,

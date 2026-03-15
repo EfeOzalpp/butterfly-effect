@@ -24,6 +24,23 @@ export const BUS_BASE_PALETTE = {
   wheel:  { r: 40,  g: 40,  b: 40  },
 };
 
+export const BUS_DARK_PALETTE = {
+  grass: [
+    { r: 32, g: 86,  b: 113  },
+    { r: 40, g: 97,  b: 133 },
+    { r: 39, g: 81,  b: 108  },
+  ],
+  asphalt: { r: 68, g: 79, b: 96 },
+  body: [
+    { r: 170, g: 80, b: 50 },
+    { r: 180, g: 80, b: 60 },
+    { r: 150, g: 80, b: 50 },
+    { r: 170, g: 100, b: 70 },
+  ],
+  window: { r: 125, g: 135, b: 200 },
+  wheel:  { r: 42, g: 65,  b: 151  },
+};
+
 const BUS = {
   grass:   { colorBlend: [0.20, 0.45] },
   body:    { colorBlend: [0.10, 0.04] },
@@ -66,6 +83,7 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
  * Variety is driven by opts.seedKey (or tile footprint) so caching won't collapse colors.
  */
 export function drawBus(p, cx, cy, r, opts = {}) {
+  const pal = opts?.darkMode ? BUS_DARK_PALETTE : BUS_BASE_PALETTE;
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 235; // used for ground/wheels
@@ -117,8 +135,8 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   const aspY   = grassY + (grassH - aspH) / 2;
 
   // Grass tint (with gradient) — seeded variety
-  const g1 = pick(BUS_BASE_PALETTE.grass, r1);
-  const g2 = pick(BUS_BASE_PALETTE.grass, r2);
+  const g1 = pick(pal.grass, r1);
+  const g2 = pick(pal.grass, r2);
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(BUS.grass.colorBlend, u));
   grassTint = applyExposureContrast(grassTint, ex, ct);
@@ -128,7 +146,7 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   p.rect(tileX, grassY, tileW, grassH, r * 0.18);
 
   // Asphalt
-  let aspColor = applyExposureContrast(BUS_BASE_PALETTE.asphalt, ex, ct);
+  let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
   aspColor = clampBrightness(aspColor, val(BUS.asphalt.min, u), val(BUS.asphalt.max, u));
   fillRgb(p, aspColor, alpha);
   p.rect(tileX, aspY, tileW, aspH, r * 0.14);
@@ -142,10 +160,10 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: !!opts.allowUpscale });
 
   // Body/window colors — seeded body pick
-  let bodyTint = pick(BUS_BASE_PALETTE.body, r1);
+  let bodyTint = pick(pal.body, r1);
   if (opts.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(BUS.body.colorBlend, u));
   bodyTint = applyExposureContrast(bodyTint, ex, ct);
-  const winTint = applyExposureContrast(BUS_BASE_PALETTE.window, ex, ct);
+  const winTint = applyExposureContrast(pal.window, ex, ct);
 
   // ---- Draw bus under width-fit transform
   beginFitScale(p, { cx: tileCx, anchorY: wheelY, scale: s });
@@ -156,7 +174,7 @@ export function drawBus(p, cx, cy, r, opts = {}) {
 
     // Wheels (two rear, one front)
     const wheelD = Math.max(3, r * 0.85);
-    fillRgb(p, BUS_BASE_PALETTE.wheel, 255);
+    fillRgb(p, pal.wheel, 255);
     p.circle(busX + w * 0.22, wheelY, wheelD);
     p.circle(busX + w * 0.38, wheelY, wheelD);
     p.circle(busX + w * 0.78, wheelY, wheelD);

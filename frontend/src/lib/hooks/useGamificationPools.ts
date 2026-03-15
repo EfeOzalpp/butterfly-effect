@@ -1,6 +1,7 @@
 // src/utils/useGamificationPools.ts
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { cdnClient, liveReadClient as liveClient } from '../../services/sanity/client';
+import { USE_MOCK_SANITY } from '../../services/sanity/config';
 import { storageKeyFor, safeSession, bucketForPercent } from '../utils/color-and-interpolation';
 
 type Doc = {
@@ -55,6 +56,11 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
   const start = () => {
     if (started) return;
     started = true;
+
+    if (USE_MOCK_SANITY) {
+      store.set({ docs: [], rev: 'mock', loaded: true });
+      return;
+    }
 
     const QUERY = buildQuery(schemaName);
     const pump = (rows: Doc[]) => {

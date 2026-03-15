@@ -1,7 +1,7 @@
 import React from "react";
 import { Html } from "@react-three/drei";
 import { SpriteShape } from "../../sprites/entry";
-import GamificationPersonalized from "../../gamification/GamificationPersonalized";
+import GamificationPersonalized from "../../gamification/gamification-personal";
 
 type PersonalizedLayerProps = {
   shouldRenderPersonalUI: boolean;
@@ -17,6 +17,7 @@ type PersonalizedLayerProps = {
   myStats: { below: number; equal: number; above: number };
   myClass: { position: string; tieContext: string };
   setPersonalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  darkMode?: boolean;
 };
 
 export default function PersonalizedLayer({
@@ -33,6 +34,7 @@ export default function PersonalizedLayer({
   myStats,
   myClass,
   setPersonalOpen,
+  darkMode = false,
 }: PersonalizedLayerProps) {
   if (!shouldRenderPersonalUI) return null;
 
@@ -56,6 +58,7 @@ export default function PersonalizedLayer({
             freezeParticles={true}
             particleStepMs={33}
             particleFrames={219}
+            darkMode={darkMode}
           />
         </group>
       )}

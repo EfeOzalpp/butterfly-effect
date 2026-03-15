@@ -21,6 +21,7 @@ export function makeTextureFromDrawer({
   bleed = {},
   timeMs = (typeof performance !== 'undefined' ? performance.now() : 0),
   seedKey,
+  darkMode = false,
 }: {
   drawer: Drawer;
   tileSize?: number;
@@ -33,6 +34,7 @@ export function makeTextureFromDrawer({
   bleed?: BleedFrac;
   timeMs?: number;
   seedKey?: string | number;
+  darkMode?: boolean;
 }): THREE.CanvasTexture {
   const wTiles = Math.max(1e-6, footprint.w || 1);
   const hTiles = Math.max(1e-6, footprint.h || 1);
@@ -89,6 +91,7 @@ export function makeTextureFromDrawer({
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
     sizeOsc: { mode: 'none' },
+    darkMode,
   };
 
   let failed = false;

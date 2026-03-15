@@ -53,16 +53,18 @@ const REG_STYLE_DEFAULT = {
   contrast: 1.0,
   appearMs: 300,
   exitMs: 300,
+  darkMode: false,
   debug: { ...DEBUG_DEFAULT } as DebugFlags,
 };
 
 export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineControls {
-  const { mount = "#canvas-root", onReady, dprMode = "fixed1", zIndex = 2, layout = "fixed" } = opts;
+  const { mount = "#canvas-root", onReady, dprMode = "fixed1", zIndex = 2, layout = "fixed", fpsCap, initialDarkMode } = opts;
 
   const parentEl = ensureMount(mount, zIndex, layout);
 
   // style knobs/config (NOT signals)
   const style = { ...REG_STYLE_DEFAULT, debug: { ...REG_STYLE_DEFAULT.debug } };
+  if (typeof initialDarkMode === "boolean") style.darkMode = initialDarkMode;
 
   // inputs/signals
   const inputs = { liveAvg: 0.5, condAvgs: {} as import('./engine/state').CondAvgs };
@@ -230,6 +232,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
     if (Number.isFinite(appearMs) && appearMs >= 0) style.appearMs = appearMs | 0;
     if (Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
+    if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
 
     if (args.debug && typeof args.debug === "object") {
       const d = args.debug as Partial<DebugFlags>;
@@ -302,7 +305,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   });
 
   onReady?.(controls);
-  registerEngineFrame(frameId, ticker.tick, { priority: zIndex });
+  registerEngineFrame(frameId, ticker.tick, { priority: zIndex, fpsCap });
   return controls;
 }
 

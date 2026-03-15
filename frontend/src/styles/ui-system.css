@@ -2,8 +2,7 @@
 
 h1,
 h2,
-h3,
-h4 {
+h3 {
   margin: 0;
   font-family: var(--font-title);
   font-optical-sizing: auto;
@@ -11,10 +10,11 @@ h4 {
   color: var(--ui-text);
 }
 
-h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 560; }
-h2 { font-size: var(--type-h2-size); line-height: var(--type-h-line); font-weight: 540; }
-h3 { font-size: var(--type-h3-size); line-height: var(--type-tight-line); font-weight: 520; }
-h4 { font-size: var(--type-h4-size); line-height: var(--type-tight-line); font-weight: 510; }
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 380; }
+h2 { font-size: var(--type-h2-size); line-height: var(--type-h-line); font-weight: 300; }
+h3 { font-size: var(--type-h3-size); line-height: var(--type-tight-line); font-weight: 300; }
+h4 { font-family: var(--font-body); font-size: var(--type-h4-size); line-height: var(--type-tight-line); font-weight: 420; }
+h4 { margin: 0; }
 
 p,
 li,
@@ -31,68 +31,151 @@ button {
 }
 
 small { font-size: var(--type-small-size); line-height: var(--type-tight-line); }
+span {
+  font-family: var(--font-body);
+  font-size: var(--type-p-size);
+  line-height: var(--type-body-line);
+  font-weight: var(--font-ui-weight);
+  color: var(--ui-text);
+}
 
-/* shared button base */
-button.begin-button,
-button.next-button,
-button.begin-button2,
-button.begin-button3,
-button.begin-button4,
-.nav-toggle,
-.observe-results,
-.system-color,
-.info-close,
-.gp-trigger {
+.mock-read-banner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
   display: inline-flex;
   align-items: center;
+  gap: 0.75rem;
+  transform: translateX(-50%);
+  z-index: 1200;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-lg);
+  background: var(--ui-bg-surface-glass);
+  color: var(--ui-text);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+}
+
+.mock-read-banner-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ui-text-secondary);
+  line-height: 1;
+}
+
+.mock-read-banner-close:hover {
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+@media (min-width: 1024px) {
+  button.begin-button { max-width: 220px; min-width: 220px; }
+  .system-color { max-height: 40px; }
+  .mock-read-banner-close {         
+    width: 20px !important;
+    height: 20px !important; }
+}
+/* shared button base primary */
+button.begin-button,
+button.next-button,
+button.questionnaire {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row-reverse;
+  gap: 0.6rem;
+  padding: var(--btn-primary-padding-y) var(--btn-primary-padding-x);
+  border-radius: var(--btn-radius);
+  color: var(--btn-tertiary-text);
+  font-weight: var(--btn-font-weight);  
+  border-width: var(--btn-border-width);
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 50ms ease;
+}
+
+/* shared button base secondary */
+button.city-button,
+.observe-results,
+.system-color {
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row-reverse;
   justify-content: center;
   gap: 0.6rem;
   padding: var(--btn-padding-y) var(--btn-padding-x);
   border-radius: var(--btn-radius);
-  border: var(--btn-border-width) solid var(--btn-tertiary-border);
-  background: var(--btn-tertiary-bg);
-  color: var(--btn-tertiary-text);
   font-weight: var(--btn-font-weight);
   line-height: 1;
   text-decoration: none;
-  transition: transform 100ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 50ms ease;
 }
+
+button { pointer-events: auto; cursor: pointer; }
 
 button.begin-button:hover,
 button.next-button:hover,
-button.begin-button2:hover,
+button.questionnaire:hover,
 button.begin-button3:hover,
-button.begin-button4:hover,
+button.city-button:hover,
 .nav-toggle:hover,
 .observe-results:hover,
 .system-color:hover,
-.info-close:hover,
-.gp-trigger:hover {
-  transform: scale(var(--btn-hover-scale));
+.info-close:hover {
+  transform: none;
 }
 
-/* variants (existing class compatibility) */
-button.begin-button {
-  background: var(--btn-primary-bg);
+/* End of general button base */ 
+
+/* variants common styles, primary button + special button */
+button.begin-button,
+button.next-button, button.questionnaire {
   color: var(--btn-primary-text);
-  border-color: var(--btn-primary-border);
+  border: var(--btn-border-width) solid var(--btn-primary-border);
+}
+/* Primary button styles */
+button.begin-button { background: var(--survey-btn-bg); }
+button.begin-button:hover {
+  background: var(--survey-btn-bg-hover);
+  border-color: var(--btn-primary-hover-border);
+}
+button.begin-button .ui-icon,
+button.next-button .ui-icon {
+  color: var(--btn-primary-icon);
+}
+button.next-button, button.questionnaire { background: var(--btn-primary-bg); border-color: var(--btn-primary-border); }
+button.next-button:hover, button.questionnaire:hover {
+  background: var(--btn-primary-hover-bg);
+  border-color: var(--btn-primary-hover-border);
+  box-shadow: 0 0 24px var(--btn-box-shadow);
 }
 
-button.next-button,
-button.begin-button2,
-button.begin-button3 {
+/* secondary button styles */
+.observe-results,
+.city-button {
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
-  border-color: var(--btn-secondary-border);
+  border: var(--btn-border-width) solid var(--btn-secondary-border);
+}
+.observe-results:hover,
+button.city-button:hover {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border);
 }
 
-button.begin-button4,
-.nav-toggle,
-.observe-results,
-.system-color,
-.info-close,
-.gp-trigger {
+/* tertiary button styles */ 
+.system-color {
+  border: var(--btn-border-width) solid var(--btn-tertiary-border);
   background: var(--btn-tertiary-bg);
   color: var(--btn-tertiary-text);
-  border-color: var(--btn-tertiary-border);
+}
+.system-color:hover {
+  background: var(--btn-tertiary-hover-bg);
+  border-color: var(--btn-tertiary-hover-border);
 }

@@ -61,9 +61,10 @@ export function makeStaticKey(args: {
   alpha: number;
   bucketId: number;
   variant: number;
+  darkMode?: boolean;
 }) {
-  const { shape, tileSize, dpr, alpha, bucketId, variant } = args;
-  return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|STATIC_NATIVE`;
+  const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode } = args;
+  return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|STATIC_NATIVE${darkMode ? '|DK' : ''}`;
 }
 
 export function makeFrozenKey(args: {
@@ -75,11 +76,12 @@ export function makeFrozenKey(args: {
   stepMs: number;
   bucketId: number;
   variant: number;
+  darkMode?: boolean;
 }) {
-  const { shape, tileSize, dpr, alpha, simulateMs, stepMs, bucketId, variant } = args;
+  const { shape, tileSize, dpr, alpha, simulateMs, stepMs, bucketId, variant, darkMode } = args;
   return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|FROZEN_NATIVE_${Math.round(
     simulateMs
-  )}_${Math.round(stepMs)}`;
+  )}_${Math.round(stepMs)}${darkMode ? '|DK' : ''}`;
 }
 
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {

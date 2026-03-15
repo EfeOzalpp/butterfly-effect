@@ -31,6 +31,15 @@ export const POWER_BASE_PALETTE = {
   bladeLine:{ r: 210, g: 120, b: 212 },
 };
 
+export const POWER_DARK_PALETTE = {
+  grass: { r: 25, g: 77, b: 156 },
+  mast:     { r: 91, g: 132, b: 160 },
+  mastCore: { r: 97,  g: 121, b: 146 },
+  hub:      { r: 101, g: 119, b: 144 },
+  blade:    { r: 136, g: 148, b: 187 },
+  bladeLine:{ r: 115, g: 76,  b: 142 },
+};
+
 /* Tunables (lerp-able) */
 const POWER = {
   grass: { colorBlend: [0.4, 0.30], satRange: [0.00, 0.80] },
@@ -142,7 +151,7 @@ const FACTORY_SMOKE = {
 function windProbability(u) {
   const p0 = 0.0;
   if (u <= 0.4) {
-    const t = u / 0.3;
+    const t = u / 0.4;
     return p0 + (0.5 - p0) * t;
   } else {
     const t = (u - 0.4) / 0.6;
@@ -166,14 +175,14 @@ function factoryLayoutFromKey(key) {
   const roofRiseK = 0.08 + 0.08 * rB;
   return { chimneyOnLeft, roofRiseK };
 }
-function pickBodyTintVariantFromKey(key, gradientRGB, ex, ct) {
+function pickBodyTintVariantFromKey(key, gradientRGB, ex, ct, pal) {
   const seed = hash32(`power-body|${String(key)}`);
   const r = rand01(seed);
   const variants = [
-    mulRgb(POWER_BASE_PALETTE.mast, 0.78),
-    mulRgb(POWER_BASE_PALETTE.mast, 0.82),
-    blendRGB(mulRgb(POWER_BASE_PALETTE.mast, 0.85), POWER_BASE_PALETTE.hub, 0.15),
-    blendRGB(mulRgb(POWER_BASE_PALETTE.mast, 0.88), POWER_BASE_PALETTE.mastCore, 0.10),
+    mulRgb(pal.mast, 0.78),
+    mulRgb(pal.mast, 0.82),
+    blendRGB(mulRgb(pal.mast, 0.85), pal.hub, 0.15),
+    blendRGB(mulRgb(pal.mast, 0.88), pal.mastCore, 0.10),
   ];
   let tint = variants[Math.floor(r * variants.length) % variants.length];
   if (gradientRGB) tint = blendRGB(tint, gradientRGB, 0.06);
@@ -182,6 +191,7 @@ function pickBodyTintVariantFromKey(key, gradientRGB, ex, ct) {
 
 /* Draw */
 export function drawPower(p, cx, cy, r, opts = {}) {
+  const pal = opts?.darkMode ? POWER_DARK_PALETTE : POWER_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -248,7 +258,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   const platH = Math.max(4, Math.round((cell || Math.max(6, pxH / 3)) * platFrac));
   const platY = pxY + pxH - platH;
 
-  let grassTint = POWER_BASE_PALETTE.grass;
+  let grassTint = pal.grass;
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(POWER.grass.colorBlend, u));
   grassTint = clampSaturation(grassTint, POWER.grass.satRange[0], POWER.grass.satRange[1]);
   grassTint = clampBrightnessLocal(grassTint, 0.35, 0.90);
@@ -265,7 +275,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     const { chimneyOnLeft: isLeftChimney } = factoryLayoutFromKey(orientKey);
     const roofVar = 0.9 + 0.25 * randFromKey(`${orientKey}|roofVar`);
 
-    const bodyTint = pickBodyTintVariantFromKey(`body|${seedKey}`, opts.gradientRGB, ex, ct);
+    const bodyTint = pickBodyTintVariantFromKey(`body|${seedKey}`, opts.gradientRGB, ex, ct, pal);
     const bodyMarginX = Math.round(pxW * 0.14);
     const bodyW = Math.max(12, pxW - bodyMarginX * 2);
     const bodyH = Math.max(Math.round(pxH * 0.16), Math.round(cell * 0.9));
@@ -285,7 +295,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     p.triangle(lowX, yTop, highX, yTop, highX, yTop - roofRise);
 
     p.strokeWeight(1);
-    strokeRgb(p, POWER_BASE_PALETTE.mastCore, 255);
+    strokeRgb(p, pal.mastCore, 255);
     p.noFill();
     p.line(lowX, yTop, highX, yTop - roofRise);
     p.noStroke();
@@ -398,7 +408,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     const chimX  = isLeftChimney ? (xL) : (xR - chimW);
     const chimY  = platY - chimH;
 
-    let chimTint = POWER_BASE_PALETTE.mast;
+    let chimTint = pal.mast;
     if (opts.gradientRGB) chimTint = blendRGB(chimTint, opts.gradientRGB, 0.08);
     chimTint = applyExposureContrast(chimTint, ex, ct);
     fillRgb(p, chimTint, 255);
@@ -407,7 +417,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
 
     const capOver = Math.round(chimW * 0.15);
     p.strokeWeight(4);
-    strokeRgb(p, POWER_BASE_PALETTE.mastCore, 255);
+    strokeRgb(p, pal.mastCore, 255);
     const capX0 = chimX - capOver / 2;
     const capX1 = chimX + chimW + capOver / 2;
     p.line(capX0, chimY - 2, capX1, chimY - 2);
@@ -448,7 +458,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   const b0 = clampX(baseX0), b1 = clampX(baseX1);
   const w0 = clampX(waistX0), w1 = clampX(waistX1);
 
-  let mastTint2 = POWER_BASE_PALETTE.mast;
+  let mastTint2 = pal.mast;
   if (opts.gradientRGB) mastTint2 = blendRGB(mastTint2, opts.gradientRGB, 0.10);
   mastTint2 = applyExposureContrast(mastTint2, ex, ct);
 
@@ -465,7 +475,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   p.vertex(w0, mastTopY + Math.round(mastH * 0.42));
   p.endShape(p.CLOSE);
 
-  let coreBase = POWER_BASE_PALETTE.mastCore;
+  let coreBase = pal.mastCore;
   if (opts.gradientRGB) coreBase = blendRGB(coreBase, opts.gradientRGB, val(POWER.mast.coreBlend, u));
   const coreTint = applyExposureContrast(coreBase, ex, ct);
 
@@ -502,7 +512,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   {
     p.push();
     p.strokeWeight(3);
-    strokeRgb(p, POWER_BASE_PALETTE.mastCore, 255);
+    strokeRgb(p, pal.mastCore, 255);
     p.noFill();
     const lineEndY = capTopY + 2;
     p.line(hubCx, hubCy, hubCx, lineEndY);
@@ -518,10 +528,10 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   const phase = rand01(seed) * POWER.rotor.spinJitter;
   const speed = (typeof opts.rotorSpeed === 'number') ? opts.rotorSpeed : val(POWER.rotor.spinSpeed, u);
 
-  const hubTint   = applyExposureContrast(POWER_BASE_PALETTE.hub,   ex, ct);
-  const lineTint  = applyExposureContrast(POWER_BASE_PALETTE.bladeLine, ex, ct);
+  const hubTint   = applyExposureContrast(pal.hub,   ex, ct);
+  const lineTint  = applyExposureContrast(pal.bladeLine, ex, ct);
 
-  const baseBlade = applyExposureContrast(POWER_BASE_PALETTE.blade, ex, ct);
+  const baseBlade = applyExposureContrast(pal.blade, ex, ct);
   const oscAmp    = val(POWER.rotor.bladeOsc.amp, u);
   const oscSpd    = val(POWER.rotor.bladeOsc.speed, u);
   const phase2    = phase + Math.PI * 2 * rand01(seed ^ 0xABCDEF);

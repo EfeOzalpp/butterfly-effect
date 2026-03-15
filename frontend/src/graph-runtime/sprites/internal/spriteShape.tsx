@@ -44,6 +44,7 @@ export function SpriteShape({
   particleStepMs = 33,
   variantSlots = DEFAULT_VARIANT_SLOTS,
   variantSeed,
+  darkMode = false,
 }: {
   avg: number;
   seed?: string | number;
@@ -59,7 +60,9 @@ export function SpriteShape({
   particleStepMs?: number;
   variantSlots?: number;
   variantSeed?: string | number;
+  darkMode?: boolean;
 }) {
+
   const tShape = clamp01(Number.isFinite(avg) ? avg : 0.5);
   const { bucketId, bucketAvg } = quantizeAvgWithDownshift(avg);
 
@@ -93,6 +96,7 @@ export function SpriteShape({
           stepMs: particleStepMs,
           bucketId,
           variant,
+          darkMode,
         })
       : makeStaticKey({
           shape,
@@ -101,12 +105,18 @@ export function SpriteShape({
           alpha: alphaUse,
           bucketId,
           variant,
+          darkMode,
         });
-  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant]);
+  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, darkMode]);
 
   const [tex, setTex] = React.useState<THREE.CanvasTexture | null>(() => {
     return wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null);
   });
+
+  // Reset texture when dark mode changes so we request a new dark/light variant
+  React.useEffect(() => {
+    setTex(wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null));
+  }, [darkMode, key, wantsFrozen]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -145,6 +155,7 @@ export function SpriteShape({
         alpha: alphaUse,
         bucketId,
         variant,
+        darkMode,
       });
 
       const existing = textureRegistry.get(sKey);
@@ -167,6 +178,7 @@ export function SpriteShape({
           bleed,
           seedKey: `${sKey}|seed:${shape}|${variant}`,
           prio: 0,
+          darkMode,
         },
         (t) => setIfAlive(t)
       );
@@ -196,6 +208,7 @@ export function SpriteShape({
         seedKey: common.seedKey,
         simulateMs,
         stepMs: particleStepMs,
+        darkMode,
         onReady: (t) => setIfAlive(t),
         onFail: () => { requestStatic(); },
       });
@@ -227,6 +240,7 @@ export function SpriteShape({
         bleed,
         seedKey: common.seedKey,
         prio: 0,
+        darkMode,
       },
       (t) => setIfAlive(t)
     );
@@ -249,6 +263,7 @@ export function SpriteShape({
     variant,
     bucketId,
     blend,
+    darkMode,
     vs.blend,
     vs.rgb,
   ]);

@@ -10,24 +10,44 @@ export const CAR_BASE_PALETTE = {
   ],
   asphalt: { r: 125, g: 125, b: 125 },
   body: [
-    { r: 200, g: 50,  b: 50  },  // bright red
-    { r: 50,  g: 120, b: 210 },  // vivid blue
-    { r: 240, g: 180, b: 60  },  // warm yellow
-    { r: 90,  g: 180, b: 100 },  // fresh green
-    { r: 230, g: 90,  b: 20  },  // orange-red
-    { r: 255, g: 100, b: 150 },  // magenta-pink
-    { r: 140, g: 90,  b: 220 },  // brighter violet
-    { r: 50,  g: 180, b: 230 },  // vibrant cyan-blue
-    { r: 245, g: 235, b: 120 },  // soft lemon
-    { r: 100, g: 100, b: 100 },  // mid gunmetal gray (lifted)
-    { r: 180, g: 70,  b: 120 },  // lighter burgundy
-    { r: 120, g: 220, b: 180 },  // mint teal
-    { r: 235, g: 150, b: 50  },  // golden copper
-    { r: 50,  g: 130, b: 80  },  // lighter forest green
-    { r: 110, g: 110, b: 200 },  // soft indigo
+    { r: 200, g: 50,  b: 50  },
+    { r: 230, g: 90,  b: 20  },
+    { r: 240, g: 180, b: 60  },
+    { r: 90,  g: 180, b: 100 },
+    { r: 50,  g: 130, b: 80  },
+    { r: 120, g: 200, b: 160 },
+    { r: 50,  g: 120, b: 210 },
+    { r: 50,  g: 180, b: 230 },
+    { r: 140, g: 90,  b: 220 },
+    { r: 255, g: 100, b: 150 },
+    { r: 245, g: 235, b: 120 },
+    { r: 100, g: 100, b: 100 },
   ],
   window: { r: 180, g: 210, b: 235 },
   wheel:  { r: 40,  g: 40,  b: 40  },
+};
+
+export const CAR_DARK_PALETTE = {
+  grass: [
+    { r: 52, g: 86,  b: 123  },
+    { r: 40, g: 97,  b: 127 },
+    { r: 29, g: 101,  b: 118  },
+  ],
+  asphalt: { r: 68, g: 79, b: 96 },
+  body: [
+    { r: 30, g: 32, b: 45 },
+    { r: 64, g: 48, b: 88 },
+    { r: 62, g: 60, b: 64 },
+    { r: 24, g: 48, b: 90 },
+    { r: 20, g: 60, b: 96 },
+    { r: 18, g: 62, b: 96 },
+    { r: 82, g: 64, b: 110 },
+    { r: 22, g: 54, b: 118 },
+    { r: 42, g: 40, b: 72 },
+    { r: 30, g: 38, b: 100 },
+  ],
+  window: { r: 125, g: 135, b: 190 },
+  wheel:  { r: 22, g: 25,  b: 31  },
 };
 
 /* ───────────────── Tunables */
@@ -82,6 +102,7 @@ function rFromKey(seedKey, tag) {
 export const CAR_VARIANTS = { suv: 'suv', sedan: 'sedan', jeep: 'jeep' };
 
 export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
+  const pal   = opts?.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE;
   const ex    = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct    = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const alpha = Number.isFinite(opts?.alpha) ? opts.alpha : 235;
@@ -98,10 +119,10 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
   const rGrassB   = rFromKey(seedKey, 'grassB');
 
   // colors
-  let bodyTint = pick(CAR_BASE_PALETTE.body, rBodyPick);
+  let bodyTint = pick(pal.body, rBodyPick);
   if (opts?.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(CAR.body.colorBlend, u));
   bodyTint = applyExposureContrast(bodyTint, ex, ct);
-  const windowTint = applyExposureContrast(CAR_BASE_PALETTE.window, ex, ct);
+  const windowTint = applyExposureContrast(pal.window, ex, ct);
 
   // geometry shared
   const w = r * 3.2;
@@ -126,7 +147,7 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
   }
 
   /* ─── Wheels first (static; no wiggle) ─── */
-  fillRgb(p, CAR_BASE_PALETTE.wheel, alpha);
+  fillRgb(p, pal.wheel, alpha);
   p.circle(cx - w * 0.38, wheelY, wheelR);
   p.circle(cx + w * 0.38, wheelY, wheelR);
 
@@ -267,6 +288,7 @@ export function endFitScale(p) { p.pop(); }
 
 /* ───────────────── Tile-aware wrapper (fits the asset to tile width) */
 export function drawCar(p, cx, cy, r, opts = {}) {
+  const pal = opts?.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE;
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 235;
@@ -319,8 +341,8 @@ export function drawCar(p, cx, cy, r, opts = {}) {
   p.translate(-cx0, -baseY);
 
   // grass
-  const g1 = pick(CAR_BASE_PALETTE.grass, rGrass1);
-  const g2 = pick(CAR_BASE_PALETTE.grass, rGrass2);
+  const g1 = pick(pal.grass, rGrass1);
+  const g2 = pick(pal.grass, rGrass2);
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(CAR.grass.colorBlend, u));
   grassTint = applyExposureContrast(grassTint, ex, ct);
@@ -330,7 +352,7 @@ export function drawCar(p, cx, cy, r, opts = {}) {
   p.rect(tileX, grassY, tileW, grassH, r * 0.18);
 
   // asphalt
-  let aspColor = applyExposureContrast(CAR_BASE_PALETTE.asphalt, ex, ct);
+  let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
   aspColor = clampBrightness(aspColor, val(CAR.asphalt.min, u), val(CAR.asphalt.max, u));
   fillRgb(p, aspColor, alpha);
   p.rect(tileX, aspY, tileW, aspH, r * 0.14);
@@ -348,6 +370,7 @@ export function drawCar(p, cx, cy, r, opts = {}) {
     alpha,
     exposure: ex,
     contrast: ct,
+    darkMode: !!opts.darkMode,
     gradientRGB: opts.gradientRGB,
     liveAvg: u,
     // pass through seedKey so color/variant match the sprite variant cache key

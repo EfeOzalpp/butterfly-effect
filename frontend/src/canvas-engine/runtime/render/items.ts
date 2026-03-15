@@ -32,7 +32,16 @@ export function drawItems(params: {
 
   if (!visible || !items.length) return;
 
-  const sorted = items.slice().sort((a, b) => (Z[b.shape] ?? 9) - (Z[a.shape] ?? 9));
+  // Painter's order: draw back -> front.
+  // 1) Smaller y first (top first), so lower items are drawn last/in front.
+  // 2) Shape z-index is only a tie-breaker for near-identical y.
+  const sorted = items.slice().sort((a, b) => {
+    if (a.y !== b.y) return a.y - b.y;
+    const za = Z[a.shape] ?? 9;
+    const zb = Z[b.shape] ?? 9;
+    if (za !== zb) return za - zb;
+    return String(a.id).localeCompare(String(b.id));
+  });
 
   for (const it of sorted) {
     let state = liveStates.get(it.id);

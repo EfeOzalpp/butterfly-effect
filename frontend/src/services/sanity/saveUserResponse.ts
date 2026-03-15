@@ -1,4 +1,6 @@
 import { getLiveClient } from './client';
+import { USE_MOCK_SANITY } from './config';
+import { createMockUserResponse } from './mockData';
 
 type Weights = { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number };
 
@@ -46,8 +48,9 @@ export async function saveUserResponse(section: string, weights: Weights) {
     submittedAt: new Date().toISOString(),
   };
 
-  const liveClient = getLiveClient();
-  const created = await liveClient.create(doc);
+  const created = USE_MOCK_SANITY
+    ? createMockUserResponse(section, clamped)
+    : await getLiveClient().create(doc);
 
   if (typeof window !== 'undefined') {
     // Persist identifiers

@@ -84,18 +84,12 @@ export type OrbitReturn = {
   tooltipOffsetPx: number;
   setZoomTarget: (val: number) => void;
   zoomTargetRef: React.RefObject<number | null>;
-  edgeCueRef: React.RefObject<{
-    visible: boolean;
-    mode: 'off' | 'near' | 'in';
-    insetX: number;
-    insetY: number;
-    pinned: boolean;
-  }>;
 };
 
 export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   const ROTATE_EVT = 'gp:orbit-rot';
   const MENU_EVT = 'gp:menu-open'; // listen for InfoPanel open/close
+  const DESKTOP_IDLE_MOUSE_DELAY_MS = 4000;
 
   const {
     isDragging = false,
@@ -169,9 +163,11 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   useEffect(() => {
     const onOpen = () => {
       hoverActiveRef.current = true;
+      markActivity();
     };
     const onClose = () => {
       hoverActiveRef.current = false;
+      markActivity();
     };
     window.addEventListener('gp:hover-open', onOpen);
     window.addEventListener('gp:hover-close', onClose);
@@ -179,10 +175,10 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
       window.removeEventListener('gp:hover-open', onOpen);
       window.removeEventListener('gp:hover-close', onClose);
     };
-  }, []);
+  }, [markActivity]);
 
-  // === Edge cue + edge drive (extracted) ===
-  const { edgeHotzoneRef, edgeDriveRef, edgeCueRef } = useEdgeCueController({
+  // === Edge cue state (kept for HUD/other UI) ===
+  useEdgeCueController({
     useDesktopLayout,
     menuOpenRef,
   });
@@ -199,7 +195,10 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   }) => {
     if (hoverActiveRef.current) return false;
     if (menuOpenRef.current) return false;
-    if (useDesktopLayout && edgeHotzoneRef.current) return false;
+    if (useDesktopLayout) {
+      const lastMouseMoveAt = lastMouseMoveTsRef.current || performance.now();
+      return !userInteracting && performance.now() - lastMouseMoveAt >= DESKTOP_IDLE_MOUSE_DELAY_MS;
+    }
     return isIdle({ userInteracting, hasInteractedRef: hiRef, lastActivityRef: laRef });
   };
 
@@ -225,7 +224,6 @@ const rot = useRotation({
   markActivity,
   isDragging,
   gestureRef,
-  edgeDriveRef,
   menuOpenRef,
 });
 
@@ -233,7 +231,7 @@ const rot = useRotation({
 const fallbackIsPinchingRef = useRef(false);
 const fallbackIsTouchRotatingRef = useRef(false);
 const fallbackEffectiveDraggingRef = useRef(false);
-const fallbackLastMouseMoveTsRef = useRef(0);
+const fallbackLastMouseMoveTsRef = useRef(performance.now());
 
 // Select the actual refs if provided, else fallback
 const isPinchingRef =
@@ -256,16 +254,7 @@ const applyRotationFrame =
   (rot?.applyRotationFrame as ((args: { idleActive: boolean; delta: number }) => void) | undefined) ??
   (() => {});
 
-const notePossibleIdleExit =
-  (rot?.notePossibleIdleExit as ((idleActive: boolean) => void) | undefined) ??
-  (() => {});
-
-const getDesktopCursorTarget =
-  (rot?.getDesktopCursorTarget as (() => { x: number; y: number }) | undefined) ??
-  (() => ({ x: 0, y: 0 }));
-
 void lastMouseMoveTsRef;
-void getDesktopCursorTarget;
 
   usePixelOffsets({
     groupRef,
@@ -289,7 +278,6 @@ void getDesktopCursorTarget;
       effectiveDraggingRef.current || isTouchRotatingRef.current || isPinchingRef.current;
 
     const idleActive = isIdleWrapped({ userInteracting, hasInteractedRef, lastActivityRef });
-    notePossibleIdleExit(idleActive);
     applyRotationFrame({ idleActive, delta });
   });
 
@@ -332,6 +320,5 @@ void getDesktopCursorTarget;
     tooltipOffsetPx,
     setZoomTarget,
     zoomTargetRef,
-    edgeCueRef,
   };
 }

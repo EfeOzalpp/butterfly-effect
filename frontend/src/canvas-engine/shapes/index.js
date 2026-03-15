@@ -1,26 +1,26 @@
 // src/canvas-engine/shapes/index.js
 // clouds
-import { drawClouds, CLOUDS_BASE_PALETTE } from './clouds';
+import { drawClouds, CLOUDS_BASE_PALETTE, CLOUDS_DARK_PALETTE } from './clouds';
 // snow
-import { drawSnow, SNOW_BASE_PALETTE } from './snow';
+import { drawSnow, SNOW_BASE_PALETTE, SNOW_DARK_PALETTE } from './snow';
 // house
-import { drawHouse, HOUSE_BASE_PALETTE } from './house';
+import { drawHouse, HOUSE_BASE_PALETTE, HOUSE_DARK_PALETTE } from './house';
 // power
-import { drawPower, POWER_BASE_PALETTE } from './power';
+import { drawPower, POWER_BASE_PALETTE, POWER_DARK_PALETTE } from './power';
 // villa
-import { drawVilla, VILLA_BASE_PALETTE } from './villa';
+import { drawVilla, VILLA_BASE_PALETTE, VILLA_DARK_PALETTE } from './villa';
 // car
-import { drawCar,   CAR_BASE_PALETTE }   from './car';
+import { drawCar,   CAR_BASE_PALETTE,   CAR_DARK_PALETTE   } from './car';
 // sea
-import { drawSea,   SEA_BASE_PALETTE }   from './sea';
+import { drawSea,   SEA_BASE_PALETTE,   SEA_DARK_PALETTE   } from './sea';
 // sun
-import { drawSun,   SUN_BASE_PALETTE }   from './sun';
+import { drawSun,   SUN_BASE_PALETTE,   SUN_DARK_PALETTE   } from './sun';
 // car factory
-import { drawCarFactory, CAR_FACTORY_BASE_PALETTE } from './carFactory';
+import { drawCarFactory, CAR_FACTORY_BASE_PALETTE, CAR_FACTORY_DARK_PALETTE } from './carFactory';
 // bus
-import { drawBus, BUS_BASE_PALETTE } from './bus';
+import { drawBus, BUS_BASE_PALETTE, BUS_DARK_PALETTE } from './bus';
 // trees
-import { drawTrees, TREES_BASE_PALETTE } from './trees';
+import { drawTrees, TREES_BASE_PALETTE, TREES_DARK_PALETTE } from './trees';
 
 // re-exports
 export { drawClouds, CLOUDS_BASE_PALETTE };

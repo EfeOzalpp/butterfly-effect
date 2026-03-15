@@ -11,15 +11,20 @@ export type CanvasBounds =
   | { kind: "parent" }
   | { kind: "fixed"; w: number; h: number };
 
+export type HostSignals = {
+  questionnaireOpen?: boolean;
+};
+
 // Base shape
 type HostDefBase = {
   mount: string;
   zIndex: number;
   dprMode: DprMode;
-  canvasDimensions?: CanvasBounds;
+  fpsCap?: number;
+  canvasDimensions?: CanvasBounds | ((signals: HostSignals) => CanvasBounds);
   stopOnOpen?: readonly string[];
   scene?: {
-    baseMode?: BaseMode;   // "start" | "overlay"
+    baseMode?: BaseMode;   // "start" | "city"
     ruleset: SceneRuleSet; // getProfile(SceneState)
   };
 };
@@ -31,17 +36,18 @@ export const HOST_DEFS = defineHosts({
     mount: "#canvas-root",
     zIndex: 2,
     dprMode: "cap3",
-    canvasDimensions: { kind: "viewport" },
+    canvasDimensions: { kind: "parent" },
     scene: { baseMode: "start", ruleset: SCENE_RULESETS.intro },
   },
 
   city: {
     mount: "#city-canvas-root",
     zIndex: 60,
-    dprMode: "auto",
+    dprMode: "fixed1",
+    fpsCap: 30,
     stopOnOpen: ["start"],
     canvasDimensions: { kind: "viewport" },
-    scene: { baseMode: "overlay", ruleset: SCENE_RULESETS.city },
+    scene: { baseMode: "city", ruleset: SCENE_RULESETS.city },
   },
 } as const);
 

@@ -43,10 +43,47 @@ export const HOUSE_BASE_PALETTE = {
     { r: 180, g: 140, b: 100 },
   ],
   window: {
-    lit: { r: 250, g: 240, b: 160 },
+    lit: [
+      { r: 250, g: 240, b: 160 },
+      { r: 255, g: 230, b: 140 },
+      { r: 245, g: 220, b: 120 },
+    ],
     dark: { r: 120, g: 170, b: 220 },
   },
   solarPanel: { r: 180, g: 205, b: 235 },
+};
+
+export const HOUSE_DARK_PALETTE = {
+  grass: { r: 56, g: 114, b: 174 },
+  body: [
+    { r: 115, g: 142, b: 180 },
+    { r: 127, g: 139, b: 158 },
+    { r: 120, g: 145, b: 165 },
+    { r: 130, g: 144, b: 179 },
+    { r: 125, g: 149, b: 188 },
+  ],
+  roof: [
+    { r: 148, g: 82,  b: 88  },
+    { r: 82, g: 86,  b: 96  },
+    { r: 72,  g: 86,  b: 110 },
+    { r: 92,  g: 98,  b: 118 },
+    { r: 58,  g: 72,  b: 98  },
+  ],
+  door: [
+    { r: 93,  g: 76,  b: 74 },
+    { r: 82,  g: 107, b: 89 },
+    { r: 118, g: 120, b: 93 },
+    { r: 99,  g: 88,  b: 87 },
+  ],
+  window: {
+    lit:  [
+      { r: 255, g: 198, b: 80 },
+      { r: 255, g: 186, b: 66 },
+      { r: 245, g: 170, b: 58 },
+    ],
+    dark: { r: 66,  g: 107, b: 169 },
+  },
+  solarPanel: { r: 99, g: 129, b: 180 },
 };
 
 const HOUSE = {
@@ -103,6 +140,7 @@ function rand01(seed) {
 function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
 
 export function drawHouse(p, _cx, _cy, _r, opts = {}) {
+  const pal = opts?.darkMode ? HOUSE_DARK_PALETTE : HOUSE_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -112,7 +150,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
 
-  const baseAlpha = Number.isFinite(opts.alpha) ? opts.alpha : 235;
+  const baseAlpha = Number.isFinite(opts.alpha) ? opts.alpha : 255;
   const u = clamp01(opts?.liveAvg ?? 0.5);
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
@@ -160,7 +198,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const grassY = pxY + pxH - grassH;
   const rGrassTop = Math.round(cell * 0.06);
 
-  let grassTint = HOUSE_BASE_PALETTE.grass;
+  let grassTint = pal.grass;
   if (opts.gradientRGB) {
     grassTint = blendRGB(grassTint, opts.gradientRGB, val(HOUSE.grass.colorBlend, u));
   }
@@ -188,19 +226,19 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const roofH = Math.max(4, Math.round(cell * 0.15));
   const roofY = Math.max(pxY, bodyY - roofH);
 
-  let bodyTint = pick(HOUSE_BASE_PALETTE.body, r2);
+  let bodyTint = pick(pal.body, r2);
   if (opts.gradientRGB) {
     bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(HOUSE.body.colorBlend, u));
   }
   bodyTint = clampBrightness(bodyTint, HOUSE.body.brightnessRange[0], HOUSE.body.brightnessRange[1]);
   bodyTint = applyExposureContrast(bodyTint, ex, ct);
 
-  const roofTintRaw = pick(HOUSE_BASE_PALETTE.roof, r3);
+  const roofTintRaw = pick(pal.roof, r3);
   const roofTint = applyExposureContrast(roofTintRaw, ex, ct);
   const rBody = Math.round(cell * 0.06);
 
   p.noStroke();
-  fillRgb(p, bodyTint, alpha);
+  fillRgb(p, bodyTint, 255);
   p.rect(pxX, bodyY, pxW, bodyH, rBody);
 
   fillRgb(p, roofTint, alpha);
@@ -258,7 +296,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       }
 
       // color & draw (no external gradient blend for panels)
-      let panelTint = HOUSE_BASE_PALETTE.solarPanel;
+      let panelTint = pal.solarPanel;
       panelTint = applyExposureContrast(panelTint, ex, ct);
 
       p.push();
@@ -385,7 +423,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
 
 // ------- Door (3 profiles: short / mid / tall) -------
 {
-  let doorTint = pick(HOUSE_BASE_PALETTE.door, r5);
+  let doorTint = pick(pal.door, r5);
   if (opts.gradientRGB) {
     doorTint = blendRGB(doorTint, opts.gradientRGB, val(HOUSE.body.colorBlend, u));
   }
@@ -422,14 +460,14 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
 // ------- Windows (3 size profiles: short / mid / tall; 2 per row; max 6) -------
 {
   // lit/dark tints (safe)
-  let winLit  = HOUSE_BASE_PALETTE.window.lit;
-  let winDark = HOUSE_BASE_PALETTE.window.dark;
+  let winLitVariants = Array.isArray(pal.window.lit) ? pal.window.lit : [pal.window.lit];
+  let winDark = pal.window.dark;
   if (opts.gradientRGB) {
     const k = val(HOUSE.body.colorBlend, u);
-    winLit  = blendRGB(winLit,  opts.gradientRGB, k);
+    winLitVariants = winLitVariants.map((c) => blendRGB(c, opts.gradientRGB, k));
     winDark = blendRGB(winDark, opts.gradientRGB, k);
   }
-  winLit  = applyExposureContrast(winLit,  ex, ct);
+  winLitVariants = winLitVariants.map((c) => applyExposureContrast(c, ex, ct));
   winDark = applyExposureContrast(winDark, ex, ct);
 
   const cellsH = bodyH / cell;
@@ -495,7 +533,9 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const x = startX + cc * (winW + gapX);
 
       if (y >= roofY + 2 && y + winH <= bodyY + bodyH - 2) {
-        const tint = (drawn < litCount) ? winLit : winDark;
+        const litRand = rand01(hash32(`house-lit|${seed}|${rr}|${cc}|${drawn}`));
+        const litIdx = Math.floor(litRand * winLitVariants.length) % winLitVariants.length;
+        const tint = (drawn < litCount) ? winLitVariants[litIdx] : winDark;
         fillRgb(p, tint, alpha);
         p.rect(x, y, winW, winH, Math.round(cell * 0.02));
       }

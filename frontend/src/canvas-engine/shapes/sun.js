@@ -24,6 +24,15 @@ export const SUN_BASE_PALETTE = {
   ray:     { r: 255, g: 140, b: 40 },
 };
 
+export const SUN_DARK_PALETTE = {
+  default: { r: 140, g: 124, b: 46 },
+  ray:     { r: 140, g: 88,  b: 31 },
+};
+
+export const MOON_DARK_PALETTE = {
+  default: { r: 195, g: 208, b: 228 }, // cool silver-blue
+};
+
 const SUN_BASE = SUN_BASE_PALETTE.default;
 const SUN_RAY  = SUN_BASE_PALETTE.ray;
 
@@ -63,7 +72,81 @@ const SUN = {
  * - rayCount         (integer)
  * - coreScaleMult    (number)         — multiplies core base diameter (before osc)
  */
+function drawCrescentMoon(p, x, y, r, opts, t, ex, ct) {
+  const u = clamp01(opts?.liveAvg ?? 0.5);
+
+  let moonTint = MOON_DARK_PALETTE.default;
+  if (opts.gradientRGB) moonTint = blendRGB(moonTint, opts.gradientRGB, 0.08);
+  moonTint = applyExposureContrast(moonTint, ex, ct);
+  const pulsed = oscillateSaturation(moonTint, t, {
+    amp:   val([0.12, 0.04], u),
+    speed: val([0.40, 0.06], u),
+    phase: 0,
+  });
+
+  const coreBase = r * val(SUN.coreDiamK, u) * (opts.coreScaleMult ?? 5);
+  const desiredAbsOsc = r * val([0.05, 0.01], u);
+
+  const m = applyShapeMods({
+    p, x, y, r: coreBase,
+    opts: {
+      alpha: Number.isFinite(opts.alpha) ? opts.alpha : 235,
+      timeMs: opts.timeMs,
+      liveAvg: opts.liveAvg,
+      rootAppearK: opts.rootAppearK,
+    },
+    mods: {
+      appear: { scaleFrom: 0.0, alphaFrom: 0.0, anchor: 'center', ease: 'back', backOvershoot: 1.6 },
+      sizeOsc: {
+        mode:    'absolute',
+        biasAbs: coreBase,
+        ampAbs:  desiredAbsOsc,
+        speed:   val([8.0, 0.18], u),
+        anchor:  'center',
+      },
+      opacityOsc: { amp: val([12, 5], u), speed: val([0.38, 0.10], u) },
+      rotation: { speed: 0 },
+    },
+  });
+
+  // Crescent drawn as two-arc path:
+  // outer arc  = moon circle (the lit limb)
+  // inner arc  = shadow circle of equal radius, offset along +X
+  // d = 0.7R  →  "almost half moon, slightly crescent" appearance
+  const R = m.r / 2;           // m.r is p5 circle diameter, convert to radius
+  const d = R * 0.7;           // shadow circle offset (0=full dark, 2R=full moon)
+  const ix = d / 2;            // x-coord of intersection points
+  const iy = Math.sqrt(Math.max(0, R * R - ix * ix)); // y-coord
+
+  // Angles from moon center (0,0) and shadow center (d,0) to the intersection points
+  const moonTop = Math.atan2(-iy, ix);
+  const moonBot = Math.atan2( iy, ix);
+  const shadBot = Math.atan2( iy, ix - d);
+  const shadTop = Math.atan2(-iy, ix - d);
+
+  const alpha = typeof m.alpha === 'number' ? m.alpha : 235;
+  const ctx = p.drawingContext;
+
+  p.push();
+  p.translate(m.x, m.y);
+  p.scale(m.scaleX, m.scaleY);
+
+  ctx.save();
+  ctx.rotate(-Math.PI / 5); // ~36° tilt — classic "resting moon" angle
+
+  ctx.beginPath();
+  ctx.arc(0, 0, R, moonTop, moonBot, true);   // outer limb: sweep left (lit) side
+  ctx.arc(d, 0, R, shadBot, shadTop, false);  // inner limb: shadow boundary
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${pulsed.r},${pulsed.g},${pulsed.b},${alpha / 255})`;
+  ctx.fill();
+
+  ctx.restore();
+  p.pop();
+}
+
 export function drawSun(p, xIn, yIn, rIn, opts = {}) {
+  const pal = opts?.darkMode ? SUN_DARK_PALETTE : SUN_BASE_PALETTE;
   const u = clamp01(opts?.liveAvg ?? 0.5);
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
@@ -82,6 +165,12 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
     x = cx; y = cy; r = diam;
   }
 
+  // Dark mode → crescent moon instead of sun
+  if (opts?.darkMode) {
+    drawCrescentMoon(p, x, y, r, opts, t, ex, ct);
+    return;
+  }
+
   // color blending setup
   const sunBlendDefault = val(SUN.colorBlend, u);
   const sunBlend = (typeof opts.sunBlend === 'number') ? clamp01(opts.sunBlend) : sunBlendDefault;
@@ -90,20 +179,20 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
   const oscPhase = opts.oscPhase ?? 0;
 
   // core tint
-  let baseTint = SUN_BASE;
+  let baseTint = pal.default;
   if (typeof opts?.sunCss === 'string' && opts.sunCss.trim().length > 0) {
     const c = p.color(opts.sunCss);
     baseTint = { r: p.red(c), g: p.green(c), b: p.blue(c) };
   } else if (opts.sunGradientRGB) {
-    baseTint = blendRGB(SUN_BASE, opts.sunGradientRGB, sunBlend);
+    baseTint = blendRGB(pal.default, opts.sunGradientRGB, sunBlend);
   } else if (opts.gradientRGB) {
-    baseTint = blendRGB(SUN_BASE, opts.gradientRGB, sunBlend);
+    baseTint = blendRGB(pal.default, opts.gradientRGB, sunBlend);
   }
   let pulsedCore = oscillateSaturation(baseTint, t, { amp: oscAmp, speed: oscSpeed, phase: oscPhase });
   pulsedCore = applyExposureContrast(pulsedCore, ex, ct);
 
   // ray tint
-  let rayTintBase = opts.gradientRGB ? blendRGB(SUN_RAY, opts.gradientRGB, sunBlend) : SUN_RAY;
+  let rayTintBase = opts.gradientRGB ? blendRGB(pal.ray, opts.gradientRGB, sunBlend) : pal.ray;
   rayTintBase = applyExposureContrast(rayTintBase, ex, ct);
   const pulsedRay = oscillateSaturation(rayTintBase, t, { amp: oscAmp, speed: oscSpeed, phase: oscPhase });
 

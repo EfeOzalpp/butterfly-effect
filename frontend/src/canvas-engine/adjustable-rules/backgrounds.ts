@@ -2,12 +2,19 @@
 
 import { SceneLookupKey } from "./sceneMode";
 
-export type RgbaStop = { k: number; rgba: string }; // k in [0..1]
+export type RgbaStop = { k: number; rgba: string; oscK?: { amp: number; hz: number } }; // k in [0..1]
 export type RadialGradientSpec = {
   kind: "radial";
-  center: { xK: number; yK: number };   
-  innerK: number;                          
-  outer: "diag" | { k: number };            
+  center: { xK: number; yK: number };
+  innerK: number;
+  outer: "diag" | { k: number };
+  stops: readonly RgbaStop[];
+};
+
+export type LinearGradientSpec = {
+  kind: "linear";
+  from: { xK: number; yK: number };
+  to: { xK: number; yK: number };
   stops: readonly RgbaStop[];
 };
 
@@ -18,56 +25,52 @@ export type SolidBackgroundSpec = {
 
 export type BackgroundSpec = {
   base: string; // used by p.background
-  overlay?: RadialGradientSpec | SolidBackgroundSpec;
+  overlay?: RadialGradientSpec | LinearGradientSpec | SolidBackgroundSpec;
 };
 
 export type BackgroundsByMode = Record<SceneLookupKey, BackgroundSpec>;
+export type BackgroundHost = "start" | "city";
 
-const START_BACKGROUND: BackgroundSpec = {
+const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
   base: "rgb(229, 246, 255)",
   overlay: {
-    kind: "radial",
-    center: { xK: 0.5, yK: 0.82 },
-    innerK: 0.06,
-    outer: "diag",
-    stops: [
-      { k: 0.0, rgba: "rgba(255,255,255,1.00)" },
-      { k: 0.2, rgba: "rgba(255,255,255,0.90)" },
-      { k: 0.4, rgba: "rgba(255,255,255,0.60)" },
-      { k: 0.5, rgba: "rgba(255,255,255,0.30)" },
-      { k: 0.65, rgba: "rgba(210,230,246,0.18)" },
-      { k: 0.9, rgba: "rgba(0, 157, 255, 0.1)" },
-      { k: 1.0, rgba: "rgba(180,228,253,1.00)" },
-    ] as const,
+    kind: "linear",
+    from: { xK: 0.5, yK: 0.0 },
+    to: { xK: 0.5, yK: 1.0 },
+      stops: [
+        { k: 0.0, rgba: "rgba(120, 188, 236, 0.32)" },
+        { k: 0.25, rgba: "rgba(88, 156, 214, 0.38)", oscK: { amp: 0.08, hz: 0.12 } },
+        { k: 0.6, rgba: "rgba(251, 252, 238, 0.9)" },
+        { k: 0.6, rgba: "rgba(171, 200, 133, 0.64)" },
+        { k: 1.0, rgba: "rgba(139, 152, 134, 0.55)" },
+      ] as const,
   },
 } as const;
 
 export const BACKGROUNDS: BackgroundsByMode = {
-  start: START_BACKGROUND,
-  sectionOpen: START_BACKGROUND,
-
-  questionnaire: {
+  start: {
     base: "rgb(229, 246, 255)",
     overlay: {
-      kind: "radial",
-      center: { xK: 0.5, yK: 0.82 },
-      innerK: 0.06,
-      outer: "diag",
+      kind: "linear",
+      from: { xK: 0.5, yK: 0.0 },
+      to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0.0, rgba: "rgba(255,255,255,1.00)" },
-        { k: 0.4, rgba: "rgba(255,255,255,0.55)" },
-        { k: 1.0, rgba: "rgba(180,228,253,1.00)" },
+        { k: 0.0, rgba: "rgba(120, 188, 236, 0.42)" },
+        { k: 0.25, rgba: "rgba(88, 156, 214, 0.38)" },
+        { k: 0.59, rgba: "rgba(251, 252, 238, 0.9)" },
+        { k: 0.59, rgba: "rgba(205, 229, 174, 0.92)" },
+        { k: 1.0, rgba: "rgba(132, 168, 118, 0.95)" },
       ] as const,
     },
   },
+  questionnaire: QUESTIONNAIRE_BACKGROUND,
 
-  overlay: {
+  city: {
     base: "rgb(229, 246, 255)",
     overlay: {
-      kind: "radial",
-      center: { xK: 0.5, yK: 0.82 },
-      innerK: 0.06,
-      outer: "diag",
+      kind: "linear",
+      from: { xK: 0.5, yK: 0.0 },
+      to: { xK: 0.5, yK: 1.0 },
       stops: [
         { k: 0.0, rgba: "rgba(255,255,255,1.00)" },
         { k: 0.2, rgba: "rgba(255,255,255,0.85)" },
@@ -77,46 +80,67 @@ export const BACKGROUNDS: BackgroundsByMode = {
   },
 } as const;
 
-const START_BACKGROUND_DARK: BackgroundSpec = {
-  base: "rgb(16, 22, 30)",
+const CITY_BACKGROUND: BackgroundSpec = {
+  base: "rgb(224, 240, 252)",
   overlay: {
-    kind: "radial",
-    center: { xK: 0.5, yK: 0.8 },
-    innerK: 0.05,
-    outer: "diag",
+    kind: "linear",
+    from: { xK: 0.42, yK: 0.0 },
+    to: { xK: 0.7, yK: 1.0 },
     stops: [
-      { k: 0.0, rgba: "rgba(56, 78, 104, 0.28)" },
-      { k: 0.35, rgba: "rgba(32, 48, 67, 0.32)" },
-      { k: 0.7, rgba: "rgba(18, 30, 44, 0.62)" },
-      { k: 1.0, rgba: "rgba(10, 16, 24, 0.96)" },
+      { k: 0.0, rgba: "rgba(255,255,255,1.00)" },
+      { k: 0.24, rgba: "rgba(245,252,255,0.92)" },
+      { k: 0.58, rgba: "rgba(214,233,246,0.48)" },
+      { k: 1.0, rgba: "rgba(164,209,236,0.92)" },
     ] as const,
   },
 } as const;
 
-export const BACKGROUNDS_DARK: BackgroundsByMode = {
-  start: START_BACKGROUND_DARK,
-  sectionOpen: START_BACKGROUND_DARK,
-  questionnaire: {
-    base: "rgb(18, 24, 33)",
-    overlay: {
-      kind: "radial",
-      center: { xK: 0.5, yK: 0.8 },
-      innerK: 0.05,
-      outer: "diag",
+export const BACKGROUNDS_CITY: BackgroundsByMode = {
+  start: CITY_BACKGROUND,
+  questionnaire: CITY_BACKGROUND,
+  city: CITY_BACKGROUND,
+} as const;
+
+const QUESTIONNAIRE_BACKGROUND_DARK: BackgroundSpec = {
+  base: "rgb(18, 24, 33)",
+  overlay: {
+    kind: "linear",
+    from: { xK: 0.5, yK: 0.0 },
+    to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0.0, rgba: "rgba(70, 96, 126, 0.24)" },
-        { k: 0.42, rgba: "rgba(36, 54, 74, 0.30)" },
-        { k: 1.0, rgba: "rgba(11, 18, 27, 0.95)" },
+        { k: 0, rgba: "#1f1c3b" },
+        { k: 0.3, rgba: "rgb(67, 65, 107)", oscK: { amp: 0.06, hz: 0.12 } },
+        { k: 0.6, rgba: "#97b3e7" },
+        { k: 0.6, rgba: "rgba(70, 98, 158, 0.95)" },
+        { k: 1.0, rgba: "#263241", oscK: { amp: 0.06, hz: 0.12 } },
+      ] as const,
+  },
+} as const;
+
+export const BACKGROUNDS_DARK: BackgroundsByMode = {
+  start: {
+    base: "rgb(16, 22, 30)",
+    overlay: {
+      kind: "linear",
+      from: { xK: 0.5, yK: 0.0 },
+      to: { xK: 0.5, yK: 1.0 },
+      stops: [
+        { k: 0, rgba: "#1f1c3b" },
+        { k: 0.25, rgba: "#4D5586", oscK: { amp: 0.06, hz: 0.12 } },
+        { k: 0.59, rgba: "#acbdf1" },
+        { k: 0.59, rgba: "rgba(68, 96, 157, 0.95)" },
+        { k: 1.0, rgba: "#2b314d", oscK: { amp: 0.06, hz: 0.12 } },
       ] as const,
     },
   },
-  overlay: {
+  questionnaire: QUESTIONNAIRE_BACKGROUND_DARK,
+
+  city: {
     base: "rgb(14, 20, 28)",
     overlay: {
-      kind: "radial",
-      center: { xK: 0.5, yK: 0.8 },
-      innerK: 0.05,
-      outer: "diag",
+      kind: "linear",
+      from: { xK: 0.5, yK: 0.0 },
+      to: { xK: 0.5, yK: 1.0 },
       stops: [
         { k: 0.0, rgba: "rgba(76, 103, 134, 0.22)" },
         { k: 0.2, rgba: "rgba(43, 62, 84, 0.28)" },
@@ -126,9 +150,34 @@ export const BACKGROUNDS_DARK: BackgroundsByMode = {
   },
 } as const;
 
+const CITY_BACKGROUND_DARK: BackgroundSpec = {
+  base: "rgb(12, 18, 26)",
+  overlay: {
+    kind: "linear",
+    from: { xK: 0.4, yK: 0.0 },
+    to: { xK: 0.7, yK: 1.0 },
+    stops: [
+      { k: 0.0, rgba: "#262624" },
+      { k: 0.36, rgba: "rgba(39, 58, 79, 0.34)" },
+      { k: 0.72, rgba: "rgba(20, 33, 47, 0.68)" },
+      { k: 1.0, rgba: "rgba(8, 14, 21, 0.96)" },
+    ] as const,
+  },
+} as const;
+
+export const BACKGROUNDS_CITY_DARK: BackgroundsByMode = {
+  start: CITY_BACKGROUND_DARK,
+  questionnaire: CITY_BACKGROUND_DARK,
+  city: CITY_BACKGROUND_DARK,
+} as const;
+
 export function backgroundForTheme(
+  host: BackgroundHost,
   key: SceneLookupKey,
   darkMode: boolean
 ): BackgroundSpec {
+  if (host === "city") {
+    return darkMode ? BACKGROUNDS_CITY_DARK[key] : BACKGROUNDS_CITY[key];
+  }
   return darkMode ? BACKGROUNDS_DARK[key] : BACKGROUNDS[key];
 }

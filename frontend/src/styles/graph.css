@@ -91,7 +91,7 @@
   justify-content: center;
   transition: transform 0.1s ease;
 }
-.toggle-button:hover { transform: scale(1.02); }
+.toggle-button:hover { transform: none; }
 
 .graph-container { position: relative; z-index: 4; }
 .bar-graph-divider { width: 100%; height: 100%; justify-content: center; align-items: flex-end; }
@@ -105,7 +105,7 @@
   animation-duration: 3.6s;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   border: 0.2px solid rgb(212, 212, 212);
 }
 
@@ -226,42 +226,81 @@
    Safe to tune tokens/colors without breaking JS positioning behavior.
    -------------------------------------------------------------------------- */
 /* Theme wiring: graph */
-.graph-wrapper,
-.graph-container,
-.draggable-container,
-.draggable-bar-graph,
-.bar-graph-divider,
-.bar-graph-container,
-.bar-graph-icons,
-.bar-graph-bar,
-.bar-graph-label,
-.percentage-section,
-.percentage-indicator,
-.toggle-button,
-.toggle-icon,
-.empty-center,
-.empty-card,
-.empty-card--canvas {
+.graph-container {
+  background: var(--graph-bg);
+}
+
+.graph-container canvas {
+  cursor: grab;
+}
+
+.graph-container canvas.hovering-shape {
+  cursor: pointer;
+}
+
+.graph-container canvas.is-rotating {
+  cursor: grabbing;
+}
+
+.graph-loading-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--ui-bg-surface-glass);
   color: var(--ui-text);
-  border-color: var(--ui-border);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
-.draggable-bar-graph,
-.bar-graph-container,
-.bar-graph-icons,
-.bar-graph-bar,
-.percentage-section,
-.percentage-indicator,
-.toggle-button,
-.empty-card {
-  background: var(--ui-bg-surface);
-  border: 1px solid var(--ui-border);
+.graph-loading-card.loading-dots {
+  color: var(--ui-text-secondary);
 }
 
-.graph-wrapper,
-.graph-container,
-.bar-graph-divider,
-.empty-center {
-  background: var(--ui-bg-muted);
-  border: 1px solid var(--ui-border);
+.graph-loading-text {
+  animation: graphLoadingTint 1.6s ease-in-out infinite;
+}
+
+.graph-loading-ellipsis {
+  display: inline-flex;
+  min-width: 1.6em;
+  justify-content: flex-start;
+}
+
+.graph-loading-dot {
+  opacity: 0;
+  transform: translateY(0);
+  animation: graphLoadingDotStep 1.2s steps(1, end) infinite,
+    graphLoadingDotJump 1.2s ease-in-out infinite;
+}
+
+.graph-loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.graph-loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes graphLoadingTint {
+  0%,
+  100% { color: var(--ui-text-secondary); }
+  50% { color: var(--ui-text); }
+}
+
+@keyframes graphLoadingDotStep {
+  0%,
+  100% { opacity: 0; }
+  25%,
+  100% { opacity: 1; }
+}
+
+@keyframes graphLoadingDotJump {
+  0%,
+  100% { transform: translateY(0); }
+  12% { transform: translateY(-0.14rem); }
+  24% { transform: translateY(0); }
 }

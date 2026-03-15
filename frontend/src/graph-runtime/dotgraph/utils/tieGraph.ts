@@ -79,15 +79,12 @@ export function getSelectedTieLinePoints(
 
   const pts = ids.map((id) => posById.get(id) as any);
   let cx = 0;
-  let cy = 0;
   let cz = 0;
   for (const p of pts) {
     cx += p[0];
-    cy += p[1];
     cz += p[2];
   }
   cx /= pts.length;
-  cy /= pts.length;
   cz /= pts.length;
 
   return pts.slice().sort((a: any, b: any) => {

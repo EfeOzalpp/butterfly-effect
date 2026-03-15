@@ -31,15 +31,18 @@ export function scoreCandidateGeneric(opts: {
   salt: number;
   shape?: ShapeName;
 
+  // center of the allowed segment this candidate belongs to (overrides full-grid center)
+  effectiveCenterC?: number;
+
   // pass data, don't import globals
   getMeta?: (shape?: ShapeName) => separationMetaLike | undefined;
 }) {
-  const { r0, c0, wCell, hCell, cols, usedRows, placed, salt, shape, getMeta } = opts;
+  const { r0, c0, wCell, hCell, cols, usedRows, placed, salt, shape, getMeta, effectiveCenterC } = opts;
 
   const { x: cx, y: cy } = centerOf({ r0, c0, w: wCell, h: hCell });
 
-  // constant mild center preference (no mode knob)
-  const gridCx = (cols - 1) / 2;
+  // prefer center of the available zone, fall back to full-grid center
+  const gridCx = effectiveCenterC ?? (cols - 1) / 2;
   const usedCy = (usedRows - 1) / 2;
   const dCenter2 = (cx - gridCx) ** 2 + (cy - usedCy) ** 2;
   const centerTerm = -0.08 * dCenter2;

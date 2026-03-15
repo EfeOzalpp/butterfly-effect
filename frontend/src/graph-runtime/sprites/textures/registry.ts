@@ -18,6 +18,7 @@ export type MakeArgs = {
   bleed?: { top?: number; right?: number; bottom?: number; left?: number };
   seedKey?: string;
   prio?: number;
+  darkMode?: boolean;
 };
 
 type Listener = (key: string, tex: THREE.CanvasTexture) => void;
@@ -53,6 +54,7 @@ class TextureRegistry {
           footprint: args.footprint,
           bleed: args.bleed,
           seedKey: args.seedKey ?? key,
+          darkMode: args.darkMode,
         });
         tex.generateMipmaps = true;
         (tex as any).anisotropy = 8;

@@ -7,6 +7,20 @@ const Lottie = React.lazy(() =>
 const LottieOption = ({ selected, isActive = false }) => {
   const lottieRef = useRef(null);
   const [animationData, setAnimationData] = useState(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduceMotion(!!mq.matches);
+    apply();
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", apply);
+      return () => mq.removeEventListener("change", apply);
+    }
+    mq.addListener(apply);
+    return () => mq.removeListener(apply);
+  }, []);
 
   // lazy-load animation json
   useEffect(() => {
@@ -27,40 +41,47 @@ const LottieOption = ({ selected, isActive = false }) => {
   useEffect(() => {
     if (!lottieRef.current) return;
 
-    lottieRef.current.setSpeed(2);
+    if (reduceMotion) {
+      lottieRef.current.goToAndStop(selected ? 15 : 0, true);
+      return;
+    }
+
+    lottieRef.current.setSpeed(1.6);
 
     if (selected) {
       lottieRef.current.setDirection(1);
       lottieRef.current.playSegments([0, 15], true);
     } else {
       lottieRef.current.setDirection(-1);
-      lottieRef.current.playSegments([2, 0], true);
+      lottieRef.current.playSegments([15, 0], true);
     }
-  }, [selected, animationData]);
+  }, [selected, animationData, reduceMotion]);
 
   // hover animation
   useEffect(() => {
-    if (!lottieRef.current || selected) return;
+    if (!lottieRef.current || selected || reduceMotion) return;
 
     if (isActive) {
-      lottieRef.current.setSpeed(2);
+      lottieRef.current.setSpeed(1.5);
       lottieRef.current.setDirection(1);
       lottieRef.current.playSegments([0, 8], true);
     } else {
       lottieRef.current.goToAndStop(0, true);
     }
-  }, [isActive, selected]);
+  }, [isActive, selected, reduceMotion]);
 
   return (
-    <div className="radio-button">
+    <div className={`radio-button${selected ? " selected" : ""}${isActive ? " active" : ""}`}>
       <Suspense fallback={<div className="lottie-skeleton" />}>
-        {animationData && (
+        {animationData ? (
           <Lottie
             lottieRef={lottieRef}
             animationData={animationData}
             loop={false}
             autoplay={false}
           />
+        ) : (
+          <div className="lottie-skeleton" />
         )}
       </Suspense>
     </div>

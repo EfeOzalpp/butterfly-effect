@@ -50,6 +50,30 @@ export const VILLA_BASE_PALETTE = {
   platform: { r: 130, g: 134, b: 138 },
 };
 
+export const VILLA_DARK_PALETTE = {
+  grass: { r: 5, g: 97, b: 176 },
+  body: [
+    { r: 129, g: 146, b: 172 }, { r: 123, g: 148, b: 182 }, { r: 127, g: 151, b: 178 },
+    { r: 130, g: 144, b: 179 }, { r: 125, g: 149, b: 188 }, { r: 120, g: 145, b: 165 },
+    { r: 132, g: 147, b: 161 },
+  ],
+  roof: [
+    { r: 104, g: 60, b: 61 },
+    { r: 82,  g: 66, b: 70 },
+    { r: 71,  g: 69, b: 77 },
+  ],
+  door: [
+    { r: 93, g: 76, b: 54 },
+    { r: 88, g: 95, b: 73 },
+    { r: 99, g: 88, b: 77 },
+  ],
+  window: {
+    lit:  { r: 255, g: 198, b: 80 },
+    dark: { r: 66,  g: 107, b: 169 },
+  },
+  platform: { r: 71, g: 85, b: 106 },
+};
+
 // ───────────────── Tunables
 const VILLA = {
   body: {
@@ -148,6 +172,7 @@ function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1) {
 }
 
 export function drawVilla(p, _cx, _cy, _r, opts = {}) {
+  const pal = opts?.darkMode ? VILLA_DARK_PALETTE : VILLA_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -210,7 +235,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     const y      = pxY + pxH - h;
 
     p.push(); p.noStroke();
-    const plat = applyExposureContrast(VILLA_BASE_PALETTE.platform, ex, ct);
+    const plat = applyExposureContrast(pal.platform, ex, ct);
     fillRgb(p, plat, drawAlpha);
     p.rect(pxX, y, pxW, h, Math.round(cell * 0.08));
     p.pop();
@@ -224,7 +249,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
   const leftIsTaller = seeded01(seedKey, 'grassSide') < 0.5;
 
-  let grassTint = VILLA_BASE_PALETTE.grass;
+  let grassTint = pal.grass;
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(VILLA.grass.colorBlend, u));
   grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
   grassTint = applyExposureContrast(grassTint, ex, ct);
@@ -281,7 +306,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     const bodyY = gTop - bodyH;
 
     let bodyTint = blendRGB(
-      VILLA_BASE_PALETTE.body[Math.floor(r2 * VILLA_BASE_PALETTE.body.length) % VILLA_BASE_PALETTE.body.length],
+      pal.body[Math.floor(r2 * pal.body.length) % pal.body.length],
       { r: 255, g: 255, b: 255 },
       0 // keep palette as-is, later blend with gradient
     );
@@ -331,7 +356,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const doorX       = doorOnLeft ? (ix + doorMargin) : (ix + iColW - doorMargin - doorW);
       const doorY       = iBodyY + bodyH - doorH + Math.round(bodyH * dCfg.Y_OFFSET_FRAC);
 
-      let doorTint = VILLA_BASE_PALETTE.door[Math.floor(rDoor * VILLA_BASE_PALETTE.door.length) % VILLA_BASE_PALETTE.door.length];
+      let doorTint = pal.door[Math.floor(rDoor * pal.door.length) % pal.door.length];
       if (opts.gradientRGB) doorTint = blendRGB(doorTint, opts.gradientRGB, val(VILLA.body.colorBlend, u));
       doorTint = applyExposureContrast(doorTint, ex, ct);
       fillRgb(p, doorTint, drawAlpha);
@@ -350,7 +375,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
       const litFront = Math.round((1 - u) * 1);
       const winColor = applyExposureContrast(
-        litFront >= 1 ? VILLA_BASE_PALETTE.window.lit : VILLA_BASE_PALETTE.window.dark,
+        litFront >= 1 ? pal.window.lit : pal.window.dark,
         ex, ct
       );
 
@@ -390,10 +415,10 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
       const litCount = Math.round((1 - u) * 2);
       const c0 = applyExposureContrast(
-        litCount > 0 ? VILLA_BASE_PALETTE.window.lit : VILLA_BASE_PALETTE.window.dark, ex, ct
+        litCount > 0 ? pal.window.lit : pal.window.dark, ex, ct
       );
       const c1 = applyExposureContrast(
-        litCount > 1 ? VILLA_BASE_PALETTE.window.lit : VILLA_BASE_PALETTE.window.dark, ex, ct
+        litCount > 1 ? pal.window.lit : pal.window.dark, ex, ct
       );
 
       const wW = Math.max(5, Math.round(iColW * sCfg.W_FRAC));

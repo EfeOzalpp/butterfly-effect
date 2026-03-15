@@ -16,7 +16,6 @@ export function EngineHost({
   liveAvg = 0.5,
   allocAvg = 0.5,
   questionnaireOpen = false,
-  sectionOpen = false,
   condAvgs,
 }: {
   id: HostId;
@@ -25,7 +24,6 @@ export function EngineHost({
   liveAvg?: number;
   allocAvg?: number;
   questionnaireOpen?: boolean;
-  sectionOpen?: boolean;
   condAvgs?: Partial<Record<'A' | 'B' | 'C' | 'D', number>>;
 }) {
   const hostDef = React.useMemo(() => {
@@ -39,6 +37,14 @@ export function EngineHost({
     return ids.map((otherId) => HOST_DEFS[otherId].mount);
   }, [hostDef]);
 
+  const resolvedBounds = React.useMemo(() => {
+    const dims = hostDef.canvasDimensions;
+    if (!dims) return undefined;
+    if (typeof dims === "function") {
+      return dims({ questionnaireOpen });
+    }
+    return dims;
+  }, [hostDef, questionnaireOpen]);
 
 
   React.useEffect(() => {
@@ -56,13 +62,14 @@ export function EngineHost({
     dprMode: hostDef.dprMode,
     mount: hostDef.mount,
     zIndex: hostDef.zIndex,
-    bounds: hostDef.canvasDimensions,
+    bounds: resolvedBounds,
+    fpsCap: hostDef.fpsCap,
   });
 
   const viewportKey = useViewportKey(120);
 
   // useSceneField should read baseMode from HOST_DEFS itself.
-  useSceneField(engine, id, allocAvg, { questionnaireOpen, sectionOpen }, viewportKey);
+  useSceneField(engine, id, allocAvg, { questionnaireOpen }, viewportKey);
 
   React.useEffect(() => {
     if (!engine.ready.current) return;

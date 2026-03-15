@@ -3,7 +3,7 @@
 export const Z_INDEX: Record<string, number> = {
   villa: 3,
   house: 2,
-  power: 5,
+  power: 13,
   car: 8,
   carFactory: 6,
   snow: 9,

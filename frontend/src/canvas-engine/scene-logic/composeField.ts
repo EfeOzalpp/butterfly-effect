@@ -13,16 +13,17 @@ import { retargetKindsStable, assignShapesByPlanner } from "./plan";
 export function composeField(opts: ComposeOpts): ComposeResult {
   const w = Math.round(opts.canvas.w);
   const h = Math.round(opts.canvas.h);
+  const ruleW = Math.round(opts.ruleWidthPx ?? w);
 
   const u = clamp01(opts.allocAvg);
 
   // mode is data (meta/debug). No branching here.
   const mode = opts.mode;
 
-  const device = deviceType(w);
+  const device = deviceType(ruleW);
 
   // padding selection uses the already-mode-resolved table passed in opts
-  const spec = resolveCanvasPaddingSpec(w, opts.padding);
+  const spec = resolveCanvasPaddingSpec(ruleW, opts.padding);
 
   const {
     cell,

@@ -21,10 +21,20 @@ export const CAR_FACTORY_BASE_PALETTE = {
   grass:    { r: 120, g: 180, b: 110 },
   building: { r: 208, g: 210, b: 214 },
   frame:    { r: 180, g: 182, b: 188 },
-  window:   { r: 220, g: 226, b: 236 },   // base before blue tint
+  window:   { r: 220, g: 226, b: 236 },
   chimney:  { r: 172, g: 174, b: 180 },
-  roof:     { r: 160, g: 162, b: 168 },   // subtle darker cap than wall
-  solarPanel:{ r: 180, g: 205, b: 235 },  // matches house panel tone
+  roof:     { r: 160, g: 162, b: 168 },
+  solarPanel:{ r: 180, g: 205, b: 235 },
+};
+
+export const CAR_FACTORY_DARK_PALETTE = {
+  grass: { r: 15, g: 97, b: 166 },
+  building:  { r: 114, g: 133, b: 164 },
+  frame:     { r: 99,  g: 115, b: 144 },
+  window:    { r: 120, g: 143, b: 181 },
+  chimney:   { r: 94,  g: 110, b: 138 },
+  roof:      { r: 88,  g: 102, b: 129 },
+  solarPanel:{ r: 99,  g: 129, b: 180 },
 };
 
 function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
@@ -178,6 +188,7 @@ function roundedRectPath(ctx, x, y, w, h, r) {
 }
 
 export function drawCarFactory(p, _x, _y, _r, opts = {}) {
+  const pal = opts?.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE;
   const cell = opts?.cell, f = opts?.footprint;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -220,7 +231,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   };
 
   // Grass tint: same logic as villa (use gradientRGB + clamp saturation)
-  let grass = CAR_FACTORY_BASE_PALETTE.grass;
+  let grass = pal.grass;
   if (opts.gradientRGB) {
     grass = blendRGB(grass, opts.gradientRGB, val(CF.grass.colorBlend, u));
   }
@@ -228,11 +239,11 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   grass = applyExposureContrast(grass, ex, ct);
 
   // Non-grass colors still use general gradient
-  const wall       = tintGeneral(CAR_FACTORY_BASE_PALETTE.building);
-  const frameRGB   = tintGeneral(CAR_FACTORY_BASE_PALETTE.frame);
-  const glassBase  = tintGeneral(CAR_FACTORY_BASE_PALETTE.window);
-  const chimneyRGB = tintGeneral(CAR_FACTORY_BASE_PALETTE.chimney);
-  const roofRGB    = tintGeneral(CAR_FACTORY_BASE_PALETTE.roof);
+  const wall       = tintGeneral(pal.building);
+  const frameRGB   = tintGeneral(pal.frame);
+  const glassBase  = tintGeneral(pal.window);
+  const chimneyRGB = tintGeneral(pal.chimney);
+  const roofRGB    = tintGeneral(pal.roof);
 
   // subtle blue tint for glass
   const blue = { r: 120, g: 170, b: 220 };
@@ -240,9 +251,9 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
 
   const backdrop = applyExposureContrast(
     {
-      r: Math.round(CAR_FACTORY_BASE_PALETTE.building.r * 0.88),
-      g: Math.round(CAR_FACTORY_BASE_PALETTE.building.g * 0.88),
-      b: Math.round(CAR_FACTORY_BASE_PALETTE.building.b * 0.88),
+      r: Math.round(pal.building.r * 0.88),
+      g: Math.round(pal.building.g * 0.88),
+      b: Math.round(pal.building.b * 0.88),
     }, ex, ct
   );
 
@@ -627,7 +638,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   {
     const sPanels = clamp01(u); // 0 → hidden, 1 → full
     if (sPanels > 0.001) {
-      const panelTint0 = applyExposureContrast(CAR_FACTORY_BASE_PALETTE.solarPanel, ex, ct);
+      const panelTint0 = applyExposureContrast(pal.solarPanel, ex, ct);
       const count = CF.panels.count;
 
       const marginSide = Math.max(4, Math.round(roofRw * CF.panels.sideMarginFrac));

@@ -46,6 +46,7 @@ export type ComposeOpts = {
 
   allocAvg: number | undefined;
   viewportKey?: number | string;
+  ruleWidthPx?: number;
 
   canvas: { w: number; h: number };
 

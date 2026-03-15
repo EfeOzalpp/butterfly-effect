@@ -15,6 +15,7 @@ export type AppState = {
   myRole: string | null;
   setMyRole: (r: string | null) => void;
 
+  counts: Record<string, number>;
   data: any[];
   loading: boolean;
 
@@ -25,6 +26,9 @@ export type AppState = {
 
   questionnaireOpen: boolean;
   setQuestionnaireOpen: (v: boolean) => void;
+
+  cityPanelOpen: boolean;
+  setCityPanelOpen: (v: boolean) => void;
 
   sectionOpen: boolean;
   setSectionOpen: (v: boolean) => void;
@@ -56,6 +60,9 @@ export type AppState = {
 
   allocAvg: number;
   commitAllocAvg: (avg?: number) => void;
+
+  radarMode: boolean;
+  setRadarMode: (v: boolean) => void;
 
   resetToStart: () => void;
 };
