@@ -24,6 +24,8 @@ const toScore100 = (v: number, decimals = 0) => {
   return Math.round(raw * pow) / pow;
 };
 
+const defaultIdOf = <T extends { _id?: string }>(item: T) => item._id;
+
 /**
  * Absolute score hook (no pool comparison).
  * Returns 0..100 for a value, id, or item.
@@ -33,7 +35,7 @@ export function useAbsoluteScore<T extends { _id?: string }>(
   opts?: AbsoluteOpts
 ) {
   const accessor = (opts?.accessor as ((x: T) => number)) ?? (avgWeightOf as (x: any) => number);
-  const idOf = (opts?.idOf as ((x: T) => string | undefined)) ?? ((x: T) => x._id);
+  const idOf = (opts?.idOf as ((x: T) => string | undefined)) ?? defaultIdOf;
   const decimals = opts?.decimals ?? 0;
 
   const idToValue = useMemo(() => {
@@ -53,7 +55,6 @@ export function useAbsoluteScore<T extends { _id?: string }>(
   };
 
   const getForItem = (item: T) => {
-    const id = idOf(item);
     const v = accessor(item);
     return getForValue(v);
     // (We don't exclude self because this is absolute, not relative.)

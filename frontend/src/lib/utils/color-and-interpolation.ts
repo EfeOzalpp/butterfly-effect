@@ -141,21 +141,27 @@ export const useGradientColor = (
   value: number,
   opts?: UseGradientOpts & { normalized?: boolean }
 ) => {
+  const skew = opts?.skew;
+  const stops = opts?.stops;
+  const gamma = opts?.gamma;
+  const contrast = opts?.contrast;
+  const normalized = opts?.normalized;
+
   return useMemo(() => {
-    const pct = opts?.normalized ? clamp(value) * 100 : value;
+    const pct = normalized ? clamp(value) * 100 : value;
     return colorFromPercent(pct, {
-      skew: opts?.skew,
-      stops: opts?.stops,
-      gamma: opts?.gamma,
-      contrast: opts?.contrast,
+      skew,
+      stops,
+      gamma,
+      contrast,
     });
   }, [
     value,
-    opts?.normalized,
-    opts?.skew?.[0], opts?.skew?.[1], opts?.skew?.[2], opts?.skew?.[3],
-    opts?.stops,
-    opts?.gamma,
-    opts?.contrast,
+    normalized,
+    skew,
+    stops,
+    gamma,
+    contrast,
   ]);
 };
 

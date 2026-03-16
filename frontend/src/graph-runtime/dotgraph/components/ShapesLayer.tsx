@@ -5,11 +5,11 @@ import { shapeForAvg } from "../../sprites/selection/shapeForAvg";
 import { FOOTPRINTS as SHAPE_FOOTPRINT } from "../../sprites/selection/footprints";
 
 type ShapesLayerProps = {
-  points: any[];
+  shapes: any[];
   myEntry: any;
   personalizedEntryId: string | null;
   showCompleteUI: boolean;
-  onHoverStart: (point: any, e: any) => void;
+  onHoverStart: (shape: any, e: any) => void;
   onHoverEnd: () => void;
   tieKeyForId: (id: string) => number | null;
   setSelectedTieKey: React.Dispatch<React.SetStateAction<number | null>>;
@@ -22,7 +22,7 @@ type ShapesLayerProps = {
 };
 
 export default function ShapesLayer({
-  points,
+  shapes,
   myEntry,
   personalizedEntryId,
   showCompleteUI,
@@ -43,10 +43,10 @@ export default function ShapesLayer({
     canvas.classList.toggle("hovering-shape", active);
   };
 
-  const pointVisuals = useMemo(
+  const shapeVisuals = useMemo(
     () =>
-      points.map((point, i) => {
-        const avg = Number.isFinite(point.averageWeight) ? point.averageWeight : 0.5;
+      shapes.map((shape, i) => {
+        const avg = Number.isFinite(shape.averageWeight) ? shape.averageWeight : 0.5;
         const chosenShape = shapeForAvg(avg, bagSeed, i);
         const fp = (SHAPE_FOOTPRINT as any)[chosenShape] ?? { w: 1, h: 1 };
         const aspect = fp.w / Math.max(0.0001, fp.h);
@@ -55,32 +55,32 @@ export default function ShapesLayer({
         const sCompY = 1 / (1 + (b.top || 0) + (b.bottom || 0));
 
         return {
-          point,
+          shape,
           avg,
           index: i,
           sx: spriteScale * aspect * sCompX,
           sy: spriteScale * sCompY,
         };
       }),
-    [points, bagSeed, bleedOf, spriteScale]
+    [shapes, bagSeed, bleedOf, spriteScale]
   );
 
   return (
     <>
-      {pointVisuals.map(({ point, avg, index, sx, sy }) => {
-        const suppressHover = !!(myEntry && point._id === personalizedEntryId && showCompleteUI);
+      {shapeVisuals.map(({ shape, avg, index, sx, sy }) => {
+        const suppressHover = !!(myEntry && shape._id === personalizedEntryId && showCompleteUI);
 
         return (
           <group
-            key={point._id ?? `${point.position?.[0]}-${point.position?.[1]}-${point.position?.[2]}`}
-            position={point.position as any}
+            key={shape._id ?? `${shape.position?.[0]}-${shape.position?.[1]}-${shape.position?.[2]}`}
+            position={shape.position as any}
           >
             <sprite
               onPointerOver={(e) => {
                 e.stopPropagation();
                 if (!suppressHover) {
                   setShapeCursor(true, e);
-                  onHoverStart(point, e);
+                  onHoverStart(shape, e);
                 }
               }}
               onPointerOut={(e) => {
@@ -90,8 +90,8 @@ export default function ShapesLayer({
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!suppressHover) onHoverStart(point, e);
-                const key = tieKeyForId(point._id);
+                if (!suppressHover) onHoverStart(shape, e);
+                const key = tieKeyForId(shape._id);
                 setSelectedTieKey((prev) => (prev === key ? null : (key ?? null)));
               }}
               scale={[sx, sy, 1]}

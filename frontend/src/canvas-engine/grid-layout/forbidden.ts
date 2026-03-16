@@ -54,17 +54,21 @@ export type RowRule = {
   center?: number | `${number}%`;
 };
 
+function snapCols(target: number, cols: number): number {
+  return Math.max(0, Math.min(cols, Math.round(target)));
+}
+
 function toCols(val: RowRule[keyof RowRule] | undefined, cols: number): number {
   if (val == null) return 0;
 
   if (typeof val === 'string' && val.endsWith('%')) {
     const p = Math.max(0, Math.min(100, parseFloat(val)));
-    return Math.floor((p / 100) * cols);
+    return snapCols((p / 100) * cols, cols);
   }
 
   if (typeof val === 'number') {
-    if (val >= 1) return Math.floor(val);
-    return Math.floor(Math.max(0, Math.min(1, val)) * cols);
+    if (val >= 1) return snapCols(val, cols);
+    return snapCols(Math.max(0, Math.min(1, val)) * cols, cols);
   }
 
   return 0;
@@ -79,13 +83,15 @@ export function makeRowForbidden(rules: RowRule[]) {
     const rule = rules[Math.min(r, rules.length - 1)] || {};
     const leftCols = toCols(rule.left, cols);
     const rightCols = toCols(rule.right, cols);
-    const centerCols = toCols(rule.center, cols);
+    const usableCols = Math.max(0, cols - leftCols - rightCols);
+    const centerCols = Math.min(toCols(rule.center, cols), usableCols);
 
     if (leftCols > 0 && c < leftCols) return true;
     if (rightCols > 0 && c >= cols - rightCols) return true;
 
     if (centerCols > 0) {
-      const start = Math.max(0, Math.floor((cols - centerCols) / 2));
+      const usableStart = leftCols;
+      const start = usableStart + Math.max(0, Math.round((usableCols - centerCols) / 2));
       const end = Math.min(cols - 1, start + centerCols - 1);
       if (c >= start && c <= end) return true;
     }

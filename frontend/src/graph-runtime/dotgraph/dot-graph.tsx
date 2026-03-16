@@ -60,7 +60,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
   const personalization = useDotGraphPersonalizationModel({
     personalizedEntryId: personalizationGate.personalizedEntryId,
-    points: scene.points,
+    shapes: scene.shapes,
     dataById,
     showCompleteUI,
     mode,
@@ -94,7 +94,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
   } as any);
 
   const { spotlightActiveRef } = useObserverSpotlight({
-    points: scene.points,
+    points: scene.shapes,
     onHoverStart: onHoverStart as any,
     onHoverEnd: onHoverEnd as any,
   });
@@ -117,7 +117,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
       <group ref={scene.groupRef as any}>
         <ShapesLayer
-          points={scene.points}
+          shapes={scene.shapes}
           myEntry={personalization.myEntry}
           personalizedEntryId={personalizationGate.personalizedEntryId}
           showCompleteUI={showCompleteUI}
@@ -136,7 +136,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
         <PersonalizedLayer
           shouldRenderPersonalUI={personalization.shouldRenderPersonalUI}
           shouldRenderExtraPersonalSprite={personalization.shouldRenderExtraPersonalSprite}
-          effectiveMyPoint={personalization.effectiveMyPoint}
+          effectiveMyShape={personalization.effectiveMyShape}
           effectiveMyEntry={personalization.effectiveMyEntry}
           spriteScale={scene.spriteScale}
           bagSeed={scene.bagSeed}
@@ -152,7 +152,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
         <HoveredLayer
           hoveredDot={hoveredDot}
-          points={scene.points}
+          shapes={scene.shapes}
           safeData={safeData}
           mode={mode}
           offsetPx={scene.offsetPx}

@@ -6,7 +6,7 @@ import GamificationPersonalized from "../../gamification/gamification-personal";
 type PersonalizedLayerProps = {
   shouldRenderPersonalUI: boolean;
   shouldRenderExtraPersonalSprite: boolean;
-  effectiveMyPoint: any;
+  effectiveMyShape: any;
   effectiveMyEntry: any;
   spriteScale: number;
   bagSeed: string;
@@ -23,7 +23,7 @@ type PersonalizedLayerProps = {
 export default function PersonalizedLayer({
   shouldRenderPersonalUI,
   shouldRenderExtraPersonalSprite,
-  effectiveMyPoint,
+  effectiveMyShape,
   effectiveMyEntry,
   spriteScale,
   bagSeed,
@@ -40,8 +40,8 @@ export default function PersonalizedLayer({
 
   return (
     <>
-      {shouldRenderExtraPersonalSprite && effectiveMyPoint && (
-        <group position={effectiveMyPoint.position}>
+      {shouldRenderExtraPersonalSprite && effectiveMyShape && (
+        <group position={effectiveMyShape.position}>
           <SpriteShape
             avg={
               Number.isFinite(effectiveMyEntry?.avgWeight)
@@ -63,9 +63,9 @@ export default function PersonalizedLayer({
         </group>
       )}
 
-      {effectiveMyPoint && (
+      {effectiveMyShape && (
         <Html
-          position={effectiveMyPoint.position}
+          position={effectiveMyShape.position}
           center
           zIndexRange={[110, 130]}
           style={{
@@ -77,7 +77,7 @@ export default function PersonalizedLayer({
             <GamificationPersonalized
               userData={effectiveMyEntry}
               percentage={myDisplayValue}
-              color={effectiveMyPoint.color}
+              color={effectiveMyShape.color}
               mode={mode}
               selectedSectionId={section}
               belowCountStrict={myStats.below}

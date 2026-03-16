@@ -6,7 +6,7 @@ import { getTieStats, classifyPosition } from "../../gamification/rankLogic";
 
 type HoveredLayerProps = {
   hoveredDot: any;
-  points: any[];
+  shapes: any[];
   safeData: any[];
   mode: "absolute" | "relative";
   offsetPx: number;
@@ -18,7 +18,7 @@ type HoveredLayerProps = {
 
 export default function HoveredLayer({
   hoveredDot,
-  points,
+  shapes,
   safeData,
   mode,
   offsetPx,
@@ -30,8 +30,8 @@ export default function HoveredLayer({
   const content = useMemo(() => {
     if (!hoveredDot) return null;
 
-    const hoveredData = points.find((d) => d._id === hoveredDot.dotId);
-    if (!hoveredData) return null;
+    const hoveredShape = shapes.find((d) => d._id === hoveredDot.dotId);
+    if (!hoveredShape) return null;
 
     const hoveredEntry = safeData.find((d) => d._id === hoveredDot.dotId);
     const hoveredAvg = hoveredEntry ? avgWeightOf(hoveredEntry) : undefined;
@@ -59,18 +59,18 @@ export default function HoveredLayer({
     const hoveredClass = classifyPosition(hoveredStats);
 
     return {
-      hoveredData,
+      hoveredShape,
       displayPct,
       hoveredStats,
       hoveredClass,
     };
-  }, [hoveredDot, points, safeData, mode, calcValueForAvg, getRelForId, absScoreById]);
+  }, [hoveredDot, shapes, safeData, mode, calcValueForAvg, getRelForId, absScoreById]);
 
   if (!hoveredDot || !content) return null;
 
   return (
     <Html
-      position={content.hoveredData.position as any}
+      position={content.hoveredShape.position as any}
       center
       zIndexRange={[120, 180]}
       style={{
@@ -84,7 +84,7 @@ export default function HoveredLayer({
         <GamificationGeneral
           dotId={hoveredDot.dotId}
           percentage={content.displayPct}
-          color={content.hoveredData.color}
+          color={content.hoveredShape.color}
           mode={mode}
           belowCountStrict={content.hoveredStats.below}
           equalCount={content.hoveredStats.equal}

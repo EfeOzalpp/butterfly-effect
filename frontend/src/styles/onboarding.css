@@ -10,7 +10,7 @@
    display: flex; justify-content: center; align-items: center; padding: 8px;
 }
 .survey.survey-step.role-select > .onboarding { display: flex; flex-direction: column; 
-  align-items: flex-start; }
+  align-items: center; }
 
 .user-flow {
   display: flex; position: fixed; 
@@ -52,10 +52,15 @@
   align-items: center;
   flex-direction: row;
   justify-content: space-between;
-  padding: 0.9rem 1rem;
   border: 1px solid var(--ui-border);
   background: var(--ui-bg-surface);
   border-radius: var(--radius-md);
+}
+.input-part-inside.radio-option:nth-child(1) {
+  padding: 0.9rem 1rem 1.05rem 1rem;
+}
+.input-part-inside.radio-option:nth-child(2) {
+  padding: 1.05rem 1rem 0.9rem 1rem;
 }
 .role-check-icon {
   color: var(--btn-primary-icon);
@@ -222,8 +227,7 @@
   .radio-button { width: 1.1rem; height: 1.1rem; min-width: 1.1rem; min-height: 1.1rem; }
 
   /* titles */
-  .welcome-title, .welcome-text { text-align: left; }
-  .welcome-text { padding-left: 0.15em; }
+  .welcome-title, .welcome-text { text-align: center; }
   .section-title  { text-align: center; }
   .questionnaire-title { text-align: center; }
   .welcome-title { white-space: nowrap; }
@@ -267,20 +271,15 @@
     font-size: var(--type-label-size);
     color: var(--ui-text-secondary);
   }
-  .answers-stack { padding: 1.6rem 0; gap: 0.6rem;
+  .answers-stack { padding: 1.6rem 0; gap: 0.4rem;
     border-radius: var(--radius-hero);
     border: 1px solid var(--ui-border);
     background: var(--ui-bg-surface-glass);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    transition: border-color 0.15s ease;
-  }
-  .answers-stack:focus-within {
-    border-color: var(--ui-border-strong);
   }
   .answer-part { padding: 0.6rem 0;
   }
-  button.questionnaire { min-width: 220px; max-width: 220px; }
   .survey-actions { gap: var(--space-sm);}
   /* Width values for onboarding flows */
   .onboarding { max-width: 300px; gap: var(--space-md); }
@@ -288,10 +287,10 @@
   .questionnaire { display: flex; flex-direction: column; gap: var(--space-md);
     min-width: 400px; max-width: 400px; }
   .q-option { padding-left: 0.1rem; }
-  .survey.survey-step.questionnaire { max-width: 100%; }
+  .survey.survey-step.questionnaire { max-width: 100%; position: relative; top: 0.9rem;}
   .user-flow {width: 46vw;}
   .user-flow.questionnaire-active { width: 100dvw; }
-  button.questionnaire { min-width: 240px; max-width: 240px; }
+  button.questionnaire { min-width: 210px; max-width: 210px; }
 }
 
 .questionnaire-title { opacity: 1; transform: translateY(0); transition: opacity 100ms ease, transform 100ms ease; }

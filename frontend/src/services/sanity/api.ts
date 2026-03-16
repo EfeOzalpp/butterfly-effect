@@ -6,7 +6,6 @@ import {
   shouldUseMockSanityReads,
 } from './config';
 import {
-  fetchMockSurveyData,
   subscribeMockSectionCounts,
   subscribeMockSurveyData,
 } from './mockData';
@@ -290,85 +289,6 @@ export const subscribeSurveyData = ({ section, limit = 300, onData }) => {
       if (shouldFallbackToMock(e)) {
         poller.disable();
         mockUnsub = subscribeMockSurveyData({ section, limit, onData });
-        return 'stop';
-      }
-      console.error('[sanityAPI] listen error', e?.message || e);
-      return undefined;
-    },
-    poller,
-  });
-
-  return () => {
-    try { unsub?.(); } catch {}
-    try { mockUnsub?.(); } catch {}
-    poller.disable();
-  };
-};
-
-export const fetchSurveyData = (callback, { limit = 300 } = {}) => {
-  if (shouldUseMockSanityReads()) {
-    return fetchMockSurveyData(callback, { limit });
-  }
-  const query = `
-    *[!(_id in path('drafts.**')) && _type == "userResponseV4"]
-      | order(coalesce(submittedAt, _createdAt) desc)[0...$limit]{ ${PROJECTION} }
-  `;
-  let currentRows = [];
-  let mockUnsub = null;
-  let unsub = () => {};
-  const emit = () => callback(currentRows);
-  const pump = (rows) => {
-    currentRows = (rows || []).map(normalizeRow).sort(sortNewestFirst).slice(0, limit);
-    emit();
-  };
-  const applyMutation = (event) => {
-    if (!event?.documentId) return;
-
-    if (event.transition === 'disappear') {
-      currentRows = removeById(currentRows, event.documentId);
-      emit();
-      return;
-    }
-
-    if (!event.result) return;
-
-    currentRows = upsertSortedLimited(currentRows, normalizeRow(event.result), limit);
-    emit();
-  };
-  const refetch = () => {
-    liveClient.fetch(query, { limit }).then(pump).catch((e) => {
-      if (shouldFallbackToMock(e)) {
-        poller.disable();
-        try { unsub?.(); } catch {}
-        mockUnsub = fetchMockSurveyData(callback, { limit });
-        return;
-      }
-      console.error('[sanityAPI] refresh fetch', e);
-    });
-  };
-
-  // single-shot + resilient refresh on change
-  liveClient.fetch(query, { limit }).then(pump).catch((e) => {
-    if (shouldFallbackToMock(e)) {
-      mockUnsub = fetchMockSurveyData(callback, { limit });
-      return;
-    }
-    console.error('[sanityAPI] initial fetch', e);
-  });
-
-  const poller = makePoller(() => {
-    liveClient.fetch(query, { limit }).then(pump).catch((e) => console.error('[sanityAPI] poll fetch', e));
-  }, 6000);
-
-  unsub = resilientListen({
-    query,
-    params: { limit },
-    onMutation: applyMutation,
-    onReconnect: refetch,
-    onError: (e) => {
-      if (shouldFallbackToMock(e)) {
-        poller.disable();
-        mockUnsub = fetchMockSurveyData(callback, { limit });
         return 'stop';
       }
       console.error('[sanityAPI] listen error', e?.message || e);

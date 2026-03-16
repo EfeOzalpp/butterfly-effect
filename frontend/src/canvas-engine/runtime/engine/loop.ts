@@ -137,13 +137,14 @@ export function createEngineTicker(deps: LoopDeps) {
       if (prevBgSpec !== null) { bgFrom = prevBgSpec; bgTransitionStart = now; }
       prevBgSpec = currentBgSpec;
     }
+    const liveAvgSignal = inputs.liveAvg;
     if (bgFrom !== null) {
       const t = Math.min(1, (now - bgTransitionStart) / BG_TRANSITION_MS);
-      drawBackground(p, sceneLookup, currentBgSpec);
-      drawBackground(p, sceneLookup, bgFrom, 1 - t);
+      drawBackground(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
+      drawBackground(p, sceneLookup, bgFrom, 1 - t, liveAvgSignal);
       if (t >= 1) bgFrom = null;
     } else {
-      drawBackground(p, sceneLookup, currentBgSpec);
+      drawBackground(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
     }
 
     const spec = getPaddingSpecForState(
@@ -181,10 +182,8 @@ export function createEngineTicker(deps: LoopDeps) {
     const beatPhase = ((tSec * bpm) / 60) % 1;
     const transport = { tSec, bpm, beatPhase };
 
-    const signal1 = inputs.liveAvg;
-
     const gradientRGB = getGradientRGB({
-      liveAvg: signal1,
+      liveAvg: liveAvgSignal,
       override: style.gradientRGBOverride,
       cache: paletteCache,
     });
@@ -195,7 +194,7 @@ export function createEngineTicker(deps: LoopDeps) {
       cellH: grid.cellH,
       gradientRGB,
       blend: style.blend,
-      liveAvg: signal1,
+      liveAvg: liveAvgSignal,
       alpha: 235,
       timeMs: tMs,
       exposure: style.exposure,

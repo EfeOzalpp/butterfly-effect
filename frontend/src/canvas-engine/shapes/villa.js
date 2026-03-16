@@ -51,7 +51,7 @@ export const VILLA_BASE_PALETTE = {
 };
 
 export const VILLA_DARK_PALETTE = {
-  grass: { r: 5, g: 97, b: 176 },
+  grass: { r: 56, g: 108, b: 116 },
   body: [
     { r: 129, g: 146, b: 172 }, { r: 123, g: 148, b: 182 }, { r: 127, g: 151, b: 178 },
     { r: 130, g: 144, b: 179 }, { r: 125, g: 149, b: 188 }, { r: 120, g: 145, b: 165 },
@@ -81,8 +81,8 @@ const VILLA = {
     brightnessRange: [0.40, 0.70],
   },
   grass: {
-    colorBlend: [0.25, 0.5],
-    satRange: [0.00, 0.35],
+    colorBlend: [0.08, 0.2],
+    satRange: [0.00, 0.24],
   },
   door: {
     widthRange: [1.2, 0.9],
@@ -166,8 +166,8 @@ function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1) {
     g: Math.round(base.g + (cool.g - base.g) * k),
     b: Math.round(base.b + (cool.b - base.b) * k),
   };
-  const blended = gradientRGB ? blendRGB(mixed, gradientRGB, 0.15 + 0.15 * u) : mixed;
-  const clamped = clampBrightness(blended, 0.55, 0.95);
+  const blended = gradientRGB ? blendRGB(mixed, gradientRGB, 0.08 + 0.08 * u) : mixed;
+  const clamped = clampBrightness(blended, 0.55, 0.9);
   return applyExposureContrast(clamped, ex, ct);
 }
 
@@ -252,6 +252,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   let grassTint = pal.grass;
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(VILLA.grass.colorBlend, u));
   grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
+  if (opts?.darkMode) grassTint = clampBrightness(grassTint, 0.36, 0.54);
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const rGrass = Math.round(cell * 0.06);

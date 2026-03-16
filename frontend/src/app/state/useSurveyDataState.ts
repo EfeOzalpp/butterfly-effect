@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { subscribeSurveyData } from '../../services/sanity/api';
 import { useMockSanityReadMode } from '../../services/sanity/config';
 import { getSessionItem, setSessionItem } from '../session';
+import type { SurveyRow } from '../types';
 
 type UseSurveyDataStateParams = {
   mySection: string | null;
@@ -17,7 +18,7 @@ export default function useSurveyDataState({
 }: UseSurveyDataStateParams) {
   const { active: mockReadMode } = useMockSanityReadMode();
 
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const subscribeToSurveyData = useCallback((section: string) => {
@@ -25,7 +26,7 @@ export default function useSurveyDataState({
     setLoading(true);
     return subscribeSurveyData({
       section,
-      onData: (rows: any[]) => {
+      onData: (rows: SurveyRow[]) => {
         setData(rows);
         setLoading(false);
       },

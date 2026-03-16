@@ -57,20 +57,20 @@ export const QUOTA_SPECIFICATION = {
 
   city: {
     A: [
-      { t: 0.0, limits: { sun: 4, bus: 5, clouds: null } },
-      { t: 1.0, limits: { sun: 6, bus: 4, clouds: null } },
+      { t: 0.0, limits: { sun: 3, bus: 3, clouds: 4 } },
+      { t: 1.0, limits: { sun: 5, bus: 6, clouds: 2 } },
     ],
     B: [
-      { t: 0.0, limits: { snow: 1, trees: 4, villa: null } },
-      { t: 1.0, limits: { snow: 3, trees: 6, villa: null } },
+      { t: 0.0, limits: { snow: 1, trees: 5, villa: 2 } },
+      { t: 1.0, limits: { snow: 2, trees: 8, villa: 5 } },
     ],
     C: [
-      { t: 0.0, limits: { power: 9, house: null } },
-      { t: 1.0, limits: { power: 6, house: null } },
+      { t: 0.0, limits: { power: 7, house: 5 } },
+      { t: 1.0, limits: { power: 4, house: 8 } },
     ],
     D: [
-      { t: 0.0, limits: { sea: 5, carFactory: 6, car: null } },
-      { t: 1.0, limits: { sea: 8, carFactory: 3, car: null } },
+      { t: 0.0, limits: { sea: 4, carFactory: 4, car: 5 } },
+      { t: 1.0, limits: { sea: 7, carFactory: 2, car: 8 } },
     ],
   },
 } as const satisfies Record<"start" | "questionnaire" | "city", QuotaSpecificationByKind | null>;

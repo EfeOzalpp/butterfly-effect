@@ -48,21 +48,21 @@ export const TREES_BASE_PALETTE = {
 
 export const TREES_DARK_PALETTE = {
   grass: [
-    { r: 42, g: 86,  b: 113  },
-    { r: 50, g: 97,  b: 133 },
-    { r: 39, g: 81,  b: 128  },
+    { r: 53, g: 97,  b: 102 },
+    { r: 60, g: 108, b: 114 },
+    { r: 49, g: 92,  b: 108 },
   ],
   asphalt: { r: 68, g: 79,  b: 96  },
   trunk:   { r: 60, g: 54,  b: 46  },
   foliage: [
-    { r: 31, g: 81,  b: 113  },
-    { r: 23, g: 72,  b: 82  },
-    { r: 36, g: 88,  b: 88 },
-    { r: 27, g: 65,  b: 72  },
-    { r: 42, g: 94,  b: 104 },
-    { r: 48, g: 102, b: 109 },
-    { r: 54, g: 110, b: 120 },
-    { r: 62, g: 118, b: 125 },
+    { r: 48, g: 86,  b: 82 },
+    { r: 42, g: 78,  b: 74 },
+    { r: 56, g: 94,  b: 84 },
+    { r: 45, g: 72,  b: 68 },
+    { r: 60, g: 100, b: 88 },
+    { r: 66, g: 108, b: 94 },
+    { r: 72, g: 116, b: 100 },
+    { r: 78, g: 124, b: 106 },
   ],
 };
 
@@ -70,7 +70,7 @@ export const TREES_DARK_PALETTE = {
    Tunables
    ─────────────────────────────────────────────────────────── */
 const TREES = {
-  grass:   { colorBlend: [0.20, 0.45], satRange: [0.20, 0.45] },
+  grass:   { colorBlend: [0.08, 0.2], satRange: [0.12, 0.3] },
 
   asphalt: {
     min: [0.25, 0.32],
@@ -128,8 +128,8 @@ const TREES = {
   },
 
   foliage: {
-    colorBlend: [0.10, 0.12],
-    brightnessRange: [0.50, 0.60],
+    colorBlend: [0.04, 0.08],
+    brightnessRange: [0.48, 0.58],
     // sat osc envelope (amp & speed lerp across u)
     satOscAmp:   [0.08, 0.16],
     satOscSpeed: [0.18, 0.35],
@@ -170,12 +170,16 @@ function pickFromKey(arr, key, tag) {
 }
 
 /* foliage tint: base → mix with grass → optional gradient → clamp → E/C */
-function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal) {
+function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, darkMode = false) {
   const base = pick(pal.foliage, rSeed);
   let mixed = blendRGB(base, grassTint, 0.20 + 0.15 * u);
   if (gradientRGB) mixed = blendRGB(mixed, gradientRGB, val(TREES.foliage.colorBlend, u));
-  mixed = clampSaturation(mixed, 0.0, 0.45, 1);
-  mixed = clampBrightness(mixed, TREES.foliage.brightnessRange[0], TREES.foliage.brightnessRange[1]);
+  mixed = clampSaturation(mixed, 0.0, darkMode ? 0.28 : 0.45, 1);
+  mixed = clampBrightness(
+    mixed,
+    darkMode ? 0.42 : TREES.foliage.brightnessRange[0],
+    darkMode ? 0.52 : TREES.foliage.brightnessRange[1]
+  );
   return applyExposureContrast(mixed, ex, ct);
 }
 
@@ -239,6 +243,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(TREES.grass.colorBlend, u));
   grassTint = clampSaturation(grassTint, TREES.grass.satRange[0], TREES.grass.satRange[1], 1);
+  if (opts?.darkMode) grassTint = clampBrightness(grassTint, 0.32, 0.48);
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const grassH = h * 0.55;
@@ -307,7 +312,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
     const phase     = rFromKey(k, 'windPhase') * TREES.wind.phaseSpread;
 
     // base foliage tint (sprite-friendly pick)
-    let leavesTint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rx, pal);
+    let leavesTint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rx, pal, !!opts?.darkMode);
 
     // saturation oscillation on leaves (gentle “breathing”)
     const satAmp   = val(TREES.foliage.satOscAmp,   u); // 0.08..0.16 across u

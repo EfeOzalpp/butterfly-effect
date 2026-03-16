@@ -3,7 +3,7 @@
 // BarGraph visualization (single-file, orchestrator-style)
 // ─────────────────────────────────────────────────────────────
 
-import React, { useEffect, useMemo, useRef, useState, useLayoutEffect, Suspense } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 
 import { useAppState } from "../../app/store";
 import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
@@ -12,51 +12,6 @@ import useGraphData from "../useGraphData";
 import EmptyStateArt from "./EmptyArt";
 
 import '../../styles/graph.css';
-
-const Lottie = React.lazy(() => import(/* webpackChunkName: "lottie-react" */ 'lottie-react'));
-
-type TreeIconProps = {
-  jsonLoader: () => Promise<any>;
-  speed?: number;
-  initialSegment?: [number, number];
-};
-
-function TreeIcon({ jsonLoader, speed = 0.3, initialSegment = [5, 55] }: TreeIconProps) {
-  const ref = useRef<any>(null);
-  const [data, setData] = useState<any>(null);
-
-  useEffect(() => {
-    let alive = true;
-    jsonLoader().then((mod) => {
-      if (alive) setData(mod?.default ?? mod);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [jsonLoader]);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const t = window.setTimeout(() => ref.current?.setSpeed?.(speed), 50);
-    return () => window.clearTimeout(t);
-  }, [data, speed]);
-
-  return (
-    <div className="bar-icon">
-      <Suspense fallback={null}>
-        {data && (
-          <Lottie
-            animationData={data}
-            loop
-            autoplay
-            lottieRef={ref}
-            initialSegment={initialSegment}
-          />
-        )}
-      </Suspense>
-    </div>
-  );
-}
 
 type BarColor = 'red' | 'yellow' | 'green';
 
@@ -256,36 +211,6 @@ export default function BarGraph() {
             </div>
           );
         })}
-      </div>
-
-      <div className="bar-graph-icons">
-        <TreeIcon
-          jsonLoader={() =>
-            import(
-              /* webpackChunkName:"lottie-tree1" */ '../../assets/lottie/tree1.json'
-            )
-          }
-          speed={0.3}
-          initialSegment={animationState ? [5, 55] : [0, 55]}
-        />
-        <TreeIcon
-          jsonLoader={() =>
-            import(
-              /* webpackChunkName:"lottie-tree2" */ '../../assets/lottie/tree2.json'
-            )
-          }
-          speed={0.2}
-          initialSegment={animationState ? [5, 55] : [0, 55]}
-        />
-        <TreeIcon
-          jsonLoader={() =>
-            import(
-              /* webpackChunkName:"lottie-tree3" */ '../../assets/lottie/tree3.json'
-            )
-          }
-          speed={0.5}
-          initialSegment={animationState ? [5, 55] : [0, 55]}
-        />
       </div>
     </>
   );

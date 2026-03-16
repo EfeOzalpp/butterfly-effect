@@ -28,7 +28,7 @@ export const CAR_FACTORY_BASE_PALETTE = {
 };
 
 export const CAR_FACTORY_DARK_PALETTE = {
-  grass: { r: 15, g: 97, b: 166 },
+  grass: { r: 58, g: 110, b: 116 },
   building:  { r: 114, g: 133, b: 164 },
   frame:     { r: 99,  g: 115, b: 144 },
   window:    { r: 120, g: 143, b: 181 },
@@ -68,8 +68,8 @@ const CF = {
 
   // Grass: match villa behavior (colorBlend + sat clamp)
   grass: {
-    colorBlend: [0.5, 0.3],
-    satRange: [0.00, 0.35],
+    colorBlend: [0.16, 0.08],
+    satRange: [0.00, 0.24],
   },
 
   // grass
@@ -236,6 +236,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
     grass = blendRGB(grass, opts.gradientRGB, val(CF.grass.colorBlend, u));
   }
   grass = clampSaturation(grass, CF.grass.satRange[0], CF.grass.satRange[1], 1);
+  if (opts?.darkMode) grass = clampBrightness(grass, 0.36, 0.54);
   grass = applyExposureContrast(grass, ex, ct);
 
   // Non-grass colors still use general gradient

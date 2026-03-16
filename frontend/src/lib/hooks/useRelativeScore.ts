@@ -12,6 +12,8 @@ export const avgWeightOf = (item: WithWeights): number => {
   return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0.5;
 };
 
+const defaultIdOf = <T extends { _id?: string }>(item: T) => item._id;
+
 export function useRelativeScores<T extends { _id?: string }>(
   items: T[],
   opts?: {
@@ -22,7 +24,7 @@ export function useRelativeScores<T extends { _id?: string }>(
 ) {
   const accessor = (opts?.accessor as ((x: T) => number)) ?? (avgWeightOf as (x: any) => number);
   const tie = opts?.tie ?? 'strict';
-  const idOf = (opts?.idOf as ((x: T) => string | undefined)) ?? ((x: T) => x._id);
+  const idOf = (opts?.idOf as ((x: T) => string | undefined)) ?? defaultIdOf;
 
   // Precompute once per data change
   const { sorted, idToValue } = useMemo(() => {

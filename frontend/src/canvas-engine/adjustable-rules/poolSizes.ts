@@ -12,9 +12,9 @@ export type PoolSizesByMode = Record<SceneLookupKey, PoolSizes>;
 
 // policy
 export const POOL_SIZES: PoolSizesByMode = {
-  start:         { mobile: 18, tablet: 26, laptop: 24 },
+  start:         { mobile: 18, tablet: 26, laptop: 26 },
   questionnaire: { mobile: 24, tablet: 32, laptop: 44 },
-  city:          { mobile: 40, tablet: 55, laptop: 70 },
+  city:          { mobile: 48, tablet: 64, laptop: 82 },
 };
 
 // helpers

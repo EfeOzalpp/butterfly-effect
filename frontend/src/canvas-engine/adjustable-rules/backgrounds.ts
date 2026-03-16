@@ -2,7 +2,12 @@
 
 import { SceneLookupKey } from "./sceneMode";
 
-export type RgbaStop = { k: number; rgba: string; oscK?: { amp: number; hz: number } }; // k in [0..1]
+export type RgbaStop = {
+  k: number;
+  rgba: string;
+  oscK?: { amp: number; hz: number };
+  liveBlend?: number | readonly [number, number];
+}; // k in [0..1]
 export type RadialGradientSpec = {
   kind: "radial";
   center: { xK: number; yK: number };
@@ -26,6 +31,14 @@ export type SolidBackgroundSpec = {
 export type BackgroundSpec = {
   base: string; // used by p.background
   overlay?: RadialGradientSpec | LinearGradientSpec | SolidBackgroundSpec;
+  stars?: {
+    count: number | readonly [number, number];
+    topBandK: number;
+    minR: number;
+    maxR: number;
+    alpha: [number, number] | readonly [[number, number], [number, number]];
+    flickerHz: [number, number] | readonly [[number, number], [number, number]];
+  };
 };
 
 export type BackgroundsByMode = Record<SceneLookupKey, BackgroundSpec>;
@@ -40,8 +53,8 @@ const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
       stops: [
         { k: 0.0, rgba: "rgba(120, 188, 236, 0.32)" },
         { k: 0.25, rgba: "rgba(88, 156, 214, 0.38)", oscK: { amp: 0.08, hz: 0.12 } },
-        { k: 0.6, rgba: "rgba(251, 252, 238, 0.9)" },
-        { k: 0.6, rgba: "rgba(171, 200, 133, 0.64)" },
+        { k: 0.59, rgba: "rgba(251, 252, 238, 0.9)" },
+        { k: 0.59, rgba: "rgba(171, 200, 133, 0.64)", liveBlend: [0.24, 0.08] },
         { k: 1.0, rgba: "rgba(139, 152, 134, 0.55)" },
       ] as const,
   },
@@ -58,7 +71,7 @@ export const BACKGROUNDS: BackgroundsByMode = {
         { k: 0.0, rgba: "rgba(120, 188, 236, 0.42)" },
         { k: 0.25, rgba: "rgba(88, 156, 214, 0.38)" },
         { k: 0.59, rgba: "rgba(251, 252, 238, 0.9)" },
-        { k: 0.59, rgba: "rgba(205, 229, 174, 0.92)" },
+        { k: 0.59, rgba: "rgba(205, 229, 174, 0.92)", liveBlend: [0.18, 0.06] },
         { k: 1.0, rgba: "rgba(132, 168, 118, 0.95)" },
       ] as const,
     },
@@ -81,16 +94,17 @@ export const BACKGROUNDS: BackgroundsByMode = {
 } as const;
 
 const CITY_BACKGROUND: BackgroundSpec = {
-  base: "rgb(224, 240, 252)",
+  base: "rgb(214, 224, 244)",
   overlay: {
     kind: "linear",
-    from: { xK: 0.42, yK: 0.0 },
-    to: { xK: 0.7, yK: 1.0 },
+    from: { xK: 0.36, yK: 0.0 },
+    to: { xK: 0.62, yK: 1.0 },
     stops: [
-      { k: 0.0, rgba: "rgba(255,255,255,1.00)" },
-      { k: 0.24, rgba: "rgba(245,252,255,0.92)" },
-      { k: 0.58, rgba: "rgba(214,233,246,0.48)" },
-      { k: 1.0, rgba: "rgba(164,209,236,0.92)" },
+      { k: 0.0, rgba: "rgba(247, 249, 255, 1.00)" },
+      { k: 0.18, rgba: "rgba(224, 228, 255, 0.84)" },
+      { k: 0.52, rgba: "rgba(185, 202, 244, 0.62)", liveBlend: [0.12, 0.04] },
+      { k: 0.74, rgba: "rgba(123, 157, 220, 0.44)", liveBlend: [0.18, 0.06] },
+      { k: 1.0, rgba: "rgba(72, 108, 186, 0.82)" },
     ] as const,
   },
 } as const;
@@ -109,11 +123,19 @@ const QUESTIONNAIRE_BACKGROUND_DARK: BackgroundSpec = {
     to: { xK: 0.5, yK: 1.0 },
       stops: [
         { k: 0, rgba: "#1f1c3b" },
-        { k: 0.3, rgba: "rgb(67, 65, 107)", oscK: { amp: 0.06, hz: 0.12 } },
-        { k: 0.6, rgba: "#97b3e7" },
-        { k: 0.6, rgba: "rgba(70, 98, 158, 0.95)" },
-        { k: 1.0, rgba: "#263241", oscK: { amp: 0.06, hz: 0.12 } },
+        { k: 0.25, rgba: "#4D5586", oscK: { amp: 0.06, hz: 0.12 } },
+        { k: 0.55, rgba: "#acbdf1", liveBlend: [0.18, 0] },
+        { k: 0.55, rgba: "rgba(68, 96, 157, 0.95)", liveBlend: [0.18, 0] },
+        { k: 1.0, rgba: "#2b314d", oscK: { amp: 0.06, hz: 0.12 } },
       ] as const,
+  },
+  stars: {
+    count: [14, 46],
+    topBandK: 0.4,
+    minR: 0.8,
+    maxR: 1.9,
+    alpha: [[0.08, 0.42], [0.24, 0.78]],
+    flickerHz: [[0.4, 0.95], [0.14, 0.34]],
   },
 } as const;
 
@@ -128,9 +150,17 @@ export const BACKGROUNDS_DARK: BackgroundsByMode = {
         { k: 0, rgba: "#1f1c3b" },
         { k: 0.25, rgba: "#4D5586", oscK: { amp: 0.06, hz: 0.12 } },
         { k: 0.59, rgba: "#acbdf1" },
-        { k: 0.59, rgba: "rgba(68, 96, 157, 0.95)" },
+        { k: 0.59, rgba: "rgba(68, 96, 157, 0.95)", liveBlend: [0.24, 0.08] },
         { k: 1.0, rgba: "#2b314d", oscK: { amp: 0.06, hz: 0.12 } },
       ] as const,
+    },
+    stars: {
+      count: [16, 28],
+      topBandK: 0.4,
+      minR: 0.9,
+      maxR: 2.1,
+      alpha: [[0.1, 0.46], [0.26, 0.82]],
+      flickerHz: [[0.42, 0.98], [0.14, 0.34]],
     },
   },
   questionnaire: QUESTIONNAIRE_BACKGROUND_DARK,
@@ -147,21 +177,38 @@ export const BACKGROUNDS_DARK: BackgroundsByMode = {
         { k: 1.0, rgba: "rgba(9, 15, 22, 0.96)" },
       ] as const,
     },
+    stars: {
+      count: [10, 18],
+      topBandK: 0.36,
+      minR: 0.8,
+      maxR: 1.7,
+      alpha: [[0.06, 0.32], [0.18, 0.58]],
+      flickerHz: [[0.36, 0.82], [0.12, 0.28]],
+    },
   },
 } as const;
 
 const CITY_BACKGROUND_DARK: BackgroundSpec = {
-  base: "rgb(12, 18, 26)",
+  base: "rgb(17, 19, 35)",
   overlay: {
     kind: "linear",
-    from: { xK: 0.4, yK: 0.0 },
-    to: { xK: 0.7, yK: 1.0 },
+    from: { xK: 0.38, yK: 0.0 },
+    to: { xK: 0.64, yK: 1.0 },
     stops: [
-      { k: 0.0, rgba: "#262624" },
-      { k: 0.36, rgba: "rgba(39, 58, 79, 0.34)" },
-      { k: 0.72, rgba: "rgba(20, 33, 47, 0.68)" },
-      { k: 1.0, rgba: "rgba(8, 14, 21, 0.96)" },
+      { k: 0.0, rgba: "rgba(52, 48, 95, 0.96)" },
+      { k: 0.28, rgba: "rgba(92, 108, 178, 0.72)" },
+      { k: 0.6, rgba: "rgba(83, 104, 170, 0.38)", liveBlend: [0.12, 0.04] },
+      { k: 0.76, rgba: "rgba(38, 62, 121, 0.32)", liveBlend: [0.18, 0.06] },
+      { k: 1.0, rgba: "rgba(10, 18, 35, 0.97)" },
     ] as const,
+  },
+  stars: {
+    count: [10, 18],
+    topBandK: 0.34,
+    minR: 0.8,
+    maxR: 1.7,
+    alpha: [[0.05, 0.3], [0.16, 0.54]],
+    flickerHz: [[0.34, 0.78], [0.12, 0.26]],
   },
 } as const;
 

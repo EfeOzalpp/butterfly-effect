@@ -85,17 +85,17 @@ export default function useDotGraphSceneModel({
     [spread, colorForAverage, personalizedEntryId, showPersonalized]
   );
 
-  const points: any[] = useDotPoints(safeData, dotPointOptions as any);
+  const shapes: any[] = useDotPoints(safeData, dotPointOptions as any);
   const bagSeed = 'dotgraph-bag-v1';
 
   const prewarmItems = useMemo(
     () =>
-      points.map((p, i) => ({
-        avg: Number.isFinite(p?.averageWeight) ? p.averageWeight : 0.5,
+      shapes.map((shape, i) => ({
+        avg: Number.isFinite(shape?.averageWeight) ? shape.averageWeight : 0.5,
         orderIndex: i,
         seed: bagSeed,
       })),
-    [points]
+    [shapes]
   );
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function useDotGraphSceneModel({
     prewarmSpriteTextures(prewarmItems, { tileSize: 128, alpha: 215, blend: 0.6, darkMode } as any);
   }, [prewarmItems, darkMode]);
 
-  const posById = useMemo(() => new Map(points.map((p) => [p._id, p.position])), [points]);
+  const posById = useMemo(() => new Map(shapes.map((shape) => [shape._id, shape.position])), [shapes]);
 
   const isPortrait =
     typeof window !== 'undefined' ? window.innerHeight > window.innerWidth : false;
@@ -139,7 +139,7 @@ export default function useDotGraphSceneModel({
     isTouchRotatingRef,
     minRadius,
     maxRadius,
-    points,
+    shapes,
     posById,
     offsetPx,
     spriteScale,

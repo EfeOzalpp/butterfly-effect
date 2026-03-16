@@ -53,20 +53,20 @@ export const SEPARATION_META: SeparationMetaByMode = {
   },
 
   city: {
-    sun: { separation: 5 },
-    clouds: { separation: 5 },
-    snow: { separation: 6 },
+    sun: { separation: 7 },
+    clouds: { separation: 9 },
+    snow: { separation: 5 },
 
-    house: { separation: 7 },
-    villa: { separation: 4 },
-    power: { separation: 5 },
-    carFactory: { separation: 5 },
+    house: { separation: 5 },
+    villa: { separation: 5 },
+    power: { separation: 4 },
+    carFactory: { separation: 4 },
 
-    car: { separation: 6 },
-    bus: { separation: 6 },
+    car: { separation: 4 },
+    bus: { separation: 5 },
 
-    sea: { separation: 5 },
-    trees: { separation: 5 },
+    sea: { separation: 6 },
+    trees: { separation: 4 },
   },
 } as const;
 

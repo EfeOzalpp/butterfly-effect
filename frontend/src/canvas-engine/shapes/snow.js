@@ -24,15 +24,15 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 }
 
 export const SNOW_BASE_PALETTE = {
-  cloud:  { r: 242, g: 244, b: 248 },
-  flake:  { r: 220, g: 228, b: 245 },
-  ground: { r: 232, g: 236, b: 242 },
+  cloud:  { r: 248, g: 250, b: 255 },
+  flake:  { r: 236, g: 242, b: 255 },
+  ground: { r: 244, g: 247, b: 252 },
 };
 
 export const SNOW_DARK_PALETTE = {
-  cloud:  { r: 153, g: 154, b: 190 },
-  flake:  { r: 120, g: 144, b: 188 },
-  ground: { r: 127, g: 149, b: 185 },
+  cloud:  { r: 182, g: 189, b: 220 },
+  flake:  { r: 170, g: 184, b: 220 },
+  ground: { r: 155, g: 170, b: 204 },
 };
 
 /* Cloud tuning */
@@ -45,20 +45,20 @@ const SCLOUD = {
   rJitter:    [0.04, 0.08],
   lobeCount:  [5, 7],
 
-  sCap:       [0.10, 0.18],
-  blend:      [0.10, 0.02],
+  sCap:       [0.22, 0.12],
+  blend:      [0.18, 0.04],
   oscAmp:     [0.02, 0.05],
   oscSpeed:   [0.10, 0.16],
 
-  lightnessRange: [1.00, 0.95],
+  lightnessRange: [0.95, 1.0],
 };
 
 /* Ground strip */
 const SGROUND = {
-  blendK:        [0.02, 0.01],
+  blendK:        [0.10, 0.02],
   satOscAmp:     [0.00, 0.02],
   satOscSpeed:   [0.08, 0.14],
-  lightnessRange:[0.92, 0.98],
+  lightnessRange:[0.96, 1.0],
   scaleY:        [0.00, 1.33],
 };
 
@@ -93,11 +93,11 @@ const SNOW = {
 
   sizeHz: 3,
 
-  blendK:      [0.06, 0.02],
+  blendK:      [0.14, 0.03],
   satOscAmp:   [0.02, 0.05],
   satOscSpeed: [0.10, 0.18],
 
-  lightnessRange: [0.90, 1.10],
+  lightnessRange: [0.94, 1.0],
 };
 
 /**
@@ -156,8 +156,10 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
   /* ───────── GROUND STRIP (translated + scaled with appear) ───────── */
   if (showGround) {
     const baseH  = Math.max(4, Math.round(cell / 3));
-    const kY     = val(SGROUND.scaleY, u);
+    const kYRaw  = val(SGROUND.scaleY, u);
+    const kY     = u <= 0.02 ? 0 : kYRaw;
     const stripH = Math.round(baseH * kY);
+    if (stripH > 0) {
     const bottomY = y0 + f.h * cellH;
     const topY    = bottomY - stripH;
 
@@ -166,7 +168,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     const gSatSpd = val(SGROUND.satOscSpeed, u);
     const base    = oscillateSaturation(pal.ground, t, { amp: gSatAmp, speed: gSatSpd, phase: 0 });
     const mixed   = opts?.gradientRGB ? blendRGB(base, opts.gradientRGB, gBlend) : base;
-    const groundLRange = opts?.darkMode ? [0.28, 0.52] : SGROUND.lightnessRange;
+    const groundLRange = opts?.darkMode ? [0.62, 0.78] : SGROUND.lightnessRange;
     let clamped   = clampBrightness(mixed, groundLRange[0], groundLRange[1]);
     clamped       = applyExposureContrast(clamped, exposure, contrast);
 
@@ -186,6 +188,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
       rTop, rTop, 0, 0
     );
     p.pop();
+    }
   }
 
   /* ───────── CLOUD GEOMETRY / TINT ───────── */
@@ -216,7 +219,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     speed: val(SCLOUD.oscSpeed, u),
     phase: 0,
   });
-  const cloudLRange = opts?.darkMode ? [0.38, 0.62] : SCLOUD.lightnessRange;
+  const cloudLRange = opts?.darkMode ? [0.68, 0.82] : SCLOUD.lightnessRange;
   cloudRgb = clampBrightness(cloudRgb, cloudLRange[0], cloudLRange[1]);
   cloudRgb = applyExposureContrast(cloudRgb, exposure, contrast);
 
@@ -265,7 +268,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
 
   let flakeBase  = oscillateSaturation(pal.flake, t, { amp: satAmp, speed: satSpd, phase: 0 });
   flakeBase      = opts?.gradientRGB ? blendRGB(flakeBase, opts.gradientRGB, blendK) : flakeBase;
-  const flakeLRange = opts?.darkMode ? [0.38, 0.62] : SNOW.lightnessRange;
+  const flakeLRange = opts?.darkMode ? [0.7, 0.84] : SNOW.lightnessRange;
   flakeBase      = clampBrightness(flakeBase, flakeLRange[0], flakeLRange[1]);
   flakeBase      = applyExposureContrast(flakeBase, exposure, contrast);
 

@@ -5,7 +5,7 @@ import { classifyPosition, getTieStats } from '../../gamification/rankLogic';
 
 type UseDotGraphPersonalizationModelParams = {
   personalizedEntryId: string | null;
-  points: any[];
+  shapes: any[];
   dataById: Map<string, any>;
   showCompleteUI: boolean;
   mode: 'absolute' | 'relative';
@@ -21,7 +21,7 @@ type UseDotGraphPersonalizationModelParams = {
 
 export default function useDotGraphPersonalizationModel({
   personalizedEntryId,
-  points,
+  shapes,
   dataById,
   showCompleteUI,
   mode,
@@ -34,9 +34,9 @@ export default function useDotGraphPersonalizationModel({
   shouldShowPersonalized,
   hasPersonalizedInDataset,
 }: UseDotGraphPersonalizationModelParams) {
-  const myPoint = useMemo(
-    () => points.find((p) => p?._id === personalizedEntryId),
-    [points, personalizedEntryId]
+  const myShape = useMemo(
+    () => shapes.find((shape) => shape?._id === personalizedEntryId),
+    [shapes, personalizedEntryId]
   );
 
   const myEntry = useMemo(
@@ -62,8 +62,8 @@ export default function useDotGraphPersonalizationModel({
     return rgbString(sampleStops(avg));
   }, [effectiveMyEntry]);
 
-  const effectiveMyPoint =
-    myPoint ||
+  const effectiveMyShape =
+    myShape ||
     (effectiveMyEntry ? { position: [0, 0, 0], color: fallbackColor } : null);
 
   const myDisplayValue = useMemo(() => {
@@ -100,7 +100,7 @@ export default function useDotGraphPersonalizationModel({
   const myClass = classifyPosition(myStats);
 
   const shouldRenderPersonalUI =
-    showCompleteUI && shouldShowPersonalized && !!effectiveMyPoint && !!effectiveMyEntry;
+    showCompleteUI && shouldShowPersonalized && !!effectiveMyShape && !!effectiveMyEntry;
 
   const shouldRenderExtraPersonalSprite = shouldRenderPersonalUI && !hasPersonalizedInDataset;
 
@@ -121,7 +121,7 @@ export default function useDotGraphPersonalizationModel({
   return {
     myEntry,
     effectiveMyEntry,
-    effectiveMyPoint,
+    effectiveMyShape,
     myDisplayValue,
     myStats,
     myClass,

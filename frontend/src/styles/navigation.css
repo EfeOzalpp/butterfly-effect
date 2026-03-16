@@ -110,7 +110,6 @@
 .left { align-items: center; z-index: 15; }
 .right {
   align-items: center;
-  gap: 0.6rem;
   min-height: var(--nav-control-h);
 }
 .right > * { flex-shrink: 0; }
@@ -330,7 +329,7 @@
 @media (min-width: 1025px) {
   .navigation { 
     --nav-control-h: 56px;
-    padding: 1rem 2.6rem;
+    padding: 0.6rem 2.4rem;
   }
 
   .logo-divider {

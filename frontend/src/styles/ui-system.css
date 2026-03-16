@@ -49,29 +49,30 @@ span {
   transform: translateX(-50%);
   z-index: 1200;
   padding: 0.7rem 1rem;
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--hint-border);
   border-radius: var(--radius-lg);
-  background: var(--ui-bg-surface-glass);
-  color: var(--ui-text);
+  background: var(--hint-bg);
   backdrop-filter: blur(8px);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
 }
+
+.mock-read-banner span { color: var(--hint-text) !important;}
 
 .mock-read-banner-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
+  border: 1px solid var(--hint-border);
+  border-radius: 4px;
   background: transparent;
-  color: var(--ui-text-secondary);
+  color: var(--hint-text);
   line-height: 1;
 }
 
 .mock-read-banner-close:hover {
-  background: var(--ui-bg-surface);
-  color: var(--ui-text);
+  background: var(--hint-bg-hover);
+  color: var(--hint-text);
 }
 
 @media (min-width: 1024px) {
