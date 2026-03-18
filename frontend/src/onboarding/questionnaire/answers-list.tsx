@@ -65,19 +65,21 @@ function AnswersListInner({ question, sliderVals, onSliderChange, className, qIn
 
       <div className="answers-stack">
         {qIndex !== undefined && qTotal !== undefined && (
-          <span className="q-count">{qIndex + 1}/{qTotal}</span>
+          <span className="q-count" aria-hidden="true">{qIndex + 1}/{qTotal}</span>
         )}
         {rows.map((row, idx) => {
           const live = clamp01(Number(sliderVals[row.key] ?? (idx % 2 === 0 ? 0.33 : 0.66)));
           const fill = 'var(--ui-text-secondary)';
           const pct = Math.round(live * 100);
           const isDeactivated = live <= 0.02;
+          const labelId = `${question.id}-option-${row.key}-label`;
 
           return (
             <div key={row.key} className="answer-row">
                 <div className="answer-content">
                   <div className="q-option">
                     <span
+                      id={labelId}
                       className="q-option-label"
                       style={{
                         color: isDeactivated ? '#97A1AF' : undefined,
@@ -105,9 +107,11 @@ function AnswersListInner({ question, sliderVals, onSliderChange, className, qIn
                     onPointerUp={() => { setActiveKey(null); try { window.dispatchEvent(new CustomEvent('gp:weights-commit')); } catch {} }}
                     onMouseUp={() => { try { window.dispatchEvent(new CustomEvent('gp:weights-commit')); } catch {} }}
                     onTouchEnd={() => { setActiveKey(null); try { window.dispatchEvent(new CustomEvent('gp:weights-commit')); } catch {} }}
+                    aria-labelledby={labelId}
                     aria-valuemin={0}
                     aria-valuemax={1}
                     aria-valuenow={Number(live.toFixed(2))}
+                    aria-valuetext={`${pct}% emphasis`}
                     className="q-slider"
                     style={{
                       flex: 1,

@@ -77,23 +77,23 @@ export default function GamificationGeneral({
 
     const fallbackBuckets = {
       '0-20': {
-        titles: ['Climate Clueless', 'Eco-Absentee'],
+        titles: ['Low Impact', 'Early Stage'],
         secondary: ['Low effort, just ahead of a few'],
       },
       '21-40': {
-        titles: ['Footprint Fumbler', 'Eco Dabbler'],
+        titles: ['Below Average', 'Getting Started'],
         secondary: ['Slow start, keep going'],
       },
       '41-60': {
-        titles: ['Balanced as in Average'],
+        titles: ['Average'],
         secondary: ['Right in the pack'],
       },
       '61-80': {
-        titles: ['Planet Ally', 'Nature Carer'],
+        titles: ['Above Average', 'Solid Standing'],
         secondary: ['Solid progress'],
       },
       '81-100': {
-        titles: ['Planet Guardian', "Earth's Best Friend"],
+        titles: ['High Impact', 'Leading Group'],
         secondary: ['Top of the class'],
       },
     };
@@ -115,32 +115,32 @@ export default function GamificationGeneral({
 
   if (mode === 'relative') {
     if (isSolo) {
-      relativeLine = <>First one here! 🎉</>;
+      relativeLine = <>First one here.</>;
     } else if (isTopBand) {
       if (canonicalTie === 'tiedTop') {
         relativeLine = (
           <>
-            <Strong>Top</Strong> spot ⬆️<br />
+            <Strong>Top</Strong> spot<br />
             Tied with {e}
           </>
         );
       } else {
         relativeLine = <>
-          <Strong>Top</Strong> of the group ⬆️
+          <Strong>Top</Strong> of the group
         </>;
       }
     } else if (isNearTop) {
       if (e > 0) {
         relativeLine = (
           <>
-            Near <Strong>Top</Strong> ⬆️<br />
+            Near <Strong>Top</Strong><br />
             Tied with {e}, behind {a}
           </>
         );
       } else {
         relativeLine = (
           <>
-            Near <Strong>Top</Strong> ⬆️<br />
+            Near <Strong>Top</Strong><br />
             Behind {a}
           </>
         );
@@ -149,25 +149,25 @@ export default function GamificationGeneral({
       if (canonicalTie === 'tiedBottom') {
         relativeLine = (
           <>
-            <Strong>Bottom</Strong> ⬇️<br />
+            <Strong>Bottom</Strong><br />
             Tied with {e}
           </>
         );
       } else {
-        relativeLine = <><Strong>Bottom</Strong> ⬇️</>;
+        relativeLine = <><Strong>Bottom</Strong></>;
       }
     } else if (isNearBottom) {
       if (e > 0) {
         relativeLine = (
           <>
-            Near <Strong>Bottom</Strong> ⬇️<br />
+            Near <Strong>Bottom</Strong><br />
             Tied with {e}, ahead of {b}
           </>
         );
       } else {
         relativeLine = (
           <>
-            Near <Strong>Bottom</Strong> ⬇️<br />
+            Near <Strong>Bottom</Strong><br />
             Ahead of {b}
           </>
         );
@@ -176,28 +176,28 @@ export default function GamificationGeneral({
       if (canonicalTie === 'tiedMiddle') {
         relativeLine = (
           <>
-            <Strong>Middle</Strong> =<br />
+            <Strong>Middle</Strong><br />
             Tied with {e}, ahead of {b}, behind {a}
           </>
         );
       } else if (a < b) {
         relativeLine = (
           <>
-            <Strong>Middle</Strong> =<br />
+            <Strong>Middle</Strong><br />
             Behind {a}
           </>
         );
       } else if (b < a) {
         relativeLine = (
           <>
-            <Strong>Middle</Strong> =<br />
+            <Strong>Middle</Strong><br />
             Ahead of {b}
           </>
         );
       } else {
         relativeLine = (
           <>
-            <Strong>Middle</Strong> =<br />
+            <Strong>Middle</Strong><br />
             Ahead of {b}, behind {a}
           </>
         );
@@ -205,15 +205,13 @@ export default function GamificationGeneral({
     }
 
     if (!relativeLine) {
-      relativeLine = <>In the mix =</>;
+      relativeLine = <>In the mix.</>;
     }
   }
 
   const line =
     mode === 'relative' ? (
-      <>
-        {relativeLine} <span style={{ opacity: 0.6 }}>🙂</span>
-      </>
+      <>{relativeLine}</>
     ) : (
       <>
         {' '}

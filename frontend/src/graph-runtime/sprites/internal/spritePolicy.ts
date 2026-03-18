@@ -1,5 +1,6 @@
 // graph-runtime/sprites/internal/spritePolicy.ts
-import { shapeForAvg, type ShapeKey } from '../selection/shapeForAvg';
+import { sampleShapeForAvg, type ShapeKey } from '../selection/shapeForAvg';
+import { spriteQuantizationDisabled } from './debug-flags';
 
 export const SPRITE_TINT_BUCKETS = 10;
 
@@ -26,6 +27,12 @@ function bucketMidpoint(id: number) {
 }
 
 export function quantizeAvgWithDownshift(avg: number) {
+  if (spriteQuantizationDisabled()) {
+    const unclamped = clamp01(Number.isFinite(avg) ? avg : 0.5);
+    const bucketId = Math.round(unclamped * 1000);
+    return { bucketId, bucketAvg: unclamped };
+  }
+
   const base = rawBucketIdFromAvg(avg);
   const adj = adjustedBucketId(base);
   return { bucketId: adj, bucketAvg: bucketMidpoint(adj) };
@@ -86,7 +93,7 @@ export function makeFrozenKey(args: {
 
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {
   const t = clamp01(Number.isFinite(args.avg) ? args.avg : 0.5);
-  return shapeForAvg(t, args.seed ?? t, args.orderIndex);
+  return sampleShapeForAvg(t, args.seed ?? t, args.orderIndex);
 }
 
 export function resolveDpr(fallback = 1) {

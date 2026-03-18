@@ -4,6 +4,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, Suspense } from 'react';
 
 import { useAppState } from "../app/store";
+import { GraphDataProvider } from "./GraphDataContext";
 
 import "../styles/graph.css";
 
@@ -57,7 +58,7 @@ function getClientXY(e: Pointerish): XY {
 }
 
 export default function VisualizationPage() {
-  const { darkMode, observerMode } = useAppState() as any;
+  const { darkMode, observerMode, data } = useAppState() as any;
 
   const [isBarGraphVisible, setIsBarGraphVisible] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -235,88 +236,89 @@ export default function VisualizationPage() {
   );
 
   return (
-    <>
-      <Suspense fallback={pageLoadingFallback}>
-        <Graph isDragging={isDragging} />
-      </Suspense>
+    <GraphDataProvider data={data}>
+      <>
+        <Suspense fallback={pageLoadingFallback}>
+          <Graph isDragging={isDragging} />
+        </Suspense>
 
-      {/* Draggable + toggle (hidden until pre-paint init completes) */}
-      <div
-        ref={dragRef}
-        className="draggable-container"
-        style={{
-          position: 'absolute',
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          zIndex: 20,
-          cursor: isDragging ? 'grabbing' : 'grab',
-          visibility: ready ? 'visible' : 'hidden', // prevent (0,0) flash on first paint
-        }}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-      >
+        {/* Draggable + toggle (hidden until pre-paint init completes) */}
         <div
-          ref={buttonRef}
-          className={`toggle-button${darkMode ? ' is-dark' : ''}`}
+          ref={dragRef}
+          className="draggable-container"
           style={{
+            position: 'absolute',
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            zIndex: 20,
             cursor: isDragging ? 'grabbing' : 'grab',
-            left: '24px',
-            position: 'relative',
+            visibility: ready ? 'visible' : 'hidden',
           }}
-          onClick={(e) => {
-            if (hasMovedRef.current) {
-              e.preventDefault();
-              e.stopPropagation();
-              hasMovedRef.current = false;
-              return;
-            }
-            userToggledRef.current = true; // remember user intent
-            setIsBarGraphVisible((prev) => !prev);
-          }}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
         >
-          <span className={`toggle-icon ${isBarGraphVisible ? 'open' : 'closed'}`} aria-hidden>
-            {isBarGraphVisible ? (
-              <svg
-                className="ui-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                style={{ transition: 'transform 0.15s ease-out' }}
-              >
-                <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
-              </svg>
-            ) : (
-              <svg
-                className="ui-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                style={{ transition: 'transform 0.15s ease-out' }}
-              >
-                <line x1="12" y1="5" x2="12" y2="19" strokeWidth="2.5" />
-                <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
-              </svg>
-            )}
-          </span>
-        </div>
-
-        {isBarGraphVisible && (
           <div
-            className="draggable-bar-graph"
+            ref={buttonRef}
+            className={`toggle-button${darkMode ? ' is-dark' : ''}`}
             style={{
-              background: darkMode
-                ? 'linear-gradient(to bottom, rgb(34 35 33) 40%,rgb(52, 46, 46) 100%)'
-                : 'linear-gradient(to bottom, #f8f8f8c9 65%, rgba(227, 237, 227, 0.7) 100%)',
-              transition: 'background 200ms ease',
+              cursor: isDragging ? 'grabbing' : 'grab',
+              left: '24px',
+              position: 'relative',
+            }}
+            onClick={(e) => {
+              if (hasMovedRef.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                hasMovedRef.current = false;
+                return;
+              }
+              userToggledRef.current = true;
+              setIsBarGraphVisible((prev) => !prev);
             }}
           >
-            <Suspense fallback={barLoadingFallback}>
-              {/* Preserve existing prop even if unused */}
-              <BarGraph/>
-            </Suspense>
+            <span className={`toggle-icon ${isBarGraphVisible ? 'open' : 'closed'}`} aria-hidden>
+              {isBarGraphVisible ? (
+                <svg
+                  className="ui-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  style={{ transition: 'transform 0.15s ease-out' }}
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
+                </svg>
+              ) : (
+                <svg
+                  className="ui-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  style={{ transition: 'transform 0.15s ease-out' }}
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" strokeWidth="2.5" />
+                  <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
+                </svg>
+              )}
+            </span>
           </div>
-        )}
-      </div>
-    </>
+
+          {isBarGraphVisible && (
+            <div
+              className="draggable-bar-graph"
+              style={{
+                background: darkMode
+                  ? 'linear-gradient(to bottom, rgb(34 35 33) 40%,rgb(52, 46, 46) 100%)'
+                  : 'linear-gradient(to bottom, #f8f8f8c9 65%, rgba(227, 237, 227, 0.7) 100%)',
+                transition: 'background 200ms ease',
+              }}
+            >
+              <Suspense fallback={barLoadingFallback}>
+                <BarGraph />
+              </Suspense>
+            </div>
+          )}
+        </div>
+      </>
+    </GraphDataProvider>
   );
 }

@@ -22,19 +22,21 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 }
 
 export const HOUSE_BASE_PALETTE = {
-  grass: { r: 120, g: 180, b: 110 },
+  grass: { r: 130, g: 180, b: 110 },
   body: [
-    { r: 210, g: 225, b: 235 },
-    { r: 232, g: 220, b: 206 },
-    { r: 220, g: 230, b: 216 },
-    { r: 238, g: 228, b: 234 },
-    { r: 229, g: 236, b: 246 },
+    { r: 198, g: 216, b: 234 },
+    { r: 224, g: 220, b: 206 },
+    { r: 214, g: 228, b: 204 },
+    { r: 228, g: 222, b: 232 },
+    { r: 223, g: 234, b: 244 },
+    { r: 206, g: 200, b: 222 },
+    { r: 236, g: 226, b: 212 },
   ],
   roof: [
-    { r: 210, g: 105, b: 90 },
-    { r: 160, g: 110, b: 95 },
-    { r: 135, g: 115, b: 105 },
-    { r: 120, g: 100, b: 90 },
+    { r: 220, g: 136, b: 116 },
+    { r: 182, g: 136, b: 118 },
+    { r: 160, g: 144, b: 138 },
+    { r: 146, g: 132, b: 124 },
   ],
   door: [
     { r: 170, g: 120, b: 70 },
@@ -44,9 +46,11 @@ export const HOUSE_BASE_PALETTE = {
   ],
   window: {
     lit: [
-      { r: 250, g: 240, b: 160 },
-      { r: 255, g: 230, b: 140 },
-      { r: 245, g: 220, b: 120 },
+      { r: 255, g: 166, b: 82 },
+      { r: 255, g: 184, b: 96 },
+      { r: 255, g: 206, b: 118 },
+      { r: 246, g: 228, b: 146 },
+      { r: 235, g: 236, b: 168 },
     ],
     dark: { r: 120, g: 170, b: 220 },
   },
@@ -54,20 +58,22 @@ export const HOUSE_BASE_PALETTE = {
 };
 
 export const HOUSE_DARK_PALETTE = {
-  grass: { r: 56, g: 114, b: 174 },
+  grass: { r: 56, g: 108, b: 116 },
   body: [
-    { r: 115, g: 142, b: 180 },
-    { r: 127, g: 139, b: 158 },
-    { r: 120, g: 145, b: 165 },
-    { r: 130, g: 144, b: 179 },
-    { r: 125, g: 149, b: 188 },
+    { r: 106, g: 132, b: 170 },
+    { r: 126, g: 132, b: 148 },
+    { r: 114, g: 142, b: 156 },
+    { r: 126, g: 138, b: 170 },
+    { r: 118, g: 145, b: 180 },
+    { r: 138, g: 124, b: 132 },
+    { r: 96, g: 118, b: 144 },
   ],
   roof: [
-    { r: 148, g: 82,  b: 88  },
+    { r: 136, g: 92,  b: 96  },
     { r: 82, g: 86,  b: 96  },
     { r: 72,  g: 86,  b: 110 },
     { r: 92,  g: 98,  b: 118 },
-    { r: 58,  g: 72,  b: 98  },
+    { r: 72,  g: 84,  b: 108 },
   ],
   door: [
     { r: 93,  g: 76,  b: 74 },
@@ -77,9 +83,11 @@ export const HOUSE_DARK_PALETTE = {
   ],
   window: {
     lit:  [
-      { r: 255, g: 198, b: 80 },
-      { r: 255, g: 186, b: 66 },
-      { r: 245, g: 170, b: 58 },
+      { r: 255, g: 156, b: 74 },
+      { r: 255, g: 176, b: 88 },
+      { r: 250, g: 198, b: 108 },
+      { r: 242, g: 220, b: 132 },
+      { r: 230, g: 228, b: 152 },
     ],
     dark: { r: 66,  g: 107, b: 169 },
   },
@@ -88,7 +96,7 @@ export const HOUSE_DARK_PALETTE = {
 
 const HOUSE = {
   body: { colorBlend: [0.2, 0.02], brightnessRange: [0.35, 0.65] },
-  grass: { colorBlend: [0.25, 0.5], satRange: [0, 0.4] },
+  grass: { colorBlend: [0.10, 0.22], satRange: [0.05, 0.22] },
   chimney: { scaleRange: [2, 0] },
   door: { widthRange: [1.3, 0.8], fixedHeights: [14, 20] },
   windows: { perFloor: 2, size: [10, 12], marginY: 12, thresholds: { low: 1.5, mid: 1.8 } }
@@ -138,6 +146,9 @@ function rand01(seed) {
   return (((t ^ (t >>> 14)) >>> 0) / 4294967296);
 }
 function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
+function pickByOccurrence(arr, occurrence = 0, offset = 0) {
+  return arr[(Math.max(0, occurrence) + offset) % arr.length];
+}
 
 export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const pal = opts?.darkMode ? HOUSE_DARK_PALETTE : HOUSE_BASE_PALETTE;
@@ -198,11 +209,16 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const grassY = pxY + pxH - grassH;
   const rGrassTop = Math.round(cell * 0.06);
 
-  let grassTint = pal.grass;
+  const grassSeed = rand01(hash32(`house-grass|${f.r0}|${f.c0}|${f.w}x${f.h}`));
+  let grassTint = pick(Array.isArray(pal.grass) ? pal.grass : [pal.grass], grassSeed);
+  const grassDriveU = Math.pow(u, 1.2);
   if (opts.gradientRGB) {
-    grassTint = blendRGB(grassTint, opts.gradientRGB, val(HOUSE.grass.colorBlend, u));
+    grassTint = blendRGB(grassTint, opts.gradientRGB, val(HOUSE.grass.colorBlend, grassDriveU));
   }
-  grassTint = driveSaturation(grassTint, u, HOUSE.grass.satRange[0], HOUSE.grass.satRange[1]);
+  grassTint = driveSaturation(grassTint, grassDriveU, HOUSE.grass.satRange[0], HOUSE.grass.satRange[1]);
+  grassTint = opts?.darkMode
+    ? clampBrightness(grassTint, 0.28, 0.42)
+    : clampBrightness(grassTint, 0.42, 0.72);
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   p.noStroke();
@@ -211,9 +227,10 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
 
   // body + roof
   const availH = grassY - pxY;
-  const seed = hash32(`house|${f.r0}|${f.c0}|${f.w}x${f.h}`);
+  const seedKey = (opts?.seedKey ?? opts?.seed) ?? `house|${f.r0}|${f.c0}|${f.w}x${f.h}`;
+  const occurrenceIndex = Number.isFinite(opts?.shapeOccurrenceIndex) ? opts.shapeOccurrenceIndex : 0;
+  const seed = hash32(String(seedKey));
   const r1 = rand01(seed ^ 0x9e3779b9);
-  const r2 = rand01(seed ^ 0x85ebca6b);
   const r3 = rand01(seed ^ 0xc2b2ae35);
   const r4 = rand01(seed ^ 0x27d4eb2f);
   const r5 = rand01(seed ^ 0xa2bfe8a1);
@@ -226,7 +243,8 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const roofH = Math.max(4, Math.round(cell * 0.15));
   const roofY = Math.max(pxY, bodyY - roofH);
 
-  let bodyTint = pick(pal.body, r2);
+  const bodyOffset = seed % pal.body.length;
+  let bodyTint = pickByOccurrence(pal.body, occurrenceIndex, bodyOffset);
   if (opts.gradientRGB) {
     bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(HOUSE.body.colorBlend, u));
   }

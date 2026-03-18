@@ -53,8 +53,8 @@ const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
       stops: [
         { k: 0.0, rgba: "rgba(120, 188, 236, 0.32)" },
         { k: 0.25, rgba: "rgba(88, 156, 214, 0.38)", oscK: { amp: 0.08, hz: 0.12 } },
-        { k: 0.59, rgba: "rgba(251, 252, 238, 0.9)" },
-        { k: 0.59, rgba: "rgba(171, 200, 133, 0.64)", liveBlend: [0.24, 0.08] },
+        { k: 0.53, rgba: "rgba(251, 252, 238, 0.9)" },
+        { k: 0.53, rgba: "rgba(171, 200, 133, 0.64)", liveBlend: [0.24, 0.08] },
         { k: 1.0, rgba: "rgba(139, 152, 134, 0.55)" },
       ] as const,
   },
@@ -123,9 +123,9 @@ const QUESTIONNAIRE_BACKGROUND_DARK: BackgroundSpec = {
     to: { xK: 0.5, yK: 1.0 },
       stops: [
         { k: 0, rgba: "#1f1c3b" },
-        { k: 0.25, rgba: "#4D5586", oscK: { amp: 0.06, hz: 0.12 } },
-        { k: 0.55, rgba: "#acbdf1", liveBlend: [0.18, 0] },
-        { k: 0.55, rgba: "rgba(68, 96, 157, 0.95)", liveBlend: [0.18, 0] },
+        { k: 0.2, rgba: "#4D5586", oscK: { amp: 0.06, hz: 0.12 } },
+        { k: 0.53, rgba: "#acbdf1", liveBlend: [0.18, 0] },
+        { k: 0.53, rgba: "rgba(68, 96, 157, 0.95)", liveBlend: [0.2, 0] },
         { k: 1.0, rgba: "#2b314d", oscK: { amp: 0.06, hz: 0.12 } },
       ] as const,
   },

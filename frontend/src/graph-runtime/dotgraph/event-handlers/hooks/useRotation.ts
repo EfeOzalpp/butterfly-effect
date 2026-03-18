@@ -2,7 +2,13 @@
 import { useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { RefObject } from 'react';
+import { Quaternion, Vector3 } from 'three';
 import type { Group } from 'three';
+
+// Scratch objects — reused every frame to avoid GC pressure
+const _rotQ = new Quaternion();
+const _axisX = new Vector3(1, 0, 0);
+const _axisY = new Vector3(0, 1, 0);
 
 export type GestureState = {
   pinching: boolean;
@@ -145,7 +151,7 @@ export default function useRotation({
     const dpr = window.devicePixelRatio || 1;
     const DEADZONE_PX = 2.0 * dpr;
     const TOUCH_PX_TO_RAD = (isTabletLike ? 0.004 : 0.006) / dpr;
-    const DESKTOP_PX_TO_RAD = 0.005 / dpr;
+    const DESKTOP_PX_TO_RAD = 0.003 / dpr;
     const canvas = (gl as any)?.domElement as HTMLElement | undefined;
 
     // Helper: did this touch start over the WebGL canvas?
@@ -207,8 +213,10 @@ export default function useRotation({
 
       const g = groupRef.current;
       if (g) {
-        g.rotation.x += -dy * DESKTOP_PX_TO_RAD;
-        g.rotation.y += -dx * DESKTOP_PX_TO_RAD;
+        _rotQ.setFromAxisAngle(_axisX, -dy * DESKTOP_PX_TO_RAD);
+        g.quaternion.premultiply(_rotQ);
+        _rotQ.setFromAxisAngle(_axisY, -dx * DESKTOP_PX_TO_RAD);
+        g.quaternion.premultiply(_rotQ);
       }
 
       const vx = (-dy / dt) * 1000 * DESKTOP_PX_TO_RAD;
@@ -316,8 +324,10 @@ export default function useRotation({
 
         const g = groupRef.current;
         if (g) {
-          g.rotation.x += -dy * TOUCH_PX_TO_RAD;
-          g.rotation.y += -dx * TOUCH_PX_TO_RAD;
+          _rotQ.setFromAxisAngle(_axisX, -dy * TOUCH_PX_TO_RAD);
+          g.quaternion.premultiply(_rotQ);
+          _rotQ.setFromAxisAngle(_axisY, -dx * TOUCH_PX_TO_RAD);
+          g.quaternion.premultiply(_rotQ);
         }
 
         const vx = (-dy / dt) * 1000 * TOUCH_PX_TO_RAD;
@@ -419,8 +429,10 @@ export default function useRotation({
       }
 
       const mul = zoomMul * tabletMul * motionMul;
-      g.rotation.x += spinVelRef.current.x * delta * mul;
-      g.rotation.y += spinVelRef.current.y * delta * mul;
+      _rotQ.setFromAxisAngle(_axisX, spinVelRef.current.x * delta * mul);
+      g.quaternion.premultiply(_rotQ);
+      _rotQ.setFromAxisAngle(_axisY, spinVelRef.current.y * delta * mul);
+      g.quaternion.premultiply(_rotQ);
     }
   }
 

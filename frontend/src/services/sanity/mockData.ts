@@ -1,3 +1,6 @@
+import { normalizeSurveyRow } from './normalizeSurveyRow';
+import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from './sections';
+
 type MockWeights = { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number };
 
 export type MockRow = {
@@ -16,78 +19,82 @@ export type MockRow = {
 };
 
 const MOCK_STORAGE_KEY = 'gp.mockRows';
+const TARGET_BASE_ROW_COUNT = 800;
 
 const MOCK_SEEDS: Array<[string, number, number, number, number, number]> = [
-  ['animation', 0.74, 0.67, 0.81, 0.69, 0.73],
-  ['illustration', 0.61, 0.58, 0.64, 0.62, 0.57],
-  ['fine-arts-2d', 0.48, 0.52, 0.51, 0.46, 0.49],
-  ['communication-design', 0.83, 0.78, 0.81, 0.76, 0.79],
-  ['visitor', 0.39, 0.42, 0.44, 0.41, 0.4],
-  ['academic-resource-center', 0.56, 0.6, 0.58, 0.62, 0.59],
-  ['industrial-design', 0.72, 0.75, 0.71, 0.7, 0.73],
-  ['student-engagement', 0.54, 0.5, 0.55, 0.57, 0.53],
-  ['photography', 0.68, 0.66, 0.7, 0.72, 0.67],
-  ['architecture', 0.77, 0.74, 0.8, 0.76, 0.79],
-  ['painting', 0.45, 0.49, 0.46, 0.47, 0.44],
-  ['visitor', 0.34, 0.37, 0.35, 0.38, 0.36],
-  ['illustration', 0.64, 0.63, 0.67, 0.61, 0.65],
-  ['design-innovation', 0.86, 0.84, 0.82, 0.87, 0.85],
-  ['academic-resource-center', 0.52, 0.55, 0.57, 0.54, 0.56],
-  ['technology', 0.69, 0.71, 0.68, 0.7, 0.72],
-  ['animation', 0.79, 0.76, 0.8, 0.78, 0.77],
-  ['photography', 0.58, 0.61, 0.57, 0.6, 0.59],
-  ['student-engagement', 0.49, 0.5, 0.52, 0.48, 0.51],
-  ['industrial-design', 0.75, 0.77, 0.73, 0.74, 0.76],
-  ['architecture', 0.82, 0.79, 0.81, 0.8, 0.83],
-  ['visitor', 0.43, 0.41, 0.46, 0.44, 0.42],
-  ['animation', 0.71, 0.73, 0.69, 0.74, 0.72],
-  ['illustration', 0.59, 0.6, 0.62, 0.58, 0.61],
-  ['dynamic-media-institute', 0.88, 0.86, 0.87, 0.85, 0.89],
-  ['academic-resource-center', 0.6, 0.57, 0.61, 0.59, 0.58],
-  ['technology', 0.66, 0.67, 0.69, 0.65, 0.68],
-  ['studio-arts', 0.51, 0.53, 0.54, 0.52, 0.5],
-  ['photography', 0.7, 0.69, 0.68, 0.71, 0.72],
-  ['student-engagement', 0.47, 0.46, 0.49, 0.5, 0.48],
+  ['animation',                0.38, 0.42, 0.35, 0.40, 0.37],   // low
+  ['animation',                0.77, 0.74, 0.80, 0.76, 0.78],   // high
+  ['illustration',             0.48, 0.51, 0.46, 0.50, 0.47],   // mid
+  ['illustration',             0.62, 0.58, 0.64, 0.60, 0.61],   // mid-high
+  ['fine-arts-2d',             0.30, 0.34, 0.32, 0.28, 0.31],   // low
+  ['fine-arts-2d',             0.54, 0.57, 0.51, 0.55, 0.53],   // mid
+  ['communication-design',     0.29, 0.33, 0.35, 0.27, 0.31],   // low
+  ['communication-design',     0.84, 0.80, 0.82, 0.78, 0.81],   // high
+  ['visitor',                  0.45, 0.48, 0.43, 0.47, 0.46],   // mid-low
+  ['visitor',                  0.63, 0.60, 0.66, 0.58, 0.62],   // mid-high
+  ['academic-resource-center', 0.37, 0.41, 0.39, 0.43, 0.38],   // low
+  ['academic-resource-center', 0.57, 0.53, 0.60, 0.55, 0.58],   // mid
+  ['industrial-design',        0.34, 0.38, 0.36, 0.40, 0.35],   // low
+  ['industrial-design',        0.76, 0.73, 0.79, 0.74, 0.77],   // high
+  ['student-engagement',       0.26, 0.30, 0.32, 0.25, 0.28],   // low
+  ['student-engagement',       0.50, 0.54, 0.48, 0.52, 0.51],   // mid
+  ['photography',              0.27, 0.31, 0.29, 0.25, 0.28],   // low
+  ['photography',              0.56, 0.60, 0.53, 0.58, 0.55],   // mid
+  ['architecture',             0.40, 0.44, 0.42, 0.38, 0.41],   // low
+  ['architecture',             0.81, 0.78, 0.84, 0.80, 0.83],   // high
+  ['painting',                 0.33, 0.37, 0.35, 0.31, 0.34],   // low
+  ['painting',                 0.52, 0.56, 0.49, 0.54, 0.53],   // mid
+  ['design-innovation',        0.28, 0.32, 0.30, 0.34, 0.27],   // low
+  ['design-innovation',        0.87, 0.84, 0.89, 0.85, 0.88],   // high
+  ['dynamic-media-institute',  0.31, 0.35, 0.28, 0.37, 0.30],   // low
+  ['dynamic-media-institute',  0.88, 0.85, 0.91, 0.86, 0.89],   // high
+  ['technology',               0.33, 0.37, 0.35, 0.31, 0.34],   // low
+  ['technology',               0.59, 0.55, 0.62, 0.57, 0.60],   // mid
+  ['studio-arts',              0.25, 0.29, 0.31, 0.27, 0.26],   // low
+  ['studio-arts',              0.49, 0.52, 0.46, 0.54, 0.50],   // mid
 ];
 
-const BASE_ROWS: MockRow[] = MOCK_SEEDS.map(([section, q1, q2, q3, q4, q5], index) => {
-  const avgWeight = Number(((q1 + q2 + q3 + q4 + q5) / 5).toFixed(3));
-  const submitted = new Date(Date.UTC(2026, 2, 15, 16, 0 - index * 3, 0)).toISOString();
-  return {
-    _id: `mock-seed-${index + 1}`,
-    _type: 'userResponseV4',
-    section,
-    q1,
-    q2,
-    q3,
-    q4,
-    q5,
-    avgWeight,
-    submittedAt: submitted,
-    _createdAt: submitted,
-    _updatedAt: submitted,
-  };
-});
+function offsetWeight(value: number, delta: number) {
+  return Math.max(0, Math.min(1, Math.round((value + delta) * 1000) / 1000));
+}
 
-const STUDENT_SECTIONS = new Set([
-  'animation',
-  'illustration',
-  'fine-arts-2d',
-  'communication-design',
-  'design-innovation',
-  'dynamic-media-institute',
-  'industrial-design',
-  'architecture',
-  'photography',
-  'painting',
-  'studio-arts',
-]);
+function buildBaseRows(): MockRow[] {
+  return Array.from({ length: TARGET_BASE_ROW_COUNT }, (_, index) => {
+    const [section, q1, q2, q3, q4, q5] = MOCK_SEEDS[index % MOCK_SEEDS.length];
+    const cycle = Math.floor(index / MOCK_SEEDS.length);
+    const drift = ((index % 7) - 3) * 0.009 + cycle * 0.006;
+    const values = [
+      offsetWeight(q1, drift),
+      offsetWeight(q2, drift * 0.7),
+      offsetWeight(q3, -drift * 0.45),
+      offsetWeight(q4, drift * 0.55),
+      offsetWeight(q5, -drift * 0.3),
+    ] as const;
+    const avgWeight = Number(
+      ((values[0] + values[1] + values[2] + values[3] + values[4]) / 5).toFixed(3)
+    );
+    const submitted = new Date(Date.UTC(2026, 2, 15, 16, 0 - index * 3, 0)).toISOString();
+    return {
+      _id: `mock-seed-${index + 1}`,
+      _type: 'userResponseV4',
+      section,
+      q1: values[0],
+      q2: values[1],
+      q3: values[2],
+      q4: values[3],
+      q5: values[4],
+      avgWeight,
+      submittedAt: submitted,
+      _createdAt: submitted,
+      _updatedAt: submitted,
+    };
+  });
+}
 
-const STAFF_SECTIONS = new Set([
-  'academic-resource-center',
-  'student-engagement',
-  'technology',
-]);
+const BASE_ROWS: MockRow[] = buildBaseRows();
+
+const STUDENT_SECTIONS = new Set(STUDENT_IDS);
+const STAFF_SECTIONS = new Set(STAFF_IDS);
 
 type SurveySubscriber = {
   section: string;
@@ -141,7 +148,7 @@ function filterRows(section: string, limit: number) {
   let rows = allRows();
   if (section && section !== 'all') {
     if (section === 'all-massart') {
-      rows = rows.filter((row) => row.section !== 'visitor');
+      rows = rows.filter((row) => NON_VISITOR_MASSART.includes(row.section));
     } else if (section === 'all-students') {
       rows = rows.filter((row) => STUDENT_SECTIONS.has(row.section));
     } else if (section === 'all-staff') {
@@ -150,7 +157,7 @@ function filterRows(section: string, limit: number) {
       rows = rows.filter((row) => row.section === section);
     }
   }
-  return rows.slice(0, limit);
+  return rows.slice(0, limit).map(normalizeSurveyRow);
 }
 
 function buildCounts(rows: MockRow[]) {

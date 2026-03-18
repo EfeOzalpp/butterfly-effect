@@ -41,7 +41,7 @@ span {
 
 .mock-read-banner {
   position: fixed;
-  top: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   left: 50%;
   display: inline-flex;
   align-items: center;
@@ -104,7 +104,8 @@ button.questionnaire {
 /* shared button base secondary */
 button.city-button,
 .observe-results,
-.system-color {
+.system-color,
+.widgets-button {
   display: inline-flex;
   align-items: center;
   flex-direction: row-reverse;
@@ -123,10 +124,10 @@ button { pointer-events: auto; cursor: pointer; }
 button.begin-button:hover,
 button.next-button:hover,
 button.questionnaire:hover,
-button.begin-button3:hover,
 button.city-button:hover,
 .nav-toggle:hover,
 .observe-results:hover,
+.widgets-button:hover,
 .system-color:hover,
 .info-close:hover {
   transform: none;
@@ -159,13 +160,15 @@ button.next-button:hover, button.questionnaire:hover {
 
 /* secondary button styles */
 .observe-results,
-.city-button {
+.city-button,
+.widgets-button {
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
   border: var(--btn-border-width) solid var(--btn-secondary-border);
 }
 .observe-results:hover,
-button.city-button:hover {
+button.city-button:hover,
+.widgets-button:hover {
   background: var(--btn-secondary-hover-bg);
   border-color: var(--btn-secondary-hover-border);
 }

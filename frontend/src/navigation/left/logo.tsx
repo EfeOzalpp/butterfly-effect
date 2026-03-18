@@ -1,17 +1,22 @@
 import { useAppState } from "../../app/store";
 
 const Logo = () => {
-  const { darkMode } = useAppState();
+  const { darkMode, resetToStart } = useAppState();
 
   return (
-    <div className="logo-divider" aria-label="Butterfly Habits">
+    <button
+      type="button"
+      className="logo-divider"
+      aria-label="Back to home"
+      onClick={resetToStart}
+    >
       <img
         className="logo-image"
         src={darkMode ? "/butterfly-effect-dark.svg" : "/butterfly-effect.svg"}
         alt=""
         aria-hidden="true"
       />
-    </div>
+    </button>
   );
 };
 

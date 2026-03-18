@@ -45,8 +45,8 @@ export default function useHoverBubble({
           computeHoverViewportClass({
             x: clientX,
             y: clientY,
-            width: window.innerWidth,
-            height: window.innerHeight,
+            width: document.documentElement.clientWidth,
+            height: document.documentElement.clientHeight,
             useDesktopLayout,
           })
         );

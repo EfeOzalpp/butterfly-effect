@@ -32,7 +32,7 @@ export function createDefaultShapeRegistry(): ShapeRegistry {
     snow: (p2, it, rEff, opts) => {
       const vw = p2.width;
       const dt = deviceType(vw);
-      const hideFrac = dt === "mobile" ? 0.32 : dt === "tablet" ? 0.4 : 0.2;
+      const hideFrac = dt === "mobile" ? 0.56 : dt === "tablet" ? 0.52 : 0.5;
 
       drawSnow(p2 as any, it.x, it.y, rEff, {
         ...opts,

@@ -15,33 +15,33 @@
 
 @keyframes greenFluctuation {
   0%,
-  100% { background-color: rgb(140, 220, 110); }
-  50% { background-color: rgb(0, 220, 60); }
+  100% { background-color: rgb(var(--graph-green-lo-rgb)); }
+  50% { background-color: rgb(var(--graph-green-hi-rgb)); }
 }
 @keyframes yellowFluctuation {
   0%,
-  100% { background-color: rgb(245, 233, 70); }
-  50% { background-color: rgb(255, 203, 70); }
+  100% { background-color: rgb(var(--graph-yellow-lo-rgb)); }
+  50% { background-color: rgb(var(--graph-yellow-hi-rgb)); }
 }
 @keyframes redFluctuation {
   0%,
-  100% { background-color: rgb(211, 95, 93); }
-  50% { background-color: rgb(240, 108, 13); }
+  100% { background-color: rgb(var(--graph-red-lo-rgb)); }
+  50% { background-color: rgb(var(--graph-red-hi-rgb)); }
 }
 @keyframes greenDotPulse {
   0%,
-  100% { background: radial-gradient(circle, rgba(0,220,60,0.92) 22%, rgba(140,220,110,0.50) 78%); }
-  50% { background: radial-gradient(circle, rgba(140,220,110,0.96) 22%, rgba(0,220,60,0.42) 78%); }
+  100% { background: radial-gradient(circle, rgba(var(--graph-green-hi-rgb), 0.92) 22%, rgba(var(--graph-green-lo-rgb), 0.50) 78%); }
+  50% { background: radial-gradient(circle, rgba(var(--graph-green-lo-rgb), 0.96) 22%, rgba(var(--graph-green-hi-rgb), 0.42) 78%); }
 }
 @keyframes yellowDotPulse {
   0%,
-  100% { background: radial-gradient(circle, rgba(245,200,70,0.92) 22%, rgba(255,180,70,0.50) 78%); }
-  50% { background: radial-gradient(circle, rgba(252,205,78,0.96) 22%, rgba(235,195,85,0.42) 78%); }
+  100% { background: radial-gradient(circle, rgba(var(--graph-yellow-lo-rgb), 0.92) 22%, rgba(var(--graph-yellow-hi-rgb), 0.50) 78%); }
+  50% { background: radial-gradient(circle, rgba(var(--graph-yellow-hi-rgb), 0.96) 22%, rgba(var(--graph-yellow-lo-rgb), 0.42) 78%); }
 }
 @keyframes redDotPulse {
   0%,
-  100% { background: radial-gradient(circle, rgba(255,120,30,0.92) 22%, rgba(230,20,45,0.50) 78%); }
-  50% { background: radial-gradient(circle, rgba(230,20,45,0.96) 22%, rgba(255,120,30,0.42) 78%); }
+  100% { background: radial-gradient(circle, rgba(var(--graph-red-hi-rgb), 0.92) 22%, rgba(var(--graph-red-lo-rgb), 0.50) 78%); }
+  50% { background: radial-gradient(circle, rgba(var(--graph-red-lo-rgb), 0.96) 22%, rgba(var(--graph-red-hi-rgb), 0.42) 78%); }
 }
 @keyframes floaty { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
 
@@ -106,7 +106,7 @@
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   border-radius: var(--radius-lg);
-  border: 0.2px solid rgb(212, 212, 212);
+  border: 0.2px solid var(--graph-bar-border);
 }
 
 .bar-graph-bar:first-child,
@@ -126,9 +126,9 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(50, 50, 50, 0) 6%,
-    rgba(108, 121, 122, 0.2) 15%,
-    rgba(30, 30, 30, 0) 40%,
+    transparent 6%,
+    var(--graph-divider) 15%,
+    transparent 40%,
     transparent 100%
   );
   pointer-events: none;
@@ -144,9 +144,9 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(50, 50, 50, 0) 6%,
-    rgba(108, 121, 122, 0.2) 15%,
-    rgba(30, 30, 30, 0) 40%,
+    transparent 6%,
+    var(--graph-divider) 15%,
+    transparent 40%,
     transparent 100%
   );
 }
@@ -226,6 +226,29 @@
    Safe to tune tokens/colors without breaking JS positioning behavior.
    -------------------------------------------------------------------------- */
 /* Theme wiring: graph */
+.draggable-container {
+  border-radius: var(--radius-hero);
+  overflow: hidden;
+}
+
+.draggable-bar-graph {
+  background: var(--ui-bg-surface);
+  border-left: 1px solid var(--ui-border);
+  border-radius: var(--radius-hero) 0 0 var(--radius-hero);
+}
+
+.toggle-button {
+  background: var(--ui-bg-muted);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-lg);
+  color: var(--ui-text);
+}
+
+.toggle-button:hover {
+  background: var(--ui-bg-muted-hover);
+  border-color: var(--ui-border-strong);
+}
+
 .graph-container {
   background: var(--graph-bg);
 }

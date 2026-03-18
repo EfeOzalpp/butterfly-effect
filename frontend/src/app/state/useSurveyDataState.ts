@@ -1,37 +1,78 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { subscribeSurveyData } from '../../services/sanity/api';
 import { useMockSanityReadMode } from '../../services/sanity/config';
+import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from '../../services/sanity/sections';
 import { getSessionItem, setSessionItem } from '../session';
 import type { SurveyRow } from '../types';
 
 type UseSurveyDataStateParams = {
+  section: string;
   mySection: string | null;
   setSection: (section: string) => void;
-  counts: Record<string, number>;
 };
 
+const ALL_ROWS_LIMIT = 5000;
+const VISIBLE_ROWS_LIMIT = 300;
+
 export default function useSurveyDataState({
+  section,
   mySection,
   setSection,
-  counts,
 }: UseSurveyDataStateParams) {
   const { active: mockReadMode } = useMockSanityReadMode();
 
-  const [data, setData] = useState<SurveyRow[]>([]);
+  const [allRows, setAllRows] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const subscribeToSurveyData = useCallback((section: string) => {
+  const subscribeToSurveyData = useCallback(() => {
     void mockReadMode;
     setLoading(true);
     return subscribeSurveyData({
-      section,
+      section: 'all',
+      limit: ALL_ROWS_LIMIT,
       onData: (rows: SurveyRow[]) => {
-        setData(rows);
+        setAllRows(rows);
         setLoading(false);
       },
     });
   }, [mockReadMode]);
+
+  const counts = useMemo(() => {
+    const bySection: Record<string, number> = {};
+    for (const row of allRows) {
+      const key = row?.section || '';
+      bySection[key] = (bySection[key] || 0) + 1;
+    }
+
+    const sum = (ids: string[]) => ids.reduce((acc, id) => acc + (bySection[id] || 0), 0);
+
+    return {
+      all: allRows.length,
+      'all-massart': sum(NON_VISITOR_MASSART),
+      'all-students': sum(STUDENT_IDS),
+      'all-staff': sum(STAFF_IDS),
+      visitor: bySection.visitor || 0,
+      ...bySection,
+    };
+  }, [allRows]);
+
+  const data = useMemo(() => {
+    if (!section || section === 'all') return allRows.slice(0, VISIBLE_ROWS_LIMIT);
+    if (section === 'all-massart') {
+      const allowed = new Set(NON_VISITOR_MASSART);
+      return allRows.filter((row) => allowed.has(row.section)).slice(0, VISIBLE_ROWS_LIMIT);
+    }
+    if (section === 'all-students') {
+      const allowed = new Set(STUDENT_IDS);
+      return allRows.filter((row) => allowed.has(row.section)).slice(0, VISIBLE_ROWS_LIMIT);
+    }
+    if (section === 'all-staff') {
+      const allowed = new Set(STAFF_IDS);
+      return allRows.filter((row) => allowed.has(row.section)).slice(0, VISIBLE_ROWS_LIMIT);
+    }
+    return allRows.filter((row) => row.section === section).slice(0, VISIBLE_ROWS_LIMIT);
+  }, [allRows, section]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -60,6 +101,7 @@ export default function useSurveyDataState({
   }, [counts, mySection, setSection]);
 
   return {
+    counts,
     data,
     loading,
     subscribeToSurveyData,

@@ -68,7 +68,6 @@ export function EngineHost({
 
   const viewportKey = useViewportKey(120);
 
-  // useSceneField should read baseMode from HOST_DEFS itself.
   useSceneField(engine, id, allocAvg, { questionnaireOpen }, viewportKey);
 
   React.useEffect(() => {

@@ -1,10 +1,9 @@
 import React from "react";
-import NavLeft from "./left/index";
-import NavRight from "./right/index";
-import NavBottom from "./bottom/index";
+import NavLeft from "./left/nav-left";
+import NavRight from "./right/nav-right";
+import NavBottom from "./bottom/nav-bottom";
 import { useAppState } from "../app/store";
 import "../styles/navigation.css";
-import "../styles/info-graph.css";
 
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
 

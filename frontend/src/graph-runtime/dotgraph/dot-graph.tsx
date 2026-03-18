@@ -1,8 +1,7 @@
 import React, { useCallback } from 'react';
 
 import { useAppState } from '../../app/store';
-
-import useGraphData from '../useGraphData';
+import { useSharedGraphData } from '../GraphDataContext';
 import { useTextureQueueProgress } from '../sprites/entry';
 
 import useHoverBubble from './hooks/useHoverBubble';
@@ -33,7 +32,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
     getAbsForId,
     getAbsForValue,
     absScoreById: absScoreByIdMap,
-  } = useGraphData(data);
+  } = useSharedGraphData();
 
   const showCompleteUI = useObserverDelay(observerMode, 2000);
 
@@ -113,7 +112,7 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
   return (
     <>
-      <GraphOverlays showCompleteUI={showCompleteUI} isBusy={isBusy} />
+      <GraphOverlays isBusy={isBusy} />
 
       <group ref={scene.groupRef as any}>
         <ShapesLayer

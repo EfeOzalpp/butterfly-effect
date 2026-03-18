@@ -8,7 +8,7 @@ function normalizeAvg(avg: unknown) {
   return typeof avg === 'number' && Number.isFinite(avg) ? avg : DEFAULT_AVG;
 }
 
-export default function useGraphRuntimeState() {
+export default function useCanvasRuntimeState() {
   const [liveAvgState, _setLiveAvgState] = useState<number>(DEFAULT_AVG);
   const [allocAvgState, _setAllocAvgState] = useState<number>(DEFAULT_AVG);
   const [condAvgsState, _setCondAvgsState] = useState<CondAvgs>({});
@@ -28,7 +28,7 @@ export default function useGraphRuntimeState() {
     _setAllocAvgState(normalizeAvg(avg));
   };
 
-  const resetGraphRuntimeState = () => {
+  const resetCanvasRuntimeState = () => {
     _setLiveAvgState(DEFAULT_AVG);
     _setAllocAvgState(DEFAULT_AVG);
     _setCondAvgsState({});
@@ -41,6 +41,6 @@ export default function useGraphRuntimeState() {
     commitAllocAvg,
     condAvgsState,
     setCondAvgs,
-    resetGraphRuntimeState,
+    resetCanvasRuntimeState,
   };
 }

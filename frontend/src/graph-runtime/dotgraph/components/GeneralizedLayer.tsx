@@ -80,7 +80,7 @@ export default function HoveredLayer({
       }}
       className={viewportClass}
     >
-      <div>
+      <>
         <GamificationGeneral
           dotId={hoveredDot.dotId}
           percentage={content.displayPct}
@@ -92,7 +92,7 @@ export default function HoveredLayer({
           positionClass={content.hoveredClass.position}
           tieContext={content.hoveredClass.tieContext}
         />
-      </div>
+      </>
     </Html>
   );
 }

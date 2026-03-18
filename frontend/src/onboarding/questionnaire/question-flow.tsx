@@ -208,10 +208,16 @@ export default function QuestionFlow({
 
   return (
     <section className="survey survey-step questionnaire">
-      <div className="questionnaire">
+      <div className="questionnaire" aria-labelledby={`question-title-${q.id}`} aria-describedby={`question-progress-${q.id}`}>
         <div className={`questions ${slabClass}`}>
-          <h3 className="q-title">{q.prompt}</h3>
+          <h3 className="q-title" id={`question-title-${q.id}`}>{q.prompt}</h3>
         </div>
+        <p
+          id={`question-progress-${q.id}`}
+          style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}
+        >
+          Question {current + 1} of {questions.length}
+        </p>
 
         <AnswersList
           question={q}
@@ -222,7 +228,13 @@ export default function QuestionFlow({
         />
 
         <div className="survey-actions">
-          <button type="button" className="questionnaire" onClick={next} disabled={!!submitting}>
+          <button
+            type="button"
+            className="questionnaire"
+            onClick={next}
+            disabled={!!submitting}
+            aria-label={current < questions.length - 1 ? `Go to question ${current + 2}` : 'Finish survey and open results'}
+          >
             <span>{current < questions.length - 1 ? "Next Question" : "Finish"}</span>
           </button>
         </div>

@@ -5,10 +5,9 @@ import React, { useEffect, useState, Suspense } from "react";
 import { AppProvider, useAppState } from "../app/store";
 
 import Survey from "../onboarding";
-import Navigation from "../navigation";
+import Navigation from "../navigation/navigation";
 import DataVisualization from "../graph-runtime";
 
-import { useDynamicMargin } from "../lib/hooks/useDynamicMargin";
 import GamificationCopyPreloader from "../lib/hooks/useGamificationTextPreload";
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
 import { useMockSanityReadMode } from "../services/sanity/config";
@@ -37,8 +36,6 @@ function DeferredGamificationPreloader() {
 }
 
 const AppInner: React.FC = () => {
-  useDynamicMargin();
-
   const [animationVisible, setAnimationVisible] = useState<boolean>(false);
   const [surveyWrapperClass, setSurveyWrapperClass] = useState<string>("");
   const [dismissedMockBanner, setDismissedMockBanner] = useState<boolean>(false);

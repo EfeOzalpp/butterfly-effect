@@ -6,18 +6,17 @@ import {
   getSessionItem,
   removeSessionItems,
 } from "./session";
-import { USE_MOCK_SANITY } from "../services/sanity/config";
+import { USE_MOCK_SANITY, shouldUseMockSanityReads } from "../services/sanity/config";
 import { clearMockSurveyState } from "../services/sanity/mockData";
 import useIdentityState from "./state/useIdentityState";
 import usePreferencesState from "./state/usePreferencesState";
 import useUiState from "./state/useUiState";
-import useGraphRuntimeState from "./state/useGraphRuntimeState";
+import useCanvasRuntimeState from "./state/useCanvasRuntimeState";
 import useSurveyDataState from "./state/useSurveyDataState";
-import useSectionCounts from "../lib/hooks/useSectionCounts";
 export type { AppState, Mode } from "./types";
 
 const AppCtx = createContext<AppState | null>(null);
-export { DEFAULT_AVG } from "./state/useGraphRuntimeState";
+export { DEFAULT_AVG } from "./state/useCanvasRuntimeState";
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const didMockBootstrapRef = useRef(false);
@@ -67,19 +66,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     commitAllocAvg,
     condAvgsState,
     setCondAvgs,
-    resetGraphRuntimeState,
-  } = useGraphRuntimeState();
-  const { counts } = useSectionCounts();
-  const { data, loading, subscribeToSurveyData } = useSurveyDataState({
+    resetCanvasRuntimeState,
+  } = useCanvasRuntimeState();
+  const { counts, data, loading, subscribeToSurveyData } = useSurveyDataState({
+    section,
     mySection,
     setSection,
-    counts,
   });
 
   useEffect(() => {
-    const unsub = subscribeToSurveyData(section);
+    const unsub = subscribeToSurveyData();
     return () => unsub();
-  }, [section, subscribeToSurveyData]);
+  }, [subscribeToSurveyData]);
 
   useEffect(() => {
     if (!USE_MOCK_SANITY || didMockBootstrapRef.current) return;
@@ -113,7 +111,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const resetToStart = useCallback(() => {
     batched(() => {
       setVizVisible(false);
-      setSurveyActive(true);
+      setSurveyActive(false);
       setHasCompletedSurvey(false);
       setObserverMode(false);
       setMyEntryId(null);
@@ -122,13 +120,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setSection("all");
       setQuestionnaireOpen(false);
 
-      resetGraphRuntimeState();
+      resetCanvasRuntimeState();
     });
 
     removeSessionItems(["gp.myEntryId", "gp.mySection", "gp.myRole", "gp.myDoc"]);
-    if (USE_MOCK_SANITY) clearMockSurveyState();
+    if (USE_MOCK_SANITY || shouldUseMockSanityReads()) clearMockSurveyState();
   }, [
-    resetGraphRuntimeState,
+    resetCanvasRuntimeState,
     setHasCompletedSurvey,
     setMyEntryId,
     setMyRole,

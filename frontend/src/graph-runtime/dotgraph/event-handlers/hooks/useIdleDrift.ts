@@ -1,7 +1,12 @@
 // src/graph-runtime/dotgraph/event-handlers/useIdleDrift.ts
 import { useFrame } from '@react-three/fiber';
 import type { RefObject } from 'react';
+import { Quaternion, Vector3 } from 'three';
 import type { Group } from 'three';
+
+const _driftQ = new Quaternion();
+const _driftAxisY = new Vector3(0, 1, 0);
+const _driftAxisX = new Vector3(1, 0, 0);
 
 export type UseIdleDriftParams = {
   groupRef: RefObject<Group | null>;
@@ -24,8 +29,10 @@ export default function useIdleDrift({
     if (!idleActive) return;
 
     if (!horizontalOnly) {
-      g.rotation.x += speed * 0.25 * delta;
+      _driftQ.setFromAxisAngle(_driftAxisX, speed * 0.25 * delta);
+      g.quaternion.premultiply(_driftQ);
     }
-    g.rotation.y += speed * delta;
+    _driftQ.setFromAxisAngle(_driftAxisY, speed * delta);
+    g.quaternion.premultiply(_driftQ);
   });
 }

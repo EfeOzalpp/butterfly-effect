@@ -18,6 +18,7 @@ import {
   requestStaticTexture,
   requestFrozenTexture,
 } from '../internal/spriteRuntime';
+import { spriteMaterialCachingDisabled } from './debug-flags';
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
@@ -27,6 +28,70 @@ const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();
 function track(tex: THREE.CanvasTexture) {
   __GLOBAL_TEX.add(tex);
   return tex;
+}
+
+type SharedMaterialEntry = {
+  material: THREE.SpriteMaterial;
+  refs: number;
+};
+
+const __SHARED_SPRITE_MATERIALS = new Map<string, SharedMaterialEntry>();
+
+function makeSpriteMaterialKey(tex: THREE.CanvasTexture, opacity: number) {
+  return [
+    tex.uuid,
+    opacity,
+    0, // depthWrite=false
+    0, // depthTest=false
+    0, // toneMapped=false
+    'white',
+  ].join('|');
+}
+
+function acquireSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
+  const key = makeSpriteMaterialKey(tex, opacity);
+  const hit = __SHARED_SPRITE_MATERIALS.get(key);
+  if (hit) {
+    hit.refs += 1;
+    return hit.material;
+  }
+
+  const material = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    opacity,
+    toneMapped: false,
+    color: 'white',
+  });
+  material.needsUpdate = true;
+  __SHARED_SPRITE_MATERIALS.set(key, { material, refs: 1 });
+  return material;
+}
+
+function releaseSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
+  const key = makeSpriteMaterialKey(tex, opacity);
+  const hit = __SHARED_SPRITE_MATERIALS.get(key);
+  if (!hit) return;
+  hit.refs -= 1;
+  if (hit.refs > 0) return;
+  try { hit.material.dispose(); } catch {}
+  __SHARED_SPRITE_MATERIALS.delete(key);
+}
+
+function makeUnsharedSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
+  const material = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    opacity,
+    toneMapped: false,
+    color: 'white',
+  });
+  material.needsUpdate = true;
+  return material;
 }
 
 export function SpriteShape({
@@ -268,7 +333,25 @@ export function SpriteShape({
     vs.rgb,
   ]);
 
-  if (!tex) return null;
+  const materialCacheDisabled = spriteMaterialCachingDisabled();
+  const material = React.useMemo(() => {
+    if (!tex) return null;
+    return materialCacheDisabled
+      ? makeUnsharedSpriteMaterial(tex, opacity)
+      : acquireSpriteMaterial(tex, opacity);
+  }, [tex, opacity, materialCacheDisabled]);
+  React.useEffect(() => {
+    if (!tex) return;
+    return () => {
+      if (materialCacheDisabled) {
+        try { material?.dispose(); } catch {}
+        return;
+      }
+      releaseSpriteMaterial(tex, opacity);
+    };
+  }, [tex, opacity, material, materialCacheDisabled]);
+
+  if (!tex || !material) return null;
 
   const shapeScaleK = VISUAL_SCALE[shape] ?? 1;
   const finalScale = (scale ?? 1) * shapeScaleK;
@@ -285,15 +368,7 @@ export function SpriteShape({
 
   return (
     <sprite position={pos as any} scale={[sx, sy, 1]} renderOrder={5}>
-      <spriteMaterial
-        map={tex}
-        transparent
-        depthWrite={false}
-        depthTest={false}
-        opacity={opacity}
-        toneMapped={false}
-        color="white"
-      />
+      <primitive object={material} attach="material" dispose={null} />
     </sprite>
   );
 }

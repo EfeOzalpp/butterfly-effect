@@ -1,5 +1,5 @@
 // src/components/survey/sectionPicker/sectionPicker.tsx
-import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { useMemo, useRef, useState, useEffect, useCallback, useId } from 'react';
 
 export type SectionHeader = { type: 'header'; id: string; label: string };
 
@@ -33,6 +33,9 @@ export default function SectionPickerIntro({
   titleOverride, // e.g., "Select Your Major"
   onOpenChange,
 }: Props) {
+  const titleId = useId();
+  const helpId = useId();
+  const errorId = useId();
   const hasHeaders = useMemo(
     () => Array.isArray(sections) && sections.some((s) => s && (s as any).type === 'header'),
     [sections]
@@ -210,11 +213,15 @@ export default function SectionPickerIntro({
     open && renderedFocusable[activeIndex] ? `opt-${renderedFocusable[activeIndex].value}` : undefined;
 
   const placeholderText = placeholderOverride ?? (current ? current.label : 'MassArt Dept...');
+  const describedBy = [helpId, error ? errorId : null].filter(Boolean).join(' ');
 
   return (
     <section className="survey survey-step section-select" ref={wrapperRef}>
       <div className="continue">
-        <h3 className="section-title">{titleOverride ?? 'Select Your Department'}</h3>
+        <h3 className="section-title" id={titleId}>{titleOverride ?? 'Select Your Department'}</h3>
+        <p id={helpId} style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>
+          Type to filter departments, then use arrow keys to move through the list and Enter to select.
+        </p>
 
       <div className="section-picker">
         <div
@@ -235,12 +242,14 @@ export default function SectionPickerIntro({
             type="text"
             className="section-input"
             role="combobox"
-            aria-label="Select your department"
+            aria-labelledby={titleId}
             aria-haspopup="listbox"
             aria-owns={listboxId}
             aria-expanded={open}
             aria-controls={listboxId}
             aria-activedescendant={activeRenderedId}
+            aria-describedby={describedBy || undefined}
+            aria-invalid={!!error}
             placeholder={placeholderText}
             value={open ? search : (current && current.label) || ''}
             inputMode="search"
@@ -367,13 +376,13 @@ export default function SectionPickerIntro({
       </div>
 
       {error && (
-        <div className="error-container">
+        <div className="error-container" id={errorId} role="alert" aria-live="polite">
           <p>{error}</p>
           {!/section/i.test(error) && <p className="email-tag">Mail: eozalp@massart.edu</p>}
         </div>
       )}
 
-      <div className="button-wrap"><button className="next-button" onClick={onBegin}>
+      <div className="button-wrap"><button type="button" className="next-button" onClick={onBegin} aria-describedby={describedBy || undefined}>
         <span>Continue</span>
         <svg
           viewBox="0 0 24 24"

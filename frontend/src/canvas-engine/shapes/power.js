@@ -23,7 +23,7 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 
 /* Palette */
 export const POWER_BASE_PALETTE = {
-  grass:    { r: 120, g: 180, b: 110 },
+  grass:    { r: 130, g: 160, b: 110 },
   mast:     { r: 203, g: 209, b: 209 },
   mastCore: { r: 178, g: 191,  b: 190 },
   hub:      { r: 185, g: 189, b: 188 },
@@ -32,7 +32,7 @@ export const POWER_BASE_PALETTE = {
 };
 
 export const POWER_DARK_PALETTE = {
-  grass: { r: 25, g: 77, b: 156 },
+  grass: { r: 35, g: 77, b: 156 },
   mast:     { r: 91, g: 132, b: 160 },
   mastCore: { r: 97,  g: 121, b: 146 },
   hub:      { r: 101, g: 119, b: 144 },
@@ -69,6 +69,10 @@ const POWER = {
       alpha:  [150, 125],
     },
     bladeOsc: { amp: [0.10, 0.033], speed: [1.6, 1.2] },
+  },
+  kindBalance: {
+    midpoint: 0.5,
+    midpointBand: 0.08,
   },
 };
 
@@ -149,14 +153,7 @@ const FACTORY_SMOKE = {
 
 /* Probability */
 function windProbability(u) {
-  const p0 = 0.0;
-  if (u <= 0.4) {
-    const t = u / 0.4;
-    return p0 + (0.5 - p0) * t;
-  } else {
-    const t = (u - 0.4) / 0.6;
-    return 0.5 + 0.5 * t;
-  }
+  return clamp01(u);
 }
 
 /* ====== NEW: seed helpers not tied to footprint/bleed ====== */
@@ -165,7 +162,7 @@ function randFromKey(key) {
   return rand01(seed);
 }
 function instanceRand01FromKey(key) {
-  return randFromKey(`power-kind|${key}`);
+  return randFromKey(`power-kind-v2|${key}`);
 }
 function factoryLayoutFromKey(key) {
   const seed = hash32(`factory-layout|${String(key)}`);
@@ -178,12 +175,19 @@ function factoryLayoutFromKey(key) {
 function pickBodyTintVariantFromKey(key, gradientRGB, ex, ct, pal) {
   const seed = hash32(`power-body|${String(key)}`);
   const r = rand01(seed);
-  const variants = [
-    mulRgb(pal.mast, 0.78),
-    mulRgb(pal.mast, 0.82),
-    blendRGB(mulRgb(pal.mast, 0.85), pal.hub, 0.15),
-    blendRGB(mulRgb(pal.mast, 0.88), pal.mastCore, 0.10),
-  ];
+  const variants = pal === POWER_DARK_PALETTE
+    ? [
+        { r: 92, g: 108, b: 126 },
+        { r: 102, g: 116, b: 132 },
+        blendRGB({ r: 96, g: 110, b: 128 }, pal.hub, 0.18),
+        blendRGB({ r: 100, g: 114, b: 134 }, pal.mastCore, 0.10),
+      ]
+    : [
+        mulRgb(pal.mast, 0.78),
+        mulRgb(pal.mast, 0.82),
+        blendRGB(mulRgb(pal.mast, 0.85), pal.hub, 0.15),
+        blendRGB(mulRgb(pal.mast, 0.88), pal.mastCore, 0.10),
+      ];
   let tint = variants[Math.floor(r * variants.length) % variants.length];
   if (gradientRGB) tint = blendRGB(tint, gradientRGB, 0.06);
   return applyExposureContrast(tint, ex, ct);
@@ -222,8 +226,13 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   const seedKey = (opts && (opts.seedKey ?? opts.seed)) ?? `${pxX}|${pxY}|${pxW}x${pxH}`;
 
   // Decide: turbine vs factory (stable regardless of bleed)
+  const occurrenceIndex = Number.isFinite(opts?.shapeOccurrenceIndex) ? opts.shapeOccurrenceIndex : 0;
+  const midpointDist = Math.abs(u - POWER.kindBalance.midpoint);
+  const inMidpointBand = midpointDist <= POWER.kindBalance.midpointBand;
   const rInst = instanceRand01FromKey(`kind|${seedKey}`);
-  const asTurbine = rInst < windProbability(u);
+  const asTurbine = inMidpointBand
+    ? ((occurrenceIndex % 2) === 1)
+    : (rInst < windProbability(u));
 
   // Appear envelope
   const anchorX = pxX + pxW / 2;
@@ -315,7 +324,10 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     if (isSprite) { emitW = Math.round(emitW * 1.35); emitH = Math.round(emitH * 1.25); }
 
     const peakY  = yTop - roofRise;
-    const emitX  = (isLeftChimney ? xL : xR) - (isLeftChimney ? -Math.round(emitW / 2) : Math.round(emitW / 2));
+    const chimW  = Math.max(12, Math.round(pxW * 0.26));
+    const chimneyCenterX = isLeftChimney ? (xL + chimW / 2) : (xR - chimW / 2);
+    const emitBiasX = Math.round(emitW * 0.05);
+    const emitX  = chimneyCenterX - emitW / 2 - emitBiasX;
     const emitY  = peakY - Math.round((cell || 12) * (isSprite ? 1.05 : 1.00));
 
     const blendK = val(FACTORY_SMOKE.blendK, u);
@@ -402,13 +414,14 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     }, dt);
 
     // chimney
-    const chimW  = Math.max(12, Math.round(pxW * 0.26));
     const chimTopTarget = Math.max(pxY + 6, peakY - Math.round(pxH * 0.05));
     const chimH  = Math.max(10, platY - chimTopTarget);
     const chimX  = isLeftChimney ? (xL) : (xR - chimW);
     const chimY  = platY - chimH;
 
-    let chimTint = pal.mast;
+    let chimTint = opts?.darkMode
+      ? { r: 112, g: 126, b: 148 }
+      : pal.mast;
     if (opts.gradientRGB) chimTint = blendRGB(chimTint, opts.gradientRGB, 0.08);
     chimTint = applyExposureContrast(chimTint, ex, ct);
     fillRgb(p, chimTint, 255);

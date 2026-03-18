@@ -16,9 +16,13 @@ export const BUS_BASE_PALETTE = {
   ],
   asphalt: { r: 125, g: 125, b: 125 },
   body: [
-    { r: 230, g: 110, b: 30 },
-    { r: 255, g: 150, b: 40 },
-    { r: 220, g: 80,  b: 40 },
+    { r: 220, g: 136, b: 86  }, // muted transit orange
+    { r: 232, g: 160, b: 102 }, // soft amber
+    { r: 204, g: 118, b: 86  }, // dusty red-orange
+    { r: 224, g: 196, b: 118 }, // pale route yellow
+    { r: 92,  g: 158, b: 154 }, // softened teal
+    { r: 132, g: 158, b: 204 }, // lighter blue
+    { r: 180, g: 92,  b: 96  }, // muted red
   ],
   window: { r: 180, g: 210, b: 235 },
   wheel:  { r: 40,  g: 40,  b: 40  },
@@ -32,18 +36,21 @@ export const BUS_DARK_PALETTE = {
   ],
   asphalt: { r: 68, g: 79, b: 96 },
   body: [
-    { r: 170, g: 80, b: 50 },
-    { r: 180, g: 80, b: 60 },
-    { r: 150, g: 80, b: 50 },
-    { r: 170, g: 100, b: 70 },
+    { r: 188, g: 98,  b: 68  }, // softened orange-red
+    { r: 170, g: 92,  b: 66  }, // softened red
+    { r: 188, g: 124, b: 88  }, // softened amber
+    { r: 64,  g: 128, b: 140 }, // softened teal
+    { r: 76,  g: 94,  b: 152 }, // softened navy
+    { r: 132, g: 132, b: 78  }, // softened olive
+    { r: 158, g: 74,  b: 102 }, // softened crimson
   ],
   window: { r: 125, g: 135, b: 200 },
-  wheel:  { r: 42, g: 65,  b: 151  },
+  wheel:  { r: 45, g: 48,  b: 58   },
 };
 
 const BUS = {
   grass:   { colorBlend: [0.20, 0.45] },
-  body:    { colorBlend: [0.10, 0.04] },
+  body:    { colorBlend: [0.06, 0.03] },
   asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
 };
 
@@ -66,6 +73,9 @@ function rand01(seed) {
 }
 function seeded01(key, salt = '') {
   return rand01(hash32(`${key}|${salt}`));
+}
+function pickByOccurrence(arr, occurrence = 0, offset = 0) {
+  return arr[(Math.max(0, occurrence) + offset) % arr.length];
 }
 function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
   const e = Math.max(0.1, Math.min(3, exposure));
@@ -108,6 +118,7 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   const seedKey =
     (opts.seedKey ?? opts.seed)
     ?? (cell && f ? `bus|${f.r0}:${f.c0}|${f.w}x${f.h}` : `bus|${Math.round(cx)}|${Math.round(cy)}|${Math.round(r)}`);
+  const occurrenceIndex = Number.isFinite(opts?.shapeOccurrenceIndex) ? opts.shapeOccurrenceIndex : 0;
 
   const r1 = seeded01(seedKey, 'a');
   const r2 = seeded01(seedKey, 'b');
@@ -160,8 +171,10 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: !!opts.allowUpscale });
 
   // Body/window colors — seeded body pick
-  let bodyTint = pick(pal.body, r1);
+  const bodyOffset = hash32(`${seedKey}|body-offset`) % pal.body.length;
+  let bodyTint = pickByOccurrence(pal.body, occurrenceIndex, bodyOffset);
   if (opts.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(BUS.body.colorBlend, u));
+  if (opts?.darkMode) bodyTint = clampBrightness(bodyTint, 0.36, 0.66);
   bodyTint = applyExposureContrast(bodyTint, ex, ct);
   const winTint = applyExposureContrast(pal.window, ex, ct);
 

@@ -1,5 +1,5 @@
 import { getLiveClient } from './client';
-import { USE_MOCK_SANITY } from './config';
+import { USE_MOCK_SANITY, shouldUseMockSanityReads } from './config';
 import { createMockUserResponse } from './mockData';
 
 type Weights = { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number };
@@ -48,7 +48,7 @@ export async function saveUserResponse(section: string, weights: Weights) {
     submittedAt: new Date().toISOString(),
   };
 
-  const created = USE_MOCK_SANITY
+  const created = (USE_MOCK_SANITY || shouldUseMockSanityReads())
     ? createMockUserResponse(section, clamped)
     : await getLiveClient().create(doc);
 

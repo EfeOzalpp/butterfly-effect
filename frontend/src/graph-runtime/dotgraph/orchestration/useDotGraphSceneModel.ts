@@ -26,7 +26,7 @@ export default function useDotGraphSceneModel({
   isDragging,
   wantsSkew,
 }: UseDotGraphSceneModelParams) {
-  const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const width = typeof window !== 'undefined' ? document.documentElement.clientWidth : 1024;
   const isRealMobile = useRealMobileViewport();
   const isSmallScreen = width < 768;
   const isTabletLike = width >= 768 && width <= 1024;

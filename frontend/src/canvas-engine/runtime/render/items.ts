@@ -43,6 +43,8 @@ export function drawItems(params: {
     return String(a.id).localeCompare(String(b.id));
   });
 
+  const shapeOccurrence = new Map<string, number>();
+
   for (const it of sorted) {
     let state = liveStates.get(it.id);
       if (!state) {
@@ -75,8 +77,17 @@ export function drawItems(params: {
 
     const scale = perShapeScale?.[it.shape] ?? 1;
     const rEff = baseR * scale;
+    const occurrenceIndex = shapeOccurrence.get(it.shape) ?? 0;
+    shapeOccurrence.set(it.shape, occurrenceIndex + 1);
 
-    const shared = { ...baseShared, footprint: it.footprint, alpha: Math.round(235 * alphaK) };
+    const shared = {
+      ...baseShared,
+      footprint: it.footprint,
+      alpha: Math.round(235 * alphaK),
+      itemId: it.id,
+      seedKey: `${it.shape}|${it.id}`,
+      shapeOccurrenceIndex: occurrenceIndex,
+    };
     renderOne(it, rEff, shared, easedK);
   }
 }

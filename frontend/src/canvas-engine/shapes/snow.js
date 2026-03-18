@@ -25,14 +25,14 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 
 export const SNOW_BASE_PALETTE = {
   cloud:  { r: 248, g: 250, b: 255 },
-  flake:  { r: 236, g: 242, b: 255 },
-  ground: { r: 244, g: 247, b: 252 },
+  flake:  { r: 228, g: 235, b: 247 },
+  ground: { r: 232, g: 238, b: 244 },
 };
 
 export const SNOW_DARK_PALETTE = {
   cloud:  { r: 182, g: 189, b: 220 },
-  flake:  { r: 170, g: 184, b: 220 },
-  ground: { r: 155, g: 170, b: 204 },
+  flake:  { r: 160, g: 174, b: 208 },
+  ground: { r: 148, g: 162, b: 194 },
 };
 
 /* Cloud tuning */
@@ -45,8 +45,8 @@ const SCLOUD = {
   rJitter:    [0.04, 0.08],
   lobeCount:  [5, 7],
 
-  sCap:       [0.22, 0.12],
-  blend:      [0.18, 0.04],
+  sCap:       [0.18, 0.10],
+  blend:      [0.12, 0.03],
   oscAmp:     [0.02, 0.05],
   oscSpeed:   [0.10, 0.16],
 
@@ -55,11 +55,11 @@ const SCLOUD = {
 
 /* Ground strip */
 const SGROUND = {
-  blendK:        [0.10, 0.02],
+  blendK:        [0.18, 0.05],
   satOscAmp:     [0.00, 0.02],
   satOscSpeed:   [0.08, 0.14],
   lightnessRange:[0.96, 1.0],
-  scaleY:        [0.00, 1.33],
+  scaleY:        [0.20, 1.33],
 };
 
 /* Snow puffs */
@@ -93,11 +93,11 @@ const SNOW = {
 
   sizeHz: 3,
 
-  blendK:      [0.14, 0.03],
+  blendK:      [0.24, 0.06],
   satOscAmp:   [0.02, 0.05],
   satOscSpeed: [0.10, 0.18],
 
-  lightnessRange: [0.94, 1.0],
+  lightnessRange: [0.9, 0.98],
 };
 
 /**
@@ -156,8 +156,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
   /* ───────── GROUND STRIP (translated + scaled with appear) ───────── */
   if (showGround) {
     const baseH  = Math.max(4, Math.round(cell / 3));
-    const kYRaw  = val(SGROUND.scaleY, u);
-    const kY     = u <= 0.02 ? 0 : kYRaw;
+    const kY     = val(SGROUND.scaleY, u);
     const stripH = Math.round(baseH * kY);
     if (stripH > 0) {
     const bottomY = y0 + f.h * cellH;

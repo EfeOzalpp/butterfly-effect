@@ -1,0 +1,57 @@
+For the first 3 seconds of the initial 3D scene load
+with 80 visible shapes:
+
+Without quantization and material caching:
+
+| Constructor     | Shallow Size | Retained Size |
+|----------------|--------------|---------------|
+| SpriteMaterial | 78.7 KB      | 370 KB        |
+| Sprite         | 22.4 KB      | 259 KB        |
+| CanvasTexture  | 12.4 KB      | 248 KB        |
+| Total          | 113.5 KB     | 877 KB        |
+
+With quantization and material caching:
+
+| Constructor     | Shallow Size | Retained Size |
+|----------------|--------------|---------------|
+| SpriteMaterial | 68.4 KB      | 315 KB        |
+| Sprite         | 22.4 KB      | 259 KB        |
+| CanvasTexture  | 9.2 KB       | 180 KB        |
+| Total          | 100.0 KB     | 714 KB        |
+
+Measured reduction:
+
+- SpriteMaterial shallow size: `13.1%`
+- SpriteMaterial retained size: `14.9%`
+- CanvasTexture shallow size: `25.8%`
+- CanvasTexture retained size: `27.4%`
+- Total shallow size: `11.9%`
+- Total retained size: `18.6%`
+
+At 300 visible shapes:
+
+Without quantization and material caching:
+
+| Constructor     | Shallow Size | Retained Size |
+|----------------|--------------|---------------|
+| SpriteMaterial | 295 KB       | 1362 KB       |
+| Sprite         | 84 KB        | 987 KB        |
+| CanvasTexture  | 44.8 KB      | 878 KB        |
+
+With quantization and material caching:
+
+| Constructor     | Shallow Size | Retained Size |
+|----------------|--------------|---------------|
+| SpriteMaterial | 206 KB       | 976 KB        |
+| Sprite         | 84 KB        | 944 KB        |
+| CanvasTexture  | 18.1 KB      | 350 KB        |
+
+Measured reduction:
+
+- SpriteMaterial count: `25.0%` (`1200 -> 838`)
+- SpriteMaterial shallow size: `30.2%`
+- SpriteMaterial retained size: `28.3%`
+- Sprite shallow size: `0.0%`
+- Sprite retained size: `4.4%`
+- CanvasTexture shallow size: `59.6%`
+- CanvasTexture retained size: `60.1%`

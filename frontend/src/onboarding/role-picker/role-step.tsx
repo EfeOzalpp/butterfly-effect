@@ -11,16 +11,17 @@ const DISPLAY = {
 export default function RoleStep({ value, onChange, onNext, error }) {
   const isSelected = Boolean(value);
   const buttonLabel = isSelected ? DISPLAY[value] : "Start Exploring";
+  const errorId = !isSelected && error ? "role-picker-error" : undefined;
 
   return (
     <section className="survey survey-step role-select">
       <div className="onboarding">
         <h1 className="welcome-title">Butterfly Effect</h1>
         <h3 className="welcome-text">Decisions That Affect the Environment.</h3>
-        <RolePicker value={value} onChange={onChange} />
+        <RolePicker value={value} onChange={onChange} errorId={errorId} />
 
         {!isSelected && error && (
-          <div className="error-container">
+          <div className="error-container" id={errorId} role="alert" aria-live="polite">
             <p>What option fits best?</p>
           </div>
         )}
@@ -29,7 +30,8 @@ export default function RoleStep({ value, onChange, onNext, error }) {
           className={`begin-button ${!isSelected ? "is-disabled" : ""} ${
             value === "staff" ? "is-staff" : ""
           }`}
-          aria-disabled={!isSelected}
+          disabled={!isSelected}
+          aria-describedby={errorId}
           onClick={onNext}
         >
           <span>{buttonLabel}</span>

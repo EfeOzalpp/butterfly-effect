@@ -6,15 +6,18 @@ import {
   particleCacheClear,
   particleCacheSize,
 } from './particleLRU';
+import { spriteCachingDisabled } from '../internal/debug-flags';
 
 const FAILED_KEYS = new Set<string>();
 const INFLIGHT = new Set<string>();
 
 export function frozenGet(key: string) {
+  if (spriteCachingDisabled()) return null;
   return particleCacheGet(key);
 }
 
 export function frozenSet(key: string, tex: THREE.CanvasTexture) {
+  if (spriteCachingDisabled()) return;
   particleCacheSet(key, tex);
 }
 

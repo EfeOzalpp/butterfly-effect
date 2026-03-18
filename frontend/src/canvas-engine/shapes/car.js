@@ -10,18 +10,18 @@ export const CAR_BASE_PALETTE = {
   ],
   asphalt: { r: 125, g: 125, b: 125 },
   body: [
-    { r: 200, g: 50,  b: 50  },
-    { r: 230, g: 90,  b: 20  },
-    { r: 240, g: 180, b: 60  },
-    { r: 90,  g: 180, b: 100 },
-    { r: 50,  g: 130, b: 80  },
-    { r: 120, g: 200, b: 160 },
-    { r: 50,  g: 120, b: 210 },
-    { r: 50,  g: 180, b: 230 },
-    { r: 140, g: 90,  b: 220 },
-    { r: 255, g: 100, b: 150 },
-    { r: 245, g: 235, b: 120 },
-    { r: 100, g: 100, b: 100 },
+    { r: 210, g: 138, b: 108 },
+    { r: 224, g: 158, b: 118 },
+    { r: 232, g: 192, b: 130 },
+    { r: 144, g: 178, b: 132 },
+    { r: 104, g: 142, b: 118 },
+    { r: 150, g: 192, b: 186 },
+    { r: 126, g: 156, b: 206 },
+    { r: 146, g: 186, b: 220 },
+    { r: 156, g: 136, b: 198 },
+    { r: 206, g: 146, b: 154 },
+    { r: 222, g: 212, b: 148 },
+    { r: 126, g: 128, b: 134 },
   ],
   window: { r: 180, g: 210, b: 235 },
   wheel:  { r: 40,  g: 40,  b: 40  },
@@ -35,17 +35,17 @@ export const CAR_DARK_PALETTE = {
   ],
   asphalt: { r: 68, g: 79, b: 96 },
   body: [
-    { r: 30, g: 32, b: 45 },
-    { r: 64, g: 48, b: 88 },
-    { r: 62, g: 60, b: 64 },
-    { r: 24, g: 48, b: 90 },
-    { r: 20, g: 60, b: 96 },
-    { r: 18, g: 62, b: 96 },
-    { r: 82, g: 64, b: 110 },
-    { r: 22, g: 54, b: 118 },
-    { r: 42, g: 40, b: 72 },
-    { r: 30, g: 38, b: 100 },
-  ],
+  { r: 86,  g: 98,  b: 210 },  
+  { r: 208, g: 92,  b: 140 },  
+  { r: 220, g: 150, b: 96  },  
+  { r: 76,  g: 150, b: 220 },  
+  { r: 70,  g: 176, b: 156 },  
+  { r: 104, g: 196, b: 116 },  
+  { r: 150, g: 110, b: 222 },  
+  { r: 72,  g: 170, b: 240 },  
+  { r: 128, g: 90,  b: 210 },  
+  { r: 92,  g: 130, b: 230 }   
+],
   window: { r: 125, g: 135, b: 190 },
   wheel:  { r: 22, g: 25,  b: 31  },
 };
@@ -53,7 +53,7 @@ export const CAR_DARK_PALETTE = {
 /* ───────────────── Tunables */
 const CAR = {
   grass:   { colorBlend: [0.20, 0.45] },
-  body:    { colorBlend: [0.06, 0.16] },
+  body:    { colorBlend: [0.04, 0.10] },
   asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
 
   // Y-axis wiggle for body/chassis/windows only
@@ -121,6 +121,7 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
   // colors
   let bodyTint = pick(pal.body, rBodyPick);
   if (opts?.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(CAR.body.colorBlend, u));
+  if (opts?.darkMode) bodyTint = clampBrightness(bodyTint, 0.5, 1.0);
   bodyTint = applyExposureContrast(bodyTint, ex, ct);
   const windowTint = applyExposureContrast(pal.window, ex, ct);
 

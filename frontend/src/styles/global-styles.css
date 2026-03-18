@@ -58,6 +58,7 @@
   --ui-bg-surface-glass: rgba(241, 245, 249, 0.714);
   --ui-bg-surface-hover: rgb(228, 231, 234);
   --ui-bg-surface-selected: rgba(176, 237, 173, 0.468);
+  --ui-bg-surface-active: #e5e5e9;
 
   --ui-bg-muted: #edeff3;
   --ui-bg-muted-hover: rgb(224, 225, 232);
@@ -113,16 +114,31 @@
   --hint-text: #e7e7e7;
   --hint-border: rgba(147, 150, 152, 0.365);
 
-  --graph-bg: #edeff3;
+  --mode-toggle: #e8e8ec;
+  --mode-toggle-active: rgb(241, 245, 249);
+  --mode-toggle-border: var(--ui-border);
+
+  --graph-bg: radial-gradient(circle at 50% 42%, #f3f5f9 0%, #eef1f6 38%, #e4e8ef 72%, #d6dce6 100%);
+
+  /* graph signal colors — RGB triplets for rgba() composition in keyframes */
+  --graph-green-hi-rgb: 0, 220, 60;
+  --graph-green-lo-rgb: 140, 220, 110;
+  --graph-yellow-hi-rgb: 255, 203, 70;
+  --graph-yellow-lo-rgb: 245, 233, 70;
+  --graph-red-hi-rgb: 240, 108, 13;
+  --graph-red-lo-rgb: 211, 95, 93;
+  --graph-bar-border: rgba(212, 212, 212, 0.8);
+  --graph-divider: rgba(108, 121, 122, 0.2);
 }
 
 :root[data-theme="dark"] {
-  --ui-bg-page: #232121;
+  --ui-bg-page: #1c1b1b;
 
   --ui-bg-surface: #2e2f35;
   --ui-bg-surface-glass: rgba(39, 39, 42, 0.9);
-  --ui-bg-surface-hover: #36373e;
+  --ui-bg-surface-hover: #3e3f47;
   --ui-bg-surface-selected: #478557;
+  --ui-bg-surface-active: #4a4a4f;
 
   --ui-bg-muted: rgb(37, 37, 43);
   --ui-bg-muted-hover: rgb(43, 43, 50);
@@ -173,7 +189,21 @@
   --hint-text: #e9e9e9;
   --hint-border: #7071743f;
 
-  --graph-bg: #1b1c21;
+  --graph-bg: radial-gradient(circle at 50% 42%, #2b2d3d 0%, #242735 36%, #1d202b 70%, #14161d 100%);
+
+  --mode-toggle: #2e2f35;
+  --mode-toggle-active: #4a4a4f;
+  --mode-toggle-border: #7071743f;
+
+  /* graph signal colors — blue-shifted for dark bg */
+  --graph-green-hi-rgb: 35, 195, 115;
+  --graph-green-lo-rgb: 70, 178, 135;
+  --graph-yellow-hi-rgb: 195, 188, 90;
+  --graph-yellow-lo-rgb: 178, 195, 105;
+  --graph-red-hi-rgb: 205, 78, 88;
+  --graph-red-lo-rgb: 178, 60, 108;
+  --graph-bar-border: rgba(70, 75, 90, 0.7);
+  --graph-divider: rgba(160, 170, 185, 0.12);
 }
 
 * { box-sizing: border-box; }

@@ -12,20 +12,20 @@ export type QuotaSpecificationByKind = Record<ConditionKind, readonly QuotaAncho
 
 const START_QUOTA_SPEC: QuotaSpecificationByKind = {
   A: [
-    { t: 0.0, limits: { sun: 1, bus: 0, clouds: null } },
-    { t: 1.0, limits: { sun: 1, bus: 4, clouds: null } },
+    { t: 0.0, limits: { sun: 1, bus: 2, clouds: null } },
+    { t: 1.0, limits: { sun: 1, bus: 7, clouds: null } },
   ],
   B: [
     { t: 0.0, limits: { villa: 2, trees: 3, snow: null } },
-    { t: 1.0, limits: { villa: 5, trees: 3, snow: null } },
+    { t: 1.0, limits: { villa: 6, trees: 7, snow: null } },
   ],
   C: [
     { t: 0.0, limits: { power: 3, house: null } },
-    { t: 1.0, limits: { power: 2, house: null } },
+    { t: 1.0, limits: { power: 4, house: null } },
   ],
   D: [
     { t: 0.0, limits: { sea: 1, carFactory: 2, car: null } },
-    { t: 1.0, limits: { sea: 3, carFactory: 1, car: null } },
+    { t: 1.0, limits: { sea: 2, carFactory: 1, car: null } },
   ],
 };
 

@@ -116,7 +116,7 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   const {
     startOnLoad = idle.startOnLoad ?? true,
     delayMs = idle.delayMs ?? 2000,
-    speed = idle.speed ?? 0.15,
+    speed = idle.speed ?? 0.1,
     horizontalOnly = idle.horizontalOnly ?? true,
   } = idle;
 

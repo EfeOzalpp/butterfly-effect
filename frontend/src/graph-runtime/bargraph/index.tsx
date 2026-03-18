@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from 're
 
 import { useAppState } from "../../app/store";
 import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
-import useGraphData from "../useGraphData";
+import { useSharedGraphData } from "../GraphDataContext";
 
 import EmptyStateArt from "./EmptyArt";
 
@@ -20,9 +20,9 @@ type Categories = Record<BarColor, number>;
 const orderedColors: BarColor[] = ['green', 'yellow', 'red'];
 
 export default function BarGraph() {
-  const { data, loading, section, hasCompletedSurvey, myEntryId, darkMode } = useAppState() as any;
+  const { loading, section, hasCompletedSurvey, myEntryId, darkMode } = useAppState() as any;
 
-  const { safeData, dataById, getRelForId } = useGraphData(data);
+  const { safeData, dataById, getRelForId } = useSharedGraphData();
 
   const [animationState, setAnimationState] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);

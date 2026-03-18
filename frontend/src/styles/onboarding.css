@@ -347,7 +347,6 @@
 button.begin-button,
 button.next-button,
 button.questionnaire,
-button.begin-button3,
 button.city-button,
 .q-option,
 .q-option input,
@@ -366,11 +365,9 @@ button.city-button,
 
 
 .z-index-respective .survey-section-wrapper,
-.z-index-respective .survey-section-wrapper2 {
+.z-index-respective .survey-section-wrapper {
   pointer-events: none;
 }
-
-.survey-section-wrapper2 { justify-content: center; z-index: 6; width: 100%; }
 
 @media (max-width: 1024px) {
   .survey,
@@ -386,7 +383,6 @@ button.city-button,
   button.begin-button,
   button.next-button,
   button.questionnaire,
-  button.begin-button3,
   button.city-button {
     width: 100%;
     min-width: 0;

@@ -1,6 +1,5 @@
 // src/components/survey/survey.tsx
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 
 import { useAppState } from "../app/store";
 import "../styles/onboarding.css";
@@ -10,8 +9,6 @@ import QuestionFlow from "./questionnaire/question-flow";
 import { WEIGHTED_QUESTIONS } from "./questionnaire/questions";
 
 import { saveUserResponse } from "../services/sanity/saveUserResponse";
-import { USE_MOCK_SANITY } from "../services/sanity/config";
-
 type Audience = 'student' | 'staff' | 'visitor' | '';
 
 type RoleKey = 'student' | 'staff';
@@ -29,9 +26,6 @@ type SectionItem = SectionHeader | SectionOption;
 const RoleStep = React.lazy(() => import("./role-picker/role-step"));
 const SectionPickerIntro = React.lazy(
   () => import("./section-picker")
-);
-const DoneOverlayR3F = React.lazy(
-  () => import("./R3F-button/done-overlay-r3f")
 );
 
 export default function Survey({
@@ -52,9 +46,8 @@ export default function Survey({
 
   // latches
   const [finished, setFinished] = useState(false); // hide QuestionFlow right after submit
-  const [showCompleteButton, setShowCompleteButton] = useState(false); // show Exit overlay
-
   const exitingRef = useRef(false);
+  const prevCompletedRef = useRef(false);
 
   const {
     setSurveyActive,
@@ -65,7 +58,6 @@ export default function Survey({
     observerMode,
     openGraph,
     section,
-    resetToStart,
     setNavVisible,
     hasCompletedSurvey,
     setQuestionnaireOpen,
@@ -116,6 +108,32 @@ export default function Survey({
       openGraph();
     }
   }, [observerMode, section, setSection, openGraph, setSurveyActive]);
+
+  useEffect(() => {
+    if (prevCompletedRef.current && !hasCompletedSurvey) {
+      setStage('role');
+      setAudience('visitor');
+      setSurveySection('');
+      setError('');
+      setSubmitting(false);
+      setFinished(false);
+      setFadeState('fade-in');
+      setQuestionnaireOpen(false);
+      setSectionOpen(false);
+      setAnimationVisible(false);
+      setSurveyWrapperClass('');
+      setNavVisible(true);
+    }
+
+    prevCompletedRef.current = hasCompletedSurvey;
+  }, [
+    hasCompletedSurvey,
+    setAnimationVisible,
+    setNavVisible,
+    setQuestionnaireOpen,
+    setSectionOpen,
+    setSurveyWrapperClass,
+  ]);
 
   const transitionTo = (next: typeof stage, side?: () => void) => {
     setFadeState('fade-out');
@@ -207,57 +225,38 @@ export default function Survey({
     setFinished(true);
     setQuestionnaireOpen(false);
 
-    // Flip the “completed” flags & reveal graph/overlay animation
-    setSection(surveySection);
-    setMySection(surveySection);
-    setHasCompletedSurvey(true);
-    openGraph();
-    setSurveyActive(false);
-    setAnimationVisible(true);
-    setSurveyWrapperClass('complete-active');
-
     try {
       const weights = answersToWeights(answers);
       const created = await saveUserResponse(surveySection, weights);
       const id = created?._id || null;
+
+      setSection(surveySection);
+      setMySection(surveySection);
       setMyEntryId(id);
+      setHasCompletedSurvey(true);
+      openGraph();
+      setSurveyActive(false);
+      setAnimationVisible(true);
+      setSurveyWrapperClass('');
+
       if (typeof window !== 'undefined') {
         if (id) sessionStorage.setItem('gp.myEntryId', id);
         sessionStorage.setItem('gp.mySection', surveySection);
         if (audience) sessionStorage.setItem('gp.myRole', audience);
       }
 
-      // show the Exit overlay; DO NOT auto-reset here
-      setShowCompleteButton(true);
     } catch (err) {
       console.error('[Survey] submit error:', err);
       // If saving failed, allow returning to questions
       setFinished(false);
       setQuestionnaireOpen(true);
+      setHasCompletedSurvey(false);
+      setSurveyActive(true);
+      setAnimationVisible(false);
+      setSurveyWrapperClass('');
     } finally {
       setSubmitting(false);
     }
-  };
-
-  // Exit button: actually reset everything and close the graph
-  const handleComplete = () => {
-    exitingRef.current = true;
-    flushSync(() => {
-      setShowCompleteButton(false);
-      setStage('role');
-      setAudience('');
-      setSurveySection('');
-      setError('');
-      setFadeState('fade-in');
-      setAnimationVisible(false);
-      setSurveyWrapperClass('');
-      setFinished(false);
-    });
-    resetToStart(); // sets hasCompletedSurvey=false, closes viz, clears identity
-    setNavVisible(true);
-    Promise.resolve().then(() => {
-      exitingRef.current = false;
-    });
   };
 
   const handleAudienceChange = (role: Audience) => {
@@ -279,7 +278,7 @@ export default function Survey({
     setError('');
   };
 
-  if (USE_MOCK_SANITY && hasCompletedSurvey && !showCompleteButton) {
+  if (hasCompletedSurvey && !observerMode) {
     return null;
   }
 
@@ -291,15 +290,6 @@ export default function Survey({
           <RoleStep value="" onChange={handleAudienceChange} onNext={handleRoleNext} error="" />
         </Suspense>
       </div>
-    );
-  }
-
-  // After submit, show Exit overlay (graph remains visible behind it)
-  if (showCompleteButton) {
-    return (
-      <Suspense fallback={null}>
-        <DoneOverlayR3F onComplete={handleComplete} />
-      </Suspense>
     );
   }
 

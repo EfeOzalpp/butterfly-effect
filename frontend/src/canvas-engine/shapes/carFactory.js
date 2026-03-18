@@ -28,7 +28,7 @@ export const CAR_FACTORY_BASE_PALETTE = {
 };
 
 export const CAR_FACTORY_DARK_PALETTE = {
-  grass: { r: 58, g: 110, b: 116 },
+  grass: { r: 80, g: 100, b: 126 },
   building:  { r: 114, g: 133, b: 164 },
   frame:     { r: 99,  g: 115, b: 144 },
   window:    { r: 120, g: 143, b: 181 },
@@ -583,6 +583,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
           alpha: env2.alpha,
           exposure: ex,
           contrast: ct,
+          darkMode: !!opts.darkMode,
           gradientRGB: opts.gradientRGB,
           liveAvg: u,
           useAppear: false,

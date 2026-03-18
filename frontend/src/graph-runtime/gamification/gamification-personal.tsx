@@ -173,11 +173,11 @@ export default function GamificationPersonalized({
     if (percentage === undefined || !userData) return;
 
     const fallbackBuckets = {
-      '0-20':   { titles: ['Carbon Culprit', 'Planet Polluter', 'Sustainability Enemy'], secondary: ['Low effort, just ahead of a few'] },
-      '21-40':  { titles: ['I Have a Backup Planet!', 'Nature? Is it Edible?'],           secondary: ['Slow start, keep going'] },
-      '41-60':  { titles: ['Middle Spot is Yours', 'Is it trendy to like nature?'],       secondary: ['Right in the pack'] },
-      '61-80':  { titles: ['Humble-Green MF', 'Sustainability and Whatnot'],              secondary: ['Solid progress'] },
-      '81-100': { titles: ["Nature's Humble Savior", 'Damn! Larger than life habits'],    secondary: ['Top of the class'] },
+      '0-20':   { titles: ['Low Impact', 'Early Stage', 'Starting Out'],  secondary: ['Low effort, just ahead of a few'] },
+      '21-40':  { titles: ['Below Average', 'Getting Started'],           secondary: ['Slow start, keep going'] },
+      '41-60':  { titles: ['Average', 'Middle Ground'],                   secondary: ['Right in the pack'] },
+      '61-80':  { titles: ['Above Average', 'Solid Standing'],            secondary: ['Solid progress'] },
+      '81-100': { titles: ['High Impact', 'Leading Group'],               secondary: ['Top of the class'] },
     };
 
     const chosen = pick(safePct, 'gp', String(userData._id || 'me'), fallbackBuckets);
@@ -242,9 +242,7 @@ export default function GamificationPersonalized({
   const line =
     mode === 'relative'
       ? (
-        <>
-          {relativeLine} <span style={{ opacity: 0.6 }}>🙂</span>
-        </>
+        <>{relativeLine}</>
       )
       : (
         <>

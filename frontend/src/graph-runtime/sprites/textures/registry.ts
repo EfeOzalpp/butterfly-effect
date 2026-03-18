@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { makeTextureFromDrawer } from './makeTextureFromDrawer';
 import { enqueueTexture } from './queue';
+import { spriteCachingDisabled } from '../internal/debug-flags';
 
 export type DrawerFn = (p: any, x: number, y: number, r: number, opts?: any) => void;
 
@@ -28,7 +29,10 @@ class TextureRegistry {
   private inFlight = new Set<string>();
   private listeners = new Set<Listener>();
 
-  get(key: string) { return this.cache.get(key) || null; }
+  get(key: string) {
+    if (spriteCachingDisabled()) return null;
+    return this.cache.get(key) || null;
+  }
 
   onReady(cb: Listener) {
     this.listeners.add(cb);
@@ -37,7 +41,9 @@ class TextureRegistry {
 
   ensure(args: MakeArgs) {
     const { key, prio = 0 } = args;
-    if (this.cache.has(key) || this.inFlight.has(key)) return;
+    const disableCache = spriteCachingDisabled();
+    if (this.inFlight.has(key)) return;
+    if (!disableCache && this.cache.has(key)) return;
 
     this.inFlight.add(key);
     enqueueTexture(() => {
@@ -62,7 +68,7 @@ class TextureRegistry {
         tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
 
-        this.cache.set(key, tex);
+        if (!disableCache) this.cache.set(key, tex);
         for (const l of this.listeners) l(key, tex);
       } catch (err) {
         if ((window as any).__GP_LOG_LOAD_ERRORS) {

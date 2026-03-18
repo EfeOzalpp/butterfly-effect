@@ -12,7 +12,7 @@ export type CanvasPaddingSpec = {
 // Shortcut all row occupied: CENTER_100
 // All row available: LR_0
 const CENTER_100 = { center: '1010%' } as const;
-const LR_0 = { left: '10%', right: '10%' } as const;
+const LR_0 = { left: '0%', right: '0%' } as const;
 
 // Enter a new section for a new canvas padding rule
 export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPaddingSpec | null>> = {
@@ -43,19 +43,19 @@ export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPad
       rows: 16,
       useTopRatio: 1,
       forbidden: makeRowForbidden([        
-        { left: '10%', right: '10%' },    
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },        
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },    
-        { left: '10%', right: '10%' },        
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },  
-        { left: '10%', right: '10%' },
-        { left: '10%', right: '10%' },       
+        LR_0,  
+        LR_0, 
+        LR_0, 
+        { left: '4%', center: '30%', right: '4%' },
+        { left: '4%', center: '30%', right: '4%' },
+        { left: '4%', center: '30%', right: '4%' },
+        { left: '4%', center: '30%', right: '4%' }, 
+        LR_0,        
+        LR_0,  
+        LR_0,  
+        LR_0, 
+        LR_0, 
+        LR_0,        
         CENTER_100,
         CENTER_100,
       ]),
@@ -102,7 +102,7 @@ export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPad
       ]),
     },
     laptop: {
-      rows: 18,
+      rows: 16,
       useTopRatio: 1,
       forbidden: makeRowForbidden([
         CENTER_100,  

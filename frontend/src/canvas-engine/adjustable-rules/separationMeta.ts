@@ -21,32 +21,32 @@ export const SEPARATION_META: SeparationMetaByMode = {
   start: {
     sun: { separation: 3 },
     clouds: { separation: 16 },
-    snow: { separation: 2 },
+    snow: { separation: 8 },
 
     house: { separation: 8 },
-    villa: { separation: 8 },
+    villa: { separation: 6 },
     power: { separation: 8 },
     carFactory: { separation: 7 },
 
-    car: { separation: 5 },
+    car: { separation: 8 },
     bus: { separation: 5 },
 
     sea: { separation: 7 },
-    trees: { separation: 6 },
+    trees: { separation: 4 },
   },
 
   questionnaire: {
     sun: { separation: 7 },
-    clouds: { separation: 6 },
-    snow: { separation: 4 },
+    clouds: { separation: 5 },
+    snow: { separation: 6 },
 
-    house: { separation: 6 },
-    villa: { separation: 6 },
-    power: { separation: 6 },
+    house: { separation: 2 },
+    villa: { separation: 3 },
+    power: { separation: 7 },
     carFactory: { separation: 6 },
 
-    car: { separation: 3 },
-    bus: { separation: 4 },
+    car: { separation: 5 },
+    bus: { separation: 5 },
 
     sea: { separation: 5 },
     trees: { separation: 5 },
