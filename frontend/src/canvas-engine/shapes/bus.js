@@ -30,9 +30,9 @@ export const BUS_BASE_PALETTE = {
 
 export const BUS_DARK_PALETTE = {
   grass: [
-    { r: 32, g: 86,  b: 113  },
-    { r: 40, g: 97,  b: 133 },
-    { r: 39, g: 81,  b: 108  },
+    { r: 52, g: 96,  b: 104 },
+    { r: 58, g: 108, b: 114 },
+    { r: 48, g: 90,  b: 102 },
   ],
   asphalt: { r: 68, g: 79, b: 96 },
   body: [
@@ -49,7 +49,7 @@ export const BUS_DARK_PALETTE = {
 };
 
 const BUS = {
-  grass:   { colorBlend: [0.20, 0.45] },
+  grass:   { colorBlend: [0.16, 0.30] },
   body:    { colorBlend: [0.06, 0.03] },
   asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
 };

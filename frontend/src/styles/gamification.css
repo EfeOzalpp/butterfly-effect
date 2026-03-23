@@ -29,6 +29,19 @@
 .gam-general {
   display: flex; flex-direction: row;  width: 100%; align-items: center; flex-wrap: nowrap; 
 }
+.gam-general-description {
+  width: 100%;
+  min-width: 0;
+}
+.gam-inline-lines {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+.gam-inline-lines > span {
+  display: block;
+}
 .generalized-result { transform: translateX(var(--offset-px)); }
 
 .is-top .generalized-result { transform: translateY(var(--offset-px)) !important; }
@@ -92,7 +105,7 @@
 }
 
 @media screen and (min-width: 1025px) {
-  .generalized-result { left: 10px; }
+  .generalized-result { width: 250px; min-width: 250px; max-width: 250px; left: 10px; }
   .is-right .generalized-result { left: -115px; }
 
   .is-left.is-bottom .generalized-result {top: -104px; left: 0; }
@@ -117,7 +130,7 @@
 .gam-general,
 .gamification-text {
   background: var(--ui-bg-surface);
-  border: 1px solid var(--ui-border);
+  border: var(--btn-border-width) solid var(--ui-border);
   border-radius: var(--radius-hero);
   padding: var(--space-md);
   height: fit-content;

@@ -282,9 +282,7 @@ function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
   return st;
 }
 
-const EMITTERS: Map<string, EmitterState> =
-  (globalThis as any).__GP_EMITTERS__ ||
-  ((globalThis as any).__GP_EMITTERS__ = new Map<string, EmitterState>());
+const EMITTERS = new Map<string, EmitterState>();
 
 export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: number) {
   const state = ensureEmitter(opts);

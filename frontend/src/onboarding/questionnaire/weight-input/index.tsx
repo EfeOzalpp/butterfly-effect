@@ -97,9 +97,11 @@ export type RadarInputProps = {
   sliderVals: Record<string, number>;
   /** Called on every drag update with the full new simplex allocation */
   onAllChange: (vals: Record<ShapeKey, number>) => void;
+  /** Called when the user releases a drag handle — signals a commit point */
+  onCommit?: () => void;
 };
 
-function RadarInputInner({ question, sliderVals, onAllChange }: RadarInputProps) {
+function RadarInputInner({ question, sliderVals, onAllChange, onCommit }: RadarInputProps) {
   const dragging = useRef<ShapeKey | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -147,8 +149,8 @@ function RadarInputInner({ question, sliderVals, onAllChange }: RadarInputProps)
   const onPointerUp = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = null;
-    try { window.dispatchEvent(new CustomEvent('gp:weights-commit')); } catch {}
-  }, []);
+    onCommit?.();
+  }, [onCommit]);
 
   return (
     <svg

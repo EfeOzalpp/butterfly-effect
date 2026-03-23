@@ -57,7 +57,7 @@ function step(deadline?: IdleDeadline) {
 
     inflight++;
     notify();
-    try { job.run(); } catch { }
+    try { job.run(); } catch (err) { console.warn('[queue] job failed:', err); }
     finally {
       inflight--;
       notify();
@@ -129,11 +129,3 @@ export function subscribeQueue(listener: () => void) {
   };
 }
 
-if (typeof window !== 'undefined') {
-  const w = window as any;
-  w.__GP_GET_QUEUE_COUNTS = getQueueCounts;
-  w.__GP_RESET_QUEUE = resetQueue;
-  w.__GP_PAUSE_QUEUE = pauseQueue;
-  w.__GP_RESUME_QUEUE = resumeQueue;
-  w.__GP_BUMP_GEN = bumpGeneration;
-} 

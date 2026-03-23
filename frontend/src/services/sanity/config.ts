@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-const FORCE_MOCK_SANITY = process.env.REACT_APP_USE_MOCK_DATA === 'true';
+const FORCE_MOCK_SANITY = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 type MockReadModeSnapshot = {
   forced: boolean;

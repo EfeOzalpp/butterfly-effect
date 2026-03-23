@@ -22,7 +22,7 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 
 // ───────────────── Palette
 export const VILLA_BASE_PALETTE = {
-  grass: { r: 130, g: 180, b: 110 },
+  grass: { r: 126, g: 188, b: 98 },
 
   body: [
     { r: 236, g: 232, b: 224 }, { r: 224, g: 234, b: 238 }, { r: 232, g: 240, b: 232 },
@@ -43,7 +43,7 @@ export const VILLA_BASE_PALETTE = {
   ],
 
   window: {
-    lit:  { r: 250, g: 240, b: 160 },
+    lit:  { r: 255, g: 234, b: 148 },
     dark: { r: 120, g: 170, b: 220 },
   },
 
@@ -51,7 +51,7 @@ export const VILLA_BASE_PALETTE = {
 };
 
 export const VILLA_DARK_PALETTE = {
-  grass: { r: 56, g: 108, b: 116 },
+  grass: { r: 58, g: 108, b: 114 },
   body: [
     { r: 129, g: 146, b: 172 }, { r: 123, g: 148, b: 182 }, { r: 127, g: 151, b: 178 },
     { r: 130, g: 144, b: 179 }, { r: 125, g: 149, b: 188 }, { r: 120, g: 145, b: 165 },
@@ -68,7 +68,7 @@ export const VILLA_DARK_PALETTE = {
     { r: 99, g: 88, b: 77 },
   ],
   window: {
-    lit:  { r: 255, g: 198, b: 80 },
+    lit:  { r: 255, g: 186, b: 62 },
     dark: { r: 66,  g: 107, b: 169 },
   },
   platform: { r: 71, g: 85, b: 106 },
@@ -81,8 +81,8 @@ const VILLA = {
     brightnessRange: [0.40, 0.70],
   },
   grass: {
-    colorBlend: [0.08, 0.2],
-    satRange: [0.00, 0.24],
+    colorBlend: [0.12, 0.18],
+    satRange: [0.00, 0.14],
   },
   door: {
     widthRange: [1.2, 0.9],
@@ -252,7 +252,9 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   let grassTint = pal.grass;
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(VILLA.grass.colorBlend, u));
   grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
-  if (opts?.darkMode) grassTint = clampBrightness(grassTint, 0.36, 0.54);
+  grassTint = opts?.darkMode
+    ? clampBrightness(grassTint, 0.36, 0.54)
+    : clampBrightness(grassTint, 0.52, 0.74);
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const rGrass = Math.round(cell * 0.06);

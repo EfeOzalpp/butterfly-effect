@@ -1,7 +1,9 @@
-import { useAppState } from "../../app/store";
+import { usePreferences } from "../../app/state/preferences-context";
+import { useUiFlow } from "../../app/state/ui-context";
 
 const Logo = () => {
-  const { darkMode, resetToStart } = useAppState();
+  const { darkMode } = usePreferences();
+  const { resetToStart } = useUiFlow();
 
   return (
     <button

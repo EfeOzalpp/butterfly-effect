@@ -16,7 +16,7 @@ import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPaddi
 import { backgroundForTheme } from "../adjustable-rules/backgrounds";
 
 import { getViewportSize } from "../shared/responsiveness";
-import { useAppState } from "../../app/store";
+import { usePreferences } from "../../app/state/preferences-context";
 
 type Engine = {
   ready: React.RefObject<boolean>;
@@ -93,7 +93,7 @@ export function useSceneField(
 
   const hostDef = HOST_DEFS[hostId];
   if (!hostDef) throw new Error(`Unknown hostId "${hostId}"`);
-  const { darkMode } = useAppState();
+  const { darkMode } = usePreferences();
 
   const ruleset = hostDef.scene?.ruleset;
   if (!ruleset) throw new Error(`[${hostId}] missing scene.ruleset`);

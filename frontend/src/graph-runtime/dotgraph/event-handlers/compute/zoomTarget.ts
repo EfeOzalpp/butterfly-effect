@@ -9,7 +9,7 @@ export function computeInitialZoomTarget(params: {
 }) {
   const { count, isSmallScreen, isTabletLike, thresholds, minRadius, maxRadius } = params;
 
-  const THRESH = isSmallScreen
+ const THRESH = isSmallScreen
     ? thresholds.mobile
     : isTabletLike
       ? thresholds.tablet
@@ -20,7 +20,7 @@ export function computeInitialZoomTarget(params: {
 
   const K_RATIO = 0.6;
   const K = Math.max(1, (THRESH || 70) * K_RATIO);
-  const BETA = 1.4;
+  const BETA = 5.5;
   const MIN_FILL = 0.08; // floor so small datasets don't collapse to near-minimum zoom
 
   const smooth = (s: number) => (s * s) * (3 - 2 * s);

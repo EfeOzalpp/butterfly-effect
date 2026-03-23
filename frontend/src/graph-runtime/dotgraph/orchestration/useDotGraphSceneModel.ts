@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
 import { useRealMobileViewport } from '../../../lib/hooks/useRealMobileViewport';
+import { useWindowWidth } from '../../../lib/hooks/useWindowWidth';
+import { useOptionalUiFlow } from '../../../app/state/ui-context';
 import { prewarmSpriteTextures } from '../../sprites/entry';
 import { useOrbitController } from '../event-handlers';
 import useDotPoints from '../hooks/useDotPoints';
@@ -28,6 +30,8 @@ export default function useDotGraphSceneModel({
 }: UseDotGraphSceneModelParams) {
   const width = typeof window !== 'undefined' ? document.documentElement.clientWidth : 1024;
   const isRealMobile = useRealMobileViewport();
+  const windowWidth = useWindowWidth();
+  const ui = useOptionalUiFlow();
   const isSmallScreen = width < 768;
   const isTabletLike = width >= 768 && width <= 1024;
   const useDesktopLayout = !(isSmallScreen || isRealMobile || isTabletLike);
@@ -48,7 +52,7 @@ export default function useDotGraphSceneModel({
       isTabletLike,
       xOffset: 0,
       yOffset: 0,
-      xOffsetPx: wantsSkew ? -112 : 0,
+      xOffsetPx: (wantsSkew ? -112 : 0) + (windowWidth > 768 ? (ui?.logsOpen ? 80 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0),
       yOffsetPx: wantsSkew ? 12 : 0,
     },
     bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },

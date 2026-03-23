@@ -1,124 +1,33 @@
 // graphPicker.jsx
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import "../../styles/graph-picker.css";
 
-import { ROLE_SECTIONS } from "../../onboarding/section-picker/sections";
-import { useAppState } from "../../app/store";
-
-
-const SPECIAL = [
-  { id: "all",          label: "Everyone" },
-  { id: "all-massart",  label: "MassArt " },
-  { id: "all-students", label: "All Students" },
-  { id: "all-staff",    label: "All Faculty/Staff" },
-  { id: "visitor",      label: "Visitors" },
-];
-
-const CHOOSE_STUDENT = "__choose-student";
-const CHOOSE_STAFF   = "__choose-staff";
-const GO_BACK        = "__go-back";
-
-// umbrella sections that sometimes exist outside ROLE_SECTIONS
-const LEGACY_UMBRELLAS = [
-  { id: "fine-arts",  label: "Fine Arts" },
-  { id: "design",     label: "Design" },
-  { id: "foundations",label: "Foundations" },
-];
-
-// show “(you)” on anything that is a real section; just exclude UI pseudo-ids & “all” buckets
-const NON_PERSONAL_IDS = new Set([
-  "all", "all-massart", "all-students", "all-staff",
-  CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
-  // NOTE: 'visitor' is intentionally NOT excluded, so visitors get (you)
-]);
-
-function titleFromId(id) {
-  if (!id) return "";
-  return id.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
-}
+import { useInteraction } from "../../app/state/interaction-context";
+import {
+  useGraphPickerData,
+  SPECIAL, CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
+  NON_PERSONAL_IDS, titleFromId,
+} from "./useGraphPickerData";
 
 export default function GraphPicker({
   value = "all",
   onChange,
+}: {
+  value?: string;
+  onChange?: (id: string) => void;
 }) {
-  const { counts, mySection } = useAppState(); // ← user’s section from context (persisted in sessionStorage on submit)
+  const { setMenuOpen } = useInteraction();
+  const { yourIdsSet, ALL_LABELS, STUDENT_OPTS, STAFF_OPTS, MAIN_OPTS, studentIdSet, staffIdSet, counts } =
+    useGraphPickerData(value);
 
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState(null); // null | 'student' | 'staff'
+  const [mode, setMode] = useState<null | "student" | "staff">(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [placement, setPlacement] = useState("down");
 
-  const wrapperRef = useRef(null);
-  const buttonRef  = useRef(null);
-  const listRef    = useRef(null);
-
-  const yourIdsSet = useMemo(() => new Set(mySection ? [mySection] : []), [mySection]);
-
-  // base lists
-  const BASE_STUDENT = useMemo(() => {
-    const base = ROLE_SECTIONS.student.map(s => ({ id: s.value, label: s.label }));
-    // add legacy umbrellas if missing
-    const have = new Set(base.map(x => x.id));
-    LEGACY_UMBRELLAS.forEach(u => { if (!have.has(u.id)) base.push(u); });
-    return base;
-  }, []);
-
-  const BASE_STAFF = useMemo(
-    () => ROLE_SECTIONS.staff.map(s => ({ id: s.value, label: s.label })),
-    []
-  );
-
-  // label lookup (also ensure unknown ids have a readable title)
-  const ALL_LABELS = useMemo(() => {
-    const list = [...SPECIAL, ...BASE_STUDENT, ...BASE_STAFF];
-    const map = new Map(list.map(o => [o.id, o.label]));
-    // ensure we can render labels for current value & mySection even if not in lists
-    [value, mySection].forEach((id) => {
-      if (id && !map.has(id)) map.set(id, titleFromId(id));
-    });
-    return map;
-  }, [BASE_STUDENT, BASE_STAFF, value, mySection]);
-
-  const sortByCountThenAlpha = useCallback((items) => {
-    return [...items].sort((a, b) => {
-      const cb = counts?.[b.id] ?? 0;
-      const ca = counts?.[a.id] ?? 0;
-      if (cb !== ca) return cb - ca;
-      return a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
-    });
-  }, [counts]);
-
-  const STUDENT_OPTS = useMemo(
-    () => sortByCountThenAlpha(BASE_STUDENT),
-    [BASE_STUDENT, sortByCountThenAlpha]
-  );
-  const STAFF_OPTS = useMemo(
-    () => sortByCountThenAlpha(BASE_STAFF),
-    [BASE_STAFF, sortByCountThenAlpha]
-  );
-
-  const MAIN_OPTS = useMemo(
-    () => [
-      ...SPECIAL,
-      { id: CHOOSE_STUDENT, label: "Student Departments" },
-      { id: CHOOSE_STAFF,   label: "Institutional Departments" },
-    ],
-    []
-  );
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onDocPointerDown = (e) => {
-      const el = wrapperRef.current;
-      if (!el) return;
-      if (!el.contains(e.target)) setOpen(false);
-    };
-
-    document.addEventListener("pointerdown", onDocPointerDown, true);
-    return () => {
-      document.removeEventListener("pointerdown", onDocPointerDown, true);
-    };
-  }, [open]);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef  = useRef<HTMLDivElement>(null);
+  const listRef    = useRef<HTMLDivElement>(null);
 
   const VISIBLE_OPTS = useMemo(() => {
     if (mode === "student") return [{ id: GO_BACK, label: "‹ Back" }, ...STUDENT_OPTS];
@@ -126,7 +35,6 @@ export default function GraphPicker({
     return MAIN_OPTS;
   }, [mode, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS]);
 
-  // trigger text; append (you) when current selection is yours
   const triggerCoreLabel = useMemo(() => {
     if (open && mode === "student") return "Student Departments";
     if (open && mode === "staff")   return "Institutional Departments";
@@ -135,33 +43,20 @@ export default function GraphPicker({
     return isPersonal ? `${base} (you)` : base;
   }, [open, mode, value, ALL_LABELS, yourIdsSet]);
 
-  // broadcast open/close (for nav fade logic)
-  const openRef = useRef(false);
-  useEffect(() => { openRef.current = open; }, [open]);
+  // Sync open state to context for orbit controller
+  useEffect(() => { setMenuOpen(open); }, [open, setMenuOpen]);
+
+  // Close on outside click
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent("gp:menu-open", { detail: { open } }));
-    if (!open) window.dispatchEvent(new CustomEvent("gp:menu-hover", { detail: { hover: false } }));
+    if (!open) return;
+    const onDocPointerDown = (e: PointerEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDocPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onDocPointerDown, true);
   }, [open]);
 
-  // only send hover while open
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const onEnter = () => openRef.current && window.dispatchEvent(new CustomEvent("gp:menu-hover", { detail: { hover: true } }));
-    const onLeave = () => openRef.current && window.dispatchEvent(new CustomEvent("gp:menu-hover", { detail: { hover: false } }));
-    el.addEventListener("mouseenter", onEnter);
-    el.addEventListener("mouseleave", onLeave);
-    el.addEventListener("pointerenter", onEnter);
-    el.addEventListener("pointerleave", onLeave);
-    return () => {
-      el.removeEventListener("mouseenter", onEnter);
-      el.removeEventListener("mouseleave", onLeave);
-      el.removeEventListener("pointerenter", onEnter);
-      el.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
-
-  // place list up/down based on viewport space
+  // Up/down placement based on viewport space
   useEffect(() => {
     const computePlacement = () => {
       if (!buttonRef.current) return;
@@ -181,53 +76,55 @@ export default function GraphPicker({
     };
   }, [open, VISIBLE_OPTS.length]);
 
+  // Clamp activeIndex when list changes
   useEffect(() => {
-    setActiveIndex((idx) =>
-      Math.min(Math.max(idx, 0), Math.max(0, VISIBLE_OPTS.length - 1))
-    );
+    setActiveIndex((idx) => Math.min(Math.max(idx, 0), Math.max(0, VISIBLE_OPTS.length - 1)));
   }, [VISIBLE_OPTS.length]);
 
-  // keep native scroll inside list; don't bubble to page/scene
+  // Prevent scroll from bubbling out of list
   useEffect(() => {
     if (!open) return;
     const el = listRef.current;
     if (!el) return;
-    const stopProp = (e) => { e.stopPropagation(); };
+    const stopProp = (e: Event) => e.stopPropagation();
     el.addEventListener("wheel", stopProp, { passive: true });
     el.addEventListener("touchstart", stopProp, { passive: true });
     el.addEventListener("touchmove", stopProp, { passive: true });
     return () => {
-      el.removeEventListener("wheel", stopProp, { passive: true });
-      el.removeEventListener("touchstart", stopProp, { passive: true });
-      el.removeEventListener("touchmove", stopProp, { passive: true });
+      el.removeEventListener("wheel", stopProp);
+      el.removeEventListener("touchstart", stopProp);
+      el.removeEventListener("touchmove", stopProp);
     };
   }, [open]);
 
   const moveActive = useCallback(
-    (delta) => setActiveIndex((idx) => (idx + delta + VISIBLE_OPTS.length) % VISIBLE_OPTS.length),
+    (delta: number) => setActiveIndex((idx) => (idx + delta + VISIBLE_OPTS.length) % VISIBLE_OPTS.length),
     [VISIBLE_OPTS.length]
   );
 
-  const chooseIndex = useCallback((idx) => {
-    const opt = VISIBLE_OPTS[idx];
-    if (!opt) return;
-    if (opt.id === CHOOSE_STUDENT) { setMode("student"); return; }
-    if (opt.id === CHOOSE_STAFF)   { setMode("staff");   return; }
-    if (opt.id === GO_BACK)        { setMode(null);      return; }
-    setMode(null);
-    setOpen(false);
-    onChange?.(opt.id);
-    buttonRef.current?.focus();
-  }, [VISIBLE_OPTS, onChange]);
+  const chooseIndex = useCallback(
+    (idx: number) => {
+      const opt = VISIBLE_OPTS[idx];
+      if (!opt) return;
+      if (opt.id === CHOOSE_STUDENT) { setMode("student"); return; }
+      if (opt.id === CHOOSE_STAFF)   { setMode("staff");   return; }
+      if (opt.id === GO_BACK)        { setMode(null);      return; }
+      setMode(null);
+      setOpen(false);
+      onChange?.(opt.id);
+      buttonRef.current?.focus();
+    },
+    [VISIBLE_OPTS, onChange]
+  );
 
-  const onTriggerKeyDown = (e) => {
+  const onTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") { e.preventDefault(); if (!open) setOpen(true); moveActive(1); }
     else if (e.key === "ArrowUp") { e.preventDefault(); if (!open) setOpen(true); moveActive(-1); }
     else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!open) setOpen(true); else chooseIndex(activeIndex); }
     else if (e.key === "Escape") { setOpen(false); }
   };
 
-  const onListKeyDown = (e) => {
+  const onListKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
     else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
     else if (e.key === "Home") { e.preventDefault(); setActiveIndex(0); }
@@ -249,7 +146,7 @@ export default function GraphPicker({
         aria-controls={listboxId}
         aria-activedescendant={VISIBLE_OPTS[activeIndex] ? `gp-opt-${VISIBLE_OPTS[activeIndex].id}` : undefined}
         className={`gp-trigger ${open ? "is-open" : ""}`}
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         onKeyDown={onTriggerKeyDown}
         tabIndex={0}
       >
@@ -278,9 +175,7 @@ export default function GraphPicker({
             const isChooser = opt.id === CHOOSE_STUDENT || opt.id === CHOOSE_STAFF;
             const showCount = !(isBack || isChooser);
             const n = counts?.[opt.id] ?? 0;
-
             const isPersonal = yourIdsSet.has(opt.id) && !NON_PERSONAL_IDS.has(opt.id);
-            const isStudent = opt.id === CHOOSE_STUDENT;
 
             return (
               <div
@@ -304,22 +199,17 @@ export default function GraphPicker({
                   </>
                 ) : isChooser ? (
                   <>
-                    <span className="gp-label">{opt.label}</span>
-                    {/* placeholder icon — swap for real asset when ready */}
-                    <span className="gp-chooser-badge" aria-hidden>
-                      {isStudent ? (
-                        // graduation cap placeholder
-                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
-                          <path d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" />
-                        </svg>
-                      ) : (
-                        // building placeholder
-                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
-                        </svg>
-                      )}
+                    <span className="gp-label-wrap">
+                      <span className="gp-label">{opt.label}</span>
+                      {(() => {
+                        const set = opt.id === CHOOSE_STUDENT ? studentIdSet : staffIdSet;
+                        if (!set.has(value)) return null;
+                        return (
+                          <span className="gp-selected-child">
+                            {ALL_LABELS.get(value) ?? titleFromId(value)}
+                          </span>
+                        );
+                      })()}
                     </span>
                     <span className="gp-chooser-icon" aria-hidden>
                       <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">

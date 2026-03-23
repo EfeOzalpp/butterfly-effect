@@ -1,23 +1,14 @@
 import Darkmode from "./color-toggle";
 import GraphPicker from "./graph-picker";
-import { useAppState } from "../../app/store";
+import { useUiFlow } from "../../app/state/ui-context";
+import { useSurveyData } from "../../app/state/survey-data-context";
 
 const DEFAULT_SECTION = "fine-arts";
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
 
-export default function NavRight({ isDark }: { isDark: boolean }) {
-  const {
-    section,
-    setSection,
-    isSurveyActive,
-    hasCompletedSurvey,
-    observerMode,
-    setObserverMode,
-    setSurveyActive,
-    openGraph,
-    closeGraph,
-    resetToStart,
-  } = useAppState();
+export default function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
+  const { isSurveyActive, setSurveyActive, hasCompletedSurvey, observerMode, setObserverMode, openGraph, closeGraph, resetToStart } = useUiFlow();
+  const { section, setSection } = useSurveyData();
 
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
@@ -43,7 +34,7 @@ export default function NavRight({ isDark }: { isDark: boolean }) {
 
   return (
     <>
-      <div className={cx("right", isDark && "is-dark")}>
+      <div className={cx("right", isDark && "is-dark", introActive && "nav-first-enter")}>
         <Darkmode />
 
         {showObserverButton && (

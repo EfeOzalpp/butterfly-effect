@@ -1,7 +1,10 @@
 // src/components/survey/survey.tsx
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useAppState } from "../app/store";
+import { usePreferences } from "../app/state/preferences-context";
+import { useUiFlow } from "../app/state/ui-context";
+import { useSurveyData } from "../app/state/survey-data-context";
+import { useIdentity } from "../app/state/identity-context";
 import "../styles/onboarding.css";
 
 import { ROLE_SECTIONS } from "./section-picker/sections";
@@ -29,40 +32,28 @@ const SectionPickerIntro = React.lazy(
 );
 
 export default function Survey({
-  setAnimationVisible,
-  setSurveyWrapperClass,
   onAnswersUpdate,
 }: {
-  setAnimationVisible: (v: boolean) => void;
-  setSurveyWrapperClass: (cls: string) => void;
   onAnswersUpdate?: (answers: Record<string, number | null>) => void;
 }) {
+  const { setAnimationVisible } = useUiFlow();
   const [stage, setStage] = useState<'role' | 'section' | 'questions'>('role');
   const [audience, setAudience] = useState<Audience>('visitor');
   const [surveySection, setSurveySection] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [fadeState, setFadeState] = useState<'fade-in' | 'fade-out'>('fade-in');
+  const [introActive, setIntroActive] = useState(true);
 
   // latches
   const [finished, setFinished] = useState(false); // hide QuestionFlow right after submit
   const exitingRef = useRef(false);
   const prevCompletedRef = useRef(false);
 
-  const {
-    setSurveyActive,
-    setHasCompletedSurvey,
-    setSection,
-    setMySection,
-    setMyEntryId,
-    observerMode,
-    openGraph,
-    section,
-    setNavVisible,
-    hasCompletedSurvey,
-    setQuestionnaireOpen,
-    setSectionOpen,
-  } = useAppState();
+  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen } = useUiFlow();
+  const { section, setSection } = useSurveyData();
+  const { setMySection, setMyEntryId, setMyRole } = useIdentity();
+  const { setNavVisible } = usePreferences();
 
   // Keep questionnaireOpen in sync with our stage (and finished latch)
   useEffect(() => {
@@ -97,6 +88,11 @@ export default function Survey({
   }, []);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => setIntroActive(false), 520);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const shouldHideNav = isPhone && stage === 'questions' && !hasCompletedSurvey && !finished;
     setNavVisible(!shouldHideNav);
   }, [isPhone, stage, hasCompletedSurvey, finished, setNavVisible]);
@@ -121,7 +117,6 @@ export default function Survey({
       setQuestionnaireOpen(false);
       setSectionOpen(false);
       setAnimationVisible(false);
-      setSurveyWrapperClass('');
       setNavVisible(true);
     }
 
@@ -132,7 +127,6 @@ export default function Survey({
     setNavVisible,
     setQuestionnaireOpen,
     setSectionOpen,
-    setSurveyWrapperClass,
   ]);
 
   const transitionTo = (next: typeof stage, side?: () => void) => {
@@ -233,11 +227,11 @@ export default function Survey({
       setSection(surveySection);
       setMySection(surveySection);
       setMyEntryId(id);
+      setMyRole(audience || null);
       setHasCompletedSurvey(true);
       openGraph();
       setSurveyActive(false);
       setAnimationVisible(true);
-      setSurveyWrapperClass('');
 
       if (typeof window !== 'undefined') {
         if (id) sessionStorage.setItem('gp.myEntryId', id);
@@ -253,7 +247,6 @@ export default function Survey({
       setHasCompletedSurvey(false);
       setSurveyActive(true);
       setAnimationVisible(false);
-      setSurveyWrapperClass('');
     } finally {
       setSubmitting(false);
     }
@@ -285,7 +278,7 @@ export default function Survey({
   // Render
   if (exitingRef.current) {
     return (
-      <div className="survey-section fade-in">
+      <div className={`survey-section fade-in ${introActive ? 'survey-first-enter' : ''}`}>
         <Suspense fallback={null}>
           <RoleStep value="" onChange={handleAudienceChange} onNext={handleRoleNext} error="" />
         </Suspense>
@@ -294,7 +287,7 @@ export default function Survey({
   }
 
   return (
-    <div className={`survey-section ${fadeState}`}>
+    <div className={`survey-section ${fadeState} ${introActive ? 'survey-first-enter' : ''}`}>
       {!observerMode && (
         <Suspense fallback={null}>
           {stage === 'role' && (

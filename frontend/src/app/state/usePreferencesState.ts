@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { Mode } from '../types';
 import {
@@ -8,6 +8,12 @@ import {
   readStoredMode,
   setSessionItem,
 } from '../session';
+import {
+  bumpGeneration,
+  resetQueue,
+  disposeAllSpriteTextures,
+  disposeStaticTextures,
+} from '../../graph-runtime/sprites/entry';
 
 export default function usePreferencesState() {
   const [mode, setMode] = useState<Mode>(() => readStoredMode('relative'));
@@ -16,9 +22,20 @@ export default function usePreferencesState() {
   }, [mode]);
 
   const [darkMode, setDarkMode] = useState<boolean>(() => readStoredDarkMode(true));
+  const didInitThemeRef = useRef(false);
   useEffect(() => {
     setSessionItem('gp.darkMode', String(darkMode));
     applyThemeToDocument(darkMode);
+
+    if (!didInitThemeRef.current) {
+      didInitThemeRef.current = true;
+      return;
+    }
+
+    try { bumpGeneration(); } catch (err) { console.warn('[usePreferencesState] bumpGeneration failed:', err); }
+    try { resetQueue(); } catch (err) { console.warn('[usePreferencesState] resetQueue failed:', err); }
+    try { disposeAllSpriteTextures(); } catch (err) { console.warn('[usePreferencesState] disposeAllSpriteTextures failed:', err); }
+    try { disposeStaticTextures(); } catch (err) { console.warn('[usePreferencesState] disposeStaticTextures failed:', err); }
   }, [darkMode]);
 
   const [navPanelOpen, setNavPanelOpen] = useState<boolean>(false);

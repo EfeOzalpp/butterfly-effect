@@ -52,7 +52,9 @@ export function EngineHost({
     for (const mount of stopOnOpenMounts) {
       try {
         stopCanvasEngine(mount);
-      } catch {}
+      } catch (err) {
+        console.warn('[EngineHost] Failed to stop canvas engine on mount:', mount, err);
+      }
     }
   }, [open, stopOnOpenMounts]);
 

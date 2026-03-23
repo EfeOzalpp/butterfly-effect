@@ -1,6 +1,7 @@
 // src/graph-runtime/dotgraph/event-handlers/useOrbitController.ts
 import { useMemo, useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
+import { useOptionalInteraction } from '../../../app/state/interaction-context';
 import type { Camera, Group } from 'three';
 
 import useActivity from './hooks/useActivity';
@@ -116,7 +117,7 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   const {
     startOnLoad = idle.startOnLoad ?? true,
     delayMs = idle.delayMs ?? 2000,
-    speed = idle.speed ?? 0.1,
+    speed = idle.speed ?? 0.06,
     horizontalOnly = idle.horizontalOnly ?? true,
   } = idle;
 
@@ -125,16 +126,12 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
 
   const gestureRef = useRef(createGestureState());
 
-  // Track InfoPanel open/close
+  // Track InfoPanel open/close via context
+  const interaction = useOptionalInteraction();
   const menuOpenRef = useRef<boolean>(false);
   useEffect(() => {
-    const onMenu = (e: Event) => {
-      const evt = e as CustomEvent<{ open?: boolean }>;
-      menuOpenRef.current = !!evt?.detail?.open;
-    };
-    window.addEventListener(MENU_EVT, onMenu);
-    return () => window.removeEventListener(MENU_EVT, onMenu);
-  }, []);
+    menuOpenRef.current = interaction?.menuOpen ?? false;
+  }, [interaction?.menuOpen]);
 
   // ----- initial zoom target from data count -----
   const count = useMemo(() => (typeof dataCount === 'number' ? dataCount : 0), [dataCount]);
@@ -161,21 +158,9 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   // Block idle when a tooltip is open
   const hoverActiveRef = useRef(false);
   useEffect(() => {
-    const onOpen = () => {
-      hoverActiveRef.current = true;
-      markActivity();
-    };
-    const onClose = () => {
-      hoverActiveRef.current = false;
-      markActivity();
-    };
-    window.addEventListener('gp:hover-open', onOpen);
-    window.addEventListener('gp:hover-close', onClose);
-    return () => {
-      window.removeEventListener('gp:hover-open', onOpen);
-      window.removeEventListener('gp:hover-close', onClose);
-    };
-  }, [markActivity]);
+    hoverActiveRef.current = interaction?.hoverOpen ?? false;
+    markActivity();
+  }, [interaction?.hoverOpen, markActivity]);
 
   // === Edge cue state (kept for HUD/other UI) ===
   useEdgeCueController({

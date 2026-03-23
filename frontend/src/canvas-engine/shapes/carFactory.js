@@ -68,8 +68,8 @@ const CF = {
 
   // Grass: match villa behavior (colorBlend + sat clamp)
   grass: {
-    colorBlend: [0.16, 0.08],
-    satRange: [0.00, 0.24],
+    colorBlend: [0.18, 0.14],
+    satRange: [0.00, 0.14],
   },
 
   // grass

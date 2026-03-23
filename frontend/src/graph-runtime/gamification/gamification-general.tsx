@@ -41,6 +41,13 @@ export default function GamificationGeneral({
       },
     [color]
   );
+  const Lines = useMemo(
+    () =>
+      function Lines({ children }) {
+        return <span className="gam-inline-lines">{children}</span>;
+      },
+    []
+  );
 
   // counts
   const b = Math.max(0, (belowCountStrict ?? 0) | 0);
@@ -119,10 +126,10 @@ export default function GamificationGeneral({
     } else if (isTopBand) {
       if (canonicalTie === 'tiedTop') {
         relativeLine = (
-          <>
-            <Strong>Top</Strong> spot<br />
-            Tied with {e}
-          </>
+          <Lines>
+            <span><Strong>Top</Strong> spot.</span>
+            <span>Tied with {e}</span>
+          </Lines>
         );
       } else {
         relativeLine = <>
@@ -132,26 +139,27 @@ export default function GamificationGeneral({
     } else if (isNearTop) {
       if (e > 0) {
         relativeLine = (
-          <>
-            Near <Strong>Top</Strong><br />
-            Tied with {e}, behind {a}
-          </>
+          <Lines>
+            <span>Near <Strong>Top</Strong>.</span>
+            <span>Tied with {e}</span>
+            <span>Behind {a}</span>
+          </Lines>
         );
       } else {
         relativeLine = (
-          <>
-            Near <Strong>Top</Strong><br />
-            Behind {a}
-          </>
+          <Lines>
+            <span>Near <Strong>Top</Strong>.</span>
+            <span>Behind {a}</span>
+          </Lines>
         );
       }
     } else if (isBottomBand) {
       if (canonicalTie === 'tiedBottom') {
         relativeLine = (
-          <>
-            <Strong>Bottom</Strong><br />
-            Tied with {e}
-          </>
+          <Lines>
+            <span><Strong>Bottom</Strong>.</span>
+            <span>Tied with {e}</span>
+          </Lines>
         );
       } else {
         relativeLine = <><Strong>Bottom</Strong></>;
@@ -159,47 +167,51 @@ export default function GamificationGeneral({
     } else if (isNearBottom) {
       if (e > 0) {
         relativeLine = (
-          <>
-            Near <Strong>Bottom</Strong><br />
-            Tied with {e}, ahead of {b}
-          </>
+          <Lines>
+            <span>Near <Strong>Bottom</Strong>.</span>
+            <span>Tied with {e}</span>
+            <span>Ahead of {b}</span>
+          </Lines>
         );
       } else {
         relativeLine = (
-          <>
-            Near <Strong>Bottom</Strong><br />
-            Ahead of {b}
-          </>
+          <Lines>
+            <span>Near <Strong>Bottom</Strong>.</span>
+            <span>Ahead of {b}</span>
+          </Lines>
         );
       }
     } else if (isMiddleBand) {
       if (canonicalTie === 'tiedMiddle') {
         relativeLine = (
-          <>
-            <Strong>Middle</Strong><br />
-            Tied with {e}, ahead of {b}, behind {a}
-          </>
+          <Lines>
+            <span><Strong>Middle</Strong>.</span>
+            <span>Tied with {e}</span>
+            <span>Ahead of {b}</span>
+            <span>Behind {a}</span>
+          </Lines>
         );
       } else if (a < b) {
         relativeLine = (
-          <>
-            <Strong>Middle</Strong><br />
-            Behind {a}
-          </>
+          <Lines>
+            <span><Strong>Middle</Strong>.</span>
+            <span>Behind {a}</span>
+          </Lines>
         );
       } else if (b < a) {
         relativeLine = (
-          <>
-            <Strong>Middle</Strong><br />
-            Ahead of {b}
-          </>
+          <Lines>
+            <span><Strong>Middle</Strong>.</span>
+            <span>Ahead of {b}</span>
+          </Lines>
         );
       } else {
         relativeLine = (
-          <>
-            <Strong>Middle</Strong><br />
-            Ahead of {b}, behind {a}
-          </>
+          <Lines>
+            <span><Strong>Middle</Strong>.</span>
+            <span>Ahead of {b}</span>
+            <span>Behind {a}</span>
+          </Lines>
         );
       }
     }

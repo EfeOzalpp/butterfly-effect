@@ -8,21 +8,19 @@ export default function useIdentityState() {
   const [myRole, setMyRole] = useState<string | null>(() => getSessionItem('gp.myRole'));
 
   useEffect(() => {
-    const onIdentityUpdated = () => {
+    const onStorageSync = () => {
       try {
         setMyEntryId(getSessionItem('gp.myEntryId'));
         setMySection(getSessionItem('gp.mySection'));
         setMyRole(getSessionItem('gp.myRole'));
-      } catch {}
+      } catch (err) {
+        console.warn('[useIdentityState] Failed to sync identity from storage:', err);
+      }
     };
 
-    window.addEventListener('gp:identity-updated', onIdentityUpdated);
-    window.addEventListener('storage', onIdentityUpdated);
-
-    return () => {
-      window.removeEventListener('gp:identity-updated', onIdentityUpdated);
-      window.removeEventListener('storage', onIdentityUpdated);
-    };
+    // Keep storage listener for cross-tab sync only
+    window.addEventListener('storage', onStorageSync);
+    return () => window.removeEventListener('storage', onStorageSync);
   }, []);
 
   return {

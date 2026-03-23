@@ -97,6 +97,6 @@ class TextureRegistry {
 
 export const textureRegistry = new TextureRegistry();
 
-if (typeof window !== 'undefined') {
-  (window as any).__GP_DISPOSE_TEX_STATIC = () => textureRegistry.clear();
+export function disposeStaticTextures() {
+  textureRegistry.clear();
 }

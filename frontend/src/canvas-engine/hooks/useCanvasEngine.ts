@@ -9,6 +9,11 @@ import {
   type CanvasEngineControls,
 } from "../runtime/index";
 import { readStoredDarkMode } from "../../app/session";
+import {
+  bumpGeneration,
+  resetQueue,
+  disposeAllSpriteTextures,
+} from "../../graph-runtime/sprites/entry";
 
 type EngineOpts = {
   enabled?: boolean;
@@ -20,16 +25,18 @@ type EngineOpts = {
   fpsCap?: number;
 };
 
-function safeCall(fn: unknown) {
+function safeCall(fn: unknown, label?: string) {
   try {
     if (typeof fn === "function") fn();
-  } catch {}
+  } catch (err) {
+    console.warn(`[useCanvasEngine] safeCall failed${label ? ` (${label})` : ''}:`, err);
+  }
 }
 
 function disposeGlobalEngineResources() {
-  safeCall((window as any).__GP_DISPOSE_TEX);
-  safeCall((window as any).__GP_BUMP_GEN);
-  safeCall((window as any).__GP_RESET_QUEUE);
+  safeCall(disposeAllSpriteTextures, "disposeAllSpriteTextures");
+  safeCall(bumpGeneration, "bumpGeneration");
+  safeCall(resetQueue, "resetQueue");
 }
 
 function shutdownControls(controls: CanvasEngineControls | null, mount: string) {

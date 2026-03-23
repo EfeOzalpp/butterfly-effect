@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
 import { classifyPosition, getTieStats } from '../../gamification/rankLogic';
+import { useOptionalUiFlow } from '../../../app/state/ui-context';
 
 type UseDotGraphPersonalizationModelParams = {
   personalizedEntryId: string | null;
@@ -43,6 +44,8 @@ export default function useDotGraphPersonalizationModel({
     () => (personalizedEntryId ? dataById.get(personalizedEntryId) ?? null : null),
     [dataById, personalizedEntryId]
   );
+
+  const ui = useOptionalUiFlow();
 
   const mySnapshot = useMemo(() => {
     if (myEntry || typeof window === 'undefined') return null;
@@ -109,12 +112,9 @@ export default function useDotGraphPersonalizationModel({
     const wantOpen = sessionStorage.getItem('gp.openPersonalOnNext') === '1';
     if (!wantOpen) return;
     if (!shouldRenderPersonalUI) return;
-    try {
-      window.dispatchEvent(new CustomEvent('gp:open-personalized'));
-    } finally {
-      sessionStorage.removeItem('gp.openPersonalOnNext');
-    }
-  }, [shouldRenderPersonalUI]);
+    sessionStorage.removeItem('gp.openPersonalOnNext');
+    ui?.setOpenPersonalized(true);
+  }, [shouldRenderPersonalUI, ui]);
 
   void section;
 

@@ -2,7 +2,3 @@
 import { disposeAllSpriteTextures } from '../internal/spriteRuntime';
 
 export { disposeAllSpriteTextures };
-
-if (typeof window !== 'undefined') {
-  (window as any).__GP_DISPOSE_TEX = disposeAllSpriteTextures;
-}

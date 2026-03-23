@@ -1,12 +1,20 @@
 // src/components/bottom/ModeToggle.jsx
 import React, { useMemo } from "react";
 
-import { useAppState } from "../../app/store";
+import { usePreferences } from "../../app/state/preferences-context";
+import { useUiFlow } from "../../app/state/ui-context";
+import { useSurveyData } from "../../app/state/survey-data-context";
+import { useIdentity } from "../../app/state/identity-context";
+import { useInteraction } from "../../app/state/interaction-context";
 import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
 import { useAbsoluteScore } from "../../lib/hooks/useAbsoluteScore";
 
 export default function ModeToggle() {
-  const { mode, setMode, data, myEntryId, observerMode } = useAppState();
+  const { mode, setMode } = usePreferences();
+  const { observerMode, setOpenPersonalized } = useUiFlow();
+  const { data } = useSurveyData();
+  const { myEntryId } = useIdentity();
+  const { setSpotlightRequest } = useInteraction();
 
   // Pool + personal metrics (used for nicer titles when not observing)
   const poolValues = useMemo(
@@ -45,7 +53,7 @@ export default function ModeToggle() {
     if (!observerMode) {
       // keep opening the personalized panel as before
       if (canPersonalize) {
-        window.dispatchEvent(new CustomEvent('gp:open-personalized'));
+        setOpenPersonalized(true);
       }
       return;
     }
@@ -54,13 +62,11 @@ export default function ModeToggle() {
     // Double rAF pushes us past layout/paint of the new mode so points exist.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        window.dispatchEvent(new CustomEvent('gp:observer-spotlight-request', {
-          detail: {
-            durationMs: 3000,      // keep GamificationGeneral open ~3s
-            fakeMouseXRatio: 0.25, // 25% from left to bias left/center
-            fakeMouseYRatio: 0.5   // vertically centered
-          }
-        }));
+        setSpotlightRequest({
+          durationMs: 3000,
+          fakeMouseXRatio: 0.25,
+          fakeMouseYRatio: 0.5,
+        });
       });
     });
   };

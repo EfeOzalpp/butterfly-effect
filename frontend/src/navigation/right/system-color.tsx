@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useAppState } from '../../app/store';
+import { usePreferences } from '../../app/state/preferences-context';
 
 const ROOT_ID = 'gp-darkmode-root';
 
 export default function DarkMode() {
-  const { darkMode } = useAppState(); 
+  const { darkMode } = usePreferences();
   const [mount, setMount] = useState(null);
 
   // Ensure portal root

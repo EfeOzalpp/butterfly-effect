@@ -90,7 +90,7 @@ export const SEA_TUNING = {
       cornerK:    0.12,
     },
     color: GRASS_BASE,
-    grassBlend: { colorBlend: [0.25, 0.50], satRange: [0.00, 0.35], brightRange: [0.35, 0.90] },
+    grassBlend: { colorBlend: [0.20, 0.34], satRange: [0.00, 0.16], brightRange: [0.35, 0.90] },
     alphaMul: 1.0,
   },
 

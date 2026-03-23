@@ -50,15 +50,11 @@ export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeC
       prev.pinned !== next.pinned
     ) {
       lastBroadcastRef.current = next;
-      window.dispatchEvent(new CustomEvent('gp:edge-cue', { detail: next }));
     }
   };
 
   const broadcastLatchedState = (latched: boolean) => {
     (window as any).__gpEdgeLatched = !!latched;
-    window.dispatchEvent(
-      new CustomEvent('gp:edge-cue-state', { detail: { latched: !!latched } })
-    );
   };
 
   // Initialize canonical latched once (SSR-safe default true if unset)
@@ -70,63 +66,6 @@ export function useEdgeCueController({ useDesktopLayout, menuOpenRef }: UseEdgeC
     broadcastLatchedState(Boolean((window as any).__gpEdgeLatched));
   }, []);
 
-  // Toggle pin (from HUD click OR mobile long-press)
-  useEffect(() => {
-    const onToggle = () => {
-      if (menuOpenRef.current) return; // ignore toggles while menu open
-
-      if (!useDesktopLayout) {
-        edgeCuePinnedRef.current = !edgeCuePinnedRef.current;
-        const next: EdgeCueState = {
-          visible: edgeCuePinnedRef.current,
-          mode: edgeCuePinnedRef.current ? 'in' : 'off',
-          insetX: 0,
-          insetY: 0,
-          pinned: edgeCuePinnedRef.current,
-        };
-        edgeCueLastModeRef.current = next.mode;
-        edgeCueRef.current = next;
-        broadcastEdgeCue(next);
-        broadcastLatchedState(!Boolean((window as any).__gpEdgeLatched));
-        hasSeenNonEdgeRef.current = false;
-        return;
-      }
-
-      const currentlyVisible = edgeCueRef.current?.visible || edgeCuePinnedRef.current;
-      if (!currentlyVisible) return;
-
-      edgeCuePinnedRef.current = !edgeCuePinnedRef.current;
-
-      if (!edgeCuePinnedRef.current) {
-        const offPinned: EdgeCueState = { ...edgeCueRef.current, pinned: false };
-        edgeCueRef.current = offPinned;
-        broadcastEdgeCue(offPinned);
-      } else {
-        const modeToUse =
-          edgeCueRef.current.mode === 'off'
-            ? edgeCueLastModeRef.current === 'off'
-              ? 'in'
-              : edgeCueLastModeRef.current
-            : edgeCueRef.current.mode;
-
-        const snap: EdgeCueState = {
-          ...edgeCueRef.current,
-          visible: true,
-          pinned: true,
-          mode: modeToUse,
-        };
-        edgeCueLastModeRef.current = modeToUse;
-        edgeCueRef.current = snap;
-        broadcastEdgeCue(snap);
-      }
-
-      broadcastLatchedState(!Boolean((window as any).__gpEdgeLatched));
-      hasSeenNonEdgeRef.current = false;
-    };
-
-    window.addEventListener('gp:edge-cue-toggle', onToggle);
-    return () => window.removeEventListener('gp:edge-cue-toggle', onToggle);
-  }, [useDesktopLayout, menuOpenRef]);
 
   // Desktop-only pointer bands that drive edge cue live state
   useEffect(() => {

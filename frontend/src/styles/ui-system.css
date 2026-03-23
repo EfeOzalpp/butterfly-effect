@@ -105,6 +105,7 @@ button.questionnaire {
 button.city-button,
 .observe-results,
 .system-color,
+.logs-button,
 .widgets-button {
   display: inline-flex;
   align-items: center;
@@ -127,6 +128,7 @@ button.questionnaire:hover,
 button.city-button:hover,
 .nav-toggle:hover,
 .observe-results:hover,
+.logs-button:hover,
 .widgets-button:hover,
 .system-color:hover,
 .info-close:hover {
@@ -139,37 +141,45 @@ button.city-button:hover,
 button.begin-button,
 button.next-button, button.questionnaire {
   color: var(--btn-primary-text);
-  border: var(--btn-border-width) solid var(--btn-primary-border);
+  border: none;
 }
 /* Primary button styles */
 button.begin-button { background: var(--survey-btn-bg); }
 button.begin-button:hover {
   background: var(--survey-btn-bg-hover);
-  border-color: var(--btn-primary-hover-border);
 }
 button.begin-button .ui-icon,
 button.next-button .ui-icon {
   color: var(--btn-primary-icon);
 }
-button.next-button, button.questionnaire { background: var(--btn-primary-bg); border-color: var(--btn-primary-border); }
+button.next-button, button.questionnaire { background: var(--btn-primary-bg); }
 button.next-button:hover, button.questionnaire:hover {
   background: var(--btn-primary-hover-bg);
-  border-color: var(--btn-primary-hover-border);
   box-shadow: 0 0 24px var(--btn-box-shadow);
 }
 
 /* secondary button styles */
 .observe-results,
-.city-button,
-.widgets-button {
+.city-button {
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
   border: var(--btn-border-width) solid var(--btn-secondary-border);
 }
 .observe-results:hover,
-button.city-button:hover,
-.widgets-button:hover {
+button.city-button:hover {
   background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border);
+}
+
+.logs-button,
+.widgets-button {
+  background: var(--ui-bg-muted);
+  color: var(--btn-secondary-text);
+  border: var(--btn-border-width) solid var(--btn-secondary-border);
+}
+.logs-button:hover,
+.widgets-button:hover {
+  background: var(--ui-bg-muted-hover);
   border-color: var(--btn-secondary-hover-border);
 }
 

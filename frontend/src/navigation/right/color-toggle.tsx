@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { useAppState } from "../../app/store";
+import { usePreferences } from "../../app/state/preferences-context";
 
 /**
  * DarkModeToggle (simplified with icon)
@@ -55,7 +55,7 @@ function MoonIcon({ className = "", ...props }) {
 }
 
 export default function Darkmode() {
-  const { darkMode, setDarkMode } = useAppState();
+  const { darkMode, setDarkMode } = usePreferences();
   const textRef = useRef(darkMode ? "Dark mode" : "Light mode");
 
   useEffect(() => {

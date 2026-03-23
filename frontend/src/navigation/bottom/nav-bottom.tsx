@@ -1,129 +1,62 @@
-import { useEffect, useRef, useState } from "react";
-import { useAppState } from "../../app/store";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import "../../styles/widgets.css";
+import { useUiFlow } from "../../app/state/ui-context";
+import { useSurveyData } from "../../app/state/survey-data-context";
+import { GraphDataProvider } from "../../graph-runtime/GraphDataContext";
+import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
 import ModeToggle from "./mode-toggle";
+import LogsButton from "./logs-button";
+import RadarChart from "./radar-chart";
 
-export default function NavBottom() {
-  const { cityPanelOpen, setCityPanelOpen, questionnaireOpen, radarMode, setRadarMode, vizVisible } = useAppState();
+const BarGraph = lazy(() => import("../../graph-runtime/bargraph/index"));
+
+export default function NavBottom({ introActive = false }: { introActive?: boolean }) {
+  const { cityPanelOpen, setCityPanelOpen, questionnaireOpen, radarMode, setRadarMode, vizVisible, logsOpen, setLogsOpen, widgetsOpen, setWidgetsOpen } = useUiFlow();
+  const { data } = useSurveyData();
+  const windowWidth = useWindowWidth();
+  const isNarrow = windowWidth <= 768;
   const [showHint, setShowHint] = useState(false);
-  const [widgetsOpen, setWidgetsOpen] = useState(false);
+  const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>(null);
+  const barGraphExpanded = expandedWidget === "bar";
+  const radarChartExpanded = expandedWidget === "radar";
+  const toggleWidget = (w: "bar" | "radar") => setExpandedWidget((cur) => (cur === w ? null : w));
   const widgetsRef = useRef<HTMLDivElement | null>(null);
+  const logsWrapRef = useRef<HTMLDivElement | null>(null);
+  const [logsSlide, setLogsSlide] = useState(0);
+  const [widgetsSlide, setWidgetsSlide] = useState(0);
 
   useEffect(() => {
-    if (!vizVisible) setWidgetsOpen(false);
+    if (!vizVisible) {
+      setWidgetsOpen(false);
+      setExpandedWidget(null);
+    }
   }, [vizVisible]);
 
   useEffect(() => {
-    if (!widgetsOpen) return;
+    if (logsOpen && !isNarrow && logsWrapRef.current) {
+      const panelWidth = Math.min(540, window.innerWidth - 51.2);
+      const btnWidth = logsWrapRef.current.offsetWidth;
+      setLogsSlide(Math.max(0, panelWidth - btnWidth));
+    } else {
+      setLogsSlide(0);
+    }
+  }, [logsOpen, isNarrow]);
 
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!widgetsRef.current?.contains(event.target as Node)) {
-        setWidgetsOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [widgetsOpen]);
+  useEffect(() => {
+    if (widgetsOpen && !isNarrow && widgetsRef.current) {
+      const panelWidth = Math.min(320, window.innerWidth - 51.2);
+      const btnWidth = widgetsRef.current.offsetWidth;
+      setWidgetsSlide(Math.max(0, panelWidth - btnWidth));
+    } else {
+      setWidgetsSlide(0);
+    }
+  }, [widgetsOpen, isNarrow]);
 
   if (!cityPanelOpen && !questionnaireOpen && !vizVisible) return null;
 
   return (
     <>
-      {vizVisible && (
-        <div className="bottom bottom-center">
-          <ModeToggle />
-        </div>
-      )}
-
-      <div className="bottom bottom-right">
-        {questionnaireOpen && !cityPanelOpen && (
-          <div
-            className="auto-adjust-wrap"
-            onMouseEnter={() => setShowHint(true)}
-            onMouseLeave={() => setShowHint(false)}
-          >
-            <button
-              type="button"
-              role="switch"
-              aria-checked={radarMode}
-              className={`auto-adjust${radarMode ? " is-on" : ""}`}
-              onClick={() => {
-                setRadarMode(!radarMode);
-                setShowHint(true);
-              }}
-            >
-              <span className="auto-adjust-thumb" />
-              <span className="auto-adjust-text">Weighted Sliders</span>
-            </button>
-            <div className={`auto-adjust-hint${showHint ? " visible" : ""}`} role="status" aria-live="polite">
-              Answers balance each other as you adjust.
-            </div>
-          </div>
-        )}
-        {vizVisible && (
-          <div className="widgets-wrap" ref={widgetsRef}>
-            {widgetsOpen && (
-              <div className="widgets-popover" role="dialog" aria-label="Widgets">
-                <div className="widgets-list">
-                  {["Color controls", "Scene controls", "Data controls"].map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className="widgets-item"
-                      aria-label={`${label} coming soon`}
-                    >
-                      <span>{label}</span>
-                      <svg
-                        className="ui-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden="true"
-                        focusable="false"
-                      >
-                        <path
-                          d="M12 8V16M8 12H16M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="widgets-button"
-              aria-expanded={widgetsOpen}
-              aria-haspopup="dialog"
-              aria-label="Widgets"
-              onClick={() => setWidgetsOpen((open) => !open)}
-            >
-              <span>Widgets</span>
-              <svg
-                className="ui-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  d="M12 5V19M5 12H19"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-        )}
-
+      <div className={`bottom bottom-left${introActive ? " nav-first-enter" : ""}`}>
         {(cityPanelOpen || questionnaireOpen) && (
           <button
             type="button"
@@ -149,6 +82,180 @@ export default function NavBottom() {
             )}
           </button>
         )}
+        {questionnaireOpen && !cityPanelOpen && (
+          <div
+            className="auto-adjust-wrap"
+            onMouseEnter={() => setShowHint(true)}
+            onMouseLeave={() => setShowHint(false)}
+          >
+            <button
+              type="button"
+              role="switch"
+              aria-checked={radarMode}
+              className={`auto-adjust${radarMode ? " is-on" : ""}`}
+              onClick={() => {
+                setRadarMode(!radarMode);
+                setShowHint(true);
+              }}
+            >
+              <span className="auto-adjust-thumb" />
+              <span className="auto-adjust-text">Weighted Sliders</span>
+            </button>
+            <div className={`auto-adjust-hint${showHint ? " visible" : ""}`} role="status" aria-live="polite">
+              Answers balance each other as you adjust.
+            </div>
+          </div>
+        )}
+        {vizVisible && (
+          <div ref={logsWrapRef}>
+            <LogsButton open={logsOpen} onOpenChange={setLogsOpen} />
+          </div>
+        )}
+        {vizVisible && (
+          <div className="widgets-wrap" ref={widgetsRef} style={{ marginLeft: logsSlide > 0 ? `${logsSlide}px` : undefined }}>
+            {widgetsOpen && (
+              <div className="widgets-popover" role="dialog" aria-label="Widgets">
+                <div className="widgets-list">
+                  <div className={`widgets-entry widgets-entry--bar-graph${barGraphExpanded ? " is-expanded" : ""}`}>
+                    <button
+                      type="button"
+                      className="widgets-item"
+                      aria-expanded={barGraphExpanded}
+                      onClick={() => toggleWidget("bar")}
+                    >
+                      <span>Bar graph</span>
+                      <svg
+                        className="ui-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M6 20V4M18 20V16M12 20V10"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                    <div className={`widgets-expandable${barGraphExpanded ? " is-expanded" : ""}`}>
+                      <div className="widgets-panel bar-graph">
+                        <GraphDataProvider data={data}>
+                          <Suspense fallback={null}>
+                            <BarGraph />
+                          </Suspense>
+                        </GraphDataProvider>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`widgets-entry widgets-entry--radar-chart${radarChartExpanded ? " is-expanded" : ""}`}>
+                    <button
+                      type="button"
+                      className="widgets-item"
+                      aria-expanded={radarChartExpanded}
+                      onClick={() => toggleWidget("radar")}
+                    >
+                      <span>Radar chart</span>
+                      <svg
+                        className="ui-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                    <div className={`widgets-expandable${radarChartExpanded ? " is-expanded" : ""}`}>
+                      <div className="widgets-panel radar-chart">
+                        <RadarChart />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="widgets-entry widgets-entry--data-controls">
+                    <button type="button" className="widgets-item" aria-label="Data controls coming soon">
+                      <span>Data controls</span>
+                      <svg
+                        className="ui-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M12 8V16M8 12H16M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="widgets-close-strip"
+                  aria-label="Close widgets"
+                  onClick={() => {
+                    setWidgetsOpen(false);
+                  }}
+                >
+                  <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                    <path d="M17 7L7 17M7 7L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>Widgets</span>
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="widgets-button"
+              aria-expanded={widgetsOpen}
+              aria-haspopup="dialog"
+              aria-label="Widgets"
+              onClick={() => {
+                setWidgetsOpen(!widgetsOpen);
+              }}
+            >
+              <span>Widgets</span>
+              <svg
+                className="ui-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M17 9L11.5657 14.4343C11.3677 14.6323 11.2687 14.7313 11.1545 14.7684C11.0541 14.8011 10.9459 14.8011 10.8455 14.7684C10.7313 14.7313 10.6323 14.6323 10.4343 14.4343L8.56569 12.5657C8.36768 12.3677 8.26867 12.2687 8.15451 12.2316C8.05409 12.1989 7.94591 12.1989 7.84549 12.2316C7.73133 12.2687 7.63232 12.3677 7.43431 12.5657L3 17M17 9H13M17 9V13M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+        {vizVisible && (
+          <div style={{ marginLeft: widgetsSlide > 0 ? `${widgetsSlide}px` : undefined, transition: "margin-left 0.2s ease" }}>
+            <ModeToggle />
+          </div>
+        )}
+
       </div>
     </>
   );

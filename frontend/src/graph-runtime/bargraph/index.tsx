@@ -5,13 +5,15 @@
 
 import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 
-import { useAppState } from "../../app/store";
+import { usePreferences } from "../../app/state/preferences-context";
+import { useUiFlow } from "../../app/state/ui-context";
+import { useIdentity } from "../../app/state/identity-context";
+import { useSurveyData } from "../../app/state/survey-data-context";
 import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
 import { useSharedGraphData } from "../GraphDataContext";
 
 import EmptyStateArt from "./EmptyArt";
 
-import '../../styles/graph.css';
 
 type BarColor = 'red' | 'yellow' | 'green';
 
@@ -20,7 +22,10 @@ type Categories = Record<BarColor, number>;
 const orderedColors: BarColor[] = ['green', 'yellow', 'red'];
 
 export default function BarGraph() {
-  const { loading, section, hasCompletedSurvey, myEntryId, darkMode } = useAppState() as any;
+  const { darkMode } = usePreferences();
+  const { hasCompletedSurvey } = useUiFlow();
+  const { myEntryId } = useIdentity();
+  const { loading, section } = useSurveyData();
 
   const { safeData, dataById, getRelForId } = useSharedGraphData();
 

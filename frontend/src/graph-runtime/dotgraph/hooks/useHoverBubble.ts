@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { computeHoverViewportClass } from '../utils/hoverViewport';
+import { useOptionalInteraction } from '../../../app/state/interaction-context';
 
 export type DotLike = {
   _id: string;
@@ -28,6 +29,7 @@ export default function useHoverBubble({
   isTouchRotatingRef,
   calcPercentForAvg,
 }: UseHoverBubbleArgs) {
+  const interaction = useOptionalInteraction();
   const [hoveredDot, setHoveredDot] = useState<HoveredDot | null>(null);
   const [viewportClass, setViewportClass] = useState<string>('');
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,9 +68,7 @@ export default function useHoverBubble({
         color: dot.color,
       });
 
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('gp:hover-open', { detail: { id: dot._id } }));
-      }
+      interaction?.setHoverOpen(true);
     },
     [useDesktopLayout, isDragging, isPinchingRef, isTouchRotatingRef, calcPercentForAvg]
   );
@@ -77,9 +77,7 @@ export default function useHoverBubble({
     if (isDragging || isPinchingRef?.current) return;
     setHoveredDot(null);
     setViewportClass('');
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('gp:hover-close'));
-    }
+    interaction?.setHoverOpen(false);
   }, [isDragging, isPinchingRef]);
 
   return {

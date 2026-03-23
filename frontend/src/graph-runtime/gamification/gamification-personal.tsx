@@ -8,7 +8,8 @@ import {
 } from "../../lib/utils/color-and-interpolation";
 
 import { usePersonalizedPools } from "../../lib/hooks/useGamificationPools";
-import { useOptionalAppState } from "../../app/store";
+import { useOptionalPreferences } from "../../app/state/preferences-context";
+import { useOptionalUiFlow } from "../../app/state/ui-context";
 
 const FADE_MS = 200;
 const PROX_THRESHOLD = 0.02;
@@ -60,8 +61,8 @@ export default function GamificationPersonalized({
 
   selectedSectionId,
 }) {
-  const appState = useOptionalAppState();
-  const darkMode = !!appState?.darkMode;
+  const darkMode = !!useOptionalPreferences()?.darkMode;
+  const ui = useOptionalUiFlow();
 
   // Title removed — keep CMS contract stable but do not render it
   const [secondaryText, setSecondaryText] = useState('');
@@ -93,10 +94,10 @@ export default function GamificationPersonalized({
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
 
   useEffect(() => {
-    const handler = () => setOpen(true);
-    window.addEventListener('gp:open-personalized', handler);
-    return () => window.removeEventListener('gp:open-personalized', handler);
-  }, []);
+    if (!ui?.openPersonalized) return;
+    setOpen(true);
+    ui.setOpenPersonalized(false);
+  }, [ui?.openPersonalized]);
 
   useEffect(() => {
     const scheduleCheck = () => {

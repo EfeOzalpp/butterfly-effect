@@ -134,6 +134,7 @@ export default function useRotation({
   const holdTimerRef = useRef<number | null>(null);
   const holdArmedRef = useRef(false); // prevent repeat fires per gesture
   const holdSceneRef = useRef(false); // true only if touch started on canvas
+  const touchOwnsSceneRef = useRef(false); // true only while the active touch gesture belongs to the canvas
   const HOLD_MS = 650;
 
   // recent mouse movement (idle gating)
@@ -165,6 +166,13 @@ export default function useRotation({
       useDesktopLayout &&
       (event.pointerType === 'mouse' || event.pointerType === 'pen') &&
       isSceneTouchTarget(event.target);
+
+    const hasSceneTouchTarget = (touches: TouchList) => {
+      for (let i = 0; i < touches.length; i++) {
+        if (isSceneTouchTarget(touches[i]?.target ?? null)) return true;
+      }
+      return false;
+    };
 
     const handlePointerDown = (event: PointerEvent) => {
       if (!isDesktopScenePointer(event)) return;
@@ -243,6 +251,17 @@ export default function useRotation({
       if (event.touches.length === 1) {
         const t = event.touches[0];
         holdSceneRef.current = isSceneTouchTarget(t.target);
+        touchOwnsSceneRef.current = holdSceneRef.current;
+
+        if (!touchOwnsSceneRef.current) {
+          isTouchRotatingRef.current = false;
+          isMovingRef.current = false;
+          spinVelRef.current = { x: 0, y: 0 };
+          if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+          holdTimerRef.current = null;
+          holdArmedRef.current = false;
+          return;
+        }
 
         isTouchRotatingRef.current = true;
         isMovingRef.current = false;
@@ -255,6 +274,7 @@ export default function useRotation({
         if (holdArmedRef.current) {
           holdTimerRef.current = window.setTimeout(() => {
             if (
+              touchOwnsSceneRef.current &&
               holdArmedRef.current &&
               holdSceneRef.current &&
               !isPinchingRef.current &&
@@ -266,6 +286,19 @@ export default function useRotation({
           }, HOLD_MS);
         }
       } else if (event.touches.length >= 2) {
+        touchOwnsSceneRef.current = hasSceneTouchTarget(event.touches);
+        if (!touchOwnsSceneRef.current) {
+          isTouchRotatingRef.current = false;
+          isMovingRef.current = false;
+          spinVelRef.current = { x: 0, y: 0 };
+          if (gestureRef?.current) gestureRef.current.pinching = false;
+          if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+          holdTimerRef.current = null;
+          holdArmedRef.current = false;
+          holdSceneRef.current = false;
+          return;
+        }
+
         isTouchRotatingRef.current = false;
         isMovingRef.current = false;
         spinVelRef.current = { x: 0, y: 0 };
@@ -278,6 +311,7 @@ export default function useRotation({
     };
 
     const handleTouchMove = (event: TouchEvent) => {
+      if (!touchOwnsSceneRef.current) return;
       event.preventDefault();
       if (isDraggingRef.current) return;
       markActivity?.();
@@ -357,6 +391,7 @@ export default function useRotation({
       if (event.touches.length === 0) {
         isTouchRotatingRef.current = false;
         isMovingRef.current = false;
+        touchOwnsSceneRef.current = false;
       }
       if (event.touches.length < 2) isPinchingRef.current = false;
 
@@ -364,6 +399,7 @@ export default function useRotation({
       holdTimerRef.current = null;
       holdArmedRef.current = false;
       holdSceneRef.current = false;
+      if (event.touches.length === 0) touchOwnsSceneRef.current = false;
     };
 
     window.addEventListener('pointerdown', handlePointerDown, { passive: true });
@@ -386,6 +422,7 @@ export default function useRotation({
       window.removeEventListener('touchcancel', handleTouchEnd);
       canvas?.classList.remove('is-rotating');
       if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+      touchOwnsSceneRef.current = false;
     };
   }, [groupRef, isTabletLike, markActivity, gl, gestureRef, menuOpenRef, useDesktopLayout]);
 

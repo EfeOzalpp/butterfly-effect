@@ -74,9 +74,6 @@
 .bar-graph-container,
 .bar-graph-icons,
 .bar-graph-bar,
-.draggable-bar-graph,
-.draggable-container,
-.empty-center,
 .empty-card,
 .empty-card--canvas {
   display: flex;
@@ -165,7 +162,11 @@
   pointer-events: none;
 }
 
-.empty-center { height: 100%; }
+.empty-center {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
 .empty-card { justify-content: center; align-items: center; flex-direction: column; }
 .empty-card--canvas { width: 250%; margin-left: -75%; }
 
@@ -187,8 +188,6 @@
    Preserve these dimensions/positions for stable JS indicator placement.
    -------------------------------------------------------------------------- */
 @media screen and (max-width: 768px) {
-  .draggable-container { height: 375px; width: 225px; pointer-events: none; }
-  .draggable-bar-graph { width: 180px; height: 100%; flex-direction: column; align-items: center; pointer-events: auto; }
   .bar-graph-container { width: 204px; }
   .bar-graph-icons { width: 88%; }
   .bar-graph-bar { width: 24%; }
@@ -196,8 +195,6 @@
 }
 
 @media screen and (min-width: 768px) and (max-width: 1024px) {
-  .draggable-container { height: 475px; pointer-events: none; }
-  .draggable-bar-graph { width: 275px; height: 120%; flex-direction: column; align-items: center; pointer-events: auto; }
   .bar-graph-container { width: 302px; }
   .bar-graph-icons { width: 85%; }
   .bar-graph-bar { width: 26%; }
@@ -205,19 +202,10 @@
 }
 
 @media screen and (min-width: 1025px) {
-  .draggable-bar-graph { width: 240px; height: 100%; flex-direction: column; align-items: center; pointer-events: auto; }
   .bar-graph-container { width: 265px; }
   .bar-graph-icons { width: 94%; }
   .bar-graph-bar { width: 28%; }
   .toggle-button { width: 40px; height: 40px; }
-}
-
-@media screen and (min-width: 1025px) and (max-width: 1320px) {
-  .draggable-container { height: 440px; width: 250px; pointer-events: none; }
-}
-
-@media screen and (min-width: 1320px) {
-  .draggable-container { height: 500px; width: 250px; pointer-events: none; }
 }
 
 /* ==========================================================================
@@ -225,18 +213,6 @@
    ==========================================================================
    Safe to tune tokens/colors without breaking JS positioning behavior.
    -------------------------------------------------------------------------- */
-/* Theme wiring: graph */
-.draggable-container {
-  border-radius: var(--radius-hero);
-  overflow: hidden;
-}
-
-.draggable-bar-graph {
-  background: var(--ui-bg-surface);
-  border-left: 1px solid var(--ui-border);
-  border-radius: var(--radius-hero) 0 0 var(--radius-hero);
-}
-
 .toggle-button {
   background: var(--ui-bg-muted);
   border: 1px solid var(--ui-border);
@@ -263,6 +239,10 @@
 
 .graph-container canvas.is-rotating {
   cursor: grabbing;
+}
+
+.graph-loading {
+  width: 100%;
 }
 
 .graph-loading-card {

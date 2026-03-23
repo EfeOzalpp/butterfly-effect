@@ -5,7 +5,6 @@ import type {
   ConditionKind,
   ShapeName,
   Size,
-  ConditionSpec,
   Quota,
   Limits,
   QuotaAnchor,
@@ -112,7 +111,8 @@ function stableShuffleKey(id: number, salt: number) {
 
 /**
  * Plans shape assignment for items of a single condition kind using quota curves and deterministic ordering.
- * Items are assigned by filling finite caps first, then falling back to the first unbounded fill shape.
+ * Items are assigned by filling finite caps first, then optional unbounded fill shapes.
+ * If quotas do not cover the whole bucket, the remaining items are left unassigned.
  */
 export function planForBucket(
   kind: ConditionKind,
@@ -167,10 +167,7 @@ export function planForBucket(
       fillIdx += 1;
     }
 
-    if (!assigned) {
-      const spec: ConditionSpec | undefined = CONDITIONS[kind];
-      assigned = (spec?.variants[0]?.shape ?? 'car') as ShapeName;
-    }
+    if (!assigned) continue;
 
     m.set(it.id, { shape: assigned, size: footprintFor(kind, assigned) });
   }

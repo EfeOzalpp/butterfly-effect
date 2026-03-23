@@ -1,20 +1,13 @@
 // canvas-engine/CanvasEntry.tsx
 
+import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
+import { useUiFlow } from "../app/state/ui-context";
 import { EngineHost } from "../canvas-engine/EngineHost";
 
-export default function CanvasEntry({
-  visible = true,
-  liveAvg = 0.5,
-  allocAvg = 0.5,
-  questionnaireOpen = false,
-  condAvgs,
-}: {
-  visible?: boolean;
-  liveAvg?: number;
-  allocAvg?: number;
-  questionnaireOpen?: boolean;
-  condAvgs?: Partial<Record<'A' | 'B' | 'C' | 'D', number>>;
-}) {
+export default function CanvasEntry({ visible = true }: { visible?: boolean }) {
+  const { liveAvg, allocAvg, condAvgs } = useCanvasRuntime();
+  const { questionnaireOpen } = useUiFlow();
+
   return (
     <div className={`onboarding-canvas${questionnaireOpen ? ' questionnaire-active' : ''}`}>
       <div id="canvas-root" style={{ width: "100%", height: "100%" }} />

@@ -152,9 +152,7 @@ function spawnOne(
   return { x, y, vx, vy, age, life, size, uSlot };
 }
 
-const EMITTERS_2: Map<string, EmitterState> =
-  (globalThis as any).__GP_EMITTERS2__ ||
-  ((globalThis as any).__GP_EMITTERS2__ = new Map<string, EmitterState>());
+const EMITTERS_2 = new Map<string, EmitterState>();
 
 function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
   const key = opts.key;

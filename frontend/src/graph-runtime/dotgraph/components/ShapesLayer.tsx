@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Line } from "@react-three/drei";
 import { SpriteShape } from "../../sprites/entry";
-import { shapeForAvg } from "../../sprites/selection/shapeForAvg";
+import { chooseShape } from "../../sprites/internal/spritePolicy";
 import { FOOTPRINTS as SHAPE_FOOTPRINT } from "../../sprites/selection/footprints";
 
 type ShapesLayerProps = {
@@ -47,7 +47,7 @@ export default function ShapesLayer({
     () =>
       shapes.map((shape, i) => {
         const avg = Number.isFinite(shape.averageWeight) ? shape.averageWeight : 0.5;
-        const chosenShape = shapeForAvg(avg, bagSeed, i);
+        const chosenShape = chooseShape({ avg, seed: bagSeed, orderIndex: i });
         const fp = (SHAPE_FOOTPRINT as any)[chosenShape] ?? { w: 1, h: 1 };
         const aspect = fp.w / Math.max(0.0001, fp.h);
         const b = bleedOf(chosenShape);

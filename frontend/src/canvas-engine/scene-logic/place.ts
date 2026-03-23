@@ -1,7 +1,7 @@
 // src/canvas-engine/scene-logic/place.ts
 
 import { createOccupancy } from "../grid-layout/occupancy";
-import { cellCenterToPx2 } from "../grid-layout/coords";
+import { cellAnchorToPx2 } from "../grid-layout/coords";
 import { PlacementBands } from "../grid-layout/placementBands";
 
 import type { DeviceType } from "../shared/responsiveness";
@@ -176,11 +176,13 @@ export function placePoolItems(opts: {
 
     if (!rectHit) continue;
 
-    const cr = rectHit.r0 + Math.floor(rectHit.h / 2);
-    const cc = rectHit.c0 + Math.floor(rectHit.w / 2);
-
-    // RC -> px using rectangular grid metrics
-    const { x, y } = cellCenterToPx2({ cellW, cellH, ox, oy }, cr, cc);
+    // Footprints can span an even number of cells, so anchor to the true
+    // rectangle center instead of snapping to a single center cell.
+    const { x, y } = cellAnchorToPx2(
+      { cellW, cellH, ox, oy },
+      rectHit,
+      "center"
+    );
 
     item.footprint = rectHit;
     item.x = x;

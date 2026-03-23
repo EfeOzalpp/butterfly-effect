@@ -174,13 +174,16 @@ export function SpriteShape({
         });
   }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, darkMode]);
 
-  const [tex, setTex] = React.useState<THREE.CanvasTexture | null>(() => {
-    return wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null);
+  const [texState, setTexState] = React.useState<{ key: string; tex: THREE.CanvasTexture | null }>(() => {
+    const tex = wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null);
+    return { key, tex };
   });
+  const tex = texState.key === key ? texState.tex : null;
 
   // Reset texture when dark mode changes so we request a new dark/light variant
   React.useEffect(() => {
-    setTex(wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null));
+    const nextTex = wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null);
+    setTexState({ key, tex: nextTex });
   }, [darkMode, key, wantsFrozen]);
 
   React.useEffect(() => {
@@ -189,7 +192,7 @@ export function SpriteShape({
     let watchdog: any;
 
     const setIfAlive = (t: THREE.CanvasTexture | null) => {
-      if (!cancelled && t) setTex(track(t));
+      if (!cancelled && t) setTexState({ key, tex: track(t) });
     };
 
     const drawer = DRAWERS[shape];

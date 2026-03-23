@@ -1,0 +1,186 @@
+/* Widgets popover — bar chart, line chart */
+
+.widgets-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+}
+
+.widgets-button .ui-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.widgets-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  pointer-events: all;
+  transition: margin-left 0.2s ease;
+}
+
+.widgets-popover {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(320px, calc(100vw - 3.2rem));
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  pointer-events: all;
+  z-index: 2;
+  box-shadow: 0 18px 42px var(--ui-drop-shadow);
+}
+
+.widgets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 0.4rem;
+}
+
+.widgets-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.widgets-entry--bar-graph.is-expanded .widgets-item {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.widgets-entry:not(:last-child) > .widgets-item {
+  box-shadow: inset 0 -1px 0 var(--ui-border);
+}
+
+.widgets-entry.is-expanded:not(:last-child) > .widgets-item {
+  box-shadow: none;
+}
+
+.widgets-entry.is-expanded:not(:last-child) > .widgets-expandable {
+  box-shadow: inset 0 -1px 0 var(--ui-border);
+}
+
+.widgets-expandable {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 280ms cubic-bezier(.22,.61,.36,1), opacity 180ms ease;
+}
+
+.widgets-expandable.is-expanded {
+  max-height: 340px;
+  opacity: 1;
+}
+
+.widgets-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ui-text);
+  text-align: left;
+}
+
+.widgets-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.widgets-panel.bar-graph {
+  padding: 1rem 1rem 0.6rem;
+}
+
+.widgets-panel.bar-graph .bar-graph-container {
+  width: 100%;
+  height: 220px;
+}
+
+.widgets-panel.bar-graph .bar-graph-bar {
+  width: 30%;
+}
+
+
+.widgets-panel.radar-chart {
+  padding: 0.6rem 0.4rem 0.4rem;
+}
+
+.radar-chart-svg {
+  display: block;
+  overflow: visible;
+}
+
+.rc-ring {
+  fill: none;
+  stroke: var(--ui-border);
+  stroke-width: 1;
+}
+
+.rc-axis {
+  stroke: var(--ui-border);
+  stroke-width: 1;
+}
+
+.rc-data {
+  fill: var(--ui-bg-surface-selected);
+  stroke: var(--ui-text);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.rc-dot {
+  fill: var(--ui-text);
+}
+
+.rc-label {
+  fill: var(--ui-text-secondary);
+  font-family: var(--font-body);
+  font-size: 9px;
+}
+
+
+.widgets-close-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-top: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: var(--ui-bg-muted);
+  color: var(--ui-text);
+  text-align: center;
+}
+
+.widgets-close-strip:hover {
+  background: var(--ui-bg-muted-hover);
+}
+
+.widgets-close-strip svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.widgets-item:hover {
+  background: var(--ui-bg-surface-hover);
+}
+
+.widgets-item .ui-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ui-text-secondary);
+  flex-shrink: 0;
+}

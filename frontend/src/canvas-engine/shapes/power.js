@@ -42,7 +42,7 @@ export const POWER_DARK_PALETTE = {
 
 /* Tunables (lerp-able) */
 const POWER = {
-  grass: { colorBlend: [0.4, 0.30], satRange: [0.00, 0.80] },
+  grass: { colorBlend: [0.24, 0.34], satRange: [0.00, 0.22] },
   platform: { hFrac: [0.28, 0.34], radiusK: 0.12 },
   mast: {
     widthK:  [0.18, 0.22],

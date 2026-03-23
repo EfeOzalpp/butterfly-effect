@@ -1,4 +1,3 @@
-import { getLiveClient } from './client';
 import { USE_MOCK_SANITY, shouldUseMockSanityReads } from './config';
 import { createMockUserResponse } from './mockData';
 
@@ -10,24 +9,7 @@ const clamp01 = (v?: number) =>
 const round3 = (v?: number) =>
   typeof v === 'number' ? Math.round(v * 1000) / 1000 : undefined;
 
-const computeAvg = (w: Weights) => {
-  const vals = [w.q1, w.q2, w.q3, w.q4, w.q5].filter(
-    (x): x is number => Number.isFinite(x)
-  );
-  if (!vals.length) return undefined;
-  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-  return avg;
-};
-
-/**
- * Saves a VERSION response with numeric q1..q5 (0..1, rounded to 3 decimals)
- * and avgWeight (0..1, rounded to 3 decimals).
- * - stash a lightweight client snapshot in sessionStorage (gp.myDoc),
- * - set a one-time flag gp.justSubmitted for better initial section selection,
- * - dispatch 'gp:identity-updated' so GraphProvider can sync without remount.
- */
 export async function saveUserResponse(section: string, weights: Weights) {
-  // clamp + round each weight
   const clamped: Weights = {
     q1: round3(clamp01(weights.q1)),
     q2: round3(clamp01(weights.q2)),
@@ -36,50 +18,64 @@ export async function saveUserResponse(section: string, weights: Weights) {
     q5: round3(clamp01(weights.q5)),
   };
 
-  // compute + round avg
-  const avgRaw = computeAvg(clamped);
-  const avgWeight = round3(avgRaw);
-
-  const doc: any = {
-    _type: 'userResponseV4',
-    section,
-    ...clamped,                // q1..q5
-    ...(typeof avgWeight === 'number' ? { avgWeight } : {}), // ensure it’s saved
-    submittedAt: new Date().toISOString(),
-  };
-
   const created = (USE_MOCK_SANITY || shouldUseMockSanityReads())
     ? createMockUserResponse(section, clamped)
-    : await getLiveClient().create(doc);
+    : await saveUserResponseViaEdge(section, clamped);
 
   if (typeof window !== 'undefined') {
-    // Persist identifiers
     sessionStorage.setItem('gp.myEntryId', created._id);
     sessionStorage.setItem('gp.mySection', section);
-    // One-time redirect/initialization marker for first open after submit
     sessionStorage.setItem('gp.justSubmitted', '1');
 
-    // Persist a minimal snapshot for local rehydrate (no schema change needed)
     try {
       const snapshot = {
         _id: created._id,
         section,
-        q1: created.q1, q2: created.q2, q3: created.q3, q4: created.q4, q5: created.q5,
+        q1: created.q1,
+        q2: created.q2,
+        q3: created.q3,
+        q4: created.q4,
+        q5: created.q5,
         avgWeight: created.avgWeight,
         submittedAt: created.submittedAt,
       };
       sessionStorage.setItem('gp.myDoc', JSON.stringify(snapshot));
-    } catch {}
-
-    // Notify the app so context can sync immediately (no remount required)
-    try {
-      window.dispatchEvent(
-        new CustomEvent('gp:identity-updated', {
-          detail: { entryId: created._id, section }
-        })
-      );
-    } catch {}
+    } catch (err) {
+      console.warn('[saveUserResponse] Failed to persist snapshot to sessionStorage:', err);
+    }
   }
 
   return created;
+}
+
+async function saveUserResponseViaEdge(section: string, weights: Weights) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (typeof supabaseUrl !== 'string' || supabaseUrl.length === 0) {
+    throw new Error('Missing VITE_SUPABASE_URL');
+  }
+  if (typeof supabaseAnonKey !== 'string' || supabaseAnonKey.length === 0) {
+    throw new Error('Missing VITE_SUPABASE_ANON_KEY');
+  }
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/save-user-response`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ section, weights }),
+  });
+
+  const json = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message =
+      json && typeof json.error === 'string'
+        ? json.error
+        : `Edge function request failed with status ${res.status}`;
+    throw new Error(message);
+  }
+
+  return json;
 }

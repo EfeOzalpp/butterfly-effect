@@ -29,9 +29,9 @@ export const CAR_BASE_PALETTE = {
 
 export const CAR_DARK_PALETTE = {
   grass: [
-    { r: 52, g: 86,  b: 123  },
-    { r: 40, g: 97,  b: 127 },
-    { r: 29, g: 101,  b: 118  },
+    { r: 52, g: 96,  b: 104 },
+    { r: 58, g: 108, b: 114 },
+    { r: 48, g: 90,  b: 102 },
   ],
   asphalt: { r: 68, g: 79, b: 96 },
   body: [
@@ -52,7 +52,7 @@ export const CAR_DARK_PALETTE = {
 
 /* ───────────────── Tunables */
 const CAR = {
-  grass:   { colorBlend: [0.20, 0.45] },
+  grass:   { colorBlend: [0.16, 0.30] },
   body:    { colorBlend: [0.04, 0.10] },
   asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
 

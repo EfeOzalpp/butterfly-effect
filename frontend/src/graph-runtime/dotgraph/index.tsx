@@ -7,7 +7,8 @@ import * as THREE from 'three';
 
 import DotGraph from "./dot-graph";
 
-import { useAppState } from "../../app/store";
+import { useUiFlow } from "../../app/state/ui-context";
+import { useSurveyData } from "../../app/state/survey-data-context";
 import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
 
 import {
@@ -17,7 +18,6 @@ import {
 } from "../sprites/entry";
 
 
-import '../../styles/graph.css';
 
 // --- iOS detector (incl. iPadOS 13+ on MacIntel) ---
 const isIOS = (() => {
@@ -122,10 +122,7 @@ function WebGLCanvas({ data, isDragging, lowFidelity, dpr }: WebGLCanvasProps) {
           try {
             e.preventDefault?.();
           } catch {}
-          try {
-            (window as any).__GP_CTX_LOST = true;
-            window.dispatchEvent(new CustomEvent('gp:webgl-lost'));
-          } catch {}
+          (window as any).__GP_CTX_LOST = true;
           // eslint-disable-next-line no-console
           console.warn('WebGL context lost');
         };
@@ -180,7 +177,8 @@ type GraphProps = {
 };
 
 const Graph = ({ isDragging }: GraphProps) => {
-  const { data: surveyData, loading, section, vizVisible } = useAppState() as any;
+  const { vizVisible } = useUiFlow();
+  const { data: surveyData, loading, section } = useSurveyData();
   const isRealMobile = useRealMobileViewport();
 
   const safeData: any[] = Array.isArray(surveyData) ? surveyData : [];
@@ -238,6 +236,18 @@ const Graph = ({ isDragging }: GraphProps) => {
     <div className="graph-container" style={{ height: '100svh', width: '100%' }}>
       {!section ? (
         <p className="graph-loading">Pick a section to begin.</p>
+      ) : safeData.length === 0 ? (
+        <div
+          className="graph-loading"
+          style={{
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <h3>Nothing yet...</h3>
+        </div>
       ) : loading ? (
         <div className="graph-loading" aria-busy="true" />
       ) : vizVisible && canMount ? (

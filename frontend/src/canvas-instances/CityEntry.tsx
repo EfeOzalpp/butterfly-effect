@@ -1,13 +1,10 @@
 // navigation/CityOverlay.tsx
+import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
 import { EngineHost } from "../canvas-engine/EngineHost";
 
-type CityOverlayProps = {
-  open: boolean;
-  liveAvg?: number;
-  allocAvg?: number;
-};
+export default function CityOverlay({ open }: { open: boolean }) {
+  const { liveAvg, allocAvg } = useCanvasRuntime();
 
-export default function CityOverlay({ open, liveAvg = 0.5, allocAvg }: CityOverlayProps) {
   return (
     <div
       id="city-overlay-root"
@@ -15,7 +12,7 @@ export default function CityOverlay({ open, liveAvg = 0.5, allocAvg }: CityOverl
       aria-hidden={!open}
     >
       <div id="city-canvas-root" className="city-canvas-host" />
-      <EngineHost id="city" open={open} liveAvg={liveAvg} allocAvg={allocAvg ?? liveAvg} />
+      <EngineHost id="city" open={open} liveAvg={liveAvg} allocAvg={allocAvg} />
     </div>
   );
 }

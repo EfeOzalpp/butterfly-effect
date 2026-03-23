@@ -17,6 +17,9 @@ export default function useUiState() {
   const openGraph = () => setVizVisible(true);
   const closeGraph = () => setVizVisible(false);
 
+  const [logsOpen, setLogsOpen] = useState<boolean>(false);
+  const [widgetsOpen, setWidgetsOpen] = useState<boolean>(false);
+
   return {
     isSurveyActive,
     setSurveyActive,
@@ -34,5 +37,9 @@ export default function useUiState() {
     openGraph,
     closeGraph,
     setVizVisible,
+    logsOpen,
+    setLogsOpen,
+    widgetsOpen,
+    setWidgetsOpen,
   };
 }

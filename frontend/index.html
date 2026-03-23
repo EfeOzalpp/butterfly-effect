@@ -25,17 +25,29 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
     <!-- Icons -->
-    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/butterfly-effect.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/favicon-180.png" />
+    <link rel="icon" type="image/svg+xml" href="/butterfly-effect.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
 
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
 
     <style>
+      :root {
+        color-scheme: light dark;
+        --preload-bg-light: #f0f2f7;
+        --preload-bg-dark: #202128;
+      }
+
       html, body {
         height: 100%;
         margin: 0;
-        background-color: #c9ecfc;
+        background-color: var(--preload-bg-light);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        html, body {
+          background-color: var(--preload-bg-dark);
+        }
       }
 
       /* iOS safe-area coverage */
@@ -126,5 +138,7 @@
         setTimeout(hideLoader, 4000);
       })();
     </script>
+
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

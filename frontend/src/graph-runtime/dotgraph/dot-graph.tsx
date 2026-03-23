@@ -1,6 +1,9 @@
 import React, { useCallback } from 'react';
 
-import { useAppState } from '../../app/store';
+import { usePreferences } from '../../app/state/preferences-context';
+import { useUiFlow } from '../../app/state/ui-context';
+import { useIdentity } from '../../app/state/identity-context';
+import { useSurveyData } from '../../app/state/survey-data-context';
 import { useSharedGraphData } from '../GraphDataContext';
 import { useTextureQueueProgress } from '../sprites/entry';
 
@@ -22,7 +25,10 @@ type DotGraphProps = {
 };
 
 export default function DotGraph({ isDragging = false, data = [] }: DotGraphProps) {
-  const { myEntryId, mySection, observerMode, mode, section, darkMode } = useAppState() as any;
+  const { darkMode, mode } = usePreferences();
+  const { observerMode } = useUiFlow();
+  const { myEntryId, mySection } = useIdentity();
+  const { section } = useSurveyData();
 
   const {
     safeData,

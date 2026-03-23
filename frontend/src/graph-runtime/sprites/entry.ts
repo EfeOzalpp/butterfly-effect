@@ -7,3 +7,4 @@ export * from './api/dispose';
 
 export { default as useTextureQueueProgress } from './textures/useQueueProgress';
 export * from './textures/queue';
+export { disposeStaticTextures } from './textures/registry';

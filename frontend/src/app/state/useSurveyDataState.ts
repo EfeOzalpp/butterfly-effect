@@ -57,22 +57,24 @@ export default function useSurveyDataState({
     };
   }, [allRows]);
 
-  const data = useMemo(() => {
-    if (!section || section === 'all') return allRows.slice(0, VISIBLE_ROWS_LIMIT);
+  const filteredRows = useMemo(() => {
+    if (!section || section === 'all') return allRows;
     if (section === 'all-massart') {
       const allowed = new Set(NON_VISITOR_MASSART);
-      return allRows.filter((row) => allowed.has(row.section)).slice(0, VISIBLE_ROWS_LIMIT);
+      return allRows.filter((row) => allowed.has(row.section));
     }
     if (section === 'all-students') {
       const allowed = new Set(STUDENT_IDS);
-      return allRows.filter((row) => allowed.has(row.section)).slice(0, VISIBLE_ROWS_LIMIT);
+      return allRows.filter((row) => allowed.has(row.section));
     }
     if (section === 'all-staff') {
       const allowed = new Set(STAFF_IDS);
-      return allRows.filter((row) => allowed.has(row.section)).slice(0, VISIBLE_ROWS_LIMIT);
+      return allRows.filter((row) => allowed.has(row.section));
     }
-    return allRows.filter((row) => row.section === section).slice(0, VISIBLE_ROWS_LIMIT);
+    return allRows.filter((row) => row.section === section);
   }, [allRows, section]);
+
+  const data = useMemo(() => filteredRows.slice(0, VISIBLE_ROWS_LIMIT), [filteredRows]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -94,7 +96,9 @@ export default function useSurveyDataState({
       setSection('all-massart');
       try {
         setSessionItem('gp.openPersonalOnNext', '1');
-      } catch {}
+      } catch (err) {
+        console.warn('[useSurveyDataState] Failed to set openPersonalOnNext in sessionStorage:', err);
+      }
     }
 
     sessionStorage.removeItem('gp.justSubmitted');
@@ -103,6 +107,7 @@ export default function useSurveyDataState({
   return {
     counts,
     data,
+    allFilteredRows: filteredRows,
     loading,
     subscribeToSurveyData,
   };

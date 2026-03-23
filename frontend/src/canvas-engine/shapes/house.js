@@ -22,7 +22,7 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 }
 
 export const HOUSE_BASE_PALETTE = {
-  grass: { r: 130, g: 180, b: 110 },
+  grass: { r: 142, g: 194, b: 118 },
   body: [
     { r: 198, g: 216, b: 234 },
     { r: 224, g: 220, b: 206 },
@@ -46,11 +46,11 @@ export const HOUSE_BASE_PALETTE = {
   ],
   window: {
     lit: [
-      { r: 255, g: 166, b: 82 },
-      { r: 255, g: 184, b: 96 },
-      { r: 255, g: 206, b: 118 },
-      { r: 246, g: 228, b: 146 },
-      { r: 235, g: 236, b: 168 },
+      { r: 255, g: 154, b: 64 },
+      { r: 255, g: 176, b: 78 },
+      { r: 255, g: 198, b: 96 },
+      { r: 255, g: 222, b: 128 },
+      { r: 255, g: 241, b: 176 },
     ],
     dark: { r: 120, g: 170, b: 220 },
   },
@@ -70,10 +70,10 @@ export const HOUSE_DARK_PALETTE = {
   ],
   roof: [
     { r: 136, g: 92,  b: 96  },
-    { r: 82, g: 86,  b: 96  },
-    { r: 72,  g: 86,  b: 110 },
-    { r: 92,  g: 98,  b: 118 },
-    { r: 72,  g: 84,  b: 108 },
+    { r: 104, g: 108, b: 120 },
+    { r: 94,  g: 108, b: 134 },
+    { r: 112, g: 118, b: 140 },
+    { r: 96,  g: 106, b: 132 },
   ],
   door: [
     { r: 93,  g: 76,  b: 74 },
@@ -83,11 +83,11 @@ export const HOUSE_DARK_PALETTE = {
   ],
   window: {
     lit:  [
-      { r: 255, g: 156, b: 74 },
-      { r: 255, g: 176, b: 88 },
-      { r: 250, g: 198, b: 108 },
-      { r: 242, g: 220, b: 132 },
-      { r: 230, g: 228, b: 152 },
+      { r: 255, g: 146, b: 62 },
+      { r: 255, g: 168, b: 76 },
+      { r: 255, g: 190, b: 92 },
+      { r: 255, g: 214, b: 120 },
+      { r: 250, g: 234, b: 166 },
     ],
     dark: { r: 66,  g: 107, b: 169 },
   },
@@ -95,8 +95,8 @@ export const HOUSE_DARK_PALETTE = {
 };
 
 const HOUSE = {
-  body: { colorBlend: [0.2, 0.02], brightnessRange: [0.35, 0.65] },
-  grass: { colorBlend: [0.10, 0.22], satRange: [0.05, 0.22] },
+  body: { colorBlend: [0.2, 0.02], brightnessRange: [0.45, 0.7] },
+  grass: { colorBlend: [0.14, 0.28], satRange: [0.03, 0.14] },
   chimney: { scaleRange: [2, 0] },
   door: { widthRange: [1.3, 0.8], fixedHeights: [14, 20] },
   windows: { perFloor: 2, size: [10, 12], marginY: 12, thresholds: { low: 1.5, mid: 1.8 } }
@@ -218,7 +218,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   grassTint = driveSaturation(grassTint, grassDriveU, HOUSE.grass.satRange[0], HOUSE.grass.satRange[1]);
   grassTint = opts?.darkMode
     ? clampBrightness(grassTint, 0.28, 0.42)
-    : clampBrightness(grassTint, 0.42, 0.72);
+    : clampBrightness(grassTint, 0.50, 0.75);
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   p.noStroke();
@@ -485,7 +485,14 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     winLitVariants = winLitVariants.map((c) => blendRGB(c, opts.gradientRGB, k));
     winDark = blendRGB(winDark, opts.gradientRGB, k);
   }
-  winLitVariants = winLitVariants.map((c) => applyExposureContrast(c, ex, ct));
+  winLitVariants = winLitVariants.map((c) => {
+    let toned = c;
+    if (!opts?.darkMode) {
+      toned = driveSaturation(toned, 0.4, 0.28, 0.4);
+      toned = clampBrightness(toned, 0.7, 0.95);
+    }
+    return applyExposureContrast(toned, ex, ct);
+  });
   winDark = applyExposureContrast(winDark, ex, ct);
 
   const cellsH = bodyH / cell;

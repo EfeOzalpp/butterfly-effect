@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 
-import { AppProvider, useAppState } from "../app/store";
+import { AppProvider } from "../app/store";
+import { useUiFlow } from "./state/ui-context";
 
 import Survey from "../onboarding";
 import Navigation from "../navigation/navigation";
@@ -10,7 +11,8 @@ import DataVisualization from "../graph-runtime";
 
 import GamificationCopyPreloader from "../lib/hooks/useGamificationTextPreload";
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
-import { useMockSanityReadMode } from "../services/sanity/config";
+import { useMockBanner } from "./useMockBanner";
+import ErrorBoundary from "./error-boundary";
 
 import "../styles/fonts.css";
 import "../styles/global-styles.css";
@@ -36,23 +38,8 @@ function DeferredGamificationPreloader() {
 }
 
 const AppInner: React.FC = () => {
-  const [animationVisible, setAnimationVisible] = useState<boolean>(false);
-  const [surveyWrapperClass, setSurveyWrapperClass] = useState<string>("");
-  const [dismissedMockBanner, setDismissedMockBanner] = useState<boolean>(false);
-
-  const { vizVisible, questionnaireOpen, cityPanelOpen, liveAvg, allocAvg, condAvgs } = useAppState();
-  const mockReadMode = useMockSanityReadMode();
-  const quotaResetMonth = React.useMemo(() => {
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    return nextMonth.toLocaleString(undefined, { month: "long" });
-  }, []);
-
-  useEffect(() => {
-    if (!mockReadMode.runtimeFallback) {
-      setDismissedMockBanner(false);
-    }
-  }, [mockReadMode.runtimeFallback]);
+  const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
+  const { visible: bannerVisible, setDismissed, quotaResetMonth } = useMockBanner();
 
   // Global zoom prevention policy
   usePreventPageZoomOutsideZones({
@@ -64,15 +51,10 @@ const AppInner: React.FC = () => {
     ],
   });
 
-  // Optional: idle prefetch of CanvasEntry while user is in the heavy viz
+  // Idle prefetch of CanvasEntry while user is in the heavy viz
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!vizVisible) return;
-
-    const prefetch = () => {
-      import("../canvas-instances/OnboardingEntry");
-    };
-
+    if (typeof window === "undefined" || !vizVisible) return;
+    const prefetch = () => { import("../canvas-instances/OnboardingEntry"); };
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(prefetch, { timeout: 1500 });
     } else {
@@ -81,17 +63,16 @@ const AppInner: React.FC = () => {
     }
   }, [vizVisible]);
 
-
   return (
     <div className="app-content">
-      {mockReadMode.runtimeFallback && !mockReadMode.forced && !dismissedMockBanner && (
+      {bannerVisible && (
         <div className="mock-read-banner" role="status" aria-live="polite">
           <span>{`API quota exceeded. Demo data until ${quotaResetMonth} 1.`}</span>
           <button
             type="button"
             className="mock-read-banner-close"
             aria-label="Dismiss demo data notice"
-            onClick={() => setDismissedMockBanner(true)}
+            onClick={() => setDismissed(true)}
           >
             <svg
               width="100%"
@@ -114,7 +95,6 @@ const AppInner: React.FC = () => {
         </div>
       )}
 
-      {/* HUD mounts only when viz is visible */}
       {vizVisible && (
         <Suspense fallback={null}>
           <EdgeCue />
@@ -124,41 +104,35 @@ const AppInner: React.FC = () => {
       <DeferredGamificationPreloader />
       <Navigation />
 
-
-      {/* Intro canvas mounts only when viz is NOT visible and overlays are not blocking */}
       {!vizVisible && !animationVisible && !cityPanelOpen && (
-        <Suspense fallback={null}>
-          <CanvasEntry
-            liveAvg={liveAvg}
-            allocAvg={allocAvg}
-            questionnaireOpen={questionnaireOpen}
-            condAvgs={condAvgs}
-            visible={true}
-          />
-        </Suspense>
+        <ErrorBoundary name="CanvasEntry">
+          <Suspense fallback={null}>
+            <CanvasEntry visible={true} />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
-      {/* City overlay canvas mounts only when button is open AND questionnaire is open */}
       {cityPanelOpen && questionnaireOpen && (
-        <Suspense fallback={null}>
-          <CityOverlay open={true} liveAvg={liveAvg} />
-        </Suspense>
+        <ErrorBoundary name="CityOverlay">
+          <Suspense fallback={null}>
+            <CityOverlay open={true} />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
-      {/* Heavy viz mounts only when vizVisible */}
       {vizVisible && (
         <div className={`graph-wrapper ${vizVisible ? "visible" : ""}`}>
-          <DataVisualization />
+          <ErrorBoundary name="DataVisualization">
+            <DataVisualization />
+          </ErrorBoundary>
         </div>
       )}
 
-      <div className={`user-flow${questionnaireOpen ? ' questionnaire-active' : ''} ${surveyWrapperClass}`}>
-        <Survey
-          setAnimationVisible={setAnimationVisible}
-          setSurveyWrapperClass={setSurveyWrapperClass}
-        />
+      <div className={`user-flow${questionnaireOpen ? " questionnaire-active" : ""}${vizVisible ? " graph-active" : ""}`}>
+        <ErrorBoundary name="Survey">
+          <Survey />
+        </ErrorBoundary>
       </div>
-
 
       <div className="radial-background">
         <div className="radial-gradient"></div>
