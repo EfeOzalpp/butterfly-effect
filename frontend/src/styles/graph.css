@@ -214,14 +214,14 @@
    Safe to tune tokens/colors without breaking JS positioning behavior.
    -------------------------------------------------------------------------- */
 .toggle-button {
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
   color: var(--ui-text);
 }
 
 .toggle-button:hover {
-  background: var(--ui-bg-muted-hover);
+  background: var(--ui-bg-surface-hover);
   border-color: var(--ui-border-strong);
 }
 

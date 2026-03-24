@@ -52,7 +52,7 @@ export default function useDotGraphSceneModel({
       isTabletLike,
       xOffset: 0,
       yOffset: 0,
-      xOffsetPx: (wantsSkew ? -112 : 0) + (windowWidth > 768 ? (ui?.logsOpen ? 80 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0),
+      xOffsetPx: (wantsSkew ? -112 : 0) + (windowWidth > 768 ? (ui?.logsOpen ? 120 : 0) + (ui?.widgetsOpen ? 40 : 0) : 0),
       yOffsetPx: wantsSkew ? 12 : 0,
     },
     bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },

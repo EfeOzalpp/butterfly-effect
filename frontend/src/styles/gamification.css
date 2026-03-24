@@ -54,7 +54,7 @@
 .is-right .generalized-result { display: flex; justify-content: flex-end; min-width: 160px;}
 
 /* Top/bottom: generalized-result is the flex shell that positions its content child */
-.is-top .generalized-reuslts, .is-bottom .generalized-result {
+.is-top .generalized-results, .is-bottom .generalized-result {
   min-height: 350px; display: flex; flex-wrap: wrap;
 }
 .is-top .generalized-result {
@@ -71,52 +71,52 @@
 .toggle-button.gp-toggle[aria-expanded="false"] { position: relative; }
 
 @media screen and (max-width: 767px) {
-  .personalized-result { width: 210px; min-width: 210px; max-width: 210px; left: -8px; }
-  .gamification-text { width: 70%; max-width: 70%; min-width: 70%; }
+  .personalized-result { width: max-content; min-width: 210px; left: -8px; }
+  .gamification-text { width: 70%; min-width: 70%; }
   .gamification-bar { width: 15%; }
   .gam-general { width: 100%; align-items: center; flex-wrap: nowrap; }
   .gam-general-description { width: 80%; }
   .gam-visualization { width: 20%; position: relative; }
-  .generalized-result { width: 180px; min-width: 180px; max-width: 180px; left: -20px; }
-  .is-top .generalized-result { width: 200px !important; min-width: 200px !important; max-width: 200px !important; top: -16px !important; left: 0 !important; }
+  .generalized-result { width: max-content; min-width: 180px; left: -20px; }
+  .is-top .generalized-result { min-width: 200px !important; top: -16px !important; left: 0 !important; }
   .is-right .generalized-result,
   .is-mid .generalized-result { left: -110px; top: 0; }
   .is-bottom .generalized-result,
-  .is-left.is-bottom .generalized-result { width: 200px !important; min-width: 200px !important; max-width: 200px !important; top: 14px; left: 0; }
+  .is-left.is-bottom .generalized-result { min-width: 200px !important; top: 14px; left: 0; }
   .toggle-button.gp-toggle { top: -44px; right: 49px; }
   .toggle-button.gp-toggle[aria-expanded="false"] { top: 0; right: -24px; }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1024px) {
-  .personalized-result { width: 280px; min-width: 280px; max-width: 280px; left: 165px; }
-  .gamification-text { width: 70%; max-width: 70%; min-width: 70%; }
+  .personalized-result { width: max-content; min-width: 280px; left: 165px; }
+  .gamification-text { width: 70%; min-width: 70%; }
   .gamification-bar { width: 10%; }
   .gam-general { width: 100%; align-items: center; flex-wrap: nowrap; }
   .gam-general-description { width: 70%; }
   .gam-visualization { width: 30%; position: relative; }
-  .generalized-result { width: 240px; min-width: 240px; max-width: 240px; left: 65px; }
+  .generalized-result { width: max-content; min-width: 240px; left: 65px; }
   .is-top .generalized-result { top: 52px !important; left: 0 !important; }
   .is-right .generalized-result,
   .is-mid .generalized-result { left: -148px; top: 0; }
   .is-bottom .generalized-result,
-  .is-left.is-bottom .generalized-result { top: -57px; left: 0; width: 280px !important; min-width: 280px !important; max-width: 280px !important; }
+  .is-left.is-bottom .generalized-result { top: -57px; left: 0; min-width: 280px !important; }
   .toggle-button.gp-toggle { top: -67px; right: 47px; }
   .toggle-button.gp-toggle[aria-expanded="false"] { top: -2px; right: -24px; }
 }
 
 @media screen and (min-width: 1025px) {
-  .generalized-result { width: 250px; min-width: 250px; max-width: 250px; left: 10px; }
+  .generalized-result { width: max-content; min-width: 250px; left: 10px; }
   .is-right .generalized-result { left: -115px; }
 
-  .is-left.is-bottom .generalized-result {top: -104px; left: 0; }
-  .is-right.is-bottom .generalized-result {top: -104px; left: 0; }
+  .is-left.is-bottom .generalized-result { top: -104px; left: 0; }
+  .is-right.is-bottom .generalized-result { top: -104px; left: 0; }
   .is-mid.is-bottom .generalized-result { top: 36px; left: 0; }
 
   .is-left.is-top .generalized-result { top: 24px; left: 0; }
   .is-right.is-top .generalized-result { top: 36px; left: 0; }
   .is-mid.is-top .generalized-result { top: 36px; left: 0; }
 
-  .personalized-result { width: 280px; min-width: 280px; max-width: 280px; left: 160px; }
+  .personalized-result { width: max-content; min-width: 280px; left: 160px; }
   .toggle-button.gp-toggle { top: -48px; right: 76px; }
   .toggle-button.gp-toggle[aria-expanded="false"] { top: -2px; right: -24px; }
 }
@@ -138,13 +138,13 @@
 
 /* Toggle button — separate interactive element */
 .toggle-button.gp-toggle {
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
   color: var(--ui-text);
 }
 
 .toggle-button.gp-toggle:hover {
-  background: var(--ui-bg-muted-hover);
+  background: var(--ui-bg-surface-hover);
   border-color: var(--ui-border-strong);
 }

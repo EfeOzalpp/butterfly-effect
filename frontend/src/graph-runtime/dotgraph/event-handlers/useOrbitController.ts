@@ -7,7 +7,6 @@ import type { Camera, Group } from 'three';
 import useActivity from './hooks/useActivity';
 import useZoom from './hooks/useZoom';
 import useRotation from './hooks/useRotation';
-import useIdleDrift from './hooks/useIdleDrift';
 import usePixelOffsets from './hooks/usePixelOffsets';
 
 import { useDynamicOffset } from '../hooks/useDynamicOffset';
@@ -117,8 +116,6 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   const {
     startOnLoad = idle.startOnLoad ?? true,
     delayMs = idle.delayMs ?? 2000,
-    speed = idle.speed ?? 0.06,
-    horizontalOnly = idle.horizontalOnly ?? true,
   } = idle;
 
   const { camera } = useThree();
@@ -250,8 +247,6 @@ void lastMouseMoveTsRef;
     xOffsetPx,
     yOffsetPx,
   });
-
-  useIdleDrift({ groupRef, speed, horizontalOnly, isIdle: isIdleWrapped });
 
   useFrame(() => {
     camera.position.set(0, 0, radius);

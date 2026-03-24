@@ -23,6 +23,10 @@ export const BUS_BASE_PALETTE = {
     { r: 92,  g: 158, b: 154 }, // softened teal
     { r: 132, g: 158, b: 204 }, // lighter blue
     { r: 180, g: 92,  b: 96  }, // muted red
+    { r: 198, g: 138, b: 154 }, // dusty rose
+    { r: 162, g: 182, b: 114 }, // muted lime
+    { r: 154, g: 138, b: 204 }, // softened violet-blue
+    { r: 118, g: 172, b: 184 }, // pale aqua
   ],
   window: { r: 180, g: 210, b: 235 },
   wheel:  { r: 40,  g: 40,  b: 40  },
@@ -43,6 +47,10 @@ export const BUS_DARK_PALETTE = {
     { r: 76,  g: 94,  b: 152 }, // softened navy
     { r: 132, g: 132, b: 78  }, // softened olive
     { r: 158, g: 74,  b: 102 }, // softened crimson
+    { r: 144, g: 102, b: 126 }, // muted mauve
+    { r: 116, g: 138, b: 96  }, // muted moss
+    { r: 108, g: 118, b: 176 }, // softened indigo
+    { r: 78,  g: 138, b: 150 }, // cool cyan-teal
   ],
   window: { r: 125, g: 135, b: 200 },
   wheel:  { r: 45, g: 48,  b: 58   },

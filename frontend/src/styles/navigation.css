@@ -159,6 +159,10 @@
   object-fit: contain;
 }
 
+:root:not([data-theme="dark"]) .logo-image {
+  filter: brightness(1.08);
+}
+
 .observe-results,
 .nav-toggle,
 .system-color,
@@ -202,9 +206,9 @@
   align-items: center;
   width: 160px;
   height: 48px;
-  border-radius: var(--radius-lg);
-  background: var(--mode-toggle);
-  border: 1px solid var(--mode-toggle-border);
+  border-radius: var(--btn-radius);
+  background: var(--ui-bg-surface);
+  border: 2px solid var(--btn-secondary-border);
   cursor: pointer;
   outline: none;
   transition: border-color 0.15s ease;
@@ -214,24 +218,24 @@
   border-color: var(--ui-border-strong);
 }
 
-
 .mode-toggle-thumb {
   position: absolute;
-  top: 0.1rem;
-  bottom: 0.1rem;
-  width: calc(50%);
-  border-radius: calc(var(--radius-lg) - 3px);
+  top: 0.2rem;
+  bottom: 0.2rem;
+  width: calc(48%);
+  border-radius: calc(var(--btn-radius) - 3px);
   background: var(--mode-toggle-active);
+  border: 1px solid var(--mode-toggle-active-border);
   transition: left 140ms cubic-bezier(.4,0,.2,1);
 }
-.mode-toggle-thumb.relative { left: 0.1rem; }
-.mode-toggle-thumb.absolute { left: calc(50% - 0.1em); }
+.mode-toggle-thumb.relative { left: 0.2rem; }
+.mode-toggle-thumb.absolute { left: calc(52% - 0.2em); }
 
 .mode-toggle-label {
   position: relative;
   z-index: 1;
   text-align: center;
-  color: var(--ui-text-muted);
+  color: var(--ui-text);
   transition: color 0.15s ease;
 }
 .mode-toggle-label.active {

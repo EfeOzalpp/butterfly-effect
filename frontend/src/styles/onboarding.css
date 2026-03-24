@@ -181,7 +181,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   padding: 4px 12px 2px;
   font-size: var(--type-small-size);
   color: var(--ui-text-secondary);
@@ -336,7 +336,7 @@
 
 .section-listbox {
   overflow-y: scroll;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-top: none;
   border-bottom-left-radius: var(--radius-md);
@@ -347,7 +347,7 @@
 .survey-flow::-webkit-scrollbar,
 .answer-part::-webkit-scrollbar { width: 6px; }
 .section-listbox::-webkit-scrollbar-track,
-.survey-flow::-webkit-scrollbar-track { background: var(--ui-bg-muted); border-top: 12px solid transparent; border-bottom: 12px solid transparent; background-clip: padding-box; }
+.survey-flow::-webkit-scrollbar-track { background: var(--ui-bg-surface); border-top: 12px solid transparent; border-bottom: 12px solid transparent; background-clip: padding-box; }
 .answer-part::-webkit-scrollbar-track { background: var(--ui-bg-page); border-top: 12px solid transparent; border-bottom: 12px solid transparent; background-clip: padding-box; }
 .section-listbox::-webkit-scrollbar-thumb,
 .survey-flow::-webkit-scrollbar-thumb,
@@ -356,8 +356,8 @@
 .survey-flow::-webkit-scrollbar-thumb:hover,
 .answer-part::-webkit-scrollbar-thumb:hover { background: var(--ui-text-secondary); }
 
-.section-option.is-active { background: var(--ui-bg-muted-hover); }
-.section-option.is-selected { background: var(--ui-bg-muted-selected); }
+.section-option.is-active { background: var(--ui-bg-surface-hover); }
+.section-option.is-selected { background: var(--ui-bg-surface-selected); }
 
 button.begin-button,
 button.next-button,

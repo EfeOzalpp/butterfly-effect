@@ -22,12 +22,18 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 
 // ───────────────── Palette
 export const VILLA_BASE_PALETTE = {
-  grass: { r: 126, g: 188, b: 98 },
+  grass: { r: 130, g: 172, b: 116 },
 
   body: [
-    { r: 236, g: 232, b: 224 }, { r: 224, g: 234, b: 238 }, { r: 232, g: 240, b: 232 },
-    { r: 238, g: 228, b: 234 }, { r: 229, g: 236, b: 246 }, { r: 220, g: 230, b: 216 },
-    { r: 241, g: 233, b: 210 },
+    { r: 244, g: 228, b: 206 },
+    { r: 216, g: 236, b: 244 },
+    { r: 220, g: 236, b: 220 },
+    { r: 232, g: 224, b: 226 },
+    { r: 214, g: 232, b: 248 },
+    { r: 208, g: 226, b: 208 },
+    { r: 248, g: 236, b: 194 },
+    { r: 236, g: 216, b: 206 },
+    { r: 208, g: 216, b: 238 },
   ],
 
   roof: [
@@ -251,10 +257,10 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
   let grassTint = pal.grass;
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(VILLA.grass.colorBlend, u));
-  grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
-  grassTint = opts?.darkMode
-    ? clampBrightness(grassTint, 0.36, 0.54)
-    : clampBrightness(grassTint, 0.52, 0.74);
+  if (opts?.darkMode) {
+    grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
+    grassTint = clampBrightness(grassTint, 0.36, 0.54);
+  }
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const rGrass = Math.round(cell * 0.06);

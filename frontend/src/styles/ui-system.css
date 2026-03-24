@@ -76,7 +76,7 @@ span {
 }
 
 @media (min-width: 1024px) {
-  button.begin-button { max-width: 220px; min-width: 220px; }
+  button.begin-button { width: stretch; box-sizing: border-box; margin: 0 0.4rem;}
   .system-color { max-height: 40px; }
   .mock-read-banner-close {         
     width: 20px !important;
@@ -173,13 +173,13 @@ button.city-button:hover {
 
 .logs-button,
 .widgets-button {
-  background: var(--ui-bg-muted);
+  background: var(--btn-secondary-bg);
   color: var(--btn-secondary-text);
   border: var(--btn-border-width) solid var(--btn-secondary-border);
 }
 .logs-button:hover,
 .widgets-button:hover {
-  background: var(--ui-bg-muted-hover);
+  background: var(--btn-secondary-hover-bg);
   border-color: var(--btn-secondary-hover-border);
 }
 

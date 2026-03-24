@@ -150,9 +150,9 @@ export default function useRotation({
 
   useEffect(() => {
     const dpr = window.devicePixelRatio || 1;
-    const DEADZONE_PX = 2.0 * dpr;
+    const DEADZONE_PX = Math.max(1, 0.9 * dpr);
     const TOUCH_PX_TO_RAD = (isTabletLike ? 0.004 : 0.006) / dpr;
-    const DESKTOP_PX_TO_RAD = 0.003 / dpr;
+    const DESKTOP_PX_TO_RAD = 0.0032 / dpr;
     const canvas = (gl as any)?.domElement as HTMLElement | undefined;
 
     // Helper: did this touch start over the WebGL canvas?

@@ -63,12 +63,12 @@
   overflow-y: auto;
   max-height: calc(100svh - 14.4rem);
   flex: 1 1 auto;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
 }
 
 .logs-table-wrap::-webkit-scrollbar { width: 6px; }
 .logs-table-wrap::-webkit-scrollbar-track {
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
   background-clip: padding-box;
@@ -88,7 +88,7 @@
 .logs-th {
   position: sticky;
   top: 0;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   color: var(--ui-text-secondary);
   font-size: var(--type-label-size);
   font-weight: var(--fw-bold);
@@ -104,7 +104,7 @@
 .logs-th--avg     { width: 52px; }
 .logs-th--rank    { width: 48px; }
 
-.logs-row:hover { background: var(--ui-bg-muted-hover); }
+.logs-row:hover { background: var(--ui-bg-surface-hover); }
 
 .logs-td {
   font-size: var(--type-label-size);
@@ -131,7 +131,7 @@
   padding: 0;
   border-top: 1px solid var(--ui-border);
   flex-shrink: 0;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
 }
 
 .logs-pagination {
@@ -159,7 +159,7 @@
   height: 32px;
   padding: 0 0.4rem;
   margin-left: 0.5rem;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
   color: var(--ui-text);
@@ -208,4 +208,4 @@
   flex-shrink: 0;
 }
 
-.logs-close-btn:hover { background: var(--ui-bg-muted-hover); }
+.logs-close-btn:hover { background: var(--ui-bg-surface-hover); }

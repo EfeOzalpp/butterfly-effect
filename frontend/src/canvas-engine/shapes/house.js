@@ -22,15 +22,17 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 }
 
 export const HOUSE_BASE_PALETTE = {
-  grass: { r: 142, g: 194, b: 118 },
+  grass: { r: 146, g: 188, b: 126 },
   body: [
-    { r: 198, g: 216, b: 234 },
-    { r: 224, g: 220, b: 206 },
-    { r: 214, g: 228, b: 204 },
-    { r: 228, g: 222, b: 232 },
-    { r: 223, g: 234, b: 244 },
-    { r: 206, g: 200, b: 222 },
-    { r: 236, g: 226, b: 212 },
+    { r: 190, g: 212, b: 236 },
+    { r: 230, g: 222, b: 202 },
+    { r: 202, g: 228, b: 190 },
+    { r: 236, g: 214, b: 228 },
+    { r: 214, g: 238, b: 246 },
+    { r: 202, g: 198, b: 222 },
+    { r: 238, g: 228, b: 208 },
+    { r: 208, g: 230, b: 216 },
+    { r: 236, g: 214, b: 210 },
   ],
   roof: [
     { r: 220, g: 136, b: 116 },
@@ -485,14 +487,14 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     winLitVariants = winLitVariants.map((c) => blendRGB(c, opts.gradientRGB, k));
     winDark = blendRGB(winDark, opts.gradientRGB, k);
   }
-  winLitVariants = winLitVariants.map((c) => {
-    let toned = c;
-    if (!opts?.darkMode) {
-      toned = driveSaturation(toned, 0.4, 0.28, 0.4);
-      toned = clampBrightness(toned, 0.7, 0.95);
-    }
-    return applyExposureContrast(toned, ex, ct);
-  });
+    winLitVariants = winLitVariants.map((c) => {
+      let toned = c;
+      if (!opts?.darkMode) {
+        toned = driveSaturation(toned, 0.4, 0.24, 0.34);
+        toned = clampBrightness(toned, 0.66, 0.9);
+      }
+      return applyExposureContrast(toned, ex, ct);
+    });
   winDark = applyExposureContrast(winDark, ex, ct);
 
   const cellsH = bodyH / cell;

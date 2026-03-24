@@ -1,13 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { usePreferences } from "../../app/state/preferences-context";
 
-/**
- * DarkModeToggle (simplified with icon)
- * - Same styling as .nav-toggle
- * - Shows Sun icon when prompting "Light Mode"
- * - Shows Moon icon when prompting "Dark Mode"
- */
-
 function SunIcon({ className = "", ...props }) {
   return (
     <svg

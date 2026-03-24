@@ -28,9 +28,9 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
    ─────────────────────────────────────────────────────────── */
 export const TREES_BASE_PALETTE = {
   grass: [
-    { r: 108, g: 182, b: 88 },
-    { r: 126, g: 202, b: 108 },
-    { r: 98, g: 172, b: 80 },
+    { r: 122, g: 172, b: 102 },
+    { r: 142, g: 192, b: 122 },
+    { r: 112, g: 162, b: 97 },
   ],
   asphalt: { r: 125, g: 125, b: 125 },
   trunk:   { r: 110, g: 85,  b: 60 },
@@ -242,10 +242,10 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   let g2 = pickFromKey(pal.grass, seedKey, 'grass2');
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(TREES.grass.colorBlend, u));
-  grassTint = clampSaturation(grassTint, TREES.grass.satRange[0], TREES.grass.satRange[1], 1);
-  grassTint = opts?.darkMode
-    ? clampBrightness(grassTint, 0.32, 0.48)
-    : clampBrightness(grassTint, 0.5, 0.78);
+  if (opts?.darkMode) {
+    grassTint = clampSaturation(grassTint, TREES.grass.satRange[0], TREES.grass.satRange[1], 1);
+    grassTint = clampBrightness(grassTint, 0.32, 0.48);
+  }
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const grassH = h * 0.55;

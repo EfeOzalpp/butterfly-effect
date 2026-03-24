@@ -15,6 +15,8 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const { data } = useSurveyData();
   const windowWidth = useWindowWidth();
   const isNarrow = windowWidth <= 768;
+  const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
+  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 120 : 0) + (widgetsOpen ? 40 : 0)) * aspectRatio : 0;
   const [showHint, setShowHint] = useState(false);
   const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>(null);
   const barGraphExpanded = expandedWidget === "bar";
@@ -23,7 +25,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const widgetsRef = useRef<HTMLDivElement | null>(null);
   const logsWrapRef = useRef<HTMLDivElement | null>(null);
   const [logsSlide, setLogsSlide] = useState(0);
-  const [widgetsSlide, setWidgetsSlide] = useState(0);
 
   useEffect(() => {
     if (!vizVisible) {
@@ -42,15 +43,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     }
   }, [logsOpen, isNarrow]);
 
-  useEffect(() => {
-    if (widgetsOpen && !isNarrow && widgetsRef.current) {
-      const panelWidth = Math.min(320, window.innerWidth - 51.2);
-      const btnWidth = widgetsRef.current.offsetWidth;
-      setWidgetsSlide(Math.max(0, panelWidth - btnWidth));
-    } else {
-      setWidgetsSlide(0);
-    }
-  }, [widgetsOpen, isNarrow]);
 
   if (!cityPanelOpen && !questionnaireOpen && !vizVisible) return null;
 
@@ -250,13 +242,15 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             </button>
           </div>
         )}
-        {vizVisible && (
-          <div style={{ marginLeft: widgetsSlide > 0 ? `${widgetsSlide}px` : undefined, transition: "margin-left 0.2s ease" }}>
-            <ModeToggle />
-          </div>
-        )}
-
       </div>
+      {vizVisible && (
+        <div
+          className="bottom bottom-center"
+          style={{ transform: `translateX(calc(-50% + ${pickerOffset}px))`, transition: "transform 0.2s ease" }}
+        >
+          <ModeToggle />
+        </div>
+      )}
     </>
   );
 }

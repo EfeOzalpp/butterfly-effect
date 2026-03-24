@@ -159,13 +159,13 @@
   border: none;
   border-top: 1px solid var(--ui-border);
   border-radius: 0;
-  background: var(--ui-bg-muted);
+  background: var(--ui-bg-surface);
   color: var(--ui-text);
   text-align: center;
 }
 
 .widgets-close-strip:hover {
-  background: var(--ui-bg-muted-hover);
+  background: var(--ui-bg-surface-hover);
 }
 
 .widgets-close-strip svg {

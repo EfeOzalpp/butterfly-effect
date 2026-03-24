@@ -53,17 +53,14 @@
   --survey-btn-bg-soft: #f8fef5;
 
   /* global ui theme tokens */
-  --ui-bg-page: #edeff3;
+  --ui-bg-page: linear-gradient(180deg, #edf1f6 0%, #f0f3f7 100%);
+  --ui-bg-onboarding: linear-gradient(120deg, #e8ecf2 10%, #f0f4f8 90%);
 
-  --ui-bg-surface: rgb(241, 245, 249);
-  --ui-bg-surface-glass: rgba(241, 245, 249, 0.714);
-  --ui-bg-surface-hover: rgb(232, 236, 240);
-  --ui-bg-surface-selected: rgba(176, 237, 173, 0.468);
+  --ui-bg-surface: #f8fafc;
+  --ui-bg-surface-glass: rgba(248, 250, 252, 0.714);
+  --ui-bg-surface-hover: #edf0f4;
+  --ui-bg-surface-selected: #d5f2d4;
   --ui-bg-surface-active: #e5e5e9;
-
-  --ui-bg-muted: #f0f2f7;
-  --ui-bg-muted-hover: rgb(233, 236, 241);
-  --ui-bg-muted-selected: rgba(176, 237, 173, 0.468);
 
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
   --btn-drop-shadow: #ffffff;
@@ -86,11 +83,11 @@
   --btn-border-width: 2px;
   --btn-hover-scale: 1.01;
 
-  --btn-secondary-bg: rgb(241, 245, 249);
+  --btn-secondary-bg: #f4f6f9;
   --btn-secondary-text: var(--ui-text);
-  --btn-secondary-border: #cfd6de;
-  --btn-secondary-hover-bg: rgb(233, 236, 241);
-  --btn-secondary-hover-border: #bcc5cf;
+  --btn-secondary-border: #ccd3db;
+  --btn-secondary-hover-bg: #eaedf2;
+  --btn-secondary-hover-border: #b8c2cc;
 
   --btn-primary-bg: var(--color-accent-green);
   --btn-primary-text: #213129;
@@ -116,11 +113,12 @@
   --hint-text: #e7e7e7;
   --hint-border: rgba(147, 150, 152, 0.365);
 
-  --mode-toggle: rgb(232, 236, 241);
-  --mode-toggle-active: rgb(244, 249, 253);
-  --mode-toggle-border: var(--ui-border);
+  --mode-toggle: #edeff3;
+  --mode-toggle-active: #f7f9fc;
+  --mode-toggle-active-border: #aaaaaab7;
+  --mode-toggle-border: #a5aeb9;
 
-  --graph-bg: radial-gradient(circle, #f2f5fa 0%, #ebeef2 50%, #edeef0 100%);
+  --graph-bg: linear-gradient(to right, #f1f4f8 0%, #f4f6f8 100%);
 
   /* graph signal colors — RGB triplets for rgba() composition in keyframes */
   --graph-green-hi-rgb: 0, 220, 60;
@@ -143,10 +141,6 @@
   --ui-bg-surface-selected: rgb(70, 117, 82);
   --ui-bg-surface-active: #4a4a4f;
 
-  --ui-bg-muted: rgb(44, 44, 49);
-  --ui-bg-muted-hover: rgb(58, 58, 66);
-  --ui-bg-muted-selected: rgb(70, 117, 82);
-
   --ui-drop-shadow: #16213331;
   --btn-drop-shadow: #191a1c;
 
@@ -160,7 +154,7 @@
   --ui-error: #ff8f8f;
 
   /* Primary button color */
-  --survey-btn-bg: linear-gradient(135deg, #30a84ce3 0%, #617ac6de 100%);
+  --survey-btn-bg: linear-gradient(135deg, rgb(70, 117, 82) 0%, #41436a 100%);
   --survey-btn-bg-hover: linear-gradient(135deg, rgb(67, 155, 90) 0%, #7c94dc 100%);
 
   --btn-secondary-bg: #262626;
@@ -197,6 +191,7 @@
 
   --mode-toggle: #2e2f35;
   --mode-toggle-active: #4a4a4f;
+  --mode-toggle-active-border: #0040ff3f;
   --mode-toggle-border: #7071743f;
 
   /* graph signal colors — blue-shifted for dark bg */

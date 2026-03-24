@@ -10,7 +10,7 @@ import { useTextureQueueProgress } from '../sprites/entry';
 import useHoverBubble from './hooks/useHoverBubble';
 import useObserverDelay from './hooks/useObserverDelay';
 import useObserverSpotlight from './hooks/useObserverSpotlight';
-import GraphOverlays from './components/GraphOverlays';
+import GraphOverlays from './components/GraphLoading';
 import ShapesLayer from './components/ShapesLayer';
 import PersonalizedLayer from './components/PersonalizedLayer';
 import HoveredLayer from './components/GeneralizedLayer';
