@@ -11,11 +11,7 @@ export { default as useOrbitController } from './useOrbitController';
 export { default as useZoom } from './hooks/useZoom';
 export { default as useRotation } from './hooks/useRotation';
 export { default as useActivity } from './hooks/useActivity';
-export { default as useIdleDrift } from './hooks/useIdleDrift';
 export { default as usePixelOffsets } from './hooks/usePixelOffsets';
-
-// Controllers
-export { useEdgeCueController } from './controller/edgeCue.controller';
 
 // Pure computations
 export { computeTooltipOffsetPx } from './compute/tooltipOffset';

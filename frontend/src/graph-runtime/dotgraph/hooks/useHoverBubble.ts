@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import { computeHoverViewportClass } from '../utils/hoverViewport';
-import { useOptionalInteraction } from '../../../app/state/interaction-context';
 
 export type DotLike = {
   _id: string;
@@ -16,7 +15,6 @@ export type HoveredDot = {
 
 export type UseHoverBubbleArgs = {
   useDesktopLayout: boolean;
-  isDragging: boolean;
   isPinchingRef?: React.RefObject<boolean>;
   isTouchRotatingRef?: React.RefObject<boolean>;
   calcPercentForAvg?: (avg: number) => number;
@@ -24,19 +22,17 @@ export type UseHoverBubbleArgs = {
 
 export default function useHoverBubble({
   useDesktopLayout,
-  isDragging,
   isPinchingRef,
   isTouchRotatingRef,
   calcPercentForAvg,
 }: UseHoverBubbleArgs) {
-  const interaction = useOptionalInteraction();
   const [hoveredDot, setHoveredDot] = useState<HoveredDot | null>(null);
   const [viewportClass, setViewportClass] = useState<string>('');
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onHoverStart = useCallback(
     (dot: DotLike, e: any) => {
-      if (isDragging || isPinchingRef?.current || isTouchRotatingRef?.current) return;
+      if (isPinchingRef?.current || isTouchRotatingRef?.current) return;
 
       const native = e?.nativeEvent ?? e;
       const clientX = native?.clientX;
@@ -68,17 +64,15 @@ export default function useHoverBubble({
         color: dot.color,
       });
 
-      interaction?.setHoverOpen(true);
     },
-    [useDesktopLayout, isDragging, isPinchingRef, isTouchRotatingRef, calcPercentForAvg]
+    [useDesktopLayout, isPinchingRef, isTouchRotatingRef, calcPercentForAvg]
   );
 
   const onHoverEnd = useCallback(() => {
-    if (isDragging || isPinchingRef?.current) return;
+    if (isPinchingRef?.current) return;
     setHoveredDot(null);
     setViewportClass('');
-    interaction?.setHoverOpen(false);
-  }, [isDragging, isPinchingRef]);
+  }, [isPinchingRef]);
 
   return {
     hoveredDot,

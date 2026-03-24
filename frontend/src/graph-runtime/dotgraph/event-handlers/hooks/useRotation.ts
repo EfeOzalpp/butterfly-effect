@@ -24,7 +24,6 @@ export type UseRotationParams = {
   maxRadius: number;
   radius: number;
   markActivity?: () => void;
-  isDragging?: boolean;
   gestureRef?: RefObject<GestureState>;
 
   // add: info panel gate
@@ -47,7 +46,6 @@ export default function useRotation({
   maxRadius,
   radius,
   markActivity,
-  isDragging,
   gestureRef,
   menuOpenRef,
 }: UseRotationParams): UseRotationReturn {
@@ -142,11 +140,7 @@ export default function useRotation({
 
   const isMovingRef = useRef(false);
 
-  // Live mirror of isDragging for single-bound handlers & frames
-  const isDraggingRef = useRef(!!isDragging);
-  useEffect(() => {
-    isDraggingRef.current = !!isDragging;
-  }, [isDragging]);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     const dpr = window.devicePixelRatio || 1;

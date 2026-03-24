@@ -5,7 +5,7 @@ import "../../styles/graph-picker.css";
 import { useInteraction } from "../../app/state/interaction-context";
 import {
   useGraphPickerData,
-  SPECIAL, CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
+  CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
   NON_PERSONAL_IDS, titleFromId,
 } from "./useGraphPickerData";
 
@@ -150,12 +150,11 @@ export default function GraphPicker({
         onKeyDown={onTriggerKeyDown}
         tabIndex={0}
       >
-        <span className="gp-trigger-label">
-          <span className="gp-trigger-prefix">Viewing:</span> {triggerCoreLabel}
+        <span className="gp-trigger-label"><h4>{triggerCoreLabel}</h4>
         </span>
         <span className="gp-trigger-chevron" aria-hidden>
-          <svg className="section-chevron-svg ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <polyline points="6 9 12 15 18 9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg className="section-chevron-svg ui-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 15L12 20L17 15M7 9L12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </span>
       </div>
@@ -191,8 +190,8 @@ export default function GraphPicker({
                 {isBack ? (
                   <>
                     <span className="gp-back-icon" aria-hidden>
-                      <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="15 18 9 12 15 6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg className="ui-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 14L4 9M4 9L9 4M4 9H10.4C13.7603 9 15.4405 9 16.7239 9.65396C17.8529 10.2292 18.7708 11.1471 19.346 12.2761C20 13.5595 20 15.2397 20 18.6V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </span>
                     <span className="gp-label">{opt.label.replace("‹ ", "")}</span>

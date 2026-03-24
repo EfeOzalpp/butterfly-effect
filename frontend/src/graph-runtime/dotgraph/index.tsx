@@ -35,13 +35,12 @@ void DESTROY_SETTLE_MS; // (kept for parity; not used)
 // Minimal props typing (tighten later)
 type WebGLCanvasProps = {
   data: any[];
-  isDragging?: boolean;
   lowFidelity: boolean;
   dpr: number | [number, number];
 };
 
 /* ------------------------------ WebGL Canvas ------------------------------ */
-function WebGLCanvas({ data, isDragging, lowFidelity, dpr }: WebGLCanvasProps) {
+function WebGLCanvas({ data, lowFidelity, dpr }: WebGLCanvasProps) {
   const rendererRef = useRef<any>(null);
 
   // New generation cancels any stale queued texture jobs
@@ -161,7 +160,7 @@ function WebGLCanvas({ data, isDragging, lowFidelity, dpr }: WebGLCanvasProps) {
       />
 
       {/* Graph */}
-      <DotGraph data={data} isDragging={isDragging} />
+      <DotGraph data={data} />
 
       {/* Perf helpers */}
       <AdaptiveDpr pixelated />
@@ -172,11 +171,7 @@ function WebGLCanvas({ data, isDragging, lowFidelity, dpr }: WebGLCanvasProps) {
 }
 
 /* --------------------------------- Wrapper -------------------------------- */
-type GraphProps = {
-  isDragging?: boolean;
-};
-
-const Graph = ({ isDragging }: GraphProps) => {
+const Graph = () => {
   const { vizVisible } = useUiFlow();
   const { data: surveyData, loading, section } = useSurveyData();
   const isRealMobile = useRealMobileViewport();
@@ -254,7 +249,6 @@ const Graph = ({ isDragging }: GraphProps) => {
         <WebGLCanvas
           key={mountVersion}
           data={safeData}
-          isDragging={isDragging}
           lowFidelity={lowFidelity}
           dpr={dpr}
         />

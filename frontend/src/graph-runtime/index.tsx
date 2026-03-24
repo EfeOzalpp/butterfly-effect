@@ -39,7 +39,7 @@ export default function VisualizationPage() {
   return (
     <GraphDataProvider data={data}>
       <Suspense fallback={pageLoadingFallback}>
-        <Graph isDragging={false} />
+        <Graph />
       </Suspense>
     </GraphDataProvider>
   );

@@ -12,7 +12,7 @@
   --type-h4-size: clamp(0.92rem, 0.94rem + 0.35vw, 1rem);
   --type-p-size: 0.98rem;
   --type-small-size: 0.9rem;
-  --type-label-size: 0.86rem;
+  --type-label-size: 0.95rem;
 
   --type-h-line: 1.62;
   --type-h2-line: 1.42;
@@ -57,7 +57,7 @@
   --ui-bg-onboarding: linear-gradient(120deg, #e8ecf2 10%, #f0f4f8 90%);
 
   --ui-bg-surface: #f8fafc;
-  --ui-bg-surface-glass: rgba(248, 250, 252, 0.714);
+  --ui-bg-surface-glass: rgba(248, 250, 252, 0.7);
   --ui-bg-surface-hover: #edf0f4;
   --ui-bg-surface-selected: #d5f2d4;
   --ui-bg-surface-active: #e5e5e9;
@@ -113,12 +113,9 @@
   --hint-text: #e7e7e7;
   --hint-border: rgba(147, 150, 152, 0.365);
 
-  --mode-toggle: #edeff3;
-  --mode-toggle-active: #f7f9fc;
-  --mode-toggle-active-border: #aaaaaab7;
-  --mode-toggle-border: #a5aeb9;
+  --mode-toggle-active: #d5f2d4;
 
-  --graph-bg: linear-gradient(to right, #f1f4f8 0%, #f4f6f8 100%);
+  --graph-bg: #f4f7f9;
 
   /* graph signal colors — RGB triplets for rgba() composition in keyframes */
   --graph-green-hi-rgb: 0, 220, 60;
@@ -132,67 +129,66 @@
 }
 
 :root[data-theme="dark"] {
-  --ui-bg-page: linear-gradient(180deg, #181818 0%, #1e1e1e 100%);
-  --ui-bg-onboarding: linear-gradient(120deg, #181818 10%, #202128 90%);
-  
-  --ui-bg-surface: rgb(43, 43, 45);
-  --ui-bg-surface-glass: rgba(39, 39, 42, 0.82);
-  --ui-bg-surface-hover: rgb(72, 73, 77);
+  --ui-bg-page: #111111;
+  --ui-bg-onboarding: #161616;
+
+  --ui-bg-surface: #2c2c2c;
+  --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
+  --ui-bg-surface-hover: #3a3a3a;
   --ui-bg-surface-selected: rgb(70, 117, 82);
-  --ui-bg-surface-active: #4a4a4f;
+  --ui-bg-surface-active: #474747;
 
-  --ui-drop-shadow: #16213331;
-  --btn-drop-shadow: #191a1c;
+  --ui-bg-selectable: #2c2c2c;
 
-  --ui-text: #e5edf5;
-  --ui-text-secondary: #c8cdd8;
-  --ui-text-muted: #b8c6d6;
-  --ui-border: #7071743f;
-  --ui-border-strong: #454e5b;
-  --scroll-bar: rgb(95, 100, 105);
-  --ui-radio-icon: #edf3fade;
+  --ui-drop-shadow: rgba(0, 0, 0, 0.4);
+  --btn-drop-shadow: #0a0a0a;
+
+  --ui-text: #ffffff;
+  --ui-text-secondary: rgba(255, 255, 255, 0.85);
+  --ui-text-muted: rgba(255, 255, 255, 0.7);
+  --ui-border: rgba(255, 255, 255, 0.08);
+  --ui-border-strong: rgba(255, 255, 255, 0.2);
+  --scroll-bar: #595959;
+  --ui-radio-icon: #ffffff;
   --ui-error: #ff8f8f;
 
   /* Primary button color */
-  --survey-btn-bg: linear-gradient(135deg, rgb(70, 117, 82) 0%, #41436a 100%);
+  --survey-btn-bg: linear-gradient(135deg, #4e4f6b 100%);
   --survey-btn-bg-hover: linear-gradient(135deg, rgb(67, 155, 90) 0%, #7c94dc 100%);
 
-  --btn-secondary-bg: #262626;
-  --btn-secondary-text: #eef3f7;
-  --btn-secondary-border: #323232;
-  --btn-secondary-hover-bg: rgb(56, 56, 56);
-  --btn-secondary-hover-border: rgb(70, 70, 70);
+  --btn-secondary-bg: #2c2c2c;
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-border: #474747;
+  --btn-secondary-hover-bg: #3a3a3a;
+  --btn-secondary-hover-border: #595959;
 
-  --btn-primary-bg: rgb(70, 117, 82); 
+  --btn-primary-bg: rgb(70, 117, 82);
   --btn-primary-text: #ecf5ef;
   --btn-primary-border: #4f8f4c;
-  --btn-primary-icon: #9dd4a8;
-  --btn-primary-hover-bg: rgb(71, 128, 86); 
+  --btn-primary-icon: #aed1b5;
+  --btn-primary-hover-bg: rgb(71, 128, 86);
   --btn-primary-hover-border: rgb(80, 193, 110);
 
   --btn-tertiary-bg: transparent;
   --btn-tertiary-text: var(--ui-text);
   --btn-tertiary-border: none;
-  --btn-tertiary-hover-bg: rgba(229, 237, 245, 0.1);
-  --btn-tertiary-hover-border: rgba(148, 163, 184, 0.6);
+  --btn-tertiary-hover-bg: rgba(255, 255, 255, 0.08);
+  --btn-tertiary-hover-border: rgba(255, 255, 255, 0.2);
 
-  --auto-adjust-off: #262626; 
+  --auto-adjust-off: #2c2c2c;
   --auto-adjust-on: rgb(70, 117, 82);
   --thumb: #ffffff96;
   --thumb-after: #ffffffd6;
-  --auto-adjust-border: #262626;
+  --auto-adjust-border: #474747;
 
-  --hint-bg: #262626;
-  --hint-bg-hover: #313436;
-  --hint-text: #e9e9e9;
-  --hint-border: #7071743f;
+  --hint-bg: #2c2c2c;
+  --hint-bg-hover: #3a3a3a;
+  --hint-text: #ffffff;
+  --hint-border: rgba(255, 255, 255, 0.1);
 
-  --graph-bg: radial-gradient(circle, #1d1f26 0%, #1a1b1f 50%, #131315 100%);
+  --graph-bg: radial-gradient(#1d1d1d 0%, red 100%);
 
-  --mode-toggle: #2e2f35;
-  --mode-toggle-active: #4a4a4f;
-  --mode-toggle-active-border: #0040ff3f;
-  --mode-toggle-border: #7071743f;
+  --mode-toggle-active: rgb(70, 117, 82);
 
   /* graph signal colors — blue-shifted for dark bg */
   --graph-green-hi-rgb: 35, 195, 115;
@@ -258,9 +254,6 @@ h4 {
   transition: transform 0.15s ease;
 }
 
-.btn:hover {
-  transform: none;
-}
 
 .btn--primary {
   background: var(--btn-primary-bg);

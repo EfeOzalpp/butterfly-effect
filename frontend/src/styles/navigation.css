@@ -165,31 +165,22 @@
 
 .observe-results,
 .nav-toggle,
-.system-color,
-.info-close { pointer-events: all; }
+.system-color { pointer-events: all; }
 
 .observe-results { min-height: 46px; }
 
 .nav-toggle,
 .observe-results,
-.system-color,
-.info-close {
+.system-color {
   cursor: pointer;
 }
 
 
 .nav-toggle.is-dark,
-.observe-results.is-dark,
 .system-color.is-dark,
-.info-close.is-dark,
-.right.is-dark .nav-toggle,
-.right.is-dark .observe-results,
-.right.is-dark .info-close {
+.right.is-dark .nav-toggle {
   opacity: 0.95;
 }
-
-.navigation.info-open .right { display: none; }
-.navigation.info-open .info-close { display: inline-flex; }
 
 /* Bottom mode toggle — lives inside .bottom */
 .mode-toggle-wrap {
@@ -220,26 +211,43 @@
 
 .mode-toggle-thumb {
   position: absolute;
-  top: 0.2rem;
-  bottom: 0.2rem;
-  width: calc(48%);
-  border-radius: calc(var(--btn-radius) - 3px);
+  top: 0;
+  bottom: 0;
+  width: 50%;
   background: var(--mode-toggle-active);
-  border: 1px solid var(--mode-toggle-active-border);
   transition: left 140ms cubic-bezier(.4,0,.2,1);
 }
-.mode-toggle-thumb.relative { left: 0.2rem; }
-.mode-toggle-thumb.absolute { left: calc(52% - 0.2em); }
+.mode-toggle-thumb.relative {
+  left: 0;
+  border-radius: calc(var(--btn-radius) - 3px) 0 0 calc(var(--btn-radius) - 3px);
+}
+.mode-toggle-thumb.absolute {
+  left: 50%;
+  border-radius: 0 calc(var(--btn-radius) - 3px) calc(var(--btn-radius) - 3px) 0;
+}
 
 .mode-toggle-label {
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   text-align: center;
   color: var(--ui-text);
+  font-size: var(--type-h4-size);
+  font-weight: 420;
+  line-height: var(--type-tight-line);
+  font-family: var(--font-title);
+  font-optical-sizing: auto;
+  font-variation-settings: "wdth" 112.5, "GRAD" 0;
   transition: color 0.15s ease;
 }
-.mode-toggle-label.active {
-  color: var(--ui-text);
+
+.mode-toggle-check {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 /* City overlay/button */
@@ -284,7 +292,7 @@
 .city-canvas-host { position: absolute; inset: 0; width: 100%; height: 100%; }
 .bottom {
   position: fixed;
-  bottom: 1.5em;
+  bottom: 1rem;
   z-index: 201;
   pointer-events: none;
   display: flex;
@@ -292,12 +300,12 @@
   align-items: center;
   gap: 0.6rem;
 }
-.bottom-left { left: 2.6rem; }
+.bottom-left { left: 1.8rem; }
 .bottom-center {
   left: 50%;
   transform: translateX(-50%);
 }
-.bottom-right { right: 2.6rem; }
+.bottom-right { right: 1.8rem; }
 
 .city-close-btn {
   pointer-events: all;
@@ -340,8 +348,7 @@
   .observe-results { min-width: 40vw; }
   .observe-results.active { min-width: 16vw; }
 
-  .system-color,
-  .info-close { width: var(--nav-control-h); }
+  .system-color { width: var(--nav-control-h); }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -361,8 +368,7 @@
   .observe-results { min-width: 220px; }
   .observe-results.active { min-width: 120px; }
 
-  .system-color,
-  .info-close { width: var(--nav-control-h); }
+  .system-color { width: var(--nav-control-h); }
 }
 
 @media (min-width: 1025px) {

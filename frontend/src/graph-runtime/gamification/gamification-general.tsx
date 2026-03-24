@@ -72,8 +72,6 @@ export default function GamificationGeneral({
   const isBottomBand = !isSolo && b === 0;
   const isNearTop = !isSolo && !isTopBand && (SMALL ? a === 1 : q >= TOP_Q - NEAR_M);
   const isNearBottom = !isSolo && !isBottomBand && (SMALL ? b === 1 : q <= BOTTOM_Q + NEAR_M);
-  const isMiddleBand =
-    !isSolo && !isTopBand && !isBottomBand && !isNearTop && !isNearBottom;
 
   // canonical tie state (derived)
   const canonicalTie =
@@ -121,104 +119,47 @@ export default function GamificationGeneral({
   let relativeLine = null;
 
   if (mode === 'relative') {
-    if (isSolo) {
-      relativeLine = <>First one here.</>;
-    } else if (isTopBand) {
-      if (canonicalTie === 'tiedTop') {
-        relativeLine = (
-          <Lines>
-            <span><Strong>Top</Strong> spot.</span>
-            <span>Tied with {e}</span>
-          </Lines>
-        );
-      } else {
-        relativeLine = <>
-          <Strong>Top</Strong> of the group
-        </>;
-      }
-    } else if (isNearTop) {
-      if (e > 0) {
-        relativeLine = (
-          <Lines>
-            <span>Near <Strong>Top</Strong>.</span>
-            <span>Tied with {e}</span>
-            <span>Behind {a}</span>
-          </Lines>
-        );
-      } else {
-        relativeLine = (
-          <Lines>
-            <span>Near <Strong>Top</Strong>.</span>
-            <span>Behind {a}</span>
-          </Lines>
-        );
-      }
-    } else if (isBottomBand) {
-      if (canonicalTie === 'tiedBottom') {
-        relativeLine = (
-          <Lines>
-            <span><Strong>Bottom</Strong>.</span>
-            <span>Tied with {e}</span>
-          </Lines>
-        );
-      } else {
-        relativeLine = <><Strong>Bottom</Strong></>;
-      }
-    } else if (isNearBottom) {
-      if (e > 0) {
-        relativeLine = (
-          <Lines>
-            <span>Near <Strong>Bottom</Strong>.</span>
-            <span>Tied with {e}</span>
-            <span>Ahead of {b}</span>
-          </Lines>
-        );
-      } else {
-        relativeLine = (
-          <Lines>
-            <span>Near <Strong>Bottom</Strong>.</span>
-            <span>Ahead of {b}</span>
-          </Lines>
-        );
-      }
-    } else if (isMiddleBand) {
-      if (canonicalTie === 'tiedMiddle') {
-        relativeLine = (
-          <Lines>
-            <span><Strong>Middle</Strong>.</span>
-            <span>Tied with {e}</span>
-            <span>Ahead of {b}</span>
-            <span>Behind {a}</span>
-          </Lines>
-        );
-      } else if (a < b) {
-        relativeLine = (
-          <Lines>
-            <span><Strong>Middle</Strong>.</span>
-            <span>Behind {a}</span>
-          </Lines>
-        );
-      } else if (b < a) {
-        relativeLine = (
-          <Lines>
-            <span><Strong>Middle</Strong>.</span>
-            <span>Ahead of {b}</span>
-          </Lines>
-        );
-      } else {
-        relativeLine = (
-          <Lines>
-            <span><Strong>Middle</Strong>.</span>
-            <span>Ahead of {b}</span>
-            <span>Behind {a}</span>
-          </Lines>
-        );
+    const band = isSolo ? 'solo' : isTopBand ? 'top' : isBottomBand ? 'bottom' : isNearTop ? 'nearTop' : isNearBottom ? 'nearBottom' : 'middle';
+
+    switch (band) {
+      case 'solo':
+        relativeLine = <>First one here.</>;
+        break;
+      case 'top':
+        relativeLine = canonicalTie === 'tiedTop'
+          ? <Lines><span><Strong>Top</Strong> spot.</span><span>Tied with {e}</span></Lines>
+          : <><Strong>Top</Strong> of the group</>;
+        break;
+      case 'nearTop':
+        relativeLine = e > 0
+          ? <Lines><span>Near <Strong>Top</Strong>.</span><span>Tied with {e}</span><span>Behind {a}</span></Lines>
+          : <Lines><span>Near <Strong>Top</Strong>.</span><span>Behind {a}</span></Lines>;
+        break;
+      case 'bottom':
+        relativeLine = canonicalTie === 'tiedBottom'
+          ? <Lines><span><Strong>Bottom</Strong>.</span><span>Tied with {e}</span></Lines>
+          : <><Strong>Bottom</Strong></>;
+        break;
+      case 'nearBottom':
+        relativeLine = e > 0
+          ? <Lines><span>Near <Strong>Bottom</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span></Lines>
+          : <Lines><span>Near <Strong>Bottom</Strong>.</span><span>Ahead of {b}</span></Lines>;
+        break;
+      default: {
+        // middle
+        if (canonicalTie === 'tiedMiddle') {
+          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
+        } else if (a < b) {
+          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Behind {a}</span></Lines>;
+        } else if (b < a) {
+          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Ahead of {b}</span></Lines>;
+        } else {
+          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
+        }
       }
     }
 
-    if (!relativeLine) {
-      relativeLine = <>In the mix.</>;
-    }
+    if (!relativeLine) relativeLine = <>In the mix.</>;
   }
 
   const line =

@@ -20,11 +20,10 @@ import useDotGraphPersonalizationModel from './orchestration/useDotGraphPersonal
 import useDotGraphTieState from './orchestration/useDotGraphTieState';
 
 type DotGraphProps = {
-  isDragging?: boolean;
   data?: any[];
 };
 
-export default function DotGraph({ isDragging = false, data = [] }: DotGraphProps) {
+export default function DotGraph({ data = [] }: DotGraphProps) {
   const { darkMode, mode } = usePreferences();
   const { observerMode } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
@@ -59,7 +58,6 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
       personalizationGate.hasPersonalizedInDataset &&
       personalizationGate.shouldShowPersonalized,
     darkMode,
-    isDragging,
     wantsSkew: personalizationGate.wantsSkew,
   });
 
@@ -92,7 +90,6 @@ export default function DotGraph({ isDragging = false, data = [] }: DotGraphProp
 
   const { hoveredDot, viewportClass, onHoverStart, onHoverEnd } = useHoverBubble({
     useDesktopLayout: scene.useDesktopLayout,
-    isDragging,
     isPinchingRef: scene.isPinchingRef,
     isTouchRotatingRef: scene.isTouchRotatingRef,
     calcPercentForAvg: calcValueForAvg,

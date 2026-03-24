@@ -38,10 +38,6 @@
   border-color: var(--ui-border-strong);
 }
 .gp-trigger.is-open .gp-trigger-chevron svg { transform: rotate(180deg); }
-.gp-trigger-prefix {
-  color: var(--ui-text-secondary);
-  font-weight: var(--fw-bold);
-}
 .gp-trigger-label {
   display: inline-block;
   flex: 1 1 auto;
@@ -136,7 +132,9 @@
 }
 
 @media (min-width: 1025px) {
-  .gp-picker { max-width: 320px; }
+  .gp-picker { max-width: 220px; min-width: 220px; }
+  .gp-picker:has(.gp-trigger.is-open) { max-width: 320px; min-width: 320px; }
+  .gp-listbox { max-width: 320px; min-width: 320px; }
 }
 
 /* Theme wiring: graph picker */

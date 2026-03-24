@@ -91,7 +91,7 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--ui-border);
-  background: var(--ui-bg-surface);
+  background: var(--ui-bg-selectable);
   border-radius: var(--radius-lg);
   overflow: hidden;
   gap: 0;
@@ -231,6 +231,17 @@
 /* Left-side scrim: separates questionnaire zone from canvas */
 
 @media (min-width: 1024px) {
+
+  .survey-section:has(.survey.survey-step.role-select ) { 
+    height: 100%; padding: 0 9rem 3rem 0rem;}
+  .survey.survey-step.role-select {
+    background: var(--ui-bg-surface);
+    height: 100%;
+    box-shadow: 0 18px 42px var(--ui-drop-shadow);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border: 1px solid var(--ui-border);
+  }
+
   .radio-button { width: 1.1rem; height: 1.1rem; min-width: 1.1rem; min-height: 1.1rem; }
 
   /* titles */
@@ -243,7 +254,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 56dvw;
+    width: 100dvw;
     height: 100dvh;
   }
   .radio-group {
@@ -294,7 +305,7 @@
     min-width: 400px; max-width: 400px; }
   .q-option { padding-left: 0.1rem; }
   .survey.survey-step.questionnaire { max-width: 100%; position: relative; top: 0.9rem;}
-  .user-flow {width: 44vw; background: var(--ui-bg-onboarding);}
+  .user-flow {width: 44vw; }
   .user-flow.questionnaire-active,
   .user-flow.graph-active {
     width: 100dvw;

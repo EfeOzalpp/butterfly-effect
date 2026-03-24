@@ -14,7 +14,6 @@ type UseDotGraphSceneModelParams = {
   personalizedEntryId: string | null;
   showPersonalized: boolean;
   darkMode: boolean;
-  isDragging: boolean;
   wantsSkew: boolean;
 };
 
@@ -25,7 +24,6 @@ export default function useDotGraphSceneModel({
   personalizedEntryId,
   showPersonalized,
   darkMode,
-  isDragging,
   wantsSkew,
 }: UseDotGraphSceneModelParams) {
   const width = typeof window !== 'undefined' ? document.documentElement.clientWidth : 1024;
@@ -45,14 +43,13 @@ export default function useDotGraphSceneModel({
     maxRadius,
     tooltipOffsetPx,
   } = useOrbitController({
-    isDragging,
     layout: {
       useDesktopLayout,
       isSmallScreen,
       isTabletLike,
       xOffset: 0,
       yOffset: 0,
-      xOffsetPx: (wantsSkew ? -112 : 0) + (windowWidth > 768 ? (ui?.logsOpen ? 120 : 0) + (ui?.widgetsOpen ? 40 : 0) : 0),
+      xOffsetPx: (wantsSkew ? -112 : 0) + (windowWidth > 768 ? (ui?.logsOpen ? 130 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0),
       yOffsetPx: wantsSkew ? 12 : 0,
     },
     bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },

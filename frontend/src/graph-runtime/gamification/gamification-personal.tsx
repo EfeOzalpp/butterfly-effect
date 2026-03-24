@@ -206,38 +206,45 @@ export default function GamificationPersonalized({
   if (mode === 'relative') {
     const { band, tie, b: bb, e: ee, a: aa } = bandInfo;
 
-    if (band === 'solo') {
-      relativeLine = <>You’re the first one here.</>;
-    } else if (band === 'top') {
-      relativeLine = tie === 'tiedTop'
-        ? <>You’re sharing the very <Strong>Top</Strong> with {ee}.</>
-        : <>You’re on <Strong>Top</Strong>, ahead of everyone else.</>;
-    } else if (band === 'nearTop') {
-      relativeLine = ee > 0
-        ? <>You’re close to the <Strong>Top</Strong>, tied with {ee} and behind {aa}.</>
-        : <>You’re close to the <Strong>Top</Strong>, behind {aa}.</>;
-    } else if (band === 'bottom') {
-      relativeLine = tie === 'tiedBottom'
-        ? <>You’re at the <Strong>Bottom</Strong>, tied with {ee}.</>
-        : <>You’re at the <Strong>Bottom</Strong>, everyone else is ahead.</>;
-    } else if (band === 'nearBottom') {
-      relativeLine = ee > 0
-        ? <>You’re near the <Strong>Bottom</Strong>, tied with {ee} and ahead of {bb}.</>
-        : <>You’re near the <Strong>Bottom</Strong>, ahead of {bb}.</>;
-    } else {
-      // middle
-      if (tie === 'tiedMiddle') {
-        relativeLine = <>You’re in the <Strong>Middle</Strong>, tied with {ee}.</>;
-      } else if (aa < bb) {
-        relativeLine = <>You’re in the <Strong>Middle</Strong>, behind {aa}.</>;
-      } else if (bb < aa) {
-        relativeLine = <>You’re in the <Strong>Middle</Strong>, ahead of {bb}.</>;
-      } else {
-        relativeLine = <>You’re in the <Strong>Middle</Strong>, ahead of {bb} and behind {aa}.</>;
+    switch (band) {
+      case 'solo':
+        relativeLine = <>You're the first one here.</>;
+        break;
+      case 'top':
+        relativeLine = tie === 'tiedTop'
+          ? <>You're sharing the very <Strong>Top</Strong> with {ee}.</>
+          : <>You're on <Strong>Top</Strong>, ahead of everyone else.</>;
+        break;
+      case 'nearTop':
+        relativeLine = ee > 0
+          ? <>You're close to the <Strong>Top</Strong>, tied with {ee} and behind {aa}.</>
+          : <>You're close to the <Strong>Top</Strong>, behind {aa}.</>;
+        break;
+      case 'bottom':
+        relativeLine = tie === 'tiedBottom'
+          ? <>You're at the <Strong>Bottom</Strong>, tied with {ee}.</>
+          : <>You're at the <Strong>Bottom</Strong>, everyone else is ahead.</>;
+        break;
+      case 'nearBottom':
+        relativeLine = ee > 0
+          ? <>You're near the <Strong>Bottom</Strong>, tied with {ee} and ahead of {bb}.</>
+          : <>You're near the <Strong>Bottom</Strong>, ahead of {bb}.</>;
+        break;
+      default: {
+        // middle
+        if (tie === 'tiedMiddle') {
+          relativeLine = <>You're in the <Strong>Middle</Strong>, tied with {ee}.</>;
+        } else if (aa < bb) {
+          relativeLine = <>You're in the <Strong>Middle</Strong>, behind {aa}.</>;
+        } else if (bb < aa) {
+          relativeLine = <>You're in the <Strong>Middle</Strong>, ahead of {bb}.</>;
+        } else {
+          relativeLine = <>You're in the <Strong>Middle</Strong>, ahead of {bb} and behind {aa}.</>;
+        }
       }
     }
 
-    if (!relativeLine) relativeLine = <>You’re in the mix.</>;
+    if (!relativeLine) relativeLine = <>You're in the mix.</>;
   }
 
   const line =

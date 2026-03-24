@@ -12,7 +12,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const { section, setSection } = useSurveyData();
   const windowWidth = useWindowWidth();
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 120 : 0) + (widgetsOpen ? 40 : 0)) * aspectRatio : 0;
+  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
 
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
@@ -43,7 +43,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
 
         {showObserverButton && (
           <button
-            className={cx("observe-results", observerMode && "active", isDark && "is-dark")}
+            className={cx("observe-results", observerMode && "active")}
             onClick={toggleObserverMode}
             aria-pressed={observerMode || hasCompletedSurvey}
             aria-label={observerMode || hasCompletedSurvey ? "Back" : "Observe"}
@@ -69,7 +69,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
               </svg>
             ) : (
               <>
-                <span>Observe</span>
+                <span>View</span>
                 <svg
                   className="ui-icon"
                   viewBox="0 0 24 24"

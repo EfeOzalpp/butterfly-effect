@@ -12,7 +12,6 @@ import usePixelOffsets from './hooks/usePixelOffsets';
 import { useDynamicOffset } from '../hooks/useDynamicOffset';
 import { createGestureState } from './shared/sharedGesture';
 
-import { useEdgeCueController } from './controller/edgeCue.controller';
 import { computeTooltipOffsetPx } from './compute/tooltipOffset';
 import { computeInitialZoomTarget } from './compute/zoomTarget';
 
@@ -48,8 +47,6 @@ export type OrbitThresholds = {
 };
 
 export type OrbitParams = {
-  isDragging?: boolean;
-
   layout?: OrbitLayout;
   bounds?: OrbitBounds;
 
@@ -92,8 +89,6 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   const DESKTOP_IDLE_MOUSE_DELAY_MS = 4000;
 
   const {
-    isDragging = false,
-
     useDesktopLayout = params.layout?.useDesktopLayout ?? params.useDesktopLayout ?? true,
     isSmallScreen = params.layout?.isSmallScreen ?? params.isSmallScreen ?? false,
     isTabletLike = params.layout?.isTabletLike ?? params.isTabletLike ?? false,
@@ -152,19 +147,6 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
     delayMs,
   });
 
-  // Block idle when a tooltip is open
-  const hoverActiveRef = useRef(false);
-  useEffect(() => {
-    hoverActiveRef.current = interaction?.hoverOpen ?? false;
-    markActivity();
-  }, [interaction?.hoverOpen, markActivity]);
-
-  // === Edge cue state (kept for HUD/other UI) ===
-  useEdgeCueController({
-    useDesktopLayout,
-    menuOpenRef,
-  });
-
   // idle wrapper
   const isIdleWrapped = ({
     userInteracting,
@@ -175,7 +157,6 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
     hasInteractedRef?: React.RefObject<boolean>;
     lastActivityRef?: React.RefObject<number>;
   }) => {
-    if (hoverActiveRef.current) return false;
     if (menuOpenRef.current) return false;
     if (useDesktopLayout) {
       const lastMouseMoveAt = lastMouseMoveTsRef.current || performance.now();
@@ -204,7 +185,6 @@ const rot = useRotation({
   maxRadius,
   radius,
   markActivity,
-  isDragging,
   gestureRef,
   menuOpenRef,
 });

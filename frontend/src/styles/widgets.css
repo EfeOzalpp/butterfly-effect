@@ -67,14 +67,15 @@
 }
 
 .widgets-expandable {
+  min-height: 0;
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: max-height 280ms cubic-bezier(.22,.61,.36,1), opacity 180ms ease;
+  transition: min-height 280ms cubic-bezier(.22,.61,.36,1), max-height 280ms cubic-bezier(.22,.61,.36,1), opacity 180ms ease;
 }
 
 .widgets-expandable.is-expanded {
-  max-height: 340px;
+  max-height: 320px;
   opacity: 1;
 }
 
@@ -183,4 +184,12 @@
   height: 18px;
   color: var(--ui-text-secondary);
   flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  /* mobile */
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* tablet */
 }

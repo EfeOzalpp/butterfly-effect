@@ -16,7 +16,7 @@ import {
 } from '../../graph-runtime/sprites/entry';
 
 export default function usePreferencesState() {
-  const [mode, setMode] = useState<Mode>(() => readStoredMode('relative'));
+  const [mode, setMode] = useState<Mode>(() => readStoredMode('absolute'));
   useEffect(() => {
     setSessionItem('gp.mode', mode);
   }, [mode]);

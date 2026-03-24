@@ -16,7 +16,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const windowWidth = useWindowWidth();
   const isNarrow = windowWidth <= 768;
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 120 : 0) + (widgetsOpen ? 40 : 0)) * aspectRatio : 0;
+  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
   const [showHint, setShowHint] = useState(false);
   const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>(null);
   const barGraphExpanded = expandedWidget === "bar";

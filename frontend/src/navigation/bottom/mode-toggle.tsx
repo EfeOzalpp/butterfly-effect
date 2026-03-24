@@ -71,12 +71,18 @@ export default function ModeToggle() {
     });
   };
 
-  const onToggle = () => flipModeAndMaybeSpotlight(isAbsolute ? "relative" : "absolute");
-
   // Context-aware title
   const titleWhenRelative = observerMode ? "Switch to Rankings" : relFeedback;
   const titleWhenAbsolute = observerMode ? "Switch to Scores"   : absFeedback;
   const title = isAbsolute ? titleWhenRelative : titleWhenAbsolute;
+
+  const CheckIcon = () => (
+    <span className="mode-toggle-check">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
 
   return (
     <div className="mode-toggle-wrap">
@@ -86,17 +92,23 @@ export default function ModeToggle() {
         aria-label="Toggle visualization mode"
         tabIndex={0}
         className={`mode-toggle-switch${observerMode ? " is-observing" : ""}`}
-        onClick={onToggle}
+        onClick={() => flipModeAndMaybeSpotlight(isAbsolute ? "relative" : "absolute")}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); }
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flipModeAndMaybeSpotlight(isAbsolute ? "relative" : "absolute"); }
           if (e.key === "ArrowLeft")  flipModeAndMaybeSpotlight("relative");
           if (e.key === "ArrowRight") flipModeAndMaybeSpotlight("absolute");
         }}
         title={title}
       >
         <div className={`mode-toggle-thumb ${isAbsolute ? "absolute" : "relative"}`} />
-        <div className={`mode-toggle-label ${!isAbsolute ? "active" : ""}`}>Versus</div>
-        <div className={`mode-toggle-label ${isAbsolute ? "active" : ""}`}>Solo</div>
+        <div className={`mode-toggle-label${!isAbsolute ? " active" : ""}`}>
+          {!isAbsolute && <CheckIcon />}
+          team
+        </div>
+        <div className={`mode-toggle-label${isAbsolute ? " active" : ""}`}>
+          {isAbsolute && <CheckIcon />}
+          solo
+        </div>
       </div>
     </div>
   );

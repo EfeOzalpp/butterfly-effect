@@ -5,8 +5,6 @@ type SpotlightRequest = { durationMs: number; fakeMouseXRatio: number; fakeMouse
 export type InteractionState = {
   menuOpen: boolean;
   setMenuOpen: (v: boolean) => void;
-  hoverOpen: boolean;
-  setHoverOpen: (v: boolean) => void;
   spotlightRequest: SpotlightRequest | null;
   setSpotlightRequest: (req: SpotlightRequest | null) => void;
 };

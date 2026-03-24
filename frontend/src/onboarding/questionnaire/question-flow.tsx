@@ -25,7 +25,7 @@ export default function QuestionFlow({
         aria-describedby={`question-progress-${q.id}`}
       >
         <div className={`questions ${slabClass}`}>
-          <h3 className="q-title" id={`question-title-${q.id}`}>{q.prompt}</h3>
+          <h2 className="q-title" id={`question-title-${q.id}`}>{q.prompt}</h2>
         </div>
         <p
           id={`question-progress-${q.id}`}

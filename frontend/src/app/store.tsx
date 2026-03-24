@@ -35,7 +35,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [openPersonalized, setOpenPersonalized] = useState(false);
   const [animationVisible, setAnimationVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [hoverOpen, setHoverOpen] = useState(false);
   const [spotlightRequest, setSpotlightRequest] = useState<{ durationMs: number; fakeMouseXRatio: number; fakeMouseYRatio: number } | null>(null);
 
   const { mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole } = useIdentityState();
@@ -159,9 +158,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const interactionValue = useMemo<InteractionState>(
-    () => ({ menuOpen, setMenuOpen, hoverOpen, setHoverOpen, spotlightRequest, setSpotlightRequest }),
+    () => ({ menuOpen, setMenuOpen, spotlightRequest, setSpotlightRequest }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [menuOpen, hoverOpen, spotlightRequest]
+    [menuOpen, spotlightRequest]
   );
 
   return (

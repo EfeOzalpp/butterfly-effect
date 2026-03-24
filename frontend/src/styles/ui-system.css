@@ -10,10 +10,10 @@ h3 {
   color: var(--ui-text);
 }
 
-h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 380; }
-h2 { font-size: var(--type-h2-size); line-height: var(--type-h-line); font-weight: 300; }
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 320; }
+h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); font-weight: 260; }
 h3 { font-size: var(--type-h3-size); line-height: var(--type-tight-line); font-weight: 300; }
-h4 { font-family: var(--font-body); font-size: var(--type-h4-size); line-height: var(--type-tight-line); font-weight: 420; }
+h4 { font-size: var(--type-h4-size); line-height: var(--type-tight-line); font-weight: 420; }
 h4 { margin: 0; }
 
 p,
@@ -124,14 +124,18 @@ button { pointer-events: auto; cursor: pointer; }
 
 button.begin-button:hover,
 button.next-button:hover,
-button.questionnaire:hover,
+button.questionnaire:hover {
+  transform: scale(1.02);
+}
+
 button.city-button:hover,
-.nav-toggle:hover,
 .observe-results:hover,
 .logs-button:hover,
-.widgets-button:hover,
-.system-color:hover,
-.info-close:hover {
+.widgets-button:hover {
+  transform: scale(1.02);
+}
+
+.nav-toggle:hover {
   transform: none;
 }
 
