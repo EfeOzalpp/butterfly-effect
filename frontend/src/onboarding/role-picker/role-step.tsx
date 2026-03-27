@@ -35,7 +35,8 @@ export default function RoleStep({ value, onChange, onNext, error }) {
           aria-describedby={errorId}
           onClick={onNext}
         >
-          <span>{buttonLabel}</span>
+          <span className="begin-button__ghost" aria-hidden="true">{buttonLabel}</span>
+          <span className="begin-button__inner">{buttonLabel}</span>
         </button></div>
       </div>
     </section>

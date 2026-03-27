@@ -6,13 +6,13 @@
   --font-ui-weight: 450;
   --fw-bold: 500;
 
-  --type-h1-size: clamp(4.8rem, 1.65rem + 1.5vw, 5.6rem);
+  --type-h1-size: clamp(4.8rem, 1.65rem + 1.5vw, 5.2rem);
   --type-h2-size: clamp(1.45rem, 1.25rem + 0.75vw, 2rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.92rem, 0.94rem + 0.35vw, 1rem);
   --type-p-size: 0.98rem;
-  --type-small-size: 0.9rem;
-  --type-label-size: 0.85rem;
+  --type-small-size: 0.94rem;
+  --type-label-size: 0.9rem;
 
   --type-h-line: 1.2;
   --type-h2-line: 1.42;
@@ -40,12 +40,14 @@
   /* input active */
   --active-accent-color: #7fba7e;
   --active-accent-color-hover:#70a56f;
+  --inactive-accent-color: #cedcce;
 
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
   --btn-drop-shadow: #ffffff;
 
   /* Text and misc color */
-  --ui-text: #1f2937;
+  --ui-text-title: #7fba7e; 
+  --ui-text: #000000;
   --ui-text-secondary: #35453c;
   --ui-text-muted: #4b5563;
         /* Border color */
@@ -59,7 +61,7 @@
   --ui-icon-stroke: var(--ui-icon);
   --ui-icon-subtle-fill: var(--ui-icon-subtle);
   --ui-icon-subtle-stroke: var(--ui-icon-subtle);
-  --ui-close-stroke: rgb(63, 63, 63);
+  --ui-close-fill: rgb(63, 63, 63);
   --ui-gp-chooser-fill: rgb(40, 108, 56);
   --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
   --ui-check-fill: rgb(40, 108, 56);
@@ -72,19 +74,19 @@
   --btn-font-weight: var(--fw-bold);
 
   --btn-hover-scale: 1.01;
-  --btn-hover-scale-lg: 1.02;
+  --btn-hover-scale-lg: 1.01;
 
   --btn-drop-shadow: #ffffff;
 
   /* Primary button */
-  --btn-primary-bg:rgb(176, 237, 173);
+  --btn-primary-bg:rgb(126, 211, 126);
   --btn-primary-hover-bg: #9de7a2;
-  --btn-primary-text: #213129;
+  --btn-primary-text: #000000;
   --btn-primary-icon: #4e8c5a;
 
   /* Secondary button */
   --btn-secondary-bg: #bf9dce;
-  --btn-secondary-text: var(--ui-text);
+  --btn-secondary-text: #000000;
   --btn-secondary-hover-bg: #ab8bbb;
 
   /* Tertiary button */
@@ -108,9 +110,6 @@
 
   /* Graph */
   --graph-bg: radial-gradient(circle, #ffffff 0%, rgb(242, 249, 255) 100%);
-
-  /* Switch */
-  --mode-toggle: #cddfcd;
 
   /* graph signal colors — RGB triplets for rgba() composition in keyframes */
   --graph-green-hi-rgb: 0, 220, 60;
@@ -156,7 +155,7 @@
   --ui-icon-stroke: var(--ui-icon);
   --ui-icon-subtle-fill: var(--ui-icon-subtle);
   --ui-icon-subtle-stroke: var(--ui-icon-subtle);
-  --ui-close-stroke: rgb(63, 63, 63);
+  --ui-close-fill: #ffffff;
   --ui-gp-chooser-fill: rgb(40, 108, 56);
   --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
   --ui-check-fill: rgb(40, 108, 56);
@@ -192,8 +191,8 @@
   --graph-bg: #1d1c1c;
 
   /* switch */
-  --mode-toggle: #505250;
-  --mode-toggle-border: #1d1c1c;
+  --inactive-accent-color: #505250;
+  --inactive-accent-color-border: #1d1c1c;
 
   /* graph signal colors — blue-shifted for dark bg */
   --graph-green-hi-rgb: 35, 195, 115;
@@ -242,18 +241,18 @@
     --space-md: 0.6rem;
     --space-lg: 0.9rem;
 
-    --btn-cta-padding: 0.88rem 5.25rem;
-    --btn-cta-padding-hover: 0.68rem 5.7rem;
-    --btn-cta-padding-reserve-block: 0.88rem;
-    --btn-cta-padding-reserve-inline: 1.25rem;
+    --btn-primary-padding: 1.15rem 1.35rem;
+    --btn-primary-padding-hover: 0.95rem 1.65rem;
+    --btn-primary-padding-reserve-block: 1.15rem;
+    --btn-primary-padding-reserve-inline: 1.45rem;
 
     --btn-primary-padding: 1.15rem 1.35rem;
-    --btn-primary-padding-hover: 0.95rem 1.45rem;
+    --btn-primary-padding-hover: 0.95rem 1.65rem;
     --btn-primary-padding-reserve-block: 1.15rem;
     --btn-primary-padding-reserve-inline: 1.45rem;
 
     --btn-secondary-padding: 0.74rem 0.9rem;
-    --btn-secondary-padding-hover: 0.69rem 1.05rem;
+    --btn-secondary-padding-hover: 0.65rem 1.15rem;
 
     --input-padding: 0.9rem 1rem;
     --input-padding-hover: 0.85rem 1rem;
@@ -291,8 +290,8 @@
     width: 1rem !important;
     height: 1rem !important;
   }
-  .ui-close [stroke] {
-    stroke: var(--ui-close-stroke);
+  .ui-close [fill] {
+    fill: var(--ui-close-fill);
   }
 
   .gp-chooser-icon svg.ui-icon, .gp-back-icon svg.ui-icon {

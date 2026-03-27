@@ -73,13 +73,12 @@
 .logs-filter-field {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   width: 140px;
-  height: 36px;
+  height: 32px;
   padding: 0 0.8rem;
-  background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   transition: border-color 0.12s ease, background 0.12s ease;
 }
 
@@ -224,7 +223,7 @@
   width: 58px;
   height: 32px;
   padding: 0 0.4rem;
-  margin-left: 0.5rem;
+  margin-left: var(--space-md);
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);

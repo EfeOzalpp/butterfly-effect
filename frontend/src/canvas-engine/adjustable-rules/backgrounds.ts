@@ -72,11 +72,7 @@ export const BACKGROUNDS: BackgroundsByMode = {
       from: { xK: 0.5, yK: 0.0 },
       to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0.0, rgba: "rgba(120, 188, 236, 0.42)" },
-        { k: 0.25, rgba: "rgba(88, 156, 214, 0.38)" },
-        { k: 0.58, rgba: "rgba(251, 252, 238, 0.9)" },
-        { k: 0.58, rgba: "rgba(205, 229, 174, 0.92)", liveBlend: [0.18, 0.06] },
-        { k: 1.0, rgba: "rgba(132, 168, 118, 0.95)" },
+        { k: 0.0, rgba: "rgba(255, 255, 255, 1)" },
       ] as const,
     },
   },

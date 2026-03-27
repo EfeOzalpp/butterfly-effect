@@ -63,12 +63,7 @@
   background: var(--ui-bg-surface);
   border-radius: var(--radius-md);
 }
-.input-part-inside.radio-option:nth-child(1) {
-  padding: 1rem 1rem;
-}
-.input-part-inside.radio-option:nth-child(2) {
-  padding: 1rem 1rem;
-}
+
 .role-check-icon {
   color: var(--btn-primary-icon);
   flex-shrink: 0;
@@ -86,14 +81,12 @@
 .role-group-options {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--ui-border);
-  background: var(--ui-bg-surface);
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  gap: 0;
+  gap: var(--space-sm);
 }
 /* Rows inside the island override standalone card styles */
-.role-group-options .radio-option--inset {
+.radio-option--inset,
+.input-part-inside.radio-option {
   border: none;
   border-radius: 0;
   background: transparent;
@@ -102,28 +95,25 @@
 .role-group-options .radio-option--inset:hover {
   background: var(--ui-bg-surface-hover);
 }
-.role-group-options .radio-option--inset.selected {
-  background: var(--ui-bg-surface-selected);
-}
-.input-part-inside.radio-option:hover {
-  background: var(--ui-bg-surface-hover);
-}
-.input-part-inside.radio-option.selected {
-  background: var(--ui-bg-surface-selected);
+
+.input-part-inside.radio-option.selected,
+.input-part-inside.radio-option.selected:nth-child(1),
+.role-group-options > .input-part-inside.radio-option.selected:nth-child(2) {
+  background: var(--active-accent-color);
+  border-radius: var(--btn-radius);
 }
 
-/* Divider between rows — inset so it doesn't touch the edges */
-.role-group-options .radio-option--inset + .radio-option--inset {
-  position: relative;
+.input-part-inside.radio-option {
+  border-radius: var(--btn-radius) var(--btn-radius) calc(var(--btn-radius) * 0.3) calc(var(--btn-radius) * 0.3);
+  background: var(--inactive-accent-color); 
 }
-.role-group-options .radio-option--inset + .radio-option--inset::before {
-  content: '';
-  position: absolute;
-  top: 0px;
-  left: 3.25rem;
-  right: 3.25rem;
-  height: 1px;
-  background: var(--ui-border);
+.input-part-inside.radio-option:nth-child(1) {
+  border-radius: calc(var(--btn-radius) * 0.3);
+  background: var(--inactive-accent-color);
+}
+.role-group-options > .input-part-inside.radio-option:nth-child(2) {
+  border-radius: calc(var(--btn-radius) * 0.3) calc(var(--btn-radius) * 0.3) var(--btn-radius) var(--btn-radius) ;
+  background: var(--inactive-accent-color);
 }
 
 /* Begin button is wrapped inside here */
@@ -429,10 +419,12 @@ button.city-button,
     max-width: 100%;
   }
 }
+.welcome-title {
+  color: var(--ui-text-title);
+}
 
 /* Theme wiring: survey */
 .welcome-text,
-.welcome-title,
 .section-title,
 .q-count,
 .q-title,

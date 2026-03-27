@@ -42,6 +42,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  margin-left: -1px;
 }
 
 .widgets-popover {
