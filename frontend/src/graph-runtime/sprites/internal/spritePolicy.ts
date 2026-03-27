@@ -69,9 +69,11 @@ export function makeStaticKey(args: {
   bucketId: number;
   variant: number;
   darkMode?: boolean;
+  pixelScaleBoost?: number;
 }) {
-  const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode } = args;
-  return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|STATIC_NATIVE${darkMode ? '|DK' : ''}`;
+  const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode, pixelScaleBoost } = args;
+  const boostSuffix = pixelScaleBoost && pixelScaleBoost !== 1 ? `|PX${pixelScaleBoost}` : '';
+  return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|STATIC_NATIVE${darkMode ? '|DK' : ''}${boostSuffix}`;
 }
 
 export function makeFrozenKey(args: {
@@ -94,6 +96,37 @@ export function makeFrozenKey(args: {
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {
   const t = clamp01(Number.isFinite(args.avg) ? args.avg : 0.5);
   return sampleShapeForAvg(t, args.seed ?? t, args.orderIndex);
+}
+
+export type ShapeAssignment = {
+  shape: ShapeKey;
+  variant: number;
+  bucketId: number;
+  bucketAvg: number;
+};
+
+const _assignmentCache = new Map<string, ShapeAssignment>();
+
+export function getOrAssignShapeEntry(
+  entryId: string,
+  sectionKey: string,
+  avg: number,
+  seed: string | number,
+  orderIndex: number,
+  variantSlots = DEFAULT_VARIANT_SLOTS
+): ShapeAssignment {
+  const cacheKey = `${entryId}|${sectionKey}`;
+  const hit = _assignmentCache.get(cacheKey);
+  if (hit) return hit;
+
+  const shape = chooseShape({ avg, seed, orderIndex });
+  const { bucketId, bucketAvg } = quantizeAvgWithDownshift(avg);
+  const vSeed = `${shape}|B${bucketId}|${seed}|${orderIndex}`;
+  const variant = pickVariantSlot(vSeed, Math.max(1, variantSlots));
+
+  const assignment: ShapeAssignment = { shape, variant, bucketId, bucketAvg };
+  _assignmentCache.set(cacheKey, assignment);
+  return assignment;
 }
 
 export function resolveDpr(fallback = 1) {

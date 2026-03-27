@@ -4,13 +4,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.7rem;
-}
-
-.widgets-button .ui-icon {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
+  gap: 0;
 }
 
 .widgets-wrap {
@@ -18,23 +12,46 @@
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.6rem;
+  gap: var(--space-md);
   pointer-events: all;
   transition: margin-left 0.2s ease;
 }
 
-.widgets-popover {
+.widgets-popover-shell {
+  display: grid;
   position: absolute;
   left: 0;
   bottom: 0;
+  z-index: 2;
   width: min(320px, calc(100vw - 3.2rem));
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition: grid-template-rows 180ms cubic-bezier(.22,.61,.36,1), opacity 120ms ease;
+}
+
+.widgets-popover-shell.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.widgets-popover-clip {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.widgets-popover {
+  width: 100%;
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   pointer-events: all;
-  z-index: 2;
-  box-shadow: 0 18px 42px var(--ui-drop-shadow);
+  box-shadow: 12px 12px 42px var(--ui-drop-shadow);
 }
 
 .widgets-list {
@@ -82,15 +99,14 @@
 .widgets-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
+  justify-content: center;
   width: 100%;
   padding: 1rem;
   border: none;
   border-radius: 0;
   background: transparent;
   color: var(--ui-text);
-  text-align: left;
+  text-align: center;
 }
 
 .widgets-panel {
@@ -153,23 +169,26 @@
 .widgets-close-strip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
+  justify-content: flex-start;
+  gap: var(--space-sm);
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0.75rem 1.2rem;
   border: none;
   border-top: 1px solid var(--ui-border);
   border-radius: 0;
   background: var(--ui-bg-surface);
   color: var(--ui-text);
-  text-align: center;
+  font-size: var(--type-label-size);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
 }
 
 .widgets-close-strip:hover {
   background: var(--ui-bg-surface-hover);
 }
 
-.widgets-close-strip svg {
+.widgets-close-strip .ui-close {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
@@ -177,13 +196,6 @@
 
 .widgets-item:hover {
   background: var(--ui-bg-surface-hover);
-}
-
-.widgets-item .ui-icon {
-  width: 18px;
-  height: 18px;
-  color: var(--ui-text-secondary);
-  flex-shrink: 0;
 }
 
 @media (max-width: 767px) {

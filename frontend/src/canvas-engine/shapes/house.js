@@ -4,6 +4,7 @@ import {
   val,
   blendRGB,
   clampBrightness,
+  oscillateBrightness,
   oscillateSaturation,
   driveSaturation,
   stepAndDrawPuffs,
@@ -59,6 +60,82 @@ export const HOUSE_BASE_PALETTE = {
   solarPanel: { r: 180, g: 205, b: 235 },
 };
 
+export const HOUSE_WARM_PALETTE = {
+  grass: { r: 158, g: 188, b: 96 },
+  body: [
+    { r: 240, g: 222, b: 190 },
+    { r: 248, g: 218, b: 188 },
+    { r: 236, g: 224, b: 192 },
+    { r: 252, g: 230, b: 208 },
+    { r: 238, g: 210, b: 186 },
+    { r: 232, g: 220, b: 196 },
+    { r: 244, g: 228, b: 200 },
+    { r: 240, g: 216, b: 194 },
+    { r: 248, g: 234, b: 210 },
+  ],
+  roof: [
+    { r: 208, g: 120, b: 88 },
+    { r: 196, g: 128, b: 96 },
+    { r: 184, g: 136, b: 106 },
+    { r: 172, g: 128, b: 112 },
+  ],
+  door: [
+    { r: 192, g: 134, b: 68 },
+    { r: 180, g: 148, b: 82 },
+    { r: 210, g: 168, b: 88 },
+    { r: 188, g: 148, b: 92 },
+  ],
+  window: {
+    lit: [
+      { r: 255, g: 154, b: 64 },
+      { r: 255, g: 176, b: 78 },
+      { r: 255, g: 198, b: 96 },
+      { r: 255, g: 222, b: 128 },
+      { r: 255, g: 241, b: 176 },
+    ],
+    dark: { r: 140, g: 168, b: 192 },
+  },
+  solarPanel: { r: 188, g: 208, b: 226 },
+};
+
+export const HOUSE_COOL_PALETTE = {
+  grass: { r: 118, g: 172, b: 140 },
+  body: [
+    { r: 198, g: 218, b: 238 },
+    { r: 210, g: 222, b: 238 },
+    { r: 196, g: 212, b: 232 },
+    { r: 218, g: 226, b: 242 },
+    { r: 206, g: 220, b: 240 },
+    { r: 208, g: 218, b: 234 },
+    { r: 202, g: 216, b: 238 },
+    { r: 214, g: 224, b: 244 },
+    { r: 196, g: 210, b: 230 },
+  ],
+  roof: [
+    { r: 154, g: 168, b: 184 },
+    { r: 148, g: 158, b: 176 },
+    { r: 142, g: 152, b: 172 },
+    { r: 136, g: 148, b: 168 },
+  ],
+  door: [
+    { r: 148, g: 164, b: 148 },
+    { r: 136, g: 152, b: 172 },
+    { r: 168, g: 178, b: 156 },
+    { r: 158, g: 168, b: 186 },
+  ],
+  window: {
+    lit: [
+      { r: 255, g: 154, b: 64 },
+      { r: 255, g: 176, b: 78 },
+      { r: 255, g: 198, b: 96 },
+      { r: 255, g: 222, b: 128 },
+      { r: 255, g: 241, b: 176 },
+    ],
+    dark: { r: 108, g: 152, b: 208 },
+  },
+  solarPanel: { r: 168, g: 196, b: 228 },
+};
+
 export const HOUSE_DARK_PALETTE = {
   grass: { r: 56, g: 108, b: 116 },
   body: [
@@ -67,8 +144,9 @@ export const HOUSE_DARK_PALETTE = {
     { r: 114, g: 142, b: 156 },
     { r: 126, g: 138, b: 170 },
     { r: 118, g: 145, b: 180 },
-    { r: 138, g: 124, b: 132 },
-    { r: 96, g: 118, b: 144 },
+    { r: 144, g: 122, b: 146 }, // orange-lean, purple undertone (mauve)
+    { r: 96,  g: 118, b: 144 },
+    { r: 116, g: 138, b: 154 }, // green-lean, purple undertone (slate-teal)
   ],
   roof: [
     { r: 136, g: 92,  b: 96  },
@@ -132,6 +210,14 @@ const SMOKE = {
   brightnessRange: [0.20, 0.95],
 };
 
+const WINDOW_OSC = {
+  amp: [0.035, 0.085],
+  speed: [0.18, 0.42],
+  brightnessMin: [0.54, 0.72],
+  brightnessMax: [0.82, 0.96],
+  litCurve: 0.92,
+};
+
 function fillRgb(p, { r, g, b }, a = 255) { p.fill(r, g, b, a); }
 function hash32(s) {
   let h = 2166136261 >>> 0;
@@ -152,8 +238,17 @@ function pickByOccurrence(arr, occurrence = 0, offset = 0) {
   return arr[(Math.max(0, occurrence) + offset) % arr.length];
 }
 
+export function houseHasChimney(seedKey) {
+  const seed = hash32(String(seedKey));
+  const r4 = rand01(seed ^ 0x27d4eb2f);
+  return Math.floor(r4 * 3) === 0;
+}
+
 export function drawHouse(p, _cx, _cy, _r, opts = {}) {
-  const pal = opts?.darkMode ? HOUSE_DARK_PALETTE : HOUSE_BASE_PALETTE;
+  const pal = opts?.darkMode ? HOUSE_DARK_PALETTE
+    : opts?.paletteTheme === 'warm' ? HOUSE_WARM_PALETTE
+    : opts?.paletteTheme === 'cool' ? HOUSE_COOL_PALETTE
+    : HOUSE_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -541,7 +636,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   let totalWindows = Math.min(rows * cols, 6);
   if (totalWindows < 2) totalWindows = 2;
 
-  const litCount = Math.round((1 - u) * totalWindows);
+  const litCount = Math.floor(Math.pow(1 - u, WINDOW_OSC.litCurve) * totalWindows);
 
   const actualBandH = (rows > 1) ? (rows - 1) * gapY + rows * winH : winH;
   const extra = usableH - actualBandH;
@@ -562,7 +657,21 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       if (y >= roofY + 2 && y + winH <= bodyY + bodyH - 2) {
         const litRand = rand01(hash32(`house-lit|${seed}|${rr}|${cc}|${drawn}`));
         const litIdx = Math.floor(litRand * winLitVariants.length) % winLitVariants.length;
-        const tint = (drawn < litCount) ? winLitVariants[litIdx] : winDark;
+        let tint = (drawn < litCount) ? winLitVariants[litIdx] : winDark;
+        if (drawn < litCount) {
+          const oscSeed = hash32(`house-window-osc|${seed}|${rr}|${cc}|${drawn}`);
+          const oscPhase = rand01(oscSeed ^ 0x9e3779b9) * Math.PI * 2;
+          const oscAmp = val(WINDOW_OSC.amp, rand01(oscSeed ^ 0x85ebca6b));
+          const oscSpeed = val(WINDOW_OSC.speed, rand01(oscSeed ^ 0xc2b2ae35));
+          const brightnessMin = val(WINDOW_OSC.brightnessMin, rand01(oscSeed ^ 0x27d4eb2f));
+          const brightnessMax = val(WINDOW_OSC.brightnessMax, rand01(oscSeed ^ 0xbb67ae85));
+          tint = clampBrightness(tint, brightnessMin, brightnessMax);
+          tint = oscillateBrightness(tint, t, {
+            amp: oscAmp,
+            speed: oscSpeed,
+            phase: oscPhase,
+          });
+        }
         fillRgb(p, tint, alpha);
         p.rect(x, y, winW, winH, Math.round(cell * 0.02));
       }

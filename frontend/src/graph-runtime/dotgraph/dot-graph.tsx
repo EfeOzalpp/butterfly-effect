@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 
 import { usePreferences } from '../../app/state/preferences-context';
 import { useUiFlow } from '../../app/state/ui-context';
@@ -23,7 +23,7 @@ type DotGraphProps = {
   data?: any[];
 };
 
-export default function DotGraph({ data = [] }: DotGraphProps) {
+export default function DotGraph({ data: _data = [] }: DotGraphProps) {
   const { darkMode, mode } = usePreferences();
   const { observerMode } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
@@ -128,11 +128,12 @@ export default function DotGraph({ data = [] }: DotGraphProps) {
           tieKeyForId={ties.tieKeyForId}
           setSelectedTieKey={ties.setSelectedTieKey}
           selectedTieKey={ties.selectedTieKey}
-          selectedTieLinePoints={ties.selectedTieLinePoints}
-          spriteScale={scene.spriteScale}
+spriteScale={scene.spriteScale}
           bagSeed={scene.bagSeed}
           bleedOf={scene.bleedOf}
           darkMode={darkMode}
+          occasionalRefreshMs={2000}
+          section={section ?? ''}
         />
 
         <PersonalizedLayer

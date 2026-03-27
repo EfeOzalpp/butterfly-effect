@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import CheckIcon from "../../assets/svg/check/CheckIcon";
 
 const OPTIONS = [
   { val: "visitor", label: "Visitor" },
@@ -14,9 +15,7 @@ const OPTIONS = [
 function SelectionIndicator({ selected }: { selected: boolean }) {
   if (selected) {
     return (
-      <svg className="role-check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <CheckIcon className="role-check-icon ui-icon" />
     );
   }
   return <span className="role-indicator-spacer" />;

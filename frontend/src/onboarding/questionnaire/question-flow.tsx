@@ -47,11 +47,17 @@ export default function QuestionFlow({
           <button
             type="button"
             className="questionnaire"
+            data-label={current < questions.length - 1 ? "Next Question" : "Finish"}
             onClick={next}
             disabled={!!submitting}
             aria-label={current < questions.length - 1 ? `Go to question ${current + 2}` : "Finish survey and open results"}
           >
-            <span>{current < questions.length - 1 ? "Next Question" : "Finish"}</span>
+            <span className="questionnaire__ghost" aria-hidden="true">
+              <span>{current < questions.length - 1 ? "Next Question" : "Finish"}</span>
+            </span>
+            <span className="questionnaire__inner">
+              <span>{current < questions.length - 1 ? "Next Question" : "Finish"}</span>
+            </span>
           </button>
         </div>
       </div>

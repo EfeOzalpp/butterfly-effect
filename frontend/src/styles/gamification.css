@@ -27,11 +27,14 @@
 
 /* generalized results general styles */
 .gam-general {
-  display: flex; flex-direction: row;  width: 100%; align-items: center; flex-wrap: nowrap; 
+  display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; 
 }
 .gam-general-description {
   width: 100%;
   min-width: 0;
+}
+.gam-general-line {
+  margin: 0;
 }
 .gam-inline-lines {
   display: inline-flex;
@@ -46,17 +49,15 @@
 
 .is-top .generalized-result { transform: translateY(var(--offset-px)) !important; }
 .is-right .generalized-result,
-.is-mid .generalized-result { transform: translateX(calc(1 - var(--offset-px))); }
+.is-mid .generalized-result { transform: translateX(calc(1 - var(--offset-px))); min-width: 160px !important; display: flex; justify-content: flex-end; }
 .is-bottom .generalized-result,
 .is-left.is-bottom .generalized-result { transform: translateY(calc(-1 * var(--offset-px))); }
 
-.is-left .generalized-result { display: flex; justify-content: flex-start; min-width: 160px;}
-.is-right .generalized-result { display: flex; justify-content: flex-end; min-width: 160px;}
 
-/* Top/bottom: generalized-result is the flex shell that positions its content child */
 .is-top .generalized-results, .is-bottom .generalized-result {
   min-height: 350px; display: flex; flex-wrap: wrap;
 }
+
 .is-top .generalized-result {
   align-content: flex-start;
 }
@@ -64,6 +65,8 @@
 .is-bottom .generalized-result {
   align-content: flex-end;
 }
+
+.is-left .generalized-result { display: flex; justify-content: flex-start; min-width: 160px;}
 
 
 /* personalized results general styles */
@@ -105,8 +108,10 @@
 }
 
 @media screen and (min-width: 1025px) {
-  .generalized-result { width: max-content; min-width: 250px; left: 10px; }
-  .is-right .generalized-result { left: -115px; }
+  .generalized-result { width: max-content; }
+
+  .is-right .generalized-result { left: -115px !important;}
+
 
   .is-left.is-bottom .generalized-result { top: -104px; left: 0; }
   .is-right.is-bottom .generalized-result { top: -104px; left: 0; }
@@ -130,7 +135,7 @@
 .gam-general,
 .gamification-text {
   background: var(--ui-bg-surface);
-  border: var(--btn-border-width) solid var(--ui-border);
+  border: 1px solid var(--ui-border);
   border-radius: var(--radius-hero);
   padding: var(--space-md);
   height: fit-content;
@@ -139,12 +144,11 @@
 /* Toggle button — separate interactive element */
 .toggle-button.gp-toggle {
   background: var(--ui-bg-surface);
-  border: 1px solid var(--ui-border);
+  border: none;
   border-radius: var(--radius-lg);
   color: var(--ui-text);
 }
 
 .toggle-button.gp-toggle:hover {
   background: var(--ui-bg-surface-hover);
-  border-color: var(--ui-border-strong);
 }

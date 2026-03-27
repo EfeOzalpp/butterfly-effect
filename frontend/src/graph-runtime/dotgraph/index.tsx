@@ -95,7 +95,7 @@ function WebGLCanvas({ data, lowFidelity, dpr }: WebGLCanvasProps) {
 
   return (
     <Canvas
-      camera={{ position: [0, 0, 25], fov: 20 }}
+      camera={{ position: [0, 0, 25], fov: 40 }}
       dpr={dpr}
       shadows={!lowFidelity && !isIOS}
       gl={{

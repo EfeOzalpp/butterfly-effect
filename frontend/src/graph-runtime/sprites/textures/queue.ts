@@ -1,13 +1,15 @@
 // graph-runtime/sprites/textures/queue.ts
-type Job = { run: () => void; prio: number; gen: number };
-type QueueCounts = { pending: number; inflight: number; paused: boolean };
+type Job = { run: () => void; prio: number; gen: number; background?: boolean };
+type QueueCounts = { pending: number; inflight: number; paused: boolean; backgroundPending: number; backgroundInflight: number };
 
 let Q: Job[] = [];
 let pumping = false;
 let paused = false;
 let inflight = 0;
+let backgroundPendingCount = 0;
+let backgroundInflightCount = 0;
 const listeners = new Set<() => void>();
-let snapshot: QueueCounts = { pending: 0, inflight: 0, paused: false };
+let snapshot: QueueCounts = { pending: 0, inflight: 0, paused: false, backgroundPending: 0, backgroundInflight: 0 };
 
 let GEN = 0;
 
@@ -18,11 +20,15 @@ function refreshSnapshot() {
   const nextPending = Q.length;
   const nextInflight = inflight;
   const nextPaused = paused;
+  const nextBgPending = backgroundPendingCount;
+  const nextBgInflight = backgroundInflightCount;
 
   if (
     snapshot.pending === nextPending &&
     snapshot.inflight === nextInflight &&
-    snapshot.paused === nextPaused
+    snapshot.paused === nextPaused &&
+    snapshot.backgroundPending === nextBgPending &&
+    snapshot.backgroundInflight === nextBgInflight
   ) {
     return false;
   }
@@ -31,6 +37,8 @@ function refreshSnapshot() {
     pending: nextPending,
     inflight: nextInflight,
     paused: nextPaused,
+    backgroundPending: nextBgPending,
+    backgroundInflight: nextBgInflight,
   };
   return true;
 }
@@ -52,14 +60,17 @@ function step(deadline?: IdleDeadline) {
 
   while (Q.length && (done < 3 || hasTime())) {
     const job = Q.shift()!;
+    if (job.background) backgroundPendingCount--;
     notify();
     if (job.gen !== GEN) continue;
 
     inflight++;
+    if (job.background) backgroundInflightCount++;
     notify();
     try { job.run(); } catch (err) { console.warn('[queue] job failed:', err); }
     finally {
       inflight--;
+      if (job.background) backgroundInflightCount--;
       notify();
     }
     done++;
@@ -72,9 +83,10 @@ function step(deadline?: IdleDeadline) {
   }
 }
 
-export function enqueueTexture(run: () => void, prio = 0) {
+export function enqueueTexture(run: () => void, prio = 0, background = false) {
   const gen = GEN;
-  Q.push({ run, prio, gen });
+  if (background) backgroundPendingCount++;
+  Q.push({ run, prio, gen, background });
   Q.sort((a, b) => b.prio - a.prio);
   notify();
   if (!pumping && !paused) {
@@ -105,6 +117,7 @@ export function resumeQueue() {
 
 export function cancelAllJobs() {
   Q = [];
+  backgroundPendingCount = 0;
   pumping = false;
   notify();
 }
@@ -127,5 +140,28 @@ export function subscribeQueue(listener: () => void) {
   return () => {
     listeners.delete(listener);
   };
+}
+
+/** Calls cb once the non-background queue goes idle. If already idle, fires immediately. */
+export function onceQueueIdle(cb: () => void): () => void {
+  refreshSnapshot();
+  const isIdle = () => {
+    const s = snapshot;
+    return (s.pending - s.backgroundPending + s.inflight - s.backgroundInflight) <= 0;
+  };
+
+  if (isIdle()) {
+    cb();
+    return () => {};
+  }
+
+  const off = subscribeQueue(() => {
+    if (isIdle()) {
+      off();
+      cb();
+    }
+  });
+
+  return off;
 }
 

@@ -32,7 +32,7 @@ export const SEPARATION_META: SeparationMetaByMode = {
     bus: { separation: 4 },
 
     sea: { separation: 1},
-    trees: { separation: 3 },
+    trees: { separation: 4 },
   },
 
   questionnaire: {

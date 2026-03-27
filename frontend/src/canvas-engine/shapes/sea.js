@@ -23,6 +23,16 @@ export const SEA_DARK_PALETTE = {
   bottom: { r: 14, g: 78,  b: 137 },
 };
 
+export const SEA_WARM_PALETTE = {
+  top:    { r: 148, g: 210, b: 218 },
+  bottom: { r:  48, g: 140, b: 168 },
+};
+
+export const SEA_COOL_PALETTE = {
+  top:    { r: 118, g: 182, b: 228 },
+  bottom: { r:  12, g:  98, b: 168 },
+};
+
 // grass for composite bowl
 export const GRASS_BASE = { r: 130, g: 180, b: 110 };
 export const GRASS_DARK  = { r: 25, g: 77, b: 156 };
@@ -199,7 +209,10 @@ function liveWindowK(u, a, b, s = 0) {
 }
 
 export function drawSea(p, _x, _y, _r, opts = {}) {
-  const pal = opts?.darkMode ? SEA_DARK_PALETTE : SEA_BASE_PALETTE;
+  const pal = opts?.darkMode ? SEA_DARK_PALETTE
+    : opts?.paletteTheme === 'warm' ? SEA_WARM_PALETTE
+    : opts?.paletteTheme === 'cool' ? SEA_COOL_PALETTE
+    : SEA_BASE_PALETTE;
   const grassPal = opts?.darkMode ? GRASS_DARK : GRASS_BASE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
@@ -211,6 +224,7 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
   // - auto when CanvasAnimatedTexture / Frozen path sets fitToFootprint: true
   // - or explicitly via opts.spriteMode
   const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
+  const pxK = isSprite ? Math.max(1, opts.coreScaleMult ?? opts.pixelScale ?? 1) : 1;
 
   // merge tunables
   const OT = opts.tuning || {};
@@ -361,8 +375,8 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
     const speedLo = Array.isArray(T.foam.motion.speedPxSec) ? T.foam.motion.speedPxSec[0] : 10;
     const speedHi = Array.isArray(T.foam.motion.speedPxSec) ? T.foam.motion.speedPxSec[1] : speedLo;
 
-    const sizeLo  = Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[0] : 1;
-    const sizeHi  = Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[1] : sizeLo;
+    const sizeLo  = (Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[0] : 1) * pxK;
+    const sizeHi  = Math.max(sizeLo, (Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[1] : sizeLo) * pxK);
 
     const lifeLo  = Array.isArray(T.foam.pool.lifetimeSec) ? T.foam.pool.lifetimeSec[0] : 1;
     const lifeHi  = Array.isArray(T.foam.pool.lifetimeSec) ? T.foam.pool.lifetimeSec[1] : 1.6;
@@ -455,8 +469,9 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
 
   // SPILL (particle-2) — gated by liveAvg; spills outside tile
   if (T.spill?.enable) {
-    // For sprites, we *don’t* want overflow: keep as-is; for canvas allow overflow.
-    if (!isSprite && wantClip) ctx.restore();
+    // Remove clip before spill so particles can render into the bleed area (sea has 0.45-tile
+    // horizontal bleed on each side — enough for the falling corridors to sit outside the pool).
+    if (wantClip) ctx.restore();
 
     const gGate = T.spill.liveGate || {};
     const spillK = liveWindowK(u, gGate.min ?? 0.35, gGate.max ?? 0.80, gGate.soft ?? 0.12);
@@ -489,37 +504,38 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
       const leftSpawnFracX  = T.spill.leftSpawnFracX  ?? [0.70, 0.96];
       const rightSpawnFracX = T.spill.rightSpawnFracX ?? [0.00, 0.20];
 
-      const leftSpawnFrac  = { x0: leftSpawnFracX[0],  x1: leftSpawnFracX[1],  y0: 0.00, y1: spawnFracY };
-      const rightSpawnFrac = { x0: rightSpawnFracX[0], x1: rightSpawnFracX[1], y0: 0.00, y1: spawnFracY };
-
       const colWBase = Math.max(8, cell * 0.35);
 
-      // Base X for each corridor. In sprite mode:
-      //  - drop global shift and per-side nudges to keep symmetry/centering
-      //  - clamp right corridor so it doesn’t extend beyond the tile
+      // Base X for each corridor.
+      // In sprite mode: anchor corridors to the bowl walls (x0 / x0+w) so particles fall
+      // in the bleed area outside the pool, not inside it. Canvas mode uses global shift/nudges.
       const leftNudge  = isSprite ? 0 : ((T.spill.leftNudgePx  ?? 0) + (isMobile ? (T.spill.mobile?.leftNudgePx  ?? 0) : 0));
       const rightNudge = isSprite ? 0 : ((T.spill.rightNudgePx ?? 0) + (isMobile ? (T.spill.mobile?.rightNudgePx ?? 0) : 0));
 
-      const leftBaseX  = x0 - spill + globalShiftX + leftNudge;
+      const leftCorridorW  = colWBase + (isMobile ? Math.round(cell * 0.25) : (T.spill.leftExtraRoomPx ?? 24));
+      const rightCorridorW = colWBase + spill;
+
+      const leftBaseX  = isSprite
+        ? (x0 - leftCorridorW)  // corridor ends at bowl left wall, falls into left bleed
+        : (x0 - spill + globalShiftX + leftNudge);
       const rightBaseX = isSprite
-        ? (x0 + w - colWBase) // clamp to tile
+        ? (x0 + w)              // corridor starts at bowl right wall, falls into right bleed
         : (x0 + w - colWBase + globalShiftX + rightNudge);
 
-      const leftCorridor = {
-        x: leftBaseX,
-        y: bandTopY,
-        w: colWBase + (isMobile ? Math.round(cell * 0.25) : (T.spill.leftExtraRoomPx ?? 24)),
-        h: bandH
-      };
-      const rightCorridor = {
-        x: Math.min(rightBaseX, x0 + w - colWBase), // ensure inside tile for sprites
-        y: bandTopY,
-        w: colWBase + (isSprite ? Math.min(spill, Math.round(cell * 0.10)) : spill),
-        h: bandH
-      };
+      const leftCorridor  = { x: leftBaseX,  y: bandTopY, w: leftCorridorW,  h: bandH };
+      const rightCorridor = { x: rightBaseX, y: bandTopY, w: rightCorridorW, h: bandH };
 
-      const rMin  = Array.isArray(T.spill.sizePx) ? T.spill.sizePx[0] : (T.spill.sizePx ?? 1.2);
-      const rMax  = Array.isArray(T.spill.sizePx) ? T.spill.sizePx[1] : rMin;
+      // Spawn fracs: in sprite mode target the full corridor (which is now entirely in bleed),
+      // avoiding the extreme outer edge. Canvas mode uses the tuning values as-is.
+      const leftSpawnFrac = isSprite
+        ? { x0: 0.10, x1: 0.90, y0: 0.00, y1: spawnFracY }
+        : { x0: leftSpawnFracX[0],  x1: leftSpawnFracX[1],  y0: 0.00, y1: spawnFracY };
+      const rightSpawnFrac = isSprite
+        ? { x0: 0.10, x1: 0.90, y0: 0.00, y1: spawnFracY }
+        : { x0: rightSpawnFracX[0], x1: rightSpawnFracX[1], y0: 0.00, y1: spawnFracY };
+
+      const rMin  = (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[0] : (T.spill.sizePx ?? 1.2)) * pxK;
+      const rMax  = Math.max(rMin, (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[1] : rMin) * pxK);
       const baseCount = T.spill.count ?? 28;
       const gatedCount = Math.max(0, Math.floor(baseCount * spillK));
       const alphaMul = spillK;
@@ -586,8 +602,8 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
       runSide('R');
     }
 
-    // re-clip after spill for canvas path
-    if (!isSprite && wantClip) { ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip(); }
+    // re-clip after spill so the bowl and subsequent elements stay within bounds
+    if (wantClip) { ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip(); }
   }
 
   // 2) BOWL composite (proportional; mobile-safe)

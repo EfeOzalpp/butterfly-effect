@@ -9,6 +9,7 @@ import {
   FOOTPRINTS,
   BLEED,
   PARTICLE_SHAPES,
+  PARTICLE_SCALE_BOOST,
 } from '../selection/footprints';
 
 import { makeFrozenTextureFromDrawer } from '../textures/animatedTexture';
@@ -163,6 +164,36 @@ export function prewarmSpriteTextures(
     const alphaUse = vs.alpha ?? alpha;
 
     if (PARTICLE_SHAPES.has(shape)) {
+      // Also prewarm the static texture so components get an immediate cache hit on mount
+      const sKeyEarly = makeStaticKey({
+        shape,
+        tileSize: TILE,
+        dpr,
+        alpha: alphaUse,
+        bucketId,
+        variant,
+        darkMode,
+        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+      });
+      if (!textureRegistry.get(sKeyEarly)) {
+        jobs.push({
+          key: sKeyEarly,
+          drawer,
+          tileSize: TILE,
+          dpr,
+          alpha: alphaUse,
+          gradientRGB: vs.rgb,
+          liveAvg: bucketAvg,
+          blend: vs.blend ?? 1.0,
+          footprint,
+          bleed,
+          seedKey: `${sKeyEarly}|seed:${shape}|${variant}`,
+          prio: 1,
+          darkMode,
+          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        });
+      }
+
       const key = makeFrozenKey({
         shape,
         tileSize: TILE,
@@ -214,6 +245,7 @@ export function prewarmSpriteTextures(
               bucketId,
               variant,
               darkMode,
+              pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
             });
             if (!textureRegistry.get(sKey)) {
               textureRegistry.ensure({
@@ -230,6 +262,7 @@ export function prewarmSpriteTextures(
                 seedKey: `${sKey}|seed:${shape}|${variant}`,
                 prio: 0,
                 darkMode,
+                pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
               });
             }
           } finally {
@@ -246,6 +279,7 @@ export function prewarmSpriteTextures(
         bucketId,
         variant,
         darkMode,
+        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
       });
       if (!textureRegistry.get(key2)) {
         jobs.push({
@@ -262,13 +296,14 @@ export function prewarmSpriteTextures(
           seedKey: `${key2}|seed:${shape}|${variant}`,
           prio: 0,
           darkMode,
+          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
         });
       }
     }
   }
 
   if (jobs.length) textureRegistry.prewarm(jobs, { prioBase: 0 } as any);
-  for (const run of frozenJobs) enqueueTexture(run, 1000);
+  for (const run of frozenJobs) enqueueTexture(run, 1000, true);
 
   if (typeof window !== 'undefined') {
     (window as any).__GP_FROZEN_TEX = { size: frozenSize() };
@@ -315,6 +350,8 @@ export function requestFrozenTexture(args: {
   simulateMs: number;
   stepMs: number;
   darkMode?: boolean;
+  background?: boolean;
+  pixelScaleBoost?: number;
   onReady: (tex: THREE.CanvasTexture) => void;
   onFail: () => void;
 }) {
@@ -344,6 +381,7 @@ export function requestFrozenTexture(args: {
           bleed: args.bleed,
           seedKey: args.seedKey,
           darkMode: args.darkMode,
+          pixelScaleBoost: args.pixelScaleBoost,
           simulateMs: args.simulateMs,
           stepMs: args.stepMs,
           generateMipmaps: true,
@@ -362,7 +400,7 @@ export function requestFrozenTexture(args: {
       } finally {
         frozenEndInflight(args.key);
       }
-    }, 0);
+    }, 0, args.background);
   }
 
   return () => {};

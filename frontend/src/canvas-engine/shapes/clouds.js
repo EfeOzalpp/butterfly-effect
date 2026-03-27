@@ -24,6 +24,16 @@ export const CLOUDS_DARK_PALETTE = {
   rain:    { r: 11,  g: 104, b: 195 },
 };
 
+export const CLOUDS_WARM_PALETTE = {
+  default: { r: 248, g: 238, b: 226 },
+  rain:    { r: 30,  g: 158, b: 228 },
+};
+
+export const CLOUDS_COOL_PALETTE = {
+  default: { r: 228, g: 236, b: 248 },
+  rain:    { r: 15,  g: 148, b: 238 },
+};
+
 const CLOUD_BASE = CLOUDS_BASE_PALETTE.default;
 
 /* ───────────────── Defaults (tweakable) ───────────────── */
@@ -85,7 +95,10 @@ const WOBBLE = { ampScale: [0.8, 0.95] };
 
 /* ───────────────── Draw ───────────────── */
 export function drawClouds(p, _cx, _cy, _r, opts) {
-  const pal = opts?.darkMode ? CLOUDS_DARK_PALETTE : CLOUDS_BASE_PALETTE;
+  const pal = opts?.darkMode ? CLOUDS_DARK_PALETTE
+    : opts?.paletteTheme === 'warm' ? CLOUDS_WARM_PALETTE
+    : opts?.paletteTheme === 'cool' ? CLOUDS_COOL_PALETTE
+    : CLOUDS_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;

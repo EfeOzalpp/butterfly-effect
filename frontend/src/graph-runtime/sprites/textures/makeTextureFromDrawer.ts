@@ -22,6 +22,9 @@ export function makeTextureFromDrawer({
   timeMs = (typeof performance !== 'undefined' ? performance.now() : 0),
   seedKey,
   darkMode = false,
+  prewarmMs = 0,
+  prewarmStepMs = 33,
+  pixelScaleBoost,
 }: {
   drawer: Drawer;
   tileSize?: number;
@@ -35,6 +38,9 @@ export function makeTextureFromDrawer({
   timeMs?: number;
   seedKey?: string | number;
   darkMode?: boolean;
+  prewarmMs?: number;
+  prewarmStepMs?: number;
+  pixelScaleBoost?: number;
 }): THREE.CanvasTexture {
   const wTiles = Math.max(1e-6, footprint.w || 1);
   const hTiles = Math.max(1e-6, footprint.h || 1);
@@ -76,17 +82,18 @@ export function makeTextureFromDrawer({
     h:  hTiles,
   };
 
-  const opts = {
+  const baseOpts = {
     alpha,
     gradientRGB,
     liveAvg,
     blend,
-    timeMs,
     fitToFootprint: true,
     cell,
     footprint: footprintForDrawer,
     seedKey,
-    coreScaleMult: 1,
+    coreScaleMult: Math.max(1, pixelScaleBoost ?? 1),
+    pixelScale: Math.max(1, pixelScaleBoost ?? 1),
+    particlePixelScale: Math.max(1, pixelScaleBoost ?? 1),
     oscAmp: 0,
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
@@ -94,9 +101,26 @@ export function makeTextureFromDrawer({
     darkMode,
   };
 
+  const r = Math.min(logicalW, logicalH) * 0.8;
+
+  // Run particle simulation warmup frames so particles are mid-flight on first view
+  if (prewarmMs > 0) {
+    const step = Math.max(1, prewarmStepMs);
+    let lastT = 0;
+    for (let t = step; t <= prewarmMs; t += step) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cnv.width, cnv.height);
+      drawer(p, centerX, centerY, r, { ...baseOpts, timeMs: t, dtMs: t - lastT, dtSec: (t - lastT) / 1000 });
+      lastT = t;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cnv.width, cnv.height);
+  }
+
+  const opts = { ...baseOpts, timeMs };
+
   let failed = false;
   try {
-    const r = Math.min(logicalW, logicalH) * 0.8;
     drawer(p, centerX, centerY, r, opts);
   } catch (err) {
     console.warn('[CanvasTextureBridge] drawer failed → fallback', err);

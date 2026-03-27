@@ -10,7 +10,7 @@ import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 import { getPaddingSpecForState } from "../layout/padding";
 import { computeGridCached, type GridCacheState } from "../layout/gridCache";
 
-import { drawBackground } from "../render/background";
+import { drawBackground, drawFogOverlay } from "../render/background";
 import { drawGridOverlay } from "../render/gridOverlay";
 import { getGradientRGB, type PaletteCache, type CondPaletteCaches } from "../render/palette";
 import { drawGhosts, type Ghost } from "../render/ghosts";
@@ -200,6 +200,7 @@ export function createEngineTicker(deps: LoopDeps) {
       exposure: style.exposure,
       contrast: style.contrast,
       darkMode: style.darkMode,
+      paletteTheme: currentBgSpec?.shapePalette,
       transport,
     };
 
@@ -230,6 +231,8 @@ export function createEngineTicker(deps: LoopDeps) {
         renderOneSandboxed(it, rEff, shared, rootAppearK),
       onGhost: (g) => ghostsRef.current.push(g),
     });
+
+    drawFogOverlay(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
 
     if (hero.visible && hero.x != null && hero.y != null) {
       p.fill(255, 0, 0, 255);

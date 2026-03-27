@@ -14,6 +14,7 @@ export { cssToRgbViaCanvas } from "./color-modifiers/adapter";
 
 export {
   oscillateSaturation,
+  oscillateBrightness,
   clampBrightness,
   clampSaturation,
   driveSaturation,

@@ -297,82 +297,87 @@ export default function SectionPickerIntro({
           </span>
         </div>
 
-        {open && (
-          <div
-            ref={listRef}
-            id={listboxId}
-            role="listbox"
-            className={`section-listbox ${placement === 'up' ? 'drop-up' : 'drop-down'}`}
-            tabIndex={-1}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                moveActive(1);
-              } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                moveActive(-1);
-              } else if (e.key === 'Home') {
-                e.preventDefault();
-                setActiveIndex(0);
-              } else if (e.key === 'End') {
-                e.preventDefault();
-                setActiveIndex(Math.max(0, renderedFocusable.length - 1));
-              } else if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                chooseIndex(activeIndex, 'keyboard');
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                setOpen(false);
-                inputRef.current && inputRef.current.focus();
-              }
-            }}
-          >
-            {displayedList.length === 0 && (
-              <div className="section-empty" role="option" aria-disabled="true" aria-selected="false">
-                No matches
-              </div>
-            )}
-
-            {displayedList.map((item: any, idx: number) => {
-              if (item.type === 'header') {
-                return (
-                  <span
-                    key={`hdr-${item.id || idx}`}
-                    className="section-group-header"
-                    role="presentation"
-                    aria-hidden="true"
-                  >
-                    {item.label}
-                  </span>
-                );
-              }
-              const selected = value === item.value;
-              const isActive = renderedFocusable[activeIndex]?.__renderIndex === idx;
-              return (
-                <div
-                  id={`opt-${item.value}`}
-                  key={item.value}
-                  role="option"
-                  aria-selected={selected}
-                  className={'section-option' + (isActive ? ' is-active' : '') + (selected ? ' is-selected' : '')}
-                  onMouseEnter={() => {
-                    const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
-                    if (focusIdx !== -1 && focusIdx !== activeIndex) {
-                      setActiveIndex(focusIdx);
-                    }
-                  }}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
-                    if (focusIdx >= 0) chooseIndex(focusIdx, 'pointer');
-                  }}
-                >
-                  <span className="section-label">{item.label}</span>
+        <div
+          className={`section-listbox-shell ${placement === 'up' ? 'drop-up' : 'drop-down'}${open ? ' is-open' : ''}`}
+          aria-hidden={!open}
+        >
+          <div className="section-listbox-clip">
+            <div
+              ref={listRef}
+              id={listboxId}
+              role="listbox"
+              className={`section-listbox ${placement === 'up' ? 'drop-up' : 'drop-down'}`}
+              tabIndex={-1}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  moveActive(1);
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  moveActive(-1);
+                } else if (e.key === 'Home') {
+                  e.preventDefault();
+                  setActiveIndex(0);
+                } else if (e.key === 'End') {
+                  e.preventDefault();
+                  setActiveIndex(Math.max(0, renderedFocusable.length - 1));
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  chooseIndex(activeIndex, 'keyboard');
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setOpen(false);
+                  inputRef.current && inputRef.current.focus();
+                }
+              }}
+            >
+              {displayedList.length === 0 && (
+                <div className="section-empty" role="option" aria-disabled="true" aria-selected="false">
+                  No matches
                 </div>
-              );
-            })}
+              )}
+
+              {displayedList.map((item: any, idx: number) => {
+                if (item.type === 'header') {
+                  return (
+                    <span
+                      key={`hdr-${item.id || idx}`}
+                      className="section-group-header"
+                      role="presentation"
+                      aria-hidden="true"
+                    >
+                      {item.label}
+                    </span>
+                  );
+                }
+                const selected = value === item.value;
+                const isActive = renderedFocusable[activeIndex]?.__renderIndex === idx;
+                return (
+                  <div
+                    id={`opt-${item.value}`}
+                    key={item.value}
+                    role="option"
+                    aria-selected={selected}
+                    className={'section-option' + (isActive ? ' is-active' : '') + (selected ? ' is-selected' : '')}
+                    onMouseEnter={() => {
+                      const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
+                      if (focusIdx !== -1 && focusIdx !== activeIndex) {
+                        setActiveIndex(focusIdx);
+                      }
+                    }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
+                      if (focusIdx >= 0) chooseIndex(focusIdx, 'pointer');
+                    }}
+                  >
+                    <span className="section-label">{item.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {error && (

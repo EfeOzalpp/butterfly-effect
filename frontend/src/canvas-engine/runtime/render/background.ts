@@ -4,6 +4,7 @@ import type { PLike } from "../p/makeP";
 import { BACKGROUNDS, type BackgroundSpec, type RadialGradientSpec, type LinearGradientSpec } from "../../adjustable-rules/backgrounds";
 import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
 import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index";
+import { stepAndDrawParticles } from "../../modifiers/particle-systems/particle-1";
 
 type RGB = { r: number; g: number; b: number };
 type RGBA = RGB & { a: number };
@@ -161,6 +162,104 @@ function resolveStarRange(
     mix(value[0][0], value[1][0], clamp01(liveAvg)),
     mix(value[0][1], value[1][1], clamp01(liveAvg)),
   ] as const;
+}
+
+export function drawFogOverlay(
+  p: PLike,
+  sceneLookup: SceneLookupKey,
+  override: BackgroundSpec | null = null,
+  alpha: number = 1,
+  liveAvg: number = 0.5
+) {
+  const spec = resolveBackgroundSpec(sceneLookup, override);
+  const overlay = spec.overlay;
+  if (!overlay || overlay.kind === "solid") return;
+
+  const gradOverlay = overlay as RadialGradientSpec | LinearGradientSpec;
+  const hasFog = gradOverlay.stops.some((s) => s.fog);
+  if (!hasFog) return;
+
+  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const t = p.millis() / 1000;
+
+  type GradStop = (typeof gradOverlay.stops)[number];
+  function fogStopColor(stop: GradStop): string {
+    if (!stop.fog) return "rgba(0,0,0,0)";
+    const resolved = resolveStopColor(stop.rgba, stop.liveBlend, liveAvg);
+    const parsed = parseCssColor(resolved);
+    if (!parsed) return "rgba(0,0,0,0)";
+    return `rgba(${parsed.r}, ${parsed.g}, ${parsed.b}, ${clamp01(stop.fog.opacity)})`;
+  }
+
+  let g: CanvasGradient;
+
+  if (gradOverlay.kind === "linear") {
+    const { x1, y1, x2, y2 } = resolveLinearPoints(p, gradOverlay);
+    g = ctx.createLinearGradient(x1, y1, x2, y2);
+    for (const stop of gradOverlay.stops) {
+      const baseK = stop.oscK
+        ? clamp01(stop.k + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t))
+        : stop.k;
+      const fogK = stop.fog?.k ?? baseK;
+      g.addColorStop(fogK, fogStopColor(stop));
+    }
+  } else {
+    const cx = p.width * gradOverlay.center.xK;
+    const cy = p.height * gradOverlay.center.yK;
+    const inner = Math.min(p.width, p.height) * gradOverlay.innerK;
+    const outer = resolveOuterRadius(p, gradOverlay.outer);
+    g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+    for (const stop of gradOverlay.stops) {
+      const fogK = stop.fog?.k ?? stop.k;
+      g.addColorStop(fogK, fogStopColor(stop));
+    }
+  }
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, p.width, p.height);
+  ctx.restore();
+
+  const dtSec = Math.min(0.1, p.deltaTime / 1000);
+
+  for (let i = 0; i < gradOverlay.stops.length; i++) {
+    const stop = gradOverlay.stops[i];
+    if (!stop.fog || stop.fog.opacity <= 0) continue;
+
+    const fogK = stop.fog.k ?? stop.k;
+    const resolved = resolveStopColor(stop.rgba, stop.liveBlend, liveAvg);
+    const parsed = parseCssColor(resolved);
+    if (!parsed) continue;
+
+    const bandH = p.height * 0.26;
+    const centerY = fogK * p.height;
+
+    stepAndDrawParticles(p, {
+      key: `fog-foliage:${sceneLookup}:${i}`,
+      rect: { x: 0, y: centerY - bandH * 0.5, w: p.width, h: bandH },
+      mode: "dot",
+      spawnMode: "stratified",
+      respawnStratified: true,
+      count: Math.max(1, Math.round(stop.fog.opacity * 48)),
+      color: { r: parsed.r, g: parsed.g, b: parsed.b, a: Math.round(stop.fog.opacity * 155) },
+      speed: { min: 6, max: 20 },
+      angle: { min: -0.28, max: 0.28 },
+      accel: { y: 1.8 },
+      jitter: { pos: 10, velAngle: 0.45 },
+      size: { min: 0.9, max: 2.5 },
+      lifetime: { min: 5, max: 13 },
+      fadeInFrac: 0.12,
+      fadeOutFrac: 0.22,
+      edgeFadePx: {
+        left: p.width * 0.09,
+        right: p.width * 0.09,
+        top: bandH * 0.32,
+        bottom: bandH * 0.32,
+      },
+      respawn: true,
+    }, dtSec);
+  }
 }
 
 export function drawBackground(

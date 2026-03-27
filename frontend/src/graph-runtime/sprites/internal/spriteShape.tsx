@@ -1,16 +1,19 @@
 // graph-runtime/sprites/api/spriteShape.tsx
 import * as React from 'react';
 import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
 import type { ShapeKey } from '../selection/types';
-import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
+import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, resolveDpr, DEFAULT_VARIANT_SLOTS, type ShapeAssignment } from '../internal/spritePolicy';
 
 import { DRAWERS } from '../selection/drawers';
-import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES } from '../selection/footprints';
+import { houseHasChimney } from '../../../canvas-engine/shapes/house.js';
+import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES, PARTICLE_SCALE_BOOST } from '../selection/footprints';
 
 import { textureRegistry } from '../textures/registry';
+import { makeTextureFromDrawer } from '../textures/makeTextureFromDrawer';
 
 import {
   getStaticTexture,
@@ -18,6 +21,8 @@ import {
   requestStaticTexture,
   requestFrozenTexture,
 } from '../internal/spriteRuntime';
+import { onceQueueIdle } from '../textures/queue';
+import { registerEpochShape } from './epochScheduler';
 import { spriteMaterialCachingDisabled } from './debug-flags';
 
 function clamp01(v: number) {
@@ -28,6 +33,20 @@ const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();
 function track(tex: THREE.CanvasTexture) {
   __GLOBAL_TEX.add(tex);
   return tex;
+}
+
+/** Dispose an epoch texture fully: zeros its canvas backing store (releases 2D context
+ *  slot) then disposes the WebGL handle. Epoch textures must NOT go through track() so
+ *  they're not pinned in __GLOBAL_TEX and can be GC'd after this call. */
+function releaseEpochTex(tex: THREE.CanvasTexture | null) {
+  if (!tex) return;
+  try {
+    if (tex.image instanceof HTMLCanvasElement) {
+      tex.image.width = 0;   // releases 2D backing store + context slot
+      tex.image.height = 0;
+    }
+    tex.dispose();
+  } catch {}
 }
 
 type SharedMaterialEntry = {
@@ -110,6 +129,9 @@ export function SpriteShape({
   variantSlots = DEFAULT_VARIANT_SLOTS,
   variantSeed,
   darkMode = false,
+  occasionalRefreshMs = 0,
+  worldPosition,
+  assignment,
 }: {
   avg: number;
   seed?: string | number;
@@ -126,65 +148,119 @@ export function SpriteShape({
   variantSlots?: number;
   variantSeed?: string | number;
   darkMode?: boolean;
+  occasionalRefreshMs?: number;
+  worldPosition?: [number, number, number];
+  assignment?: ShapeAssignment;
 }) {
 
   const tShape = clamp01(Number.isFinite(avg) ? avg : 0.5);
-  const { bucketId, bucketAvg } = quantizeAvgWithDownshift(avg);
+  const _derived = quantizeAvgWithDownshift(avg);
+  const bucketId   = assignment?.bucketId  ?? _derived.bucketId;
+  const bucketAvg  = assignment?.bucketAvg ?? _derived.bucketAvg;
 
   const shape: ShapeKey = React.useMemo(
-    () => chooseShape({ avg: tShape, seed: seed ?? tShape, orderIndex }),
-    [tShape, seed, orderIndex]
+    () => assignment?.shape ?? chooseShape({ avg: tShape, seed: seed ?? tShape, orderIndex }),
+    // assignment is stable (cache hit) so this only re-runs if avg/seed/orderIndex change without an assignment
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [assignment, tShape, seed, orderIndex]
   );
 
   const TILE = Math.min(tileSize, 128);
   const dpr = resolveDpr(1);
 
-  const wantsFrozen = !!(freezeParticles && PARTICLE_SHAPES.has(shape));
+  const isParticleShape = PARTICLE_SHAPES.has(shape);
+  const [animationReady, setAnimationReady] = React.useState(false);
+  const wantsFrozen = !!(animationReady && freezeParticles && isParticleShape);
   const simulateMs = Math.max(0, particleFrames * particleStepMs);
 
   const vs = computeVisualStyle(bucketAvg);
   const alphaUse = vs.alpha ?? alpha;
 
   const variant = React.useMemo(() => {
+    if (assignment?.variant !== undefined) return assignment.variant;
     const vSeed = variantSeed ?? `${shape}|B${bucketId}|${seed ?? ''}|${orderIndex ?? 0}`;
     return pickVariantSlot(String(vSeed), Math.max(1, variantSlots));
-  }, [shape, bucketId, seed, orderIndex, variantSeed, variantSlots]);
+  }, [assignment, shape, bucketId, seed, orderIndex, variantSeed, variantSlots]);
+
+  // Stagger dark-mode texture rebuilds by orderIndex so the queue isn't flooded
+  // when the user toggles theme. CSS vars change instantly; shapes re-texture gradually.
+  const [localDarkMode, setLocalDarkMode] = React.useState(darkMode);
+  React.useEffect(() => {
+    if (localDarkMode === darkMode) return;
+    const delay = Math.min((orderIndex ?? 0) * 6, 1200);
+    const id = setTimeout(() => setLocalDarkMode(darkMode), delay);
+    return () => clearTimeout(id);
+  }, [darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stableSeedKey = React.useMemo(() => {
+    const base = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: PARTICLE_SCALE_BOOST[shape] });
+    return `${base}|seed:${shape}|${variant}`;
+  }, [shape, TILE, dpr, alphaUse, bucketId, variant, localDarkMode]);
+
+  const wantsEpochRefresh = React.useMemo(() => {
+    if (shape === 'house') return houseHasChimney(stableSeedKey);
+    return true;
+  }, [shape, stableSeedKey]);
+
+  const [refreshEpoch, setRefreshEpoch] = React.useState(0);
+  const isVisibleRef = React.useRef(true);
+  const setRefreshEpochRef = React.useRef(setRefreshEpoch);
+  React.useEffect(() => { setRefreshEpochRef.current = setRefreshEpoch; }, [setRefreshEpoch]);
+
+  React.useEffect(() => {
+    if (!occasionalRefreshMs || !wantsEpochRefresh) return;
+    return registerEpochShape({
+      isVisible: () => isVisibleRef.current && fogOpacityRef.current > 0.3,
+      tick: () => setRefreshEpochRef.current((e) => e + 1),
+    });
+  }, [occasionalRefreshMs, wantsEpochRefresh]);
 
   const key = React.useMemo(() => {
+    const staticBase = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: PARTICLE_SCALE_BOOST[shape] });
+    // Epoch refreshes always use cheap static textures — frozen rebuilds are too expensive
+    if (refreshEpoch > 0) return `${staticBase}|e:${refreshEpoch}`;
     return wantsFrozen
-      ? makeFrozenKey({
-          shape,
-          tileSize: TILE,
-          dpr,
-          alpha: alphaUse,
-          simulateMs,
-          stepMs: particleStepMs,
-          bucketId,
-          variant,
-          darkMode,
-        })
-      : makeStaticKey({
-          shape,
-          tileSize: TILE,
-          dpr,
-          alpha: alphaUse,
-          bucketId,
-          variant,
-          darkMode,
-        });
-  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, darkMode]);
+      ? makeFrozenKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, simulateMs, stepMs: particleStepMs, bucketId, variant, darkMode: localDarkMode })
+      : staticBase;
+  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, localDarkMode, refreshEpoch]);
 
   const [texState, setTexState] = React.useState<{ key: string; tex: THREE.CanvasTexture | null }>(() => {
     const tex = wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null);
     return { key, tex };
   });
   const tex = texState.key === key ? texState.tex : null;
+  const prevTexRef = React.useRef<THREE.CanvasTexture | null>(null);
+  const prevTexShapeRef = React.useRef<ShapeKey | null>(null);
+  React.useEffect(() => {
+    if (tex) {
+      prevTexRef.current = tex;
+      prevTexShapeRef.current = shape;
+    }
+  }, [tex, shape]);
+  // Only reuse prev texture if it's the same shape — cross-shape fallback shows the wrong sprite
+  const displayTex = tex ?? (prevTexShapeRef.current === shape ? prevTexRef.current : null);
+
+  // Once static texture is loaded, wait for the static queue to go idle, then stagger frozen upgrade
+  React.useEffect(() => {
+    if (animationReady || !isParticleShape || !tex) return;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+    const offIdle = onceQueueIdle(() => {
+      if (cancelled) return;
+      timerId = setTimeout(() => setAnimationReady(true), ((orderIndex ?? 0) % 300) * 10);
+    });
+    return () => {
+      cancelled = true;
+      offIdle();
+      if (timerId !== undefined) clearTimeout(timerId);
+    };
+  }, [animationReady, isParticleShape, tex, orderIndex]);
 
   // Reset texture when dark mode changes so we request a new dark/light variant
   React.useEffect(() => {
     const nextTex = wantsFrozen ? (getFrozenTexture(key) || null) : (getStaticTexture(key) || null);
     setTexState({ key, tex: nextTex });
-  }, [darkMode, key, wantsFrozen]);
+  }, [localDarkMode, key, wantsFrozen]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -212,7 +288,7 @@ export function SpriteShape({
       gradientRGB: vs.rgb,
       footprint,
       bleed,
-      seedKey: `${key}|seed:${shape}|${variant}`,
+      seedKey: stableSeedKey,
     } as const;
 
     const requestStatic = () => {
@@ -223,7 +299,8 @@ export function SpriteShape({
         alpha: alphaUse,
         bucketId,
         variant,
-        darkMode,
+        darkMode: localDarkMode,
+        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
       });
 
       const existing = textureRegistry.get(sKey);
@@ -246,7 +323,8 @@ export function SpriteShape({
           bleed,
           seedKey: `${sKey}|seed:${shape}|${variant}`,
           prio: 0,
-          darkMode,
+          darkMode: localDarkMode,
+          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
         },
         (t) => setIfAlive(t)
       );
@@ -254,7 +332,7 @@ export function SpriteShape({
       return off;
     };
 
-    if (wantsFrozen) {
+    if (wantsFrozen && refreshEpoch === 0) {
       const cached = getFrozenTexture(key);
       if (cached) {
         setIfAlive(cached);
@@ -276,22 +354,58 @@ export function SpriteShape({
         seedKey: common.seedKey,
         simulateMs,
         stepMs: particleStepMs,
-        darkMode,
+        darkMode: localDarkMode,
+        background: true,
+        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
         onReady: (t) => setIfAlive(t),
         onFail: () => { requestStatic(); },
       });
 
-      watchdog = setTimeout(() => {
-        if (!cancelled && !getFrozenTexture(key) && !textureRegistry.get(key)) {
-          requestStatic();
-        }
-      }, 1000);
+      if (refreshEpoch === 0) {
+        watchdog = setTimeout(() => {
+          if (!cancelled && !getFrozenTexture(key) && !textureRegistry.get(key)) {
+            requestStatic();
+          }
+        }, 1000);
+      }
 
       return () => {
         cancelled = true;
         if (off) off();
         if (watchdog) clearTimeout(watchdog);
       };
+    }
+
+    // Epoch refreshes: build texture directly, bypassing the registry entirely.
+    // IMPORTANT: epoch textures must NOT go through track()/setIfAlive because
+    // __GLOBAL_TEX would pin them in memory forever. Instead we manage their
+    // lifecycle manually via epochTexRef so the canvas 2D context slot is released
+    // on each cycle (Chrome hard-caps at ~300 contexts → GPU process crash otherwise).
+    if (refreshEpoch > 0) {
+      const prevEpochTex = epochTexRef.current;
+      try {
+        const newTex = makeTextureFromDrawer({
+          drawer,
+          tileSize: TILE,
+          dpr,
+          alpha: alphaUse,
+          gradientRGB: vs.rgb,
+          liveAvg: bucketAvg,
+          blend: (vs.blend ?? blend ?? 1.0),
+          footprint,
+          bleed,
+          seedKey: common.seedKey,
+          darkMode: localDarkMode,
+          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        });
+        epochTexRef.current = newTex;
+        // Bypass track() — set state directly so this texture is NOT pinned in __GLOBAL_TEX
+        if (!cancelled) setTexState({ key, tex: newTex });
+        // Dispose prev after the next frame (GPU has already uploaded it; zeroing the
+        // canvas releases the 2D context slot without affecting the rendered output)
+        if (prevEpochTex) requestAnimationFrame(() => releaseEpochTex(prevEpochTex));
+      } catch {}
+      return () => { cancelled = true; };
     }
 
     off = requestStaticTexture(
@@ -308,7 +422,8 @@ export function SpriteShape({
         bleed,
         seedKey: common.seedKey,
         prio: 0,
-        darkMode,
+        darkMode: localDarkMode,
+        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
       },
       (t) => setIfAlive(t)
     );
@@ -331,46 +446,93 @@ export function SpriteShape({
     variant,
     bucketId,
     blend,
-    darkMode,
+    localDarkMode,
     vs.blend,
     vs.rgb,
+    refreshEpoch,
   ]);
 
-  const materialCacheDisabled = spriteMaterialCachingDisabled();
+  const materialCacheDisabled = spriteMaterialCachingDisabled() || !!worldPosition;
   const material = React.useMemo(() => {
-    if (!tex) return null;
+    if (!displayTex) return null;
     return materialCacheDisabled
-      ? makeUnsharedSpriteMaterial(tex, opacity)
-      : acquireSpriteMaterial(tex, opacity);
-  }, [tex, opacity, materialCacheDisabled]);
+      ? makeUnsharedSpriteMaterial(displayTex, opacity)
+      : acquireSpriteMaterial(displayTex, opacity);
+  }, [displayTex, opacity, materialCacheDisabled]);
   React.useEffect(() => {
-    if (!tex) return;
+    if (!displayTex) return;
     return () => {
       if (materialCacheDisabled) {
         try { material?.dispose(); } catch {}
         return;
       }
-      releaseSpriteMaterial(tex, opacity);
+      releaseSpriteMaterial(displayTex, opacity);
     };
-  }, [tex, opacity, material, materialCacheDisabled]);
+  }, [displayTex, opacity, material, materialCacheDisabled]);
 
-  if (!tex || !material) return null;
+  const materialRef = React.useRef<THREE.SpriteMaterial | null>(null);
+  React.useEffect(() => { materialRef.current = material; }, [material]);
+  const spriteRef = React.useRef<THREE.Sprite | null>(null);
+  const _wp = React.useRef(new THREE.Vector3());
+  const _frustum = React.useRef(new THREE.Frustum());
+  const _projScreenMatrix = React.useRef(new THREE.Matrix4());
+  const fogOpacityRef = React.useRef(1);
+  const epochTexRef = React.useRef<THREE.CanvasTexture | null>(null);
+  React.useEffect(() => {
+    return () => { releaseEpochTex(epochTexRef.current); };
+  }, []);
+
+  useFrame(({ camera }) => {
+    const spr = spriteRef.current;
+    if (spr) {
+      spr.getWorldPosition(_wp.current);
+      _projScreenMatrix.current.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      _frustum.current.setFromProjectionMatrix(_projScreenMatrix.current);
+      isVisibleRef.current = _frustum.current.containsPoint(_wp.current);
+    }
+
+    const mat = materialRef.current;
+    if (!mat || !spr || !worldPosition) return;
+    const cameraToOrigin = camera.position.length();
+    // Project shape onto camera's forward axis (view-space depth)
+    // This fogs only truly back-facing shapes, not off-axis side shapes
+    const invLen = 1 / Math.max(0.001, cameraToOrigin);
+    const fwdX = -camera.position.x * invLen;
+    const fwdY = -camera.position.y * invLen;
+    const fwdZ = -camera.position.z * invLen;
+    const depth = (_wp.current.x - camera.position.x) * fwdX
+                + (_wp.current.y - camera.position.y) * fwdY
+                + (_wp.current.z - camera.position.z) * fwdZ;
+    const fogNear = cameraToOrigin + 1;
+    const fogFar  = cameraToOrigin + 13;
+    const t = Math.max(0, Math.min(1, (depth - fogNear) / Math.max(1, fogFar - fogNear)));
+    // Fade fog out entirely when camera is close — thresholds match scene minRadius (~20)
+    const zoomFade = Math.max(0, Math.min(1, (cameraToOrigin - 25) / 50));
+    const newOpacity = 1.0 - t * 0.92 * zoomFade;
+    fogOpacityRef.current = newOpacity;
+    if (Math.abs(mat.opacity - newOpacity) > 0.004) mat.opacity = newOpacity;
+  });
+
+  if (!displayTex || !material) return null;
 
   const shapeScaleK = VISUAL_SCALE[shape] ?? 1;
   const finalScale = (scale ?? 1) * shapeScaleK;
 
-  const iw = (tex.image as HTMLCanvasElement | HTMLImageElement | undefined)?.width ?? 1;
-  const ih = (tex.image as HTMLCanvasElement | HTMLImageElement | undefined)?.height ?? 1;
-  const maxSide = Math.max(iw, ih) || 1;
-  const sx = finalScale * (iw / maxSide);
-  const sy = finalScale * (ih / maxSide);
+  // Use footprint+bleed constants for stable scale — texture swaps never cause size jumps
+  const fp = FOOTPRINTS[shape] ?? { w: 1, h: 1 };
+  const bl = BLEED[shape] ?? {};
+  const totalW = fp.w + (bl.left ?? 0) + (bl.right ?? 0);
+  const totalH = fp.h + (bl.top ?? 0) + (bl.bottom ?? 0);
+  const maxSide = Math.max(totalW, totalH) || 1;
+  const sx = finalScale * (totalW / maxSide);
+  const sy = finalScale * (totalH / maxSide);
 
   const biasY = ANCHOR_BIAS_Y[shape] ?? 0;
   const pos = Array.isArray(position) ? ([...position] as [number, number, number]) : [0, 0, 0];
   pos[1] += sy * biasY;
 
   return (
-    <sprite position={pos as any} scale={[sx, sy, 1]} renderOrder={5}>
+    <sprite ref={spriteRef as any} position={pos as any} scale={[sx, sy, 1]} renderOrder={5}>
       <primitive object={material} attach="material" dispose={null} />
     </sprite>
   );

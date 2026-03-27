@@ -10,6 +10,31 @@ const _rotQ = new Quaternion();
 const _axisX = new Vector3(1, 0, 0);
 const _axisY = new Vector3(0, 1, 0);
 
+const ROT_RELEASE_TAU = 0.38;
+const ROT_IDLE_RELEASE_TAU = 0.18;
+const ROT_STOP_EPSILON = 0.001;
+
+const mapResponsiveDelta = (delta: number, deadzone: number) => {
+  const magnitude = Math.abs(delta);
+  if (magnitude === 0) return 0;
+
+  const sign = Math.sign(delta);
+  if (magnitude <= deadzone) {
+    return sign * ((magnitude * magnitude) / (2 * deadzone));
+  }
+
+  return sign * (magnitude - deadzone / 2);
+};
+
+const decaySpinAxis = (value: number, tau: number, delta: number) => {
+  const magnitude = Math.abs(value);
+  if (magnitude <= ROT_STOP_EPSILON) return 0;
+
+  const decay = Math.exp(-delta / tau);
+  const next = value * decay;
+  return Math.abs(next) <= ROT_STOP_EPSILON ? 0 : next;
+};
+
 export type GestureState = {
   pinching: boolean;
   touchCount: number;
@@ -144,7 +169,8 @@ export default function useRotation({
 
   useEffect(() => {
     const dpr = window.devicePixelRatio || 1;
-    const DEADZONE_PX = Math.max(1, 0.9 * dpr);
+    const DESKTOP_DEADZONE_PX = Math.max(0.2, 0.35 * dpr);
+    const TOUCH_DEADZONE_PX = Math.max(0.6, 0.8 * dpr);
     const TOUCH_PX_TO_RAD = (isTabletLike ? 0.004 : 0.006) / dpr;
     const DESKTOP_PX_TO_RAD = 0.0032 / dpr;
     const canvas = (gl as any)?.domElement as HTMLElement | undefined;
@@ -203,9 +229,11 @@ export default function useRotation({
       const now = performance.now();
       const last = lastDesktopPointerRef.current;
       const dt = Math.max(1, now - last.t);
-      const dx = event.clientX - last.x;
-      const dy = event.clientY - last.y;
-      const moving = Math.abs(dx) >= DEADZONE_PX || Math.abs(dy) >= DEADZONE_PX;
+      const rawDx = event.clientX - last.x;
+      const rawDy = event.clientY - last.y;
+      const dx = mapResponsiveDelta(rawDx, DESKTOP_DEADZONE_PX);
+      const dy = mapResponsiveDelta(rawDy, DESKTOP_DEADZONE_PX);
+      const moving = Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005;
       isMovingRef.current = moving;
 
       if (!moving) {
@@ -339,10 +367,12 @@ export default function useRotation({
 
         const last = lastTouchRef.current;
         const dt = Math.max(1, now2 - last.t);
-        const dx = t.clientX - last.x;
-        const dy = t.clientY - last.y;
+        const rawDx = t.clientX - last.x;
+        const rawDy = t.clientY - last.y;
+        const dx = mapResponsiveDelta(rawDx, TOUCH_DEADZONE_PX);
+        const dy = mapResponsiveDelta(rawDy, TOUCH_DEADZONE_PX);
 
-        const moving = Math.abs(dx) >= DEADZONE_PX || Math.abs(dy) >= DEADZONE_PX;
+        const moving = Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005;
         isMovingRef.current = moving;
 
         if (!moving) {
@@ -421,9 +451,6 @@ export default function useRotation({
   }, [groupRef, isTabletLike, markActivity, gl, gestureRef, menuOpenRef, useDesktopLayout]);
 
   // frame application
-  const ROT_RELEASE_TAU = 0.09;
-  const ROT_MIN_SPEED = 0.02;
-
   function applyRotationFrame({ idleActive, delta }: { idleActive: boolean; delta: number }) {
     const g = groupRef.current;
     if (!g) return;
@@ -441,30 +468,26 @@ export default function useRotation({
     // Freeze rotation while dragging external UI
     if (isDraggingRef.current) return;
 
-    if (!idleActive) {
-      const zf = Math.max(0, Math.min(1, (radius - minRadius) / (maxRadius - minRadius) || 0));
-      const zoomMul = 0.9 + 0.8 * zf;
-      const tabletMul = isTabletLike ? 1.6 : 1.25;
-      const motionMul = !useDesktopLayout && isMovingRef.current
-        ? (0.10 + (0.30 - 0.10) * zf)
-        : 1.0;
+    const zf = Math.max(0, Math.min(1, (radius - minRadius) / (maxRadius - minRadius) || 0));
+    const zoomMul = 0.9 + 0.8 * zf;
+    const tabletMul = isTabletLike ? 1.6 : 1.25;
+    const motionMul =
+      !useDesktopLayout && isMovingRef.current ? 0.10 + (0.30 - 0.10) * zf : 1.0;
+    const idleMul = idleActive ? 0.42 : 1.0;
 
-      const holdingTouch = isTouchRotatingRef.current && !isPinchingRef.current;
-      const holdingDesktop = useDesktopLayout && isDesktopRotatingRef.current;
-      if (!holdingTouch && !holdingDesktop) {
-        const k = Math.exp(-delta / ROT_RELEASE_TAU);
-        spinVelRef.current.x *= k;
-        spinVelRef.current.y *= k;
-        if (Math.abs(spinVelRef.current.x) < ROT_MIN_SPEED) spinVelRef.current.x = 0;
-        if (Math.abs(spinVelRef.current.y) < ROT_MIN_SPEED) spinVelRef.current.y = 0;
-      }
-
-      const mul = zoomMul * tabletMul * motionMul;
-      _rotQ.setFromAxisAngle(_axisX, spinVelRef.current.x * delta * mul);
-      g.quaternion.premultiply(_rotQ);
-      _rotQ.setFromAxisAngle(_axisY, spinVelRef.current.y * delta * mul);
-      g.quaternion.premultiply(_rotQ);
+    const holdingTouch = isTouchRotatingRef.current && !isPinchingRef.current;
+    const holdingDesktop = useDesktopLayout && isDesktopRotatingRef.current;
+    if (!holdingTouch && !holdingDesktop) {
+      const releaseTau = idleActive ? ROT_IDLE_RELEASE_TAU : ROT_RELEASE_TAU;
+      spinVelRef.current.x = decaySpinAxis(spinVelRef.current.x, releaseTau, delta);
+      spinVelRef.current.y = decaySpinAxis(spinVelRef.current.y, releaseTau, delta);
     }
+
+    const mul = zoomMul * tabletMul * motionMul * idleMul;
+    _rotQ.setFromAxisAngle(_axisX, spinVelRef.current.x * delta * mul);
+    g.quaternion.premultiply(_rotQ);
+    _rotQ.setFromAxisAngle(_axisY, spinVelRef.current.y * delta * mul);
+    g.quaternion.premultiply(_rotQ);
   }
 
   // keep your optional debug frame hook (no behavior change)

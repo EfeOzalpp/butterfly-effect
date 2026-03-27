@@ -29,6 +29,16 @@ export const SUN_DARK_PALETTE = {
   ray:     { r: 140, g: 88,  b: 31 },
 };
 
+export const SUN_WARM_PALETTE = {
+  default: { r: 255, g: 188, b: 44  },
+  ray:     { r: 248, g: 118, b: 26  },
+};
+
+export const SUN_COOL_PALETTE = {
+  default: { r: 255, g: 222, b: 128 },
+  ray:     { r: 248, g: 180, b: 80  },
+};
+
 export const MOON_DARK_PALETTE = {
   default: { r: 195, g: 208, b: 228 }, // cool silver-blue
 };
@@ -146,7 +156,10 @@ function drawCrescentMoon(p, x, y, r, opts, t, ex, ct) {
 }
 
 export function drawSun(p, xIn, yIn, rIn, opts = {}) {
-  const pal = opts?.darkMode ? SUN_DARK_PALETTE : SUN_BASE_PALETTE;
+  const pal = opts?.darkMode ? SUN_DARK_PALETTE
+    : opts?.paletteTheme === 'warm' ? SUN_WARM_PALETTE
+    : opts?.paletteTheme === 'cool' ? SUN_COOL_PALETTE
+    : SUN_BASE_PALETTE;
   const u = clamp01(opts?.liveAvg ?? 0.5);
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 

@@ -8,6 +8,7 @@ import {
 } from "../../lib/utils/color-and-interpolation";
 
 import { useGeneralPools } from "../../lib/hooks/useGamificationPools";
+import { useOptionalPreferences } from "../../app/state/preferences-context";
 
 const NEUTRAL = 'rgba(255,255,255,0.95)';
 
@@ -23,6 +24,8 @@ export default function GamificationGeneral({
   tieContext,
 }) {
   const [currentText, setCurrentText] = useState({ title: '', description: '' });
+  const preferences = useOptionalPreferences();
+  const darkMode = preferences?.darkMode ?? false;
   
   const safePct = Math.max(0, Math.min(100, Math.round(Number(percentage) || 0)));
 
@@ -31,15 +34,29 @@ export default function GamificationGeneral({
 
   const knobSample = useGradientColor(knobPct, DEFAULT_COLOR_OPTS);
   const knobColor  = mode === 'absolute' ? knobSample.css : NEUTRAL;
+  const emphasisShadow = useMemo(
+    () =>
+      darkMode
+        ? `0 0 10px color-mix(in srgb, ${color} 52%, var(--gam-glow-dark-base)), 0 0 18px color-mix(in srgb, ${color} 32%, var(--gam-glow-dark-base))`
+        : `0 0 8px color-mix(in srgb, ${color} 30%, var(--gam-glow-light-base)), 0 0 14px color-mix(in srgb, ${color} 16%, var(--gam-glow-light-base))`,
+    [color, darkMode]
+  );
+  const absoluteShadow = useMemo(
+    () =>
+      darkMode
+        ? `0 0 10px color-mix(in srgb, ${color} 52%, var(--gam-glow-dark-base)), 0 0 18px color-mix(in srgb, ${knobSample.css} 28%, var(--gam-glow-dark-base))`
+        : `0 0 8px color-mix(in srgb, ${color} 30%, var(--gam-glow-light-base)), 0 0 14px color-mix(in srgb, ${knobSample.css} 16%, var(--gam-glow-light-base))`,
+    [color, darkMode, knobSample.css]
+  );
     
   const { pick, loaded } = useGeneralPools();
 
   const Strong = useMemo(
     () =>
       function Strong({ children }) {
-        return <strong style={{ textShadow: `0 0 12px ${color}` }}>{children}</strong>;
+        return <strong style={{ textShadow: emphasisShadow }}>{children}</strong>;
       },
-    [color]
+    [emphasisShadow]
   );
   const Lines = useMemo(
     () =>
@@ -168,7 +185,7 @@ export default function GamificationGeneral({
     ) : (
       <>
         {' '}
-        <strong style={{ textShadow: `0 0 12px ${color}, 0 0 22px ${knobSample.css}` }}>
+        <strong style={{ textShadow: absoluteShadow }}>
           {Math.round(safePct)}
         </strong>
         /100
@@ -185,7 +202,7 @@ export default function GamificationGeneral({
           {mode === 'absolute' && description ? (
             <h4 className="gam-subline">{description}</h4>
           ) : null}
-          <p>{line}</p>
+          <h3 className="gam-general-line">{line}</h3>
         </div>
 
         {mode === 'absolute' && (

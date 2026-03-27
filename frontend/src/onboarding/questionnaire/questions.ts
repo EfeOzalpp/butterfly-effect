@@ -4,13 +4,13 @@ import type { Question } from '../types';
 export const WEIGHTED_QUESTIONS: Question[] = [
   {
     id: 'q1',
-    prompt: 'How do you usually get around?',
+    prompt: 'What\'s your usual commute for something simple?',
     required: true,
     options: [
-      { key: 'A', label: 'Use sidewalks or bicycle', weight: 1 },
-      { key: 'B', label: 'Take public transit and shared rides', weight: 0.75 },
-      { key: 'C', label: 'Use a solely gas-powered vehicle for short trips', weight: 0.05 },
-      { key: 'D', label: 'Use an electric or hybrid car or truck', weight: 0.3 },
+      { key: 'A', label: 'Just walk or ride a bike', weight: 1 },
+      { key: 'B', label: 'Take public transit or share a ride', weight: 0.75 },
+      { key: 'C', label: 'Use a good ol\' car for short trips', weight: 0.05 },
+      { key: 'D', label: 'An electric or hybrid car', weight: 0.3 },
     ],
   },
   {

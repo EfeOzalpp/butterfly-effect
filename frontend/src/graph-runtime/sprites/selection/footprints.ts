@@ -22,8 +22,8 @@ export const BLEED: Partial<Record<ShapeKey, { top?: number; right?: number; bot
   villa: { top: 0.08, bottom: 0.12, left: 0.08, right: 0.08 },
   house: { top: 0, bottom: 0, left: 0, right: 0 },
   power: { top: 0.08, bottom: 0.12, left: 0.5, right: 0.5 },
-  carFactory: { top: 0.75, bottom: 0.12, left: 0.12, right: 0.12 },
-  sea:   { top: 0.10, bottom: 0.10, left: 0.10, right: 0.10 },
+  carFactory: { top: 2.0, bottom: 0.12, left: 0.12, right: 0.12 },
+  sea:   { top: 0.10, bottom: 2.5, left: 0.45, right: 0.45 },
   car:   { top: 0.16, bottom: 0.28, left: 0.36, right: 0.36 },
   bus:   { top: 0.06, bottom: 0.08, left: 0.10, right: 0.10 },
   sun:   { top: 2, bottom: 2, left: 2, right: 2 },
@@ -32,4 +32,21 @@ export const BLEED: Partial<Record<ShapeKey, { top?: number; right?: number; bot
 export const VISUAL_SCALE: Partial<Record<ShapeKey, number>> = { car: 0.86, snow: 1.18 };
 export const ANCHOR_BIAS_Y: Partial<Record<ShapeKey, number>> = { car: -0.14 };
 
-export const PARTICLE_SHAPES = new Set<ShapeKey>(['snow', 'clouds']);
+export const PARTICLE_SHAPES = new Set<ShapeKey>(['snow', 'clouds', 'house', 'sea', 'carFactory', 'power']);
+
+/** Extra pixelScale multiplier passed to frozen texture builder for particle-heavy shapes. */
+export const PARTICLE_SCALE_BOOST: Partial<Record<ShapeKey, number>> = {
+  snow: 2,
+  clouds: 2.5,
+  sea: 2.5,
+};
+
+/** Warmup simulation ms applied to static textures so particles are mid-flight on first view. */
+export const PARTICLE_PREWARM_MS: Partial<Record<ShapeKey, number>> = {
+  snow: 1200,
+  clouds: 1000,
+  sea: 800,
+  house: 900,
+  carFactory: 900,
+  power: 800,
+};

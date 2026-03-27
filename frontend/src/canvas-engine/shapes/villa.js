@@ -5,6 +5,7 @@ import {
   blendRGB,
   clampBrightness,
   clampSaturation,
+  oscillateBrightness,
   applyShapeMods,
 } from "../modifiers/index";
 
@@ -61,7 +62,8 @@ export const VILLA_DARK_PALETTE = {
   body: [
     { r: 129, g: 146, b: 172 }, { r: 123, g: 148, b: 182 }, { r: 127, g: 151, b: 178 },
     { r: 130, g: 144, b: 179 }, { r: 125, g: 149, b: 188 }, { r: 120, g: 145, b: 165 },
-    { r: 132, g: 147, b: 161 },
+    { r: 148, g: 130, b: 152 }, // orange-lean, purple undertone (mauve)
+    { r: 118, g: 142, b: 158 }, // green-lean, purple undertone (slate-teal)
   ],
   roof: [
     { r: 104, g: 60, b: 61 },
@@ -77,7 +79,7 @@ export const VILLA_DARK_PALETTE = {
     lit:  { r: 255, g: 186, b: 62 },
     dark: { r: 66,  g: 107, b: 169 },
   },
-  platform: { r: 71, g: 85, b: 106 },
+  platform: { r: 82, g: 86, b: 88 },
 };
 
 // ───────────────── Tunables
@@ -130,6 +132,14 @@ const VILLA = {
       phaseJitter: Math.PI * 4,
     },
   }
+};
+
+const WINDOW_OSC = {
+  amp: [0.035, 0.08],
+  speed: [0.18, 0.4],
+  brightnessMin: [0.56, 0.74],
+  brightnessMax: [0.84, 0.97],
+  litCurve: 0.95,
 };
 
 // helpers
@@ -187,6 +197,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
+  const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
   const baseAlpha  = Number.isFinite(opts.alpha) ? opts.alpha : 235;
   const opaque = 255;
@@ -199,6 +210,18 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
   // Stable per-instance seed (independent of offscreen center)
   const seedKey = (opts.seedKey ?? opts.seed) ?? `villa|${f.r0}:${f.c0}|${f.w}x${f.h}`;
+
+  function pulseLitWindow(base, slotKey) {
+    const oscSeed = hash32(`${seedKey}|window-osc|${slotKey}`);
+    const brightnessMin = val(WINDOW_OSC.brightnessMin, rand01(oscSeed ^ 0x27d4eb2f));
+    const brightnessMax = val(WINDOW_OSC.brightnessMax, rand01(oscSeed ^ 0xbb67ae85));
+    const toned = clampBrightness(base, brightnessMin, brightnessMax);
+    return oscillateBrightness(toned, t, {
+      amp: val(WINDOW_OSC.amp, rand01(oscSeed ^ 0x9e3779b9)),
+      speed: val(WINDOW_OSC.speed, rand01(oscSeed ^ 0x85ebca6b)),
+      phase: rand01(oscSeed ^ 0xc2b2ae35) * Math.PI * 2,
+    });
+  }
 
   // ── bottom-center anchored APPEAR/SCALE envelope
   const anchorX = pxX + pxW / 2;
@@ -382,11 +405,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       };
       const fCfg = FRONT_WIN[wProfile];
 
-      const litFront = Math.round((1 - u) * 1);
-      const winColor = applyExposureContrast(
-        litFront >= 1 ? pal.window.lit : pal.window.dark,
-        ex, ct
-      );
+      const litFront = Math.floor(Math.pow(1 - u, WINDOW_OSC.litCurve) * 1.25);
+      const frontBaseColor = litFront >= 1
+        ? pulseLitWindow(pal.window.lit, `front|${col}`)
+        : pal.window.dark;
+      const winColor = applyExposureContrast(frontBaseColor, ex, ct);
 
       const wW = Math.max(6, Math.round(iColW * fCfg.W_FRAC));
       const wH = Math.max(6, Math.round(bodyH * fCfg.H_FRAC));
@@ -422,13 +445,15 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       };
       const sCfg = SIDE_WIN[sProfile];
 
-      const litCount = Math.round((1 - u) * 2);
-      const c0 = applyExposureContrast(
-        litCount > 0 ? pal.window.lit : pal.window.dark, ex, ct
-      );
-      const c1 = applyExposureContrast(
-        litCount > 1 ? pal.window.lit : pal.window.dark, ex, ct
-      );
+      const litCount = Math.floor(Math.pow(1 - u, WINDOW_OSC.litCurve) * 2.25);
+      const sideBase0 = litCount > 0
+        ? pulseLitWindow(pal.window.lit, `side|${col}|0`)
+        : pal.window.dark;
+      const sideBase1 = litCount > 1
+        ? pulseLitWindow(pal.window.lit, `side|${col}|1`)
+        : pal.window.dark;
+      const c0 = applyExposureContrast(sideBase0, ex, ct);
+      const c1 = applyExposureContrast(sideBase1, ex, ct);
 
       const wW = Math.max(5, Math.round(iColW * sCfg.W_FRAC));
       const wH = Math.max(5, Math.round(bodyH * sCfg.H_FRAC));

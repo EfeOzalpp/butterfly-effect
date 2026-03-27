@@ -16,6 +16,8 @@ export type AnimatedTextureParams = {
   bleed?: { top?: number; right?: number; bottom?: number; left?: number };
   seedKey?: string | number;
   darkMode?: boolean;
+  /** Extra multiplier applied on top of tileSize/128 for particle-heavy shapes (snow, clouds). */
+  pixelScaleBoost?: number;
 
   fps?: number;
   generateMipmaps?: boolean;
@@ -58,6 +60,7 @@ function makePainter(
     bLeft,
     seedKey,
     darkMode,
+    pixelScaleBoost,
   }: {
     drawer: Drawer;
     dpr: number;
@@ -72,6 +75,7 @@ function makePainter(
     bLeft: number;
     seedKey?: string | number;
     darkMode?: boolean;
+    pixelScaleBoost?: number;
   }
 ) {
   const p = makeCanvasFacade(cnv, { dpr });
@@ -80,7 +84,7 @@ function makePainter(
   const centerY = cnv.height / (2 * dpr);
   const r = Math.min(cnv.width / dpr, cnv.height / dpr) * 0.8;
 
-  const pixelScale = Math.max(1, tileSize / 128);
+  const pixelScale = Math.max(1, tileSize / 128) * Math.max(1, pixelScaleBoost ?? 1);
 
   const baseOpts = {
     alpha,
@@ -93,6 +97,7 @@ function makePainter(
     fitToFootprint: true,
     coreScaleMult: pixelScale,
     pixelScale,
+    particlePixelScale: pixelScale,
     oscAmp: 0,
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
@@ -162,6 +167,7 @@ export function makeAnimatedTextureFromDrawer({
   bleed = {},
   seedKey,
   darkMode = false,
+  pixelScaleBoost,
   fps = 15,
   generateMipmaps = false,
   anisotropy = 1,
@@ -192,6 +198,7 @@ export function makeAnimatedTextureFromDrawer({
     bLeft,
     seedKey,
     darkMode,
+    pixelScaleBoost,
   });
 
   paint(typeof performance !== 'undefined' ? performance.now() : 0);
@@ -228,6 +235,7 @@ export function makeFrozenTextureFromDrawer({
   bleed = {},
   seedKey,
   darkMode = false,
+  pixelScaleBoost,
   simulateMs = 1200,
   stepMs = 33,
   generateMipmaps = false,
@@ -259,6 +267,7 @@ export function makeFrozenTextureFromDrawer({
     bLeft,
     seedKey,
     darkMode,
+    pixelScaleBoost,
   });
 
   const start = typeof performance !== 'undefined' ? performance.now() : 0;

@@ -6,116 +6,111 @@
   --font-ui-weight: 450;
   --fw-bold: 500;
 
-  --type-h1-size: clamp(2.4rem, 1.35rem + 1.1vw, 2.5rem);
+  --type-h1-size: clamp(4.8rem, 1.65rem + 1.5vw, 5.6rem);
   --type-h2-size: clamp(1.45rem, 1.25rem + 0.75vw, 2rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.92rem, 0.94rem + 0.35vw, 1rem);
   --type-p-size: 0.98rem;
   --type-small-size: 0.9rem;
-  --type-label-size: 0.95rem;
+  --type-label-size: 0.85rem;
 
-  --type-h-line: 1.62;
+  --type-h-line: 1.2;
   --type-h2-line: 1.42;
   --type-body-line: 1.4;
   --type-tight-line: 1.25;
 
-  --color-text-strong: #414141;
-  --color-text-muted: #5f6a74;
-  --color-surface: #f9fefb;
-  --color-surface-strong: #ffffff;
-  --color-border-soft: #d6dee6;
-  --color-border-strong: #414141;
-  --color-accent-green: rgb(176, 237, 173);
+  /*  
+  /* End of typography 
+  /*
 
-  --survey-text-strong: var(--color-text-strong);
-  --survey-text-muted: var(--color-text-muted);
-  --survey-surface: var(--color-surface);
-  --survey-surface-strong: var(--color-surface-strong);
-  --survey-border-soft: 1px solid var(--color-border-soft);
-  --survey-border-strong: 1px solid var(--color-border-strong);
-  --survey-border-subtle: 1px solid rgba(138, 138, 138, 0.2);
-
-  --radius-sm: 6px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-hero: 16px;
-  --radius-inner-lg: 6px;
-  
-
-  --space-sm: 8px;
-  --space-md: 14px;
-  --space-lg: 20px;
-
-  /* Primary button color */
-  --survey-btn-bg: linear-gradient(135deg, var(--color-accent-green) 0%, rgb(185, 228, 248) 100%);
-  --survey-btn-bg-hover: linear-gradient(135deg, rgb(135, 228, 152) 0%, rgb(132, 207, 245) 100%);
-  --survey-btn-green: var(--color-accent-green);
-  --survey-btn-bg-soft: #f8fef5;
-
-  /* global ui theme tokens */
+  /* Main background surfaces */
   --ui-bg-page: linear-gradient(180deg, #edf1f6 0%, #f0f3f7 100%);
   --ui-bg-onboarding: linear-gradient(120deg, #e8ecf2 10%, #f0f4f8 90%);
 
+  /* Main UI surface colors */
   --ui-bg-surface: #f8fafc;
   --ui-bg-surface-glass: rgba(248, 250, 252, 0.7);
-  --ui-bg-surface-hover: #edf0f4;
+  --ui-bg-surface-hover: #eeeeee;
   --ui-bg-surface-selected: #d5f2d4;
-  --ui-bg-surface-active: #e5e5e9;
+
+  /* input fields color */
+  --ui-bg-input: #d6d6d6;
+  --ui-bg-input-hover: #bebebe;
+
+  /* input active */
+  --active-accent-color: #7fba7e;
+  --active-accent-color-hover:#70a56f;
 
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
   --btn-drop-shadow: #ffffff;
 
+  /* Text and misc color */
   --ui-text: #1f2937;
   --ui-text-secondary: #35453c;
   --ui-text-muted: #4b5563;
+        /* Border color */
   --ui-border: #cbd5e1;
   --ui-border-strong: #879cba;
+
+  /* Icons */
+  --ui-icon: currentColor;
+  --ui-icon-subtle: #7fba7e;
+  --ui-icon-fill: var(--ui-icon);
+  --ui-icon-stroke: var(--ui-icon);
+  --ui-icon-subtle-fill: var(--ui-icon-subtle);
+  --ui-icon-subtle-stroke: var(--ui-icon-subtle);
+  --ui-close-stroke: rgb(63, 63, 63);
+  --ui-gp-chooser-fill: rgb(40, 108, 56);
+  --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
+  --ui-check-fill: rgb(40, 108, 56);
+
   --scroll-bar: rgb(195, 195, 195);
-  --ui-radio-icon: #212121;
+        /* error color */
   --ui-error: #cb2418;
 
-  --btn-radius: 16px;
-  --btn-primary-padding-y: 0.88rem;
-  --btn-primary-padding-x: 1.25rem;
-  --btn-padding-y: 0.64rem;
-  --btn-padding-x: 0.9rem;
+  /* General button */
   --btn-font-weight: var(--fw-bold);
-  --btn-border-width: 2px;
+
   --btn-hover-scale: 1.01;
+  --btn-hover-scale-lg: 1.02;
 
-  --btn-secondary-bg: #f4f6f9;
-  --btn-secondary-text: var(--ui-text);
-  --btn-secondary-border: #ccd3db;
-  --btn-secondary-hover-bg: #eaedf2;
-  --btn-secondary-hover-border: #b8c2cc;
+  --btn-drop-shadow: #ffffff;
 
-  --btn-primary-bg: var(--color-accent-green);
-  --btn-primary-text: #213129;
-  --btn-primary-border: var(--color-accent-green);
-  --btn-primary-icon: #4e8c5a;
+  /* Primary button */
+  --btn-primary-bg:rgb(176, 237, 173);
   --btn-primary-hover-bg: #9de7a2;
-  --btn-primary-hover-border: #74967d;
+  --btn-primary-text: #213129;
+  --btn-primary-icon: #4e8c5a;
 
+  /* Secondary button */
+  --btn-secondary-bg: #bf9dce;
+  --btn-secondary-text: var(--ui-text);
+  --btn-secondary-hover-bg: #ab8bbb;
+
+  /* Tertiary button */
   --btn-tertiary-bg: transparent;
   --btn-tertiary-text: var(--ui-text);
-  --btn-tertiary-border: none;
   --btn-tertiary-hover-bg: rgba(31, 41, 55, 0.08);
-  --btn-tertiary-hover-border: rgba(100, 116, 139, 0.55);
 
+  /* Adjust button */
   --auto-adjust-on: #b0edad;
   --auto-adjust-off: #e5e5e9e7;
   --thumb-after: #1f1f1fc0;
   --thumb: #1f1f1f90;
   --auto-adjust-border: #e5e5e9e7;
 
+  /* Hint theme */
   --hint-bg: #333435;
   --hint-bg-hover: #35393d;
   --hint-text: #e7e7e7;
   --hint-border: rgba(147, 150, 152, 0.365);
+  --hint-svg: var(--hint-text); 
 
-  --mode-toggle-active: #d5f2d4;
+  /* Graph */
+  --graph-bg: radial-gradient(circle, #ffffff 0%, rgb(242, 249, 255) 100%);
 
-  --graph-bg: #f4f7f9;
+  /* Switch */
+  --mode-toggle: #cddfcd;
 
   /* graph signal colors — RGB triplets for rgba() composition in keyframes */
   --graph-green-hi-rgb: 0, 220, 60;
@@ -135,45 +130,51 @@
   --ui-bg-surface: #2c2c2c;
   --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
   --ui-bg-surface-hover: #3a3a3a;
-  --ui-bg-surface-selected: rgb(70, 117, 82);
-  --ui-bg-surface-active: #474747;
+  --ui-bg-input: #444444;
+  --ui-bg-input-hover: #595959;
 
-  --ui-bg-selectable: #2c2c2c;
+  --ui-bg-surface-selected: rgb(70, 117, 82);
+  --active-accent-color: #578956;
+  --active-accent-color-hover: red;
+  --ui-bg-surface-active: #474747;
 
   --ui-drop-shadow: rgba(0, 0, 0, 0.4);
   --btn-drop-shadow: #0a0a0a;
+  --panel-open-dropdown: 0 8px 32px rgba(23, 23, 23, 1);
 
   --ui-text: #ffffff;
   --ui-text-secondary: rgba(255, 255, 255, 0.85);
   --ui-text-muted: rgba(255, 255, 255, 0.7);
   --ui-border: rgba(255, 255, 255, 0.08);
   --ui-border-strong: rgba(255, 255, 255, 0.2);
+
+  /* Icons */
   --scroll-bar: #595959;
-  --ui-radio-icon: #ffffff;
+  --ui-icon: currentColor;
+  --ui-icon-subtle: #7fba7e;
+  --ui-icon-fill: var(--ui-icon);
+  --ui-icon-stroke: var(--ui-icon);
+  --ui-icon-subtle-fill: var(--ui-icon-subtle);
+  --ui-icon-subtle-stroke: var(--ui-icon-subtle);
+  --ui-close-stroke: rgb(63, 63, 63);
+  --ui-gp-chooser-fill: rgb(40, 108, 56);
+  --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
+  --ui-check-fill: rgb(40, 108, 56);
   --ui-error: #ff8f8f;
 
   /* Primary button color */
-  --survey-btn-bg: linear-gradient(135deg, #4e4f6b 100%);
-  --survey-btn-bg-hover: linear-gradient(135deg, rgb(67, 155, 90) 0%, #7c94dc 100%);
-
-  --btn-secondary-bg: #2c2c2c;
-  --btn-secondary-text: #ffffff;
-  --btn-secondary-border: #474747;
-  --btn-secondary-hover-bg: #3a3a3a;
-  --btn-secondary-hover-border: #595959;
-
   --btn-primary-bg: rgb(70, 117, 82);
   --btn-primary-text: #ecf5ef;
-  --btn-primary-border: #4f8f4c;
   --btn-primary-icon: #aed1b5;
   --btn-primary-hover-bg: rgb(71, 128, 86);
-  --btn-primary-hover-border: rgb(80, 193, 110);
+
+  --btn-secondary-bg: #826584;
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-hover-bg: #755c7e;
 
   --btn-tertiary-bg: transparent;
   --btn-tertiary-text: var(--ui-text);
-  --btn-tertiary-border: none;
   --btn-tertiary-hover-bg: rgba(255, 255, 255, 0.08);
-  --btn-tertiary-hover-border: rgba(255, 255, 255, 0.2);
 
   --auto-adjust-off: #2c2c2c;
   --auto-adjust-on: rgb(70, 117, 82);
@@ -185,10 +186,14 @@
   --hint-bg-hover: #3a3a3a;
   --hint-text: #ffffff;
   --hint-border: rgba(255, 255, 255, 0.1);
+  --hint-svg: var(--hint-text); 
 
-  --graph-bg: radial-gradient(#1d1d1d 0%, red 100%);
+  /* graph background */
+  --graph-bg: #1d1c1c;
 
-  --mode-toggle-active: rgb(70, 117, 82);
+  /* switch */
+  --mode-toggle: #505250;
+  --mode-toggle-border: #1d1c1c;
 
   /* graph signal colors — blue-shifted for dark bg */
   --graph-green-hi-rgb: 35, 195, 115;
@@ -199,6 +204,119 @@
   --graph-red-lo-rgb: 178, 60, 108;
   --graph-bar-border: rgba(70, 75, 90, 0.7);
   --graph-divider: rgba(160, 170, 185, 0.12);
+}
+
+/* ── Responsive tokens ───────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  :root {
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --radius-hero: 12px;
+    --btn-radius: 12px;
+
+    --space-sm: 6px;
+    --space-md: 10px;
+    --space-lg: 16px;
+
+    --btn-primary-padding: 0.72rem 1rem;
+    --btn-primary-padding-hover: 0.66rem 1.1rem;
+    --btn-primary-padding-reserve-block: 0.72rem;
+    --btn-primary-padding-reserve-inline: 1.1rem;
+
+    --btn-secondary-padding: 0.52rem 0.72rem;
+
+    --input-padding: 0.72rem 0.85rem;
+    --input-padding-hover: 0.68rem 0.95rem;
+  }
+}
+
+@media (min-width: 769px) {
+  :root {
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-hero: 16px;
+    --btn-radius: 16px;
+
+    --space-sm: 0.3rem;
+    --space-md: 0.6rem;
+    --space-lg: 0.9rem;
+
+    --btn-cta-padding: 0.88rem 5.25rem;
+    --btn-cta-padding-hover: 0.68rem 5.7rem;
+    --btn-cta-padding-reserve-block: 0.88rem;
+    --btn-cta-padding-reserve-inline: 1.25rem;
+
+    --btn-primary-padding: 1.15rem 1.35rem;
+    --btn-primary-padding-hover: 0.95rem 1.45rem;
+    --btn-primary-padding-reserve-block: 1.15rem;
+    --btn-primary-padding-reserve-inline: 1.45rem;
+
+    --btn-secondary-padding: 0.74rem 0.9rem;
+    --btn-secondary-padding-hover: 0.69rem 1.05rem;
+
+    --input-padding: 0.9rem 1rem;
+    --input-padding-hover: 0.85rem 1rem;
+  }
+}
+
+ /* exception informatino label svg */
+ .mock-read-banner svg [stroke] {
+  stroke: var(--hint-svg);
+ }
+@media (max-width: 768px) {
+  .ui-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ui-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .ui-icon {
+    width: 1.05rem !important;
+    height: 1.05rem !important;
+  }
+  .system-color svg.ui-icon {
+    width: 1.6rem !important;
+    height: 1.6rem !important;
+  }
+  .ui-close {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+  .ui-close [stroke] {
+    stroke: var(--ui-close-stroke);
+  }
+
+  .gp-chooser-icon svg.ui-icon, .gp-back-icon svg.ui-icon {
+    width: 1em !important; 
+    height: 1em !important; 
+  }
+  .gp-chooser-icon svg.ui-icon [fill],
+  .gp-back-icon svg.ui-icon [fill] {
+    fill: var(--ui-gp-chooser-fill);
+  }
+  .gp-trigger-chevron svg.ui-icon {
+    width: 1.3em !important;
+    height: 1.3em !important;
+  }
+  .gp-trigger-chevron svg.ui-icon [fill] {
+    fill: var(--ui-gp-trigger-chevron-fill);
+  }
+  .role-check-icon, .switch-check-icon, .role-indicator-spacer   {
+    width: 1.2em !important;
+    height: 1.2em !important;
+  }
+  .role-check-icon [fill], .switch-check-icon [fill] {
+    fill: var(--ui-check-fill);
+  }
 }
 
 * { box-sizing: border-box; }
@@ -228,74 +346,12 @@ body {
   color: var(--btn-primary-text);
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-title);
-  font-optical-sizing: auto;
-  font-variation-settings: "wdth" 112.5, "GRAD" 0;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 40px;
-  padding: var(--btn-padding-y) var(--btn-padding-x);
-  border-width: var(--btn-border-width);
-  border-style: solid;
-  border-radius: var(--btn-radius);
-  font-family: var(--font-body);
-  font-weight: var(--btn-font-weight);
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-
-.btn--primary {
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-text);
-  border-color: var(--btn-primary-border);
-}
-
-a { text-decoration: none; }
-
 canvas { touch-action: none !important; }
 
 .radio-button svg [fill] { fill: var(--ui-radio-icon) !important; }
 .radio-button svg [stroke] { stroke: var(--ui-radio-icon) !important; }
-
-/* Shared responsive icon sizing */
-.ui-icon {
-  display: inline-block;
-  width: 20px !important;
-  height: 20px !important;
-  flex: 0 0 auto;
-}
-
-@media (max-width: 767px) {
-  .ui-icon {
-    width: 16px !important;
-    height: 16px !important;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1024px) {
-  .ui-icon {
-    width: 18px !important;
-    height: 18px !important;
-  }
-}
-
-@media (min-width: 1025px) {
-  .ui-icon {
-    width: 20px !important;
-    height: 20px !important;
-  }
-}
+.ui-icon [fill] { fill: var(--ui-icon-fill); }
+.ui-icon [stroke] { stroke: var(--ui-icon-stroke); }
 
 #butterfly-habits {
   width: 100%;
@@ -304,8 +360,6 @@ canvas { touch-action: none !important; }
   flex-direction: column;
   overflow: hidden;
 }
-
-.q5Canvas { z-index: 2; }
 
 #decoy-container,
 #decoy-container canvas,

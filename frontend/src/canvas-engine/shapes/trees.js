@@ -66,6 +66,46 @@ export const TREES_DARK_PALETTE = {
   ],
 };
 
+export const TREES_WARM_PALETTE = {
+  grass: [
+    { r: 148, g: 186, b: 98  },
+    { r: 162, g: 198, b: 108 },
+    { r: 138, g: 178, b: 92  },
+  ],
+  asphalt: { r: 142, g: 130, b: 112 },
+  trunk:   { r: 132, g: 96,  b: 58  },
+  foliage: [
+    { r: 112, g: 164, b: 82  },
+    { r: 148, g: 188, b: 88  },
+    { r: 136, g: 180, b: 86  },
+    { r: 168, g: 198, b: 96  },
+    { r: 124, g: 172, b: 84  },
+    { r: 152, g: 194, b: 102 },
+    { r: 172, g: 210, b: 108 },
+    { r: 188, g: 218, b: 118 },
+  ],
+};
+
+export const TREES_COOL_PALETTE = {
+  grass: [
+    { r: 112, g: 168, b: 136 },
+    { r: 122, g: 178, b: 144 },
+    { r: 104, g: 158, b: 128 },
+  ],
+  asphalt: { r: 118, g: 128, b: 138 },
+  trunk:   { r: 92,  g: 84,  b: 76  },
+  foliage: [
+    { r: 72,  g: 138, b: 108 },
+    { r: 58,  g: 122, b: 98  },
+    { r: 84,  g: 148, b: 116 },
+    { r: 66,  g: 116, b: 104 },
+    { r: 96,  g: 158, b: 122 },
+    { r: 108, g: 168, b: 132 },
+    { r: 122, g: 178, b: 142 },
+    { r: 138, g: 192, b: 152 },
+  ],
+};
+
 /* ───────────────────────────────────────────────────────────
    Tunables
    ─────────────────────────────────────────────────────────── */
@@ -187,7 +227,10 @@ function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, darkMode = f
    drawTrees (1×1 tile) — with sprite-variant randomization
    ─────────────────────────────────────────────────────────── */
 export function drawTrees(p, cx, cy, r, opts = {}) {
-  const pal = opts?.darkMode ? TREES_DARK_PALETTE : TREES_BASE_PALETTE;
+  const pal = opts?.darkMode ? TREES_DARK_PALETTE
+    : opts?.paletteTheme === 'warm' ? TREES_WARM_PALETTE
+    : opts?.paletteTheme === 'cool' ? TREES_COOL_PALETTE
+    : TREES_BASE_PALETTE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;

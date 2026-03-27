@@ -121,8 +121,8 @@ export default function useDotGraphSceneModel({
   const spriteScale = useMemo(() => {
     const denom = Math.max(1e-6, maxRadius - minRadius);
     const t = Math.max(0, Math.min(1, (radius - minRadius) / denom));
-    const SCALE_MIN = 7;
-    const SCALE_MAX = 12;
+    const SCALE_MIN = 8;
+    const SCALE_MAX = 13.5;
     return nonlinearLerp(SCALE_MAX, SCALE_MIN, t);
   }, [radius, minRadius, maxRadius]);
 

@@ -7,6 +7,7 @@ export type RgbaStop = {
   rgba: string;
   oscK?: { amp: number; hz: number };
   liveBlend?: number | readonly [number, number];
+  fog?: { opacity: number; k?: number };
 }; // k in [0..1]
 export type RadialGradientSpec = {
   kind: "radial";
@@ -28,9 +29,12 @@ export type SolidBackgroundSpec = {
   color: string; // css color
 };
 
+export type ShapePaletteTheme = 'warm' | 'cool';
+
 export type BackgroundSpec = {
   base: string; // used by p.background
   overlay?: RadialGradientSpec | LinearGradientSpec | SolidBackgroundSpec;
+  shapePalette?: ShapePaletteTheme;
   stars?: {
     count: number | readonly [number, number];
     topBandK: number;
@@ -147,11 +151,11 @@ export const BACKGROUNDS_DARK: BackgroundsByMode = {
       from: { xK: 0.5, yK: 0.0 },
       to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0, rgba: "#242233" },
-        { k: 0.25, rgba: "#4D5586", oscK: { amp: 0.04, hz: 0.02 } },
-        { k: 0.58, rgba: "#b3c3f5" },
-        { k: 0.58, rgba: "rgba(68, 96, 158, 0.95)", liveBlend: [0.24, 0.08] },
-        { k: 1.0, rgba: "#292d3d", oscK: { amp: 0.03, hz: 0.02 } },
+        { k: 0, rgba: "#5e6f82" },
+        { k: 0.33, rgba: "#4f546f", oscK: { amp: 0.04, hz: 0.02 }, fog: { opacity: 0, k: 0} },
+        { k: 0.52, rgba: "rgb(65, 65, 71)", liveBlend: [0.01, 0.01], fog: { opacity: 0.4, k: 0.33} },
+        { k: 0.6, rgba: "#2c2c2c", fog: { opacity: 0.8, k: 0.55} },
+        { k: 1, rgba: "#1d1c1c", oscK: { amp: 0.03, hz: 0.02 }, fog: { opacity: 0, k: 0.75} },
       ] as const,
     },
     stars: {

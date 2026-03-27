@@ -215,14 +215,13 @@
    -------------------------------------------------------------------------- */
 .toggle-button {
   background: var(--ui-bg-surface);
-  border: 1px solid var(--ui-border);
+  border: none;
   border-radius: var(--radius-lg);
   color: var(--ui-text);
 }
 
 .toggle-button:hover {
   background: var(--ui-bg-surface-hover);
-  border-color: var(--ui-border-strong);
 }
 
 .graph-container {
