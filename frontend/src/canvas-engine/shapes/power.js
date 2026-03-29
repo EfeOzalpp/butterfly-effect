@@ -7,6 +7,9 @@ import {
   stepAndDrawPuffs,
   clampBrightness,
   oscillateSaturation,
+  footprintToPx,
+  particleSizePerspectiveScale,
+  particleMotionPerspectiveScale,
 } from "../modifiers/index";
 
 /* Exposure/contrast helper (channel-space, gentle defaults) */
@@ -68,7 +71,7 @@ const POWER = {
       offset: [5, 7],
       alpha:  [150, 125],
     },
-    bladeOsc: { amp: [0.10, 0.033], speed: [1.6, 1.2] },
+    bladeOsc: { amp: [0.18, 0.6], speed: [2.4, 0.8] },
   },
   kindBalance: {
     midpoint: 0.5,
@@ -195,7 +198,7 @@ function pickBodyTintVariantFromKey(key, gradientRGB, ex, ct, pal) {
 
 /* Draw */
 export function drawPower(p, cx, cy, r, opts = {}) {
-  const pal = opts?.darkMode ? POWER_DARK_PALETTE : POWER_BASE_PALETTE;
+  const pal = opts?.palette ?? (opts?.darkMode ? POWER_DARK_PALETTE : POWER_BASE_PALETTE);
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -204,6 +207,8 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   const ex   = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct   = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const baseAlpha = Number.isFinite(opts.alpha) ? opts.alpha : 235;
+  const particleScale = f ? particleSizePerspectiveScale(f, opts) : 1;
+  const motionScale = f ? particleMotionPerspectiveScale(f, opts) : 1;
 
   // Sprite export mode: infer from fitToFootprint or explicit override
   const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
@@ -211,10 +216,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   // Resolve pixel rect
   let pxX, pxY, pxW, pxH;
   if (cell && f) {
-    pxX = f.c0 * cellW;
-    pxY = f.r0 * cellH;
-    pxW = f.w * cellW;
-    pxH = f.h * cellH;
+    ({ x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts));
   } else {
     pxW = (cell || r * 2) * 1;
     pxH = (cell || r * 2) * 3;
@@ -290,12 +292,12 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     const bodyH = Math.max(Math.round(pxH * 0.16), Math.round(cell * 0.9));
     const bodyX = pxX + bodyMarginX;
     const bodyTop = platY - bodyH;
+    const roofRise = Math.round(Math.min(pxH * 0.10, cell * roofVar));
 
     p.noStroke();
     fillRgb(p, bodyTint, 255);
     p.rect(bodyX, bodyTop, bodyW, bodyH);
 
-    const roofRise = Math.round(Math.min(pxH * 0.10, cell * roofVar));
     const xL = bodyX, xR = bodyX + bodyW, yTop = bodyTop + 1;
     const highX = isLeftChimney ? xL : xR;
     const lowX  = isLeftChimney ? xR : xL;
@@ -346,16 +348,16 @@ export function drawPower(p, cx, cy, r, opts = {}) {
       : Math.max(1/120, (p.deltaTime ? p.deltaTime / 1000 : 1/60));
 
     let count    = Math.max(4, Math.floor(val(FACTORY_SMOKE.count, u)));
-    let sizeMin  = val(FACTORY_SMOKE.sizeMin, u);
-    let sizeMax  = Math.max(sizeMin, val(FACTORY_SMOKE.sizeMax, u));
-    let lifeMin  = Math.max(0.05, val(FACTORY_SMOKE.lifeMin, u));
-    let lifeMax  = Math.max(lifeMin, val(FACTORY_SMOKE.lifeMax, u));
+    let sizeMin  = val(FACTORY_SMOKE.sizeMin, u) * particleScale;
+    let sizeMax  = Math.max(sizeMin, val(FACTORY_SMOKE.sizeMax, u) * particleScale);
+    let lifeMin  = Math.max(0.05, val(FACTORY_SMOKE.lifeMin, u) * motionScale);
+    let lifeMax  = Math.max(lifeMin, val(FACTORY_SMOKE.lifeMax, u) * motionScale);
     let sAlpha   = Math.max(60, Math.min(255, Math.round(val(FACTORY_SMOKE.alpha, u))));
-    let speedMin = val(FACTORY_SMOKE.speedMin, u);
-    let speedMax = Math.max(speedMin, val(FACTORY_SMOKE.speedMax, u));
-    let gravity  = val(FACTORY_SMOKE.gravity, u);
+    let speedMin = val(FACTORY_SMOKE.speedMin, u) * motionScale;
+    let speedMax = Math.max(speedMin, val(FACTORY_SMOKE.speedMax, u) * motionScale);
+    let gravity  = val(FACTORY_SMOKE.gravity, u) * motionScale;
     let drag     = val(FACTORY_SMOKE.drag, u);
-    let jPos     = val(FACTORY_SMOKE.jitterPos, u);
+    let jPos     = val(FACTORY_SMOKE.jitterPos, u) * particleScale;
     let jAng     = val(FACTORY_SMOKE.jitterAngle, u);
     let spread   = val(FACTORY_SMOKE.spreadAngle, u);
 

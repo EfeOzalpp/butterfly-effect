@@ -8,7 +8,7 @@
   --nav-control-h: 40px;
 }
 .navigation {
-  position: absolute;
+  position: fixed;
   inset: 0 0 auto 0;
   width: 100%;
   display: flex;
@@ -112,10 +112,11 @@
   align-items: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 100ms ease;
+  transform: translateX(-50%) translateY(-6px);
+  transition: opacity 150ms ease, transform 150ms ease;
   z-index: 100;
 }
-.auto-adjust-hint.visible { opacity: 1; }
+.auto-adjust-hint.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .left,
 .right,
@@ -125,7 +126,8 @@
 
 .left { align-items: center; z-index: 15; }
 .right {
-  align-items: center;
+  align-items: center; 
+  gap: var(--space-sm);
 }
 .right > * { flex-shrink: 0; }
 
@@ -196,7 +198,7 @@
   display: flex;
   gap: var(--space-sm);
   align-items: stretch;
-  height: 48px;
+  height: 52px;
   outline: none;
 }
 
@@ -229,6 +231,9 @@
 }
 .mode-toggle-label.active {
   background: var(--active-accent-color);
+}
+.mode-toggle-label:not(.active):hover {
+  background: var(--inactive-accent-color-hover);
 }
 .mode-toggle-label.active:hover {
   background: var(--active-accent-color-hover);
@@ -361,7 +366,7 @@
   .navigation {
     padding: 1rem 2.4rem;
   }
-
+  .right { height: 36px; }
   .logo-divider {
     width: var(--logo-wrap-w-desktop, 76px);
     height: var(--logo-wrap-h-desktop, 76px);

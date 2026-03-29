@@ -2,11 +2,11 @@
 
 :root {
   --font-body: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-title: "Roboto Serif", Georgia, "Times New Roman", serif;
+  --font-title: "Libre Baskerville", Georgia, serif;
   --font-ui-weight: 450;
   --fw-bold: 500;
 
-  --type-h1-size: clamp(4.8rem, 1.65rem + 1.5vw, 5.2rem);
+  --type-h1-size: clamp(6.4rem, 1.65rem + 1.6vw, 7.2rem);
   --type-h2-size: clamp(1.45rem, 1.25rem + 0.75vw, 2rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.92rem, 0.94rem + 0.35vw, 1rem);
@@ -24,7 +24,7 @@
   /*
 
   /* Main background surfaces */
-  --ui-bg-page: linear-gradient(180deg, #edf1f6 0%, #f0f3f7 100%);
+  --ui-bg-page: #f8f0ea;
   --ui-bg-onboarding: linear-gradient(120deg, #e8ecf2 10%, #f0f4f8 90%);
 
   /* Main UI surface colors */
@@ -40,13 +40,14 @@
   /* input active */
   --active-accent-color: #7fba7e;
   --active-accent-color-hover:#70a56f;
-  --inactive-accent-color: #cedcce;
+  --inactive-accent-color: #c9dac9;
+  --inactive-accent-color-hover: #c2cbc2;
 
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
   --btn-drop-shadow: #ffffff;
 
   /* Text and misc color */
-  --ui-text-title: #7fba7e; 
+  --ui-text-title: rgba(51, 155, 224, 0.6); 
   --ui-text: #000000;
   --ui-text-secondary: #35453c;
   --ui-text-muted: #4b5563;
@@ -80,7 +81,7 @@
 
   /* Primary button */
   --btn-primary-bg:rgb(126, 211, 126);
-  --btn-primary-hover-bg: #9de7a2;
+  --btn-primary-hover-bg: rgb(117, 174, 120);
   --btn-primary-text: #000000;
   --btn-primary-icon: #4e8c5a;
 
@@ -123,34 +124,43 @@
 }
 
 :root[data-theme="dark"] {
-  --ui-bg-page: #111111;
+  --ui-bg-page: #1a1e23;
   --ui-bg-onboarding: #161616;
 
+  /* Main UI surface colors */
   --ui-bg-surface: #2c2c2c;
   --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
   --ui-bg-surface-hover: #3a3a3a;
+  --ui-bg-surface-selected: rgb(70, 117, 82);
+
+  /* input fields color */
   --ui-bg-input: #444444;
   --ui-bg-input-hover: #595959;
 
-  --ui-bg-surface-selected: rgb(70, 117, 82);
-  --active-accent-color: #578956;
-  --active-accent-color-hover: red;
+  /* input active */
+  --active-accent-color: #6d976c;
+  --active-accent-color-hover: #476e46;
+  --inactive-accent-color: #36383b;
+  --inactive-accent-color-hover: #5f635f;
   --ui-bg-surface-active: #474747;
 
   --ui-drop-shadow: rgba(0, 0, 0, 0.4);
   --btn-drop-shadow: #0a0a0a;
   --panel-open-dropdown: 0 8px 32px rgba(23, 23, 23, 1);
 
+  /* Text and misc color */
+  --ui-text-title: linear-gradient(135deg, #a8d8f0 0%, rgba(67, 112, 161, 0.6) 55%);
+
   --ui-text: #ffffff;
   --ui-text-secondary: rgba(255, 255, 255, 0.85);
   --ui-text-muted: rgba(255, 255, 255, 0.7);
+  /* Border color */
   --ui-border: rgba(255, 255, 255, 0.08);
   --ui-border-strong: rgba(255, 255, 255, 0.2);
 
   /* Icons */
-  --scroll-bar: #595959;
-  --ui-icon: currentColor;
-  --ui-icon-subtle: #7fba7e;
+  --ui-icon: #ffffff;
+  --ui-icon-subtle: #a4a4a4;
   --ui-icon-fill: var(--ui-icon);
   --ui-icon-stroke: var(--ui-icon);
   --ui-icon-subtle-fill: var(--ui-icon-subtle);
@@ -159,39 +169,49 @@
   --ui-gp-chooser-fill: rgb(40, 108, 56);
   --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
   --ui-check-fill: rgb(40, 108, 56);
+  --scroll-bar: #595959;
   --ui-error: #ff8f8f;
 
-  /* Primary button color */
-  --btn-primary-bg: rgb(70, 117, 82);
+  /* General button */
+  /* New added */
+  --btn-font-weight: var(--fw-bold);
+  /* New added */
+  --btn-hover-scale: 1.01;
+  /* New added */
+  --btn-hover-scale-lg: 1.01;
+
+  /* Primary button */
+  --btn-primary-bg: rgb(78, 145, 93);
+  --btn-primary-hover-bg: rgb(92, 157, 106);
   --btn-primary-text: #ecf5ef;
   --btn-primary-icon: #aed1b5;
-  --btn-primary-hover-bg: rgb(71, 128, 86);
 
+  /* Secondary button */
   --btn-secondary-bg: #826584;
   --btn-secondary-text: #ffffff;
   --btn-secondary-hover-bg: #755c7e;
 
+  /* Tertiary button */
   --btn-tertiary-bg: transparent;
   --btn-tertiary-text: var(--ui-text);
   --btn-tertiary-hover-bg: rgba(255, 255, 255, 0.08);
 
-  --auto-adjust-off: #2c2c2c;
+  /* Adjust button */
   --auto-adjust-on: rgb(70, 117, 82);
-  --thumb: #ffffff96;
+  --auto-adjust-off: #2c2c2c;
   --thumb-after: #ffffffd6;
+  --thumb: #ffffff96;
   --auto-adjust-border: #474747;
 
+  /* Hint theme */
   --hint-bg: #2c2c2c;
   --hint-bg-hover: #3a3a3a;
   --hint-text: #ffffff;
   --hint-border: rgba(255, 255, 255, 0.1);
   --hint-svg: var(--hint-text); 
 
-  /* graph background */
-  --graph-bg: #1d1c1c;
-
-  /* switch */
-  --inactive-accent-color: #505250;
+  /* Graph */
+  --graph-bg: #1a1e23;
   --inactive-accent-color-border: #1d1c1c;
 
   /* graph signal colors — blue-shifted for dark bg */
@@ -224,6 +244,11 @@
     --btn-primary-padding-reserve-inline: 1.1rem;
 
     --btn-secondary-padding: 0.52rem 0.72rem;
+    --btn-secondary-padding-block: 0.52rem;
+    --btn-secondary-padding-inline: 0.72rem;
+    --btn-secondary-padding-hover: 0.47rem 0.82rem;
+    --btn-secondary-padding-hover-block: 0.47rem;
+    --btn-secondary-padding-hover-inline: 0.82rem;
 
     --input-padding: 0.72rem 0.85rem;
     --input-padding-hover: 0.68rem 0.95rem;
@@ -235,7 +260,7 @@
     --radius-md: 6px;
     --radius-lg: 8px;
     --radius-hero: 16px;
-    --btn-radius: 16px;
+    --btn-radius: 10px;
 
     --space-sm: 0.3rem;
     --space-md: 0.6rem;
@@ -251,10 +276,15 @@
     --btn-primary-padding-reserve-block: 1.15rem;
     --btn-primary-padding-reserve-inline: 1.45rem;
 
-    --btn-secondary-padding: 0.74rem 0.9rem;
-    --btn-secondary-padding-hover: 0.65rem 1.15rem;
+    --btn-secondary-padding: 0.95rem 0.9rem;
+    --btn-secondary-padding-hover: 0.85rem 1.15rem;
 
-    --input-padding: 0.9rem 1rem;
+    --btn-secondary-padding-block: 0.95rem;
+    --btn-secondary-padding-inline: 0.9rem;
+    --btn-secondary-padding-hover-block: 0.85rem;
+    --btn-secondary-padding-hover-inline: 1.15rem;
+
+    --input-padding: 1.1rem 1rem;
     --input-padding-hover: 0.85rem 1rem;
   }
 }
@@ -281,6 +311,7 @@
   .ui-icon {
     width: 1.05rem !important;
     height: 1.05rem !important;
+    
   }
   .system-color svg.ui-icon {
     width: 1.6rem !important;
@@ -305,6 +336,7 @@
   .gp-trigger-chevron svg.ui-icon {
     width: 1.3em !important;
     height: 1.3em !important;
+    fill: var(--ui-icon) !important;
   }
   .gp-trigger-chevron svg.ui-icon [fill] {
     fill: var(--ui-gp-trigger-chevron-fill);
@@ -324,15 +356,23 @@ html,
 body,
 #root {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   margin: 0;
-  overflow: hidden;
+}
+
+html {
+  background: var(--ui-bg-page);
 }
 
 body {
   background: var(--ui-bg-page);
   color: var(--ui-text);
   font-family: var(--font-body);
+}
+
+#root,
+#butterfly-habits {
+  background: var(--ui-bg-page);
 }
 
 ::selection {
@@ -354,10 +394,8 @@ canvas { touch-action: none !important; }
 
 #butterfly-habits {
   width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 #decoy-container,

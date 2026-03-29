@@ -5,6 +5,7 @@ import {
   blendRGB,
   oscillateSaturation,
   applyShapeMods,
+  footprintToPx,
 } from "../modifiers/index";
 
 /* Exposure/contrast helper */
@@ -156,10 +157,10 @@ function drawCrescentMoon(p, x, y, r, opts, t, ex, ct) {
 }
 
 export function drawSun(p, xIn, yIn, rIn, opts = {}) {
-  const pal = opts?.darkMode ? SUN_DARK_PALETTE
+  const pal = opts?.palette ?? (opts?.darkMode ? SUN_DARK_PALETTE
     : opts?.paletteTheme === 'warm' ? SUN_WARM_PALETTE
     : opts?.paletteTheme === 'cool' ? SUN_COOL_PALETTE
-    : SUN_BASE_PALETTE;
+    : SUN_BASE_PALETTE);
   const u = clamp01(opts?.liveAvg ?? 0.5);
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
@@ -172,9 +173,10 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
     const { r0, c0, w, h } = opts.footprint;
     const cellW = opts.cellW ?? opts.cell;
     const cellH = opts.cellH ?? opts.cell;
+    const { y: fpY, h: fpH } = footprintToPx(opts.footprint, opts);
     const cx = c0 * cellW + (w * cellW) / 2;
-    const cy = r0 * cellH + (h * cellH) / 2;
-    const diam = Math.min(w * cellW, h * cellH);
+    const cy = fpY + fpH / 2;
+    const diam = Math.min(w * cellW, fpH);
     x = cx; y = cy; r = diam;
   }
 

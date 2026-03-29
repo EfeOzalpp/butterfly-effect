@@ -503,12 +503,15 @@ export function SpriteShape({
     const depth = (_wp.current.x - camera.position.x) * fwdX
                 + (_wp.current.y - camera.position.y) * fwdY
                 + (_wp.current.z - camera.position.z) * fwdZ;
-    const fogNear = cameraToOrigin + 1;
-    const fogFar  = cameraToOrigin + 13;
-    const t = Math.max(0, Math.min(1, (depth - fogNear) / Math.max(1, fogFar - fogNear)));
+    const fogNear = cameraToOrigin + 1.5;
+    const fogFar  = cameraToOrigin + 24;
+    const fogT = Math.max(0, Math.min(1, (depth - fogNear) / Math.max(1, fogFar - fogNear)));
+    const t = fogT * fogT * (3 - 2 * fogT);
     // Fade fog out entirely when camera is close — thresholds match scene minRadius (~20)
     const zoomFade = Math.max(0, Math.min(1, (cameraToOrigin - 25) / 50));
-    const newOpacity = 1.0 - t * 0.92 * zoomFade;
+    const fogStrength = 0.74;
+    const minOpacity = 0.34;
+    const newOpacity = Math.max(minOpacity, 1.0 - t * fogStrength * zoomFade);
     fogOpacityRef.current = newOpacity;
     if (Math.abs(mat.opacity - newOpacity) > 0.004) mat.opacity = newOpacity;
   });

@@ -10,6 +10,7 @@ import {
   oscillateSaturation,
   stepAndDrawPuffs,
   applyShapeMods,
+  footprintToPx,
 } from "../modifiers/index";
 
 // base palettes
@@ -209,10 +210,10 @@ function liveWindowK(u, a, b, s = 0) {
 }
 
 export function drawSea(p, _x, _y, _r, opts = {}) {
-  const pal = opts?.darkMode ? SEA_DARK_PALETTE
+  const pal = opts?.palette ?? (opts?.darkMode ? SEA_DARK_PALETTE
     : opts?.paletteTheme === 'warm' ? SEA_WARM_PALETTE
     : opts?.paletteTheme === 'cool' ? SEA_COOL_PALETTE
-    : SEA_BASE_PALETTE;
+    : SEA_BASE_PALETTE);
   const grassPal = opts?.darkMode ? GRASS_DARK : GRASS_BASE;
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
@@ -271,9 +272,8 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
 
   // tile rect
   const x0 = f.c0 * cellW;
-  const y0 = f.r0 * cellH;
+  const { y: y0, h } = footprintToPx(f, opts);
   const w  = Math.max(f.w, spanTilesX) * cellW;
-  const h  = f.h * cellH;
 
   const cx = x0 + w / 2;
   const bottomY = y0 + h;

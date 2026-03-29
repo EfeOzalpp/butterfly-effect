@@ -9,6 +9,12 @@ import {
   driveSaturation,
   stepAndDrawPuffs,
   applyShapeMods,
+  footprintToPx,
+  particleBucketRange,
+  particleRowBucket,
+  sampleDirectionalLightRect,
+  paintPixelLightBands,
+  mixRgb,
 } from "../modifiers/index";
 
 function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
@@ -179,7 +185,7 @@ const HOUSE = {
   grass: { colorBlend: [0.14, 0.28], satRange: [0.03, 0.14] },
   chimney: { scaleRange: [2, 0] },
   door: { widthRange: [1.3, 0.8], fixedHeights: [14, 20] },
-  windows: { perFloor: 2, size: [10, 12], marginY: 12, thresholds: { low: 1.5, mid: 1.8 } }
+  windows: { perFloor: 2, size: [10, 12], marginY: 12, thresholds: { low: 1.5, mid: 2.5 } }
 };
 
 const SMOKE = {
@@ -218,6 +224,17 @@ const WINDOW_OSC = {
   litCurve: 0.92,
 };
 
+function smokeRowContext(t) {
+  return {
+    size: particleBucketRange(t, 0.26, 1.0),
+    motion: particleBucketRange(t, 0.12, 1.0),
+    life: particleBucketRange(t, 1.18, 1.0),
+    count: particleBucketRange(t, 0.52, 1.0),
+    columnW: particleBucketRange(t, 0.62, 1.0),
+    columnH: particleBucketRange(t, 0.72, 1.0),
+  };
+}
+
 function fillRgb(p, { r, g, b }, a = 255) { p.fill(r, g, b, a); }
 function hash32(s) {
   let h = 2166136261 >>> 0;
@@ -245,13 +262,12 @@ export function houseHasChimney(seedKey) {
 }
 
 export function drawHouse(p, _cx, _cy, _r, opts = {}) {
-  const pal = opts?.darkMode ? HOUSE_DARK_PALETTE
+  const pal = opts?.palette ?? (opts?.darkMode ? HOUSE_DARK_PALETTE
     : opts?.paletteTheme === 'warm' ? HOUSE_WARM_PALETTE
     : opts?.paletteTheme === 'cool' ? HOUSE_COOL_PALETTE
-    : HOUSE_BASE_PALETTE;
+    : HOUSE_BASE_PALETTE);
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
-  const cellH = opts?.cellH ?? cell;
   const f = opts?.footprint;
   if (!cell || !f) return;
 
@@ -261,11 +277,10 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const baseAlpha = Number.isFinite(opts.alpha) ? opts.alpha : 255;
   const u = clamp01(opts?.liveAvg ?? 0.5);
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
+  const rowBucket = particleRowBucket(f, opts);
+  const smokeScale = smokeRowContext(rowBucket.t);
 
-  const pxX = f.c0 * cellW;
-  const pxY = f.r0 * cellH;
-  const pxW = f.w * cellW;
-  const pxH = f.h * cellH;
+  const { x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts);
 
   // --- Appear envelope anchored to bottom-center of footprint ---
   const anchorX = pxX + pxW / 2;
@@ -349,15 +364,49 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   bodyTint = applyExposureContrast(bodyTint, ex, ct);
 
   const roofTintRaw = pick(pal.roof, r3);
-  const roofTint = applyExposureContrast(roofTintRaw, ex, ct);
+  let roofTint = applyExposureContrast(roofTintRaw, ex, ct);
+  const buildingLight = sampleDirectionalLightRect(
+    { x: pxX, y: roofY, w: pxW, h: Math.max(1, grassY - roofY) },
+    opts.lightCtx ?? null
+  );
+  bodyTint = mixRgb(bodyTint, buildingLight.lightColor, 0.24 * buildingLight.overallK);
+  roofTint = mixRgb(roofTint, buildingLight.lightColor, 0.18 * buildingLight.overallK);
   const rBody = Math.round(cell * 0.06);
 
   p.noStroke();
   fillRgb(p, bodyTint, 255);
   p.rect(pxX, bodyY, pxW, bodyH, rBody);
+  paintPixelLightBands(
+    p,
+    { x: pxX, y: bodyY, w: pxW, h: bodyH },
+    buildingLight,
+    {
+      alpha: 255,
+      highlightColor: mixRgb(bodyTint, buildingLight.lightColor, 0.52),
+      shadowColor: mixRgb(bodyTint, buildingLight.shadowColor, 0.30),
+      corner: rBody,
+      sideK: 0.42,
+      topK: 0.0,
+      shadowK: 0.18,
+    }
+  );
 
   fillRgb(p, roofTint, alpha);
   p.rect(pxX, roofY, pxW, roofH, rBody, rBody, 0, 0);
+  paintPixelLightBands(
+    p,
+    { x: pxX, y: roofY, w: pxW, h: roofH },
+    buildingLight,
+    {
+      alpha,
+      highlightColor: mixRgb(roofTint, buildingLight.lightColor, 0.44),
+      shadowColor: mixRgb(roofTint, buildingLight.shadowColor, 0.24),
+      corner: rBody,
+      sideK: 0.28,
+      topK: 0.18,
+      shadowK: 0.12,
+    }
+  );
 
   // --- Solar panels (bigger, slightly above roof top line, side-linked tilt)
   {
@@ -463,8 +512,8 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
 
     // smoke behind chimney
     {
-      const smokeColW = Math.max(8, Math.round(cW * 0));
-      const smokeColH = Math.max(48, Math.round(cell * 2));
+      const smokeColW = Math.max(4, Math.round(Math.max(cW, 6) * smokeScale.columnW));
+      const smokeColH = Math.max(18, Math.round(cell * 2 * smokeScale.columnH));
       const smokeX = cx + cW / 2 - smokeColW / 2;
       const smokeY = cy - cH - Math.round(cell * 0.7);
 
@@ -473,18 +522,18 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const spawnY0 = Math.min(val(SMOKE.spawnY, 0), val(SMOKE.spawnY, u));
       const spawnY1 = Math.max(val(SMOKE.spawnY, u), 1 - (1 - val(SMOKE.spawnY, u)));
 
-      const count     = Math.max(4, Math.floor(val(SMOKE.count, u)));
-      const sizeMin   = val(SMOKE.sizeMin, u);
-      const sizeMax   = Math.max(sizeMin, val(SMOKE.sizeMax, u));
-      const lifeMin   = Math.max(0.05, val(SMOKE.lifeMin, u));
-      const lifeMax   = Math.max(lifeMin, val(SMOKE.lifeMax, u));
+      const count     = Math.max(4, Math.floor(val(SMOKE.count, u) * smokeScale.count));
+      const sizeMin   = val(SMOKE.sizeMin, u) * smokeScale.size;
+      const sizeMax   = Math.max(sizeMin, val(SMOKE.sizeMax, u) * smokeScale.size);
+      const lifeMin   = Math.max(0.05, val(SMOKE.lifeMin, u) * smokeScale.life);
+      const lifeMax   = Math.max(lifeMin, val(SMOKE.lifeMax, u) * smokeScale.life);
       const sAlpha    = Math.max(0, Math.min(255, Math.round(val(SMOKE.alpha, u))));
 
-      const speedMin  = val(SMOKE.speedMin, u);
-      const speedMax  = Math.max(speedMin, val(SMOKE.speedMax, u));
-      const gravity   = val(SMOKE.gravity, u);
+      const speedMin  = val(SMOKE.speedMin, u) * smokeScale.motion;
+      const speedMax  = Math.max(speedMin, val(SMOKE.speedMax, u) * smokeScale.motion);
+      const gravity   = val(SMOKE.gravity, u) * smokeScale.motion;
       const drag      = val(SMOKE.drag, u);
-      const jPos      = val(SMOKE.jitterPos, u);
+      const jPos      = val(SMOKE.jitterPos, u) * smokeScale.size;
       const jAng      = val(SMOKE.jitterAngle, u);
       const spreadAng = val(SMOKE.spreadAngle, u);
 
@@ -545,7 +594,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   doorTint = applyExposureContrast(doorTint, ex, ct);
 
   // Choose profile by building height (in cells)
-  const cellsH = bodyH / cell;
+  const cellsH = f.h;
   const low = HOUSE.windows.thresholds.low;
   const mid = HOUSE.windows.thresholds.mid;
   let profile = 'short';
@@ -592,7 +641,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     });
   winDark = applyExposureContrast(winDark, ex, ct);
 
-  const cellsH = bodyH / cell;
+  const cellsH = f.h;
   const low = HOUSE.windows.thresholds.low;
   const mid = HOUSE.windows.thresholds.mid;
 
@@ -636,7 +685,12 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   let totalWindows = Math.min(rows * cols, 6);
   if (totalWindows < 2) totalWindows = 2;
 
-  const litCount = Math.floor(Math.pow(1 - u, WINDOW_OSC.litCurve) * totalWindows);
+  const dynamicLitRatio = Math.pow(1 - u, WINDOW_OSC.litCurve);
+  const minLitRatio = opts?.darkMode ? 0.45 : 0.3;
+  const litCount = Math.min(
+    totalWindows,
+    Math.max(1, Math.round(Math.max(minLitRatio, dynamicLitRatio) * totalWindows))
+  );
 
   const actualBandH = (rows > 1) ? (rows - 1) * gapY + rows * winH : winH;
   const extra = usableH - actualBandH;
@@ -657,8 +711,9 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       if (y >= roofY + 2 && y + winH <= bodyY + bodyH - 2) {
         const litRand = rand01(hash32(`house-lit|${seed}|${rr}|${cc}|${drawn}`));
         const litIdx = Math.floor(litRand * winLitVariants.length) % winLitVariants.length;
-        let tint = (drawn < litCount) ? winLitVariants[litIdx] : winDark;
-        if (drawn < litCount) {
+        const isLit = drawn < litCount;
+        let tint = isLit ? winLitVariants[litIdx] : winDark;
+        if (isLit) {
           const oscSeed = hash32(`house-window-osc|${seed}|${rr}|${cc}|${drawn}`);
           const oscPhase = rand01(oscSeed ^ 0x9e3779b9) * Math.PI * 2;
           const oscAmp = val(WINDOW_OSC.amp, rand01(oscSeed ^ 0x85ebca6b));
@@ -671,6 +726,32 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
             speed: oscSpeed,
             phase: oscPhase,
           });
+
+          // Lightweight emissive feel: two soft pixel-glow shells behind the core window.
+          const glowInner = mixRgb(tint, { r: 255, g: 244, b: 214 }, 0.28);
+          const glowOuter = mixRgb(tint, { r: 255, g: 236, b: 188 }, 0.20);
+          const glowPad1 = Math.max(1, Math.round(Math.min(winW, winH) * 0.20));
+          const glowPad2 = glowPad1 + Math.max(1, Math.round(Math.min(winW, winH) * 0.12));
+
+          fillRgb(p, glowOuter, Math.round(alpha * 0.12));
+          p.rect(
+            x - glowPad2,
+            y - glowPad2,
+            winW + glowPad2 * 2,
+            winH + glowPad2 * 2,
+            Math.round(cell * 0.03)
+          );
+
+          fillRgb(p, glowInner, Math.round(alpha * 0.22));
+          p.rect(
+            x - glowPad1,
+            y - glowPad1,
+            winW + glowPad1 * 2,
+            winH + glowPad1 * 2,
+            Math.round(cell * 0.025)
+          );
+
+          tint = mixRgb(tint, { r: 255, g: 248, b: 222 }, 0.18);
         }
         fillRgb(p, tint, alpha);
         p.rect(x, y, winW, winH, Math.round(cell * 0.02));

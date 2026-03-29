@@ -55,7 +55,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const { liveAvgState, setLiveAvg, allocAvgState, commitAllocAvg, condAvgsState, setCondAvgs, resetCanvasRuntimeState } = useCanvasRuntimeState();
 
-  const { counts, data, allFilteredRows, loading, subscribeToSurveyData } = useSurveyDataState({ section, mySection, setSection });
+  const { counts, allRows, data, allFilteredRows, loading, subscribeToSurveyData } = useSurveyDataState({ section, mySection, setSection });
 
   useEffect(() => {
     const unsub = subscribeToSurveyData();
@@ -152,9 +152,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const surveyDataValue = useMemo<SurveyDataState>(
-    () => ({ section, setSection, counts, data, allFilteredRows, loading }),
+    () => ({ section, setSection, counts, allRows, data, allFilteredRows, loading }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [section, counts, data, allFilteredRows, loading]
+    [section, counts, allRows, data, allFilteredRows, loading]
   );
 
   const interactionValue = useMemo<InteractionState>(

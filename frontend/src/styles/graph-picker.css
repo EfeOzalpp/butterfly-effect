@@ -55,8 +55,7 @@
   font-weight: var(--fw-bold);
 }
 .gp-trigger-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; align-items: center; justify-content: center; pointer-events: none; }
-.gp-trigger-chevron .ui-icon { opacity: 0.95; }
-.gp-trigger-chevron .ui-icon [stroke] { stroke: var(--ui-icon-subtle); }
+.gp-trigger-chevron .ui-icon { opacity: 0.95; color: var(--ui-gp-trigger-chevron-fill); }
 .gp-chooser-icon svg.ui-icon { color: var(--ui-icon-subtle); }
 
 .gp-listbox-shell {
@@ -71,7 +70,6 @@
   border-top: none;
   border-bottom-left-radius: var(--radius-lg);
   border-bottom-right-radius: var(--radius-lg);
-  box-shadow: var(--panel-open-dropdown);
   grid-template-rows: 0fr;
   opacity: 0;
   pointer-events: none;

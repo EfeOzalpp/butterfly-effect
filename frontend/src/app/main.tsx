@@ -41,6 +41,7 @@ const AppInner: React.FC = () => {
   const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
   const { visible: bannerVisible, setDismissed, quotaResetMonth } = useMockBanner();
 
+
   // Global zoom prevention policy
   usePreventPageZoomOutsideZones({
     allowWithin: [
@@ -61,6 +62,26 @@ const AppInner: React.FC = () => {
       const t = setTimeout(prefetch, 0);
       return () => clearTimeout(t);
     }
+  }, [vizVisible]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+
+    if (vizVisible) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+    }
+
+    return () => {
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+    };
   }, [vizVisible]);
 
   return (
@@ -103,6 +124,12 @@ const AppInner: React.FC = () => {
 
       <DeferredGamificationPreloader />
       <Navigation />
+
+      {!vizVisible && !animationVisible && !cityPanelOpen && !questionnaireOpen && (
+        <div className="welcome-title-layer">
+          <h1 className="welcome-title">Butterfly Effect</h1>
+        </div>
+      )}
 
       {!vizVisible && !animationVisible && !cityPanelOpen && (
         <ErrorBoundary name="CanvasEntry">

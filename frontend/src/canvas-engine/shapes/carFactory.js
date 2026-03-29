@@ -7,6 +7,9 @@ import {
   clampSaturation,
   applyShapeMods,
   stepAndDrawPuffs,
+  footprintToPx,
+  particleSizePerspectiveScale,
+  particleMotionPerspectiveScale,
 } from "../modifiers/index";
 
 import {
@@ -188,7 +191,7 @@ function roundedRectPath(ctx, x, y, w, h, r) {
 }
 
 export function drawCarFactory(p, _x, _y, _r, opts = {}) {
-  const pal = opts?.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE;
+  const pal = opts?.palette ?? (opts?.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE);
   const cell = opts?.cell, f = opts?.footprint;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -202,11 +205,10 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const ex  = Number.isFinite(opts.exposure) ? opts.exposure : 1;
   const ct  = Number.isFinite(opts.contrast) ? opts.contrast : 1;
   const tMs = typeof opts.timeMs === 'number' ? opts.timeMs : p.millis?.();
+  const particleScale = particleSizePerspectiveScale(f, opts);
+  const motionScale = particleMotionPerspectiveScale(f, opts);
 
-  const x0 = f.c0 * cellW;
-  const y0 = f.r0 * cellH;
-  const W  = f.w * cellW;
-  const H  = f.h * cellH;
+  const { x: x0, y: y0, w: W, h: H } = footprintToPx(f, opts);
 
   // appear (bottom-center)
   const anchorX = x0 + W / 2;
@@ -240,15 +242,15 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   grass = applyExposureContrast(grass, ex, ct);
 
   // Non-grass colors still use general gradient
-  const wall       = tintGeneral(pal.building);
-  const frameRGB   = tintGeneral(pal.frame);
-  const glassBase  = tintGeneral(pal.window);
-  const chimneyRGB = tintGeneral(pal.chimney);
-  const roofRGB    = tintGeneral(pal.roof);
+  let wall       = tintGeneral(pal.building);
+  let frameRGB   = tintGeneral(pal.frame);
+  let glassBase  = tintGeneral(pal.window);
+  let chimneyRGB = tintGeneral(pal.chimney);
+  let roofRGB    = tintGeneral(pal.roof);
 
   // subtle blue tint for glass
   const blue = { r: 120, g: 170, b: 220 };
-  const glass = clampBrightness(blendRGB(glassBase, blue, 0.42), 0.80, 1.10);
+  let glass = clampBrightness(blendRGB(glassBase, blue, 0.42), 0.80, 1.10);
 
   const backdrop = applyExposureContrast(
     {
@@ -366,16 +368,16 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
 
     // base knobs
     let count    = Math.max(4, Math.floor(val(CF.smoke.count, u)));
-    let sizeMin  = val(CF.smoke.sizeMin, u);
-    let sizeMax  = Math.max(sizeMin, val(CF.smoke.sizeMax, u));
-    let lifeMin  = Math.max(0.05, val(CF.smoke.lifeMin, u));
-    let lifeMax  = Math.max(lifeMin, val(CF.smoke.lifeMax, u));
+    let sizeMin  = val(CF.smoke.sizeMin, u) * particleScale;
+    let sizeMax  = Math.max(sizeMin, val(CF.smoke.sizeMax, u) * particleScale);
+    let lifeMin  = Math.max(0.05, val(CF.smoke.lifeMin, u) * motionScale);
+    let lifeMax  = Math.max(lifeMin, val(CF.smoke.lifeMax, u) * motionScale);
     let sAlpha   = Math.max(90, Math.min(255, Math.round(val(CF.smoke.alpha, u))));
-    let speedMin = val(CF.smoke.speedMin, u);
-    let speedMax = Math.max(speedMin, val(CF.smoke.speedMax, u));
-    let gravity  = val(CF.smoke.gravity, u);
+    let speedMin = val(CF.smoke.speedMin, u) * motionScale;
+    let speedMax = Math.max(speedMin, val(CF.smoke.speedMax, u) * motionScale);
+    let gravity  = val(CF.smoke.gravity, u) * motionScale;
     let drag     = val(CF.smoke.drag, u);
-    let jPos     = val(CF.smoke.jitterPos, u);
+    let jPos     = val(CF.smoke.jitterPos, u) * particleScale;
     let jAng     = val(CF.smoke.jitterAngle, u);
     let spread   = val(CF.smoke.spreadAngle, u);
     const blendK = val(CF.smoke.blendK, u);

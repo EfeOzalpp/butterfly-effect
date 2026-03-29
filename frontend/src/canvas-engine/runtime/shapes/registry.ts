@@ -4,7 +4,7 @@ import type { PLike } from "../p/makeP";
 import type { EngineFieldItem } from "../types";
 import { deviceType } from "../../shared/responsiveness";
 
-// NOTE: JS in repo today
+// JS in repo today
 import {
   drawClouds,
   drawSnow,
@@ -33,12 +33,14 @@ export function createDefaultShapeRegistry(): ShapeRegistry {
       const vw = p2.width;
       const dt = deviceType(vw);
       const hideFrac = dt === "mobile" ? 0.56 : dt === "tablet" ? 0.52 : 0.5;
+      const hideBucketT = dt === "mobile" ? 0.72 : dt === "tablet" ? 0.66 : 0.60;
 
       drawSnow(p2 as any, it.x, it.y, rEff, {
         ...opts,
         footprint: it.footprint,
         usedRows: (opts as any)?.usedRows,
         hideGroundAboveFrac: hideFrac,
+        hideGroundBelowBucketT: hideBucketT,
         showGround: true,
       });
     },

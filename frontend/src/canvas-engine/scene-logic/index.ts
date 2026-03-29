@@ -10,4 +10,3 @@ export type {
 } from './types';
 
 export { composeField } from './composeField';
-export { targetPoolSize  } from '../adjustable-rules/poolSizes';

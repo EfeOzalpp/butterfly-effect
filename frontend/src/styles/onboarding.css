@@ -16,12 +16,28 @@
 .survey.survey-step.role-select, .survey.survey-step.questionnaire {
    display: flex; justify-content: center; align-items: center; flex-direction: column;
 }
+.role-select-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+}
 .survey.survey-step.role-select > .onboarding { display: flex; flex-direction: column; 
   align-items: center; }
 
 .user-flow {
-  display: flex; position: fixed; 
+  display: flex;
   inset: 0; align-items: center; pointer-events: none; z-index: 6;
+}
+
+.welcome-title-layer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  align-items: center;
+  z-index: 5;
 }
 
 .welcome-text { opacity: 0.9;}
@@ -81,7 +97,6 @@
 .role-group-options {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   gap: var(--space-sm);
 }
 /* Rows inside the island override standalone card styles */
@@ -91,14 +106,21 @@
   border-radius: 0;
   background: transparent;
   padding: var(--input-padding);
+  transition: background-color 120ms ease, transform 50ms ease;
 }
-.role-group-options .radio-option--inset:hover {
-  background: var(--ui-bg-surface-hover);
+.input-part-inside.radio-option:not(.selected):hover,
+.radio-option--inset:not(.selected):hover {
+  background: var(--inactive-accent-color-hover) !important;
+}
+
+.input-part-inside.radio-option.selected:hover,
+.role-group-options > .input-part-inside.radio-option.selected:hover {
+  background: var(--active-accent-color-hover);
+  transform: scale(var(--btn-hover-scale-lg));
 }
 
 .input-part-inside.radio-option.selected,
-.input-part-inside.radio-option.selected:nth-child(1),
-.role-group-options > .input-part-inside.radio-option.selected:nth-child(2) {
+.role-group-options > .input-part-inside.radio-option.selected {
   background: var(--active-accent-color);
   border-radius: var(--btn-radius);
 }
@@ -206,7 +228,6 @@
   .survey-section:has(.survey.survey-step.role-select),
   .survey-section:has(.survey.survey-step.section-select) { 
     height: 100%; }
-  .survey.survey-step.role-select,
   .survey.survey-step.section-select {
     height: 100%;
   }
@@ -223,17 +244,18 @@
   .welcome-title, .welcome-text { text-align: center; }
   .section-title  { text-align: center; }
   .questionnaire-title { text-align: center; }
-  .welcome-title { white-space: nowrap; }
+  .welcome-title { white-space: nowrap; padding: 2.4rem 0 3.2rem 0;}
   /* canvas flow for pre-questionnaire */
   .onboarding-canvas {
-    position: fixed;
     top: 0;
     right: 0;
-    width: 100dvw;
-    height: 100dvh;
-  }
-  .radio-group {
     width: 100%;
+    height: 95dvh;
+    position: absolute;
+  }
+  .welcome-title-layer { height: 90dvh; }
+  .radio-group {
+    width: 90%;
   }
 
   /* Section picker spacing */ 
@@ -249,7 +271,7 @@
     border-radius: 0;
   }
   .section-picker { max-width: 320px; }
-  button.next-button { min-width: 200px; max-width: 200px; }
+  button.section-continue-button { min-width: 200px; max-width: 200px; }
 
   /* Questionnaire styles */
   .answer-row {
@@ -279,10 +301,10 @@
     min-width: 400px; max-width: 400px; }
   .q-option { padding-left: 0.1rem; }
   .survey.survey-step.questionnaire { max-width: 100%; position: relative; top: var(--space-lg);}
-  .user-flow {width: 100vw; }
+  .user-flow {width: 100%; padding-top: 5dvh;}
   .user-flow.questionnaire-active,
   .user-flow.graph-active {
-    width: 100dvw;
+    width: 100%;
     background: transparent;
     transition: background 800ms;
   }
@@ -321,9 +343,8 @@
 
 .section-listbox-shell {
   display: grid;
-  position: absolute;
-  top: calc(100% + 0px);
-  left: 0;
+  position: static;
+  margin-top: 0;
   z-index: 20;
   width: 100%;
   background: var(--ui-bg-surface);
@@ -343,8 +364,6 @@
   pointer-events: auto;
 }
 .section-listbox-shell.drop-up {
-  top: auto;
-  bottom: calc(100% + 8px);
   border-top: 1px solid var(--ui-border);
   border-bottom: none;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
@@ -376,6 +395,7 @@
 
 button.begin-button,
 button.next-button,
+button.section-continue-button,
 button.questionnaire,
 button.city-button,
 .q-option,
@@ -412,6 +432,7 @@ button.city-button,
 
   button.begin-button,
   button.next-button,
+  button.section-continue-button,
   button.questionnaire,
   button.city-button {
     width: 100%;
@@ -420,7 +441,25 @@ button.city-button,
   }
 }
 .welcome-title {
-  color: var(--ui-text-title);
+  background: var(--ui-text-title);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: titleWipe 1800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes titleWipe {
+  from {
+    clip-path: inset(100% 0 0 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(0% 0 0 0);
+    opacity: 1;
+  }
 }
 
 /* Theme wiring: survey */

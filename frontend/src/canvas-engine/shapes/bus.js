@@ -1,5 +1,15 @@
 // src/canvas-engine/shape/bus.js
-import { applyShapeMods, blendRGB, clampBrightness, clamp01, val } from "../modifiers/index";
+import {
+  applyShapeMods,
+  blendRGB,
+  clampBrightness,
+  clamp01,
+  val,
+  footprintToPx,
+  sampleDirectionalLightRect,
+  mixRgb,
+  paintPixelLightBands,
+} from "../modifiers/index";
 
 // reuse fit helpers from car.js so behavior matches car exactly
 import {
@@ -101,7 +111,7 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
  * Variety is driven by opts.seedKey (or tile footprint) so caching won't collapse colors.
  */
 export function drawBus(p, cx, cy, r, opts = {}) {
-  const pal = opts?.darkMode ? BUS_DARK_PALETTE : BUS_BASE_PALETTE;
+  const pal = opts?.palette ?? (opts?.darkMode ? BUS_DARK_PALETTE : BUS_BASE_PALETTE);
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 235; // used for ground/wheels
@@ -115,7 +125,7 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   let tileX, tileY, tileW, tileH, tileCx;
 
   if (cell && f) {
-    tileX = f.c0 * cellW; tileY = f.r0 * cellH; tileW = f.w * cellW; tileH = f.h * cellH;
+    ({ x: tileX, y: tileY, w: tileW, h: tileH } = footprintToPx(f, opts));
     tileCx = tileX + tileW / 2;
   } else {
     tileW = r * 6.4; tileH = r * 3.0; tileX = cx - tileW / 2; tileY = cy - tileH / 2;
@@ -192,6 +202,14 @@ export function drawBus(p, cx, cy, r, opts = {}) {
     const w = designW;
     const bodyH = r * 2.0;
     const busX  = tileCx - w / 2;
+    const bodyY = wheelY - bodyH * 1.00;
+    const bodyLight = sampleDirectionalLightRect(
+      { x: busX, y: bodyY, w, h: bodyH },
+      opts.lightCtx ?? null
+    );
+    const litBodyTint = mixRgb(bodyTint, bodyLight.lightColor, 0.26 * bodyLight.overallK);
+    const busHighlight = mixRgb(litBodyTint, bodyLight.lightColor, 0.46);
+    const busShadow = mixRgb(litBodyTint, bodyLight.shadowColor, 0.28);
 
     // Wheels (two rear, one front)
     const wheelD = Math.max(3, r * 0.85);
@@ -201,9 +219,17 @@ export function drawBus(p, cx, cy, r, opts = {}) {
     p.circle(busX + w * 0.78, wheelY, wheelD);
 
     // Body
-    fillRgb(p, bodyTint, 255);
-    const bodyY = wheelY - bodyH * 1.00;
+    fillRgb(p, litBodyTint, 255);
     p.rect(busX, bodyY, w, bodyH, r * 0.22);
+    paintPixelLightBands(p, { x: busX, y: bodyY, w, h: bodyH }, bodyLight, {
+      alpha: 255,
+      highlightColor: busHighlight,
+      shadowColor: busShadow,
+      corner: Math.round(r * 0.22),
+      sideK: 0.40,
+      topK: 0.24,
+      shadowK: 0.16,
+    });
 
     // Windows
     fillRgb(p, winTint, 255);

@@ -93,7 +93,7 @@
 }
 
 .widgets-expandable.is-expanded {
-  max-height: 320px;
+  max-height: 440px;
   opacity: 1;
 }
 
@@ -130,7 +130,14 @@
 
 
 .widgets-panel.radar-chart {
-  padding: 0.6rem 0.4rem 0.4rem;
+  padding: 0.8rem 0.6rem 0.4rem;
+}
+
+.radar-chart-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
 }
 
 .radar-chart-svg {
@@ -166,12 +173,74 @@
   font-size: 9px;
 }
 
+.rc-value {
+  fill: var(--ui-text);
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: var(--fw-bold);
+}
+
+.radar-chart-caption {
+  margin: 0;
+  padding: 0 0.5rem;
+  color: var(--ui-text-secondary);
+  font-size: var(--type-label-size);
+  line-height: var(--type-tight-line);
+  text-align: center;
+}
+
+.radar-chart-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 0.25rem 0.35rem 0 0.35rem;
+  border-top: 1px solid var(--ui-border);
+  min-height: 40px;
+}
+
+.radar-footer-section {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: var(--type-label-size);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radar-footer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 32px;
+  padding: 0 0.35rem;
+  border: none;
+  background: none;
+  color: var(--ui-text-muted);
+  font-size: var(--type-label-size);
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.1s ease;
+}
+
+.radar-footer-btn:hover {
+  color: var(--ui-text);
+  background: none;
+}
+
+.radar-footer-btn--pause {
+  min-width: 44px;
+}
+
 
 .widgets-close-strip {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--space-sm);
+  gap: var(--space-md);
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 1.2rem;
   border: none;

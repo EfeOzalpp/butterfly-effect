@@ -27,7 +27,7 @@ import { resolveBounds } from "./layout/bounds";
 import { createGridCache, invalidateGridCache } from "./layout/gridCache";
 import { installResizeHandlers } from "./platform/resize";
 
-import { createPaletteCache, createCondPaletteCaches } from "./render/palette";
+import { createPaletteCache } from "./render/palette";
 import { type LiveState, defaultShapeKeyOfItem } from "./render/items";
 
 import { Z_INDEX } from "./shapes/zIndex";
@@ -54,6 +54,7 @@ const REG_STYLE_DEFAULT = {
   appearMs: 300,
   exitMs: 300,
   darkMode: false,
+  fog: true,
   debug: { ...DEBUG_DEFAULT } as DebugFlags,
 };
 
@@ -104,8 +105,6 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // ───────────────────────────────────────────────────────────
   const gridCache = createGridCache();
   const paletteCache = createPaletteCache(BRAND_STOPS_VIVID);
-  const condPaletteCaches = createCondPaletteCaches(BRAND_STOPS_VIVID);
-
   const cleanupResize = installResizeHandlers({
     parentEl,
     canvasEl: canvasEl!,
@@ -142,7 +141,6 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     getBackgroundSpecOverride: () => backgroundSpecOverride,
     gridCache,
     paletteCache,
-    condPaletteCaches,
     liveStates,
     ghostsRef,
     shapeRegistry,
@@ -233,13 +231,12 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     if (Number.isFinite(appearMs) && appearMs >= 0) style.appearMs = appearMs | 0;
     if (Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
     if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
+    if (typeof args.fog === "boolean") style.fog = args.fog;
 
     if (args.debug && typeof args.debug === "object") {
       const d = args.debug as Partial<DebugFlags>;
       if (typeof d.grid === "boolean") style.debug.grid = d.grid;
       if (typeof d.gridAlpha === "number") style.debug.gridAlpha = Math.max(0, Math.min(1, d.gridAlpha));
-      if (typeof d.forbiddenAlpha === "number")
-        style.debug.forbiddenAlpha = Math.max(0, Math.min(1, d.forbiddenAlpha));
     }
   }
 
@@ -247,8 +244,6 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     if (!next || typeof next !== "object") return;
     if (typeof next.grid === "boolean") style.debug.grid = next.grid;
     if (typeof next.gridAlpha === "number") style.debug.gridAlpha = Math.max(0, Math.min(1, next.gridAlpha));
-    if (typeof next.forbiddenAlpha === "number")
-      style.debug.forbiddenAlpha = Math.max(0, Math.min(1, next.forbiddenAlpha));
   }
 
   function setFieldVisible(v: boolean) {

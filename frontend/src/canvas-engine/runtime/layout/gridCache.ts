@@ -2,7 +2,10 @@
 
 import type { PLike } from "../p/makeP";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
-import { makeCenteredSquareGrid } from "../../grid-layout/layoutCentered";
+import { makeCenteredSquareGrid } from "../../grid-layout/buildGrid";
+import type { GridMetrics } from "../../grid-layout/gridMetrics";
+
+export type { GridMetrics };
 
 export type GridCacheState = {
   w: number;
@@ -15,7 +18,15 @@ export type GridCacheState = {
   rows: number;
   cols: number;
   usedRows: number;
+  metrics: GridMetrics;
   specKey: string | null;
+};
+
+const EMPTY_METRICS: GridMetrics = {
+  rowHeights: [],
+  rowOffsetY: [],
+  colsPerRow: [],
+  cellWPerRow: [],
 };
 
 export function createGridCache(): GridCacheState {
@@ -30,6 +41,7 @@ export function createGridCache(): GridCacheState {
     rows: 0,
     cols: 0,
     usedRows: 0,
+    metrics: EMPTY_METRICS,
     specKey: null,
   };
 }
@@ -42,7 +54,7 @@ export function invalidateGridCache(cache: GridCacheState) {
 }
 
 function specKeyOf(spec: CanvasPaddingSpec) {
-  return `${spec.rows}|${spec.useTopRatio ?? 1}`;
+  return `${spec.rows}|${spec.useTopRatio ?? 1}|${spec.horizonPos ?? ''}`;
 }
 
 export function computeGridCached(
@@ -61,11 +73,12 @@ export function computeGridCached(
     return cache;
   }
 
-  const { cell, cellW, cellH, ox, oy, rows, cols } = makeCenteredSquareGrid({
+  const { cell, cellW, cellH, ox, oy, rows, cols, metrics } = makeCenteredSquareGrid({
     w: p.width,
     h: p.height,
     rows: spec.rows,
     useTopRatio: spec.useTopRatio ?? 1,
+    horizonPos: spec.horizonPos,
   });
 
   const useTop = Math.max(0.01, Math.min(1, spec.useTopRatio ?? 1));
@@ -81,6 +94,7 @@ export function computeGridCached(
   cache.rows = rows;
   cache.cols = cols;
   cache.usedRows = usedRows;
+  cache.metrics = metrics;
   cache.specKey = key;
 
   return cache;

@@ -3,15 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 import { composeField } from "../scene-logic/composeField";
-import type { PoolItem as ScenePoolItem } from "../scene-logic/types";
-
 import type { HostId } from "../multi-canvas-setup/hostDefs";
 import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 
 import { resolveSceneState } from "../adjustable-rules/sceneMode";
 import type { BaseMode, SceneState, SceneLookupKey } from "../adjustable-rules/sceneMode";
 
-import { targetPoolSize } from "../adjustable-rules/poolSizes";
 import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding";
 import { backgroundForTheme } from "../adjustable-rules/backgrounds";
 
@@ -49,34 +46,6 @@ function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
   return { w: Math.round(w), h: Math.round(h) };
 }
 
-function makeDefaultPoolItem(id: number): ScenePoolItem {
-  return { id, cond: "A" as ScenePoolItem["cond"] };
-}
-
-function ensurePoolSize(
-  poolRef: { current: ScenePoolItem[] | null },
-  desired: number
-) {
-  const cur = poolRef.current;
-
-  if (!cur) {
-    poolRef.current = Array.from({ length: desired }, (_, i) => makeDefaultPoolItem(i + 1));
-    return;
-  }
-
-  if (cur.length === desired) return;
-
-  if (cur.length > desired) {
-    poolRef.current = cur.slice(0, desired);
-    return;
-  }
-
-  const maxId = cur.reduce((m, p) => Math.max(m, p.id), 0);
-  const toAdd = desired - cur.length;
-
-  const extra = Array.from({ length: toAdd }, (_, k) => makeDefaultPoolItem(maxId + k + 1));
-  poolRef.current = cur.concat(extra);
-}
 
 export type SceneSignals = {
   questionnaireOpen: boolean;
@@ -117,8 +86,6 @@ export function useSceneField(
 
   const uRef = useRef(0.5);
   uRef.current = clamp01(allocAvg);
-
-  const poolRef = useRef<ScenePoolItem[] | null>(null);
 
   // Recompose field when the actual canvas size changes, even if viewport size does not.
   useEffect(() => {
@@ -163,26 +130,15 @@ export function useSceneField(
     // inform runtime about the current lookup key (used by ticker/renderer)
     engine.controls.current?.setSceneMode?.(sceneLookupKey);
 
-    const desired = targetPoolSize(profile.poolSizes, ruleWidthPx);
-    ensurePoolSize(poolRef, desired);
-
-    const pool = poolRef.current ?? [];
-
     const result = composeField({
-      // scene-logic composes layout using the base mode (start/overlay)
       mode: sceneState.baseMode,
       padding: profile.padding,
-      bands: profile.bands,
-      separationMeta: profile.separationMeta,
-      quotaSpecification: profile.quotaSpecification,
+      placements: profile.placements,
       allocAvg,
       viewportKey,
       ruleWidthPx,
       canvas: { w, h },
-      pool,
     });
-
-    poolRef.current = result.nextPool;
 
     // Let runtime compute forbidden/rows from the current profile padding
     // and optionally override it (escape hatch)

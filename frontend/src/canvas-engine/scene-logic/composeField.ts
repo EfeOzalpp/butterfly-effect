@@ -1,50 +1,69 @@
 // src/canvas-engine/scene-logic/composeField.ts
 
 import { deviceType } from "../shared/responsiveness";
-
 import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding";
-import { makeCenteredSquareGrid } from "../grid-layout/layoutCentered";
+import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
+import { SHAPES, SHAPE_TO_COND } from "../adjustable-rules/shapeCatalog";
+import { footprintForShape } from "../adjustable-rules/footprintConditions";
+import { stableItemId, interpolatePct } from "../adjustable-rules/placement-rules/index";
 
 import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
 import { clamp01, usedRowsFromSpec } from "./math";
 import { placePoolItems } from "./place";
-import { retargetKindsStable, assignShapesByPlanner } from "./plan";
+
+function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
+  const { placements, allocAvg } = opts;
+  const t = clamp01(allocAvg);
+  const items: PoolItem[] = [];
+
+  for (const shape of SHAPES) {
+    const rule = placements[shape];
+    if (!rule) continue;
+
+    const pct = interpolatePct(rule.quota, t);
+    const size = footprintForShape(shape);
+    const cond = SHAPE_TO_COND[shape];
+
+    rule.zones.forEach((zone, zoneIdx) => {
+      const baseCount = zone.count[device] ?? zone.count.tablet ?? zone.count.mobile ?? 0;
+      const count = Math.max(0, Math.round(baseCount * pct / 50));
+
+      for (let i = 0; i < count; i++) {
+        items.push({
+          id: stableItemId(shape, zoneIdx, i),
+          shape,
+          zoneIndex: zoneIdx,
+          size,
+          cond,
+        });
+      }
+    });
+  }
+
+  return items;
+}
 
 export function composeField(opts: ComposeOpts): ComposeResult {
   const w = Math.round(opts.canvas.w);
   const h = Math.round(opts.canvas.h);
   const ruleW = Math.round(opts.ruleWidthPx ?? w);
 
-  const u = clamp01(opts.allocAvg);
-
-  // mode is data (meta/debug). No branching here.
-  const mode = opts.mode;
-
   const device = deviceType(ruleW);
-
-  // padding selection uses the already-mode-resolved table passed in opts
   const spec = resolveCanvasPaddingSpec(ruleW, opts.padding);
 
-  const {
-    cell,
-    cellW,
-    cellH,
-    ox,
-    oy,
-    rows,
-    cols
-  } = makeCenteredSquareGrid({
+  const { cell, cellW, cellH, ox, oy, rows, cols, metrics } = makeCenteredSquareGrid({
     w,
     h,
     rows: spec.rows,
     useTopRatio: spec.useTopRatio ?? 1,
+    horizonPos: spec.horizonPos,
   });
 
   const usedRows = usedRowsFromSpec(rows, spec.useTopRatio);
-  const meta = { device, mode, spec, rows, cols, cell, usedRows };
+  const meta = { device, mode: opts.mode, spec, rows, cols, cell, usedRows };
 
   if (!rows || !cols || !cell) {
-    return { placed: [], nextPool: opts.pool.slice(), meta };
+    return { placed: [], meta };
   }
 
   const salt =
@@ -52,24 +71,9 @@ export function composeField(opts: ComposeOpts): ComposeResult {
       ? opts.salt
       : (rows * 73856093) ^ (cols * 19349663);
 
-  const desiredSize = opts.pool.length;
+  const pool = buildPool(opts, device);
 
-  // reset volatile placement fields
-  const pool: PoolItem[] = opts.pool.map((p) => ({
-    ...p,
-    shape: undefined,
-    size: undefined,
-    footprint: undefined,
-    x: undefined,
-    y: undefined,
-  }));
-
-  // planner assigns sizes/shapes based on policy (quotaSpecification etc.)
-  retargetKindsStable(pool, u, desiredSize);
-  assignShapesByPlanner(pool, u, salt, opts.quotaSpecification);
-
-  // placement consumes resolved rule data (bands) + derived layout info
-    const { placed, nextPool } = placePoolItems({
+  const { placed } = placePoolItems({
     pool,
     spec,
     device,
@@ -82,10 +86,9 @@ export function composeField(opts: ComposeOpts): ComposeResult {
     oy,
     usedRows,
     salt,
-    bands: opts.bands,
-    separationMeta: opts.separationMeta,
+    placements: opts.placements,
+    metrics,
   });
 
-
-  return { placed, nextPool, meta };
+  return { placed, meta };
 }

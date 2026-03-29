@@ -9,6 +9,7 @@ export { clamp01 } from "./color-modifiers/math";
 export { rgbToHsl, hslToRgb } from "./color-modifiers/colorspace";
 
 export { blendRGB, blendRGBGamma } from "./color-modifiers/blend";
+export { fogifyPalette } from "./color-modifiers/fog";
 
 export { cssToRgbViaCanvas } from "./color-modifiers/adapter";
 
@@ -48,3 +49,26 @@ export type { Anchor, ShapeMods, ApplyShapeModsOpts } from "./shape-modifiers/sh
 
 export { stepAndDrawParticles } from "./particle-systems/particle-1";
 export { stepAndDrawPuffs } from "./particle-systems/particle-2";
+export { particleRowBucket, particleBucketRange } from "./particlePerspective";
+export {
+  createSceneLightContext,
+  sampleDirectionalLightRect,
+  mixRgb,
+  paintEdgeGradientRect,
+  paintDirectionalTriangleBands,
+  paintPixelLightBands,
+} from "./lighting";
+
+
+/* =========================
+ * GRID / FOOTPRINT
+ * ========================= */
+
+export {
+  footprintToPx,
+  rowHeightAt,
+  rowWidthAt,
+  particlePerspectiveScale,
+  particleSizePerspectiveScale,
+  particleMotionPerspectiveScale,
+} from "./footprintPx";

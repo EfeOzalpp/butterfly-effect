@@ -73,12 +73,12 @@ export default function useDotGraphSceneModel({
 
   const dotPointOptions = useMemo(
     () => ({
-      spread,
+      spreadOverride: spread,
       minDistance: 2.1,
       seed: 1337,
       relaxPasses: 1,
       relaxStrength: 0.25,
-      centerBias: 0.35,
+      attractorStrength: 0.56,
       colorForAverage,
       personalizedEntryId,
       showPersonalized,

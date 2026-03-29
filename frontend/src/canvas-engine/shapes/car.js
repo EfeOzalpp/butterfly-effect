@@ -1,5 +1,15 @@
 // src/canvas-engine/shapes/car.js
-import { applyShapeMods, blendRGB, clampBrightness, clamp01, val } from "../modifiers/index";
+import {
+  applyShapeMods,
+  blendRGB,
+  clampBrightness,
+  clamp01,
+  val,
+  footprintToPx,
+  sampleDirectionalLightRect,
+  mixRgb,
+  paintPixelLightBands,
+} from "../modifiers/index";
 
 /* ───────────────── Base Palette */
 export const CAR_BASE_PALETTE = {
@@ -102,7 +112,7 @@ function rFromKey(seedKey, tag) {
 export const CAR_VARIANTS = { suv: 'suv', sedan: 'sedan', jeep: 'jeep' };
 
 export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
-  const pal   = opts?.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE;
+  const pal   = opts?.palette ?? (opts?.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
   const ex    = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct    = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const alpha = Number.isFinite(opts?.alpha) ? opts.alpha : 235;
@@ -175,10 +185,24 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
   if (variant === 'suv') {
     const h = r * 1.9;
     const bodyCy = wheelY - h * 0.46 + bodyYOffset;
+    const bodyRect = { x: cx - w / 2, y: bodyCy - h / 2, w, h };
+    const bodyLight = sampleDirectionalLightRect(bodyRect, opts.lightCtx ?? null);
+    const suvTint = mixRgb(bodyTint, bodyLight.lightColor, 0.28 * bodyLight.overallK);
+    const suvHighlight = mixRgb(suvTint, bodyLight.lightColor, 0.46);
+    const suvShadow = mixRgb(suvTint, bodyLight.shadowColor, 0.30);
 
     p.noStroke();
-    fillRgb(p, bodyTint, alpha);
+    fillRgb(p, suvTint, alpha);
     p.rect(cx - w / 2, bodyCy - h / 2, w, h, r * 0.42);
+    paintPixelLightBands(p, bodyRect, bodyLight, {
+      alpha,
+      highlightColor: suvHighlight,
+      shadowColor: suvShadow,
+      corner: Math.round(r * 0.42),
+      sideK: 0.40,
+      topK: 0.28,
+      shadowK: 0.18,
+    });
 
     fillRgb(p, windowTint, alpha);
     const winH = h * 0.42;
@@ -189,30 +213,90 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
     const chassisW = w * 0.94;
     const chassisH = Math.max(6, r * 0.40);
     const chassisCy = wheelY - chassisH * 0.55 + bodyYOffset;
-
-    p.noStroke();
-    fillRgb(p, bodyTint, alpha);
-    p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.22);
-
     const cabinBottomW = w * 0.70;
     const cabinTopW    = cabinBottomW * 0.84;
     const cabinH       = Math.max(8, r * 1.05);
     const chassisTopY  = chassisCy - chassisH / 2;
     const cabinBaseY   = chassisTopY;
     const cabinTopY    = cabinBaseY - cabinH;
-
     const x0  = cx - cabinBottomW / 2;
     const x1  = cx + cabinBottomW / 2;
     const xt0 = cx - cabinTopW / 2;
     const xt1 = cx + cabinTopW / 2;
+    const bodyLight = sampleDirectionalLightRect(
+      { x: cx - chassisW / 2, y: cabinTopY, w: chassisW, h: wheelY - cabinTopY },
+      opts.lightCtx ?? null
+    );
+    const sedanTint = mixRgb(bodyTint, bodyLight.lightColor, 0.26 * bodyLight.overallK);
+    const sedanHighlight = mixRgb(sedanTint, bodyLight.lightColor, 0.44);
+    const sedanShadow = mixRgb(sedanTint, bodyLight.shadowColor, 0.26);
 
-    fillRgb(p, bodyTint, alpha);
+    p.noStroke();
+    fillRgb(p, sedanTint, alpha);
+    p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.22);
+    paintPixelLightBands(
+      p,
+      { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
+      bodyLight,
+      {
+        alpha,
+        highlightColor: sedanHighlight,
+        shadowColor: sedanShadow,
+        corner: Math.round(r * 0.22),
+        sideK: 0.36,
+        topK: 0.22,
+        shadowK: 0.16,
+      }
+    );
+
+    fillRgb(p, sedanTint, alpha);
     p.beginShape();
     p.vertex(x0,  cabinBaseY);
     p.vertex(x1,  cabinBaseY);
     p.vertex(xt1, cabinTopY);
     p.vertex(xt0, cabinTopY);
     p.endShape(p.CLOSE);
+    {
+      const litLeft = bodyLight.leftK >= bodyLight.rightK;
+      const sideLitK = Math.max(bodyLight.leftK, bodyLight.rightK);
+      p.fill(sedanHighlight.r, sedanHighlight.g, sedanHighlight.b, Math.round(alpha * 0.34 * sideLitK));
+      p.beginShape();
+      if (litLeft) {
+        p.vertex(x0, cabinBaseY);
+        p.vertex(x0 + cabinBottomW * 0.22, cabinBaseY);
+        p.vertex(xt0 + cabinTopW * 0.20, cabinTopY);
+        p.vertex(xt0, cabinTopY);
+      } else {
+        p.vertex(x1 - cabinBottomW * 0.22, cabinBaseY);
+        p.vertex(x1, cabinBaseY);
+        p.vertex(xt1, cabinTopY);
+        p.vertex(xt1 - cabinTopW * 0.20, cabinTopY);
+      }
+      p.endShape(p.CLOSE);
+
+      p.fill(sedanHighlight.r, sedanHighlight.g, sedanHighlight.b, Math.round(alpha * 0.22 * bodyLight.topK));
+      p.beginShape();
+      p.vertex(x0 + cabinBottomW * 0.14, cabinBaseY);
+      p.vertex(x1 - cabinBottomW * 0.14, cabinBaseY);
+      p.vertex(xt1 - cabinTopW * 0.12, cabinTopY + Math.max(1, r * 0.08));
+      p.vertex(xt0 + cabinTopW * 0.12, cabinTopY + Math.max(1, r * 0.08));
+      p.endShape(p.CLOSE);
+
+      p.fill(sedanShadow.r, sedanShadow.g, sedanShadow.b, Math.round(alpha * 0.16 * sideLitK));
+      p.beginShape();
+      if (litLeft) {
+        p.vertex(x1 - cabinBottomW * 0.18, cabinBaseY);
+        p.vertex(x1, cabinBaseY);
+        p.vertex(xt1, cabinTopY);
+        p.vertex(xt1 - cabinTopW * 0.14, cabinTopY);
+      } else {
+        p.vertex(x0, cabinBaseY);
+        p.vertex(x0 + cabinBottomW * 0.18, cabinBaseY);
+        p.vertex(xt0 + cabinTopW * 0.14, cabinTopY);
+        p.vertex(xt0, cabinTopY);
+      }
+      p.endShape(p.CLOSE);
+    }
 
     // windows
     const insetX   = Math.max(3, r * 0.25);
@@ -240,10 +324,31 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
     const chassisW = w * 0.92;
     const chassisH = Math.max(6, r * 0.65);
     const chassisCy = wheelY - chassisH * 0.58 + bodyYOffset;
+    const bodyLight = sampleDirectionalLightRect(
+      { x: cx - chassisW / 2, y: wheelY - r * 1.8 + bodyYOffset, w: chassisW, h: r * 1.8 },
+      opts.lightCtx ?? null
+    );
+    const jeepTint = mixRgb(bodyTint, bodyLight.lightColor, 0.28 * bodyLight.overallK);
+    const jeepHighlight = mixRgb(jeepTint, bodyLight.lightColor, 0.46);
+    const jeepShadow = mixRgb(jeepTint, bodyLight.shadowColor, 0.28);
 
     p.noStroke();
-    fillRgb(p, bodyTint, alpha);
+    fillRgb(p, jeepTint, alpha);
     p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.18);
+    paintPixelLightBands(
+      p,
+      { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
+      bodyLight,
+      {
+        alpha,
+        highlightColor: jeepHighlight,
+        shadowColor: jeepShadow,
+        corner: Math.round(r * 0.18),
+        sideK: 0.40,
+        topK: 0.20,
+        shadowK: 0.16,
+      }
+    );
 
     const cabinW      = w * 0.64;
     const cabinH      = Math.max(10, r * 1.15);
@@ -256,8 +361,22 @@ export function drawCarAsset(p, cx, wheelY, r, opts = {}) {
       ? (cx - chassisW / 2 + sidePad)
       : (cx + chassisW / 2 - cabinW - sidePad);
 
-    fillRgb(p, bodyTint, alpha);
+    fillRgb(p, jeepTint, alpha);
     p.rect(cabinX0, cabinTopY, cabinW, cabinH, r * 0.10);
+    paintPixelLightBands(
+      p,
+      { x: cabinX0, y: cabinTopY, w: cabinW, h: cabinH },
+      bodyLight,
+      {
+        alpha,
+        highlightColor: jeepHighlight,
+        shadowColor: jeepShadow,
+        corner: Math.round(r * 0.10),
+        sideK: 0.32,
+        topK: 0.24,
+        shadowK: 0.14,
+      }
+    );
 
     // windows
     const pad = Math.max(3, r * 0.22);
@@ -289,7 +408,7 @@ export function endFitScale(p) { p.pop(); }
 
 /* ───────────────── Tile-aware wrapper (fits the asset to tile width) */
 export function drawCar(p, cx, cy, r, opts = {}) {
-  const pal = opts?.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE;
+  const pal = opts?.palette ?? (opts?.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
   const alpha = Number.isFinite(opts.alpha) ? opts.alpha : 235;
@@ -302,7 +421,7 @@ export function drawCar(p, cx, cy, r, opts = {}) {
   const f    = opts?.footprint;
   let tileX, tileY, tileW, tileH;
   if (cell && f) {
-    tileX = f.c0 * cellW; tileY = f.r0 * cellH; tileW = f.w * cellW; tileH = f.h * cellH;
+    ({ x: tileX, y: tileY, w: tileW, h: tileH } = footprintToPx(f, opts));
   } else {
     tileW = r * 3.0; tileH = r * 3.0; tileX = cx - tileW / 2; tileY = cy - tileH / 2;
   }
@@ -374,6 +493,7 @@ export function drawCar(p, cx, cy, r, opts = {}) {
     darkMode: !!opts.darkMode,
     gradientRGB: opts.gradientRGB,
     liveAvg: u,
+    lightCtx: opts.lightCtx,
     // pass through seedKey so color/variant match the sprite variant cache key
     seedKey,
     useAppear: false,

@@ -106,6 +106,7 @@ export default function useSurveyDataState({
 
   return {
     counts,
+    allRows,
     data,
     allFilteredRows: filteredRows,
     loading,

@@ -10,11 +10,13 @@ import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 import { getPaddingSpecForState } from "../layout/padding";
 import { computeGridCached, type GridCacheState } from "../layout/gridCache";
 
-import { drawBackground, drawFogOverlay } from "../render/background";
+import { drawBackground, drawFogOverlay, drawRowTopLightOverlay } from "../render/background";
+import { computeFogState, createBottomFogStepper, drawSkyFog } from "../render/fog";
 import { drawGridOverlay } from "../render/gridOverlay";
-import { getGradientRGB, type PaletteCache, type CondPaletteCaches } from "../render/palette";
+import { getGradientRGB, type PaletteCache } from "../render/palette";
 import { drawGhosts, type Ghost } from "../render/ghosts";
 import { drawItems, type LiveState } from "../render/items";
+import { createSceneLightContext } from "../../modifiers/index";
 
 import { drawItemFromRegistry } from "../shapes/draw";
 import type { ShapeRegistry } from "../shapes/registry";
@@ -40,6 +42,7 @@ export type LoopDeps = {
     appearMs: number;
     exitMs: number;
     darkMode: boolean;
+    fog: boolean;
     debug: DebugFlags;
   };
 
@@ -53,8 +56,6 @@ export type LoopDeps = {
   // caches
   gridCache: GridCacheState;
   paletteCache: PaletteCache;
-  condPaletteCaches: CondPaletteCaches;
-
   // lifecycle state
   liveStates: Map<string, LiveState>;
   ghostsRef: { current: Ghost[] };
@@ -81,7 +82,7 @@ export function createEngineTicker(deps: LoopDeps) {
     getBackgroundSpecOverride,
     gridCache,
     paletteCache,
-    condPaletteCaches,
+
     liveStates,
     ghostsRef,
     shapeRegistry,
@@ -96,7 +97,6 @@ export function createEngineTicker(deps: LoopDeps) {
   let prevBgSpec: BackgroundSpec | null = null;
   let bgFrom: BackgroundSpec | null = null;
   let bgTransitionStart = -1;
-
   function renderOneSandboxed(
     it: EngineFieldItem,
     rEff: number,
@@ -110,13 +110,31 @@ export function createEngineTicker(deps: LoopDeps) {
       const itemAvg = inputs.liveAvg;
       const itemGradient = sharedOpts.gradientRGB;
 
-      const opts2 = {
+      const opts2: any = {
         ...sharedOpts,
         liveAvg: itemAvg,
         gradientRGB: itemGradient,
         rootAppearK,
         usedRows: gridCache.usedRows,
       };
+
+      // Override cell/cellW/cellH with the actual tile size for this item's row.
+      // baseShared carries the horizon reference (smallest tile); shapes that use
+      // cell * fraction would otherwise size themselves relative to the horizon
+      // regardless of where they sit on screen.
+      const fp = (it as any).footprint;
+      const m = gridCache.metrics;
+      if (fp != null && m.rowHeights.length > 0) {
+        // Use the bottom row of the footprint — matches footprintToPx which uses
+        // bottomRow as the unit tile (unitH = rowHeights[bottomRow], pxH = f.h * unitH).
+        // Using r0 (top row) caused cell/pxH mismatch on multi-row shapes.
+        const bottomRow = (fp.r0 ?? 0) + (fp.h ?? 1) - 1;
+        opts2.cell  = m.rowHeights[bottomRow]  ?? gridCache.cellH;
+        opts2.cellH = m.rowHeights[bottomRow]  ?? gridCache.cellH;
+        opts2.cellW = m.cellWPerRow[bottomRow] ?? gridCache.cellW;
+
+      }
+
       drawItemFromRegistry(shapeRegistry, p, it, rEff, opts2);
     } finally {
       p.pop();
@@ -165,12 +183,12 @@ export function createEngineTicker(deps: LoopDeps) {
         rows: grid.rows,
         cols: grid.cols,
         usedRows: grid.usedRows,
+        metrics: grid.metrics,
       },
       spec,
       {
         enabled: !!style.debug.grid,
         gridAlpha: style.debug.gridAlpha ?? 0.35,
-        forbiddenAlpha: style.debug.forbiddenAlpha ?? 0.25,
       }
     );
 
@@ -188,10 +206,32 @@ export function createEngineTicker(deps: LoopDeps) {
       cache: paletteCache,
     });
 
+    const sceneLight = createSceneLightContext({
+      lightItem: field.items.find((it) => it.shape === "sun") ?? null,
+      darkMode: style.darkMode,
+      canvasW: p.width,
+      canvasH: p.height,
+      cell: grid.cell,
+      cellW: grid.cellW,
+      cellH: grid.cellH,
+      ...grid.metrics,
+    });
+
+    drawRowTopLightOverlay({
+      p,
+      metrics: grid.metrics,
+      light: sceneLight,
+      alpha: style.darkMode ? 0.18 : 0.11,
+    });
+
+    const regularItems = field.items.filter((it) => it.shape !== "sun");
+    const fogForegroundItems = field.items.filter((it) => it.shape === "sun");
+
     const baseShared = {
       cell: grid.cell,
       cellW: grid.cellW,
       cellH: grid.cellH,
+      ...grid.metrics,
       gradientRGB,
       blend: style.blend,
       liveAvg: liveAvgSignal,
@@ -200,8 +240,9 @@ export function createEngineTicker(deps: LoopDeps) {
       exposure: style.exposure,
       contrast: style.contrast,
       darkMode: style.darkMode,
-      paletteTheme: currentBgSpec?.shapePalette,
+      paletteTheme: currentBgSpec,
       transport,
+      lightCtx: sceneLight,
     };
 
     ghostsRef.current = drawGhosts({
@@ -216,8 +257,15 @@ export function createEngineTicker(deps: LoopDeps) {
         renderOneSandboxed(it, rEff, shared, rootAppearK),
     });
 
+    const fog = style.fog ? computeFogState({
+      p,
+      metrics: grid.metrics,
+      darkMode: style.darkMode,
+    }) : null;
+    const bottomFogStepper = fog ? createBottomFogStepper(p, fog) : null;
+
     drawItems({
-      items: field.items,
+      items: regularItems,
       visible: field.visible,
       nowMs: tMs,
       appearMs: style.appearMs,
@@ -226,13 +274,47 @@ export function createEngineTicker(deps: LoopDeps) {
       perShapeScale: style.perShapeScale,
       baseR: style.r,
       baseShared,
+      gridMetrics: grid.metrics,
       shapeKeyOfItem,
       renderOne: (it, rEff, shared, rootAppearK) =>
         renderOneSandboxed(it, rEff, shared, rootAppearK),
       onGhost: (g) => ghostsRef.current.push(g),
+      onBeforeGroundItem: bottomFogStepper ? ({ depth }) => {
+        bottomFogStepper.drawUntilDepth(depth);
+      } : undefined,
+      onAfterRowGroup: bottomFogStepper ? () => {
+        bottomFogStepper.drawNext();
+      } : undefined,
     });
 
+    if (bottomFogStepper) {
+      bottomFogStepper.drawRemaining();
+    }
+
+    if (fog) {
+      drawSkyFog(p, fog);
+    }
+
     drawFogOverlay(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
+
+    if (fogForegroundItems.length > 0) {
+      drawItems({
+        items: fogForegroundItems,
+        visible: field.visible,
+        nowMs: tMs,
+        appearMs: style.appearMs,
+        Z,
+        liveStates,
+        perShapeScale: style.perShapeScale,
+        baseR: style.r,
+        baseShared,
+        gridMetrics: grid.metrics,
+        shapeKeyOfItem,
+        renderOne: (it, rEff, shared, rootAppearK) =>
+          renderOneSandboxed(it, rEff, shared, rootAppearK),
+        onGhost: (g) => ghostsRef.current.push(g),
+      });
+    }
 
     if (hero.visible && hero.x != null && hero.y != null) {
       p.fill(255, 0, 0, 255);

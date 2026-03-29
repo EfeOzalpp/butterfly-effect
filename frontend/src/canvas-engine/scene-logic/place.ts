@@ -2,24 +2,13 @@
 
 import { createOccupancy } from "../grid-layout/occupancy";
 import { cellAnchorToPx2 } from "../grid-layout/coords";
-import { PlacementBands } from "../grid-layout/placementBands";
-
+import type { GridMetrics } from "../grid-layout/gridMetrics";
 import type { DeviceType } from "../shared/responsiveness";
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
-
+import type { ScenePlacementRules } from "../adjustable-rules/placement-rules/index";
 import type { PoolItem, PlacedItem, FootRect } from "./types";
 import { buildFallbackCells } from "./candidates";
-import {
-  cellForbiddenFromSpec,
-  allowedSegmentsForRow,
-  footprintAllowed,
-} from "./constraints";
-
-import type { ShapeName } from "../adjustable-rules/shapeCatalog";
-import type { ShapeBands } from "../adjustable-rules/placementRules";
-
-import type { SeparationMeta } from "../adjustable-rules/separationMeta";
-
+import { cellForbiddenFromSpec, allowedSegmentsForRow, footprintAllowed } from "./constraints";
 import { scoreCandidateGeneric } from "./scoring";
 
 export function placePoolItems(opts: {
@@ -28,120 +17,71 @@ export function placePoolItems(opts: {
   device: DeviceType;
   rows: number;
   cols: number;
-
-  // legacy scalar (still used by some systems as a "size knob")
   cell: number;
-
-  // NEW: rectangular grid metrics used for x/y placement
   cellW: number;
   cellH: number;
   ox?: number;
   oy?: number;
-
+  metrics?: GridMetrics;
   usedRows: number;
   salt: number;
+  placements: ScenePlacementRules;
+}): { placed: PlacedItem[] } {
+  const { pool, spec, device, rows, cols, cell, cellW, cellH, ox, oy, usedRows, salt, placements, metrics } = opts;
 
-  bands: ShapeBands;
+  const { rowHeights, rowOffsetY, colsPerRow, cellWPerRow } = metrics ?? {};
 
-  // ✅ updated: now maps to simplified SeparationMeta
-  separationMeta: Record<ShapeName, SeparationMeta>;
-}): { placed: PlacedItem[]; nextPool: PoolItem[] } {
-  const {
-    pool,
-    spec,
-    device,
-    rows,
-    cols,
-    cell,
-    cellW,
-    cellH,
-    ox,
-    oy,
-    usedRows,
-    salt,
-    bands,
-    separationMeta,
-  } = opts;
-
-  const isForbidden = cellForbiddenFromSpec(spec, rows, cols);
-  const occ = createOccupancy(rows, cols, (r, c) => isForbidden(r, c));
-
+  const isForbidden = cellForbiddenFromSpec(spec, rows, cols, colsPerRow);
+  const occ = createOccupancy(rows, cols, (r, c) => isForbidden(r, c), colsPerRow);
   const fallbackCells = buildFallbackCells(rows, cols, spec);
 
-  const nextPool: PoolItem[] = pool.map((p) => ({
-    ...p,
-    footprint: undefined,
-    x: undefined,
-    y: undefined,
-  }));
-
-  const placedAccum: Array<{
-    id: number;
-    x: number;
-    y: number;
-    shape?: PoolItem["shape"];
-    footprint: FootRect;
-  }> = [];
-
+  const placedAccum: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];
   const outPlaced: PlacedItem[] = [];
   let cursor = 0;
 
-  const getMeta = (s?: ShapeName) => (s ? separationMeta[s] : undefined);
+  for (const item of pool) {
+    const { shape, zoneIndex, size } = item;
+    const wCell = size.w;
+    const hCell = size.h;
 
-  for (let i = 0; i < nextPool.length; i++) {
-    const item = nextPool[i];
-    if (!item.size) continue;
+    // Resolve zone bounds for this item
+    const zone = placements[shape]?.zones[zoneIndex];
+    const topK   = zone?.verticalK[0]    ?? 0;
+    const botK   = zone?.verticalK[1]    ?? 1;
+    const leftK  = zone?.horizontalK?.[0] ?? 0;
+    const rightK = zone?.horizontalK?.[1] ?? 1;
 
-    const wCell = item.size.w;
-    const hCell = item.size.h;
-
-    let rectHit: FootRect | null = null;
-
-    const shape = item.shape as ShapeName | undefined;
-    if (!shape) continue;
-
-    const { top: rMin, bot: rMax } = PlacementBands.band(
-      bands,
-      shape,
-      usedRows,
-      device,
-      hCell
-    );
+    const rMin = Math.max(0, Math.floor(usedRows * topK));
+    const rMax = Math.min(usedRows - hCell, Math.floor(usedRows * botK));
 
     const placedForScore = placedAccum.map((p) => ({
       r0: p.footprint.r0,
       c0: p.footprint.c0,
       w: p.footprint.w,
       h: p.footprint.h,
-      shape: p.shape as ShapeName | undefined,
     }));
 
     const candidates: Array<{ r0: number; c0: number; score: number }> = [];
 
     for (let r0 = rMin; r0 <= Math.min(rMax, rows - hCell); r0++) {
-      const segs = allowedSegmentsForRow(
-        r0,
-        wCell,
-        hCell,
-        rows,
-        cols,
-        isForbidden
-      );
+      // Use per-row column count so horizontalK is a consistent fraction of
+      // each row's actual width, not the max columns at the horizon.
+      const rowCols = colsPerRow?.[r0] ?? cols;
+      const cMin = Math.max(0, Math.floor(rowCols * leftK));
+      const cMax = Math.min(rowCols - wCell, Math.floor(rowCols * rightK));
+
+      const segs = allowedSegmentsForRow(r0, wCell, hCell, rows, cols, isForbidden, colsPerRow);
 
       for (const seg of segs) {
         const effectiveCenterC = (seg.cStart + seg.cEnd) / 2;
-        for (let c0 = seg.cStart; c0 <= seg.cEnd; c0++) {
+        const c0Start = Math.max(seg.cStart, cMin);
+        const c0End   = Math.min(seg.cEnd,   cMax);
+
+        for (let c0 = c0Start; c0 <= c0End; c0++) {
           const score = scoreCandidateGeneric({
-            r0,
-            c0,
-            wCell,
-            hCell,
-            cols,
-            usedRows,
+            r0, c0, wCell, hCell, cols, usedRows,
             placed: placedForScore,
             salt,
-            shape,
-            getMeta,
             effectiveCenterC,
           });
           candidates.push({ r0, c0, score });
@@ -149,13 +89,17 @@ export function placePoolItems(opts: {
       }
     }
 
+    let rectHit: FootRect | null = null;
+
     if (candidates.length === 0) {
       for (let k = cursor; k < fallbackCells.length; k++) {
         const { r, c } = fallbackCells[k];
-
         if (r < rMin || r > rMax) continue;
-        if (!footprintAllowed(r, c, wCell, hCell, rows, cols, isForbidden)) continue;
-
+        const fbRowCols = colsPerRow?.[r] ?? cols;
+        const fbCMin = Math.max(0, Math.floor(fbRowCols * leftK));
+        const fbCMax = Math.min(fbRowCols - wCell, Math.floor(fbRowCols * rightK));
+        if (c < fbCMin || c > fbCMax) continue;
+        if (!footprintAllowed(r, c, wCell, hCell, rows, cols, isForbidden, colsPerRow)) continue;
         const hit = occ.tryPlaceAt(r, c, wCell, hCell);
         if (hit) {
           rectHit = hit;
@@ -167,19 +111,14 @@ export function placePoolItems(opts: {
       candidates.sort((a, b) => b.score - a.score);
       for (const cand of candidates) {
         const hit = occ.tryPlaceAt(cand.r0, cand.c0, wCell, hCell);
-        if (hit) {
-          rectHit = hit;
-          break;
-        }
+        if (hit) { rectHit = hit; break; }
       }
     }
 
     if (!rectHit) continue;
 
-    // Footprints can span an even number of cells, so anchor to the true
-    // rectangle center instead of snapping to a single center cell.
     const { x, y } = cellAnchorToPx2(
-      { cellW, cellH, ox, oy },
+      { cellW, cellH, ox, oy, ...metrics },
       rectHit,
       "center"
     );
@@ -188,10 +127,9 @@ export function placePoolItems(opts: {
     item.x = x;
     item.y = y;
 
-    placedAccum.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
-
+    placedAccum.push({ id: item.id, x, y, footprint: rectHit });
     outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
   }
 
-  return { placed: outPlaced, nextPool };
+  return { placed: outPlaced };
 }

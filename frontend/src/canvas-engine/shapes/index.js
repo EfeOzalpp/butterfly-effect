@@ -50,6 +50,20 @@ export const SHAPE_BASE_PALETTES = {
   trees:      TREES_BASE_PALETTE,
 };
 
+export const SHAPE_DARK_PALETTES = {
+  clouds:     CLOUDS_DARK_PALETTE,
+  snow:       SNOW_DARK_PALETTE,
+  sun:        SUN_DARK_PALETTE,
+  house:      HOUSE_DARK_PALETTE,
+  villa:      VILLA_DARK_PALETTE,
+  power:      POWER_DARK_PALETTE,
+  car:        CAR_DARK_PALETTE,
+  sea:        SEA_DARK_PALETTE,
+  carFactory: CAR_FACTORY_DARK_PALETTE,
+  bus:        BUS_DARK_PALETTE,
+  trees:      TREES_DARK_PALETTE,
+};
+
 export function getBaseRGB(shape, key = 'default') {
   const pal = SHAPE_BASE_PALETTES[shape];
   if (!pal) return null;

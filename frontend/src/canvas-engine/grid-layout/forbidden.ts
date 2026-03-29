@@ -35,15 +35,16 @@ export function cellInRectFrac(
 /**
  * Combines forbiddenRects and an optional per-cell forbidden predicate into a single checker.
  */
-export function makeCellForbidden(spec: ForbiddenSpec, rows: number, cols: number) {
+export function makeCellForbidden(spec: ForbiddenSpec, rows: number, cols: number, colsPerRow?: number[]) {
   const rects = spec.forbiddenRects ?? [];
   const fn = spec.forbidden;
 
   return (r: number, c: number) => {
+    const rowCols = colsPerRow ? (colsPerRow[r] ?? cols) : cols;
     for (const rect of rects) {
-      if (cellInRectFrac(r, c, rows, cols, rect)) return true;
+      if (cellInRectFrac(r, c, rows, rowCols, rect)) return true;
     }
-    if (fn && fn(r, c, rows, cols)) return true;
+    if (fn && fn(r, c, rows, rowCols)) return true;
     return false;
   };
 }

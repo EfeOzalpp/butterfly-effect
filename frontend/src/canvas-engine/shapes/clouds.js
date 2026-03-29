@@ -8,9 +8,16 @@ import {
   displacementOsc,
   blendRGB,
   stepAndDrawParticles,
+  particleBucketRange,
+  particleRowBucket,
   clamp01,
   val,
   applyShapeMods,
+  footprintToPx,
+  rowHeightAt,
+  rowWidthAt,
+  sampleDirectionalLightRect,
+  mixRgb,
 } from "../modifiers/index";
 
 /* ───────────────── Palettes ───────────────── */
@@ -93,12 +100,26 @@ const CLOUDS = {
 
 const WOBBLE = { ampScale: [0.8, 0.95] };
 
+function cloudRowContext(t) {
+  return {
+    width: particleBucketRange(t, 1.18, 1.0),
+    height: particleBucketRange(t, 1.38, 1.0),
+    overlap: particleBucketRange(t, 0.58, 1.0),
+    radius: particleBucketRange(t, 1.38, 1.0),
+    lobeCount: particleBucketRange(t, 0.48, 1.0),
+    arcLift: particleBucketRange(t, 0.72, 1.0),
+    radiusFromWidth: particleBucketRange(t, 1.95, 2.35),
+    wobbleAmp: particleBucketRange(t, 0.12, 1.0),
+    wobbleHz: particleBucketRange(t, 0.15, 1.0),
+  };
+}
+
 /* ───────────────── Draw ───────────────── */
 export function drawClouds(p, _cx, _cy, _r, opts) {
-  const pal = opts?.darkMode ? CLOUDS_DARK_PALETTE
+  const pal = opts?.palette ?? (opts?.darkMode ? CLOUDS_DARK_PALETTE
     : opts?.paletteTheme === 'warm' ? CLOUDS_WARM_PALETTE
     : opts?.paletteTheme === 'cool' ? CLOUDS_COOL_PALETTE
-    : CLOUDS_BASE_PALETTE;
+    : CLOUDS_BASE_PALETTE);
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -117,30 +138,43 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     0.001,
     Number.isFinite(opts?.dtSec) ? opts.dtSec : ((p.deltaTime || 16) / 1000)
   );
+  const drawRain = opts?.drawRain !== false;
+  const drawCloudBody = opts?.drawCloudBody !== false;
 
   // ── Texture-pixel scaling for sprite textures ────────────────────────────
-  const BASE_TILE = 124;
-  const pxK = Math.max(0.5, (cell || BASE_TILE) / BASE_TILE);
+  const rowBucket = particleRowBucket(f, opts);
+  const rainRowBucket = particleRowBucket({ ...f, h: 1 }, opts);
+  const cloudRow = cloudRowContext(rowBucket.t);
   const pixelScale = Number.isFinite(opts?.particlePixelScale) ? Math.max(0.25, opts.particlePixelScale) : 1;
-  const PARTICLE_PX_SCALE = pxK * pixelScale;
+  const PARTICLE_SIZE_SCALE = particleBucketRange(rainRowBucket.t, 0.50, 1.0) * pixelScale;
+  const PARTICLE_MOTION_SCALE = particleBucketRange(rainRowBucket.t, 0.02, 1.0) * pixelScale;
+  const PARTICLE_LIFE_SCALE = particleBucketRange(rainRowBucket.t, 1.28, 1.0);
+  const PARTICLE_COUNT_SCALE = particleBucketRange(rainRowBucket.t, 0.72, 1.0);
 
   /* ── Layout base ── */
-  const x0 = f.c0 * cellW;
-  const y0 = f.r0 * cellH;
-  const wTop = f.w * cellW;
-  const hTop = cellH;
-
-  const anchorX = x0 + wTop / 2;
+  const topCellW = rowWidthAt(f.r0, opts);
+  const { x: fpX, y: y0, w: fpW } = footprintToPx(f, opts);
+  const wTop = f.w * topCellW;
+  const anchorX = fpX + fpW / 2;
+  const x0 = anchorX - wTop / 2;
+  const hTop = rowHeightAt(f.r0, opts);
   const anchorY = y0 + hTop * 0.60;
 
   /* ── Resolve cloud geometry ── */
-  const wEnv = wTop * val(CLOUDS.widthEnv,  u);
-  const hEnv = hTop * val(CLOUDS.heightEnv, u);
-  const spreadX = val(CLOUDS.spreadX, u);
-  const arcLift = val(CLOUDS.arcLift, u);
-  const rBase   = hTop * val(CLOUDS.rBaseK, u);
+  const wEnv = wTop * val(CLOUDS.widthEnv, u) * cloudRow.width;
+  const hEnv = hTop * val(CLOUDS.heightEnv, u) * cloudRow.height;
+  const spreadXBase = val(CLOUDS.spreadX, u) * cloudRow.overlap;
+  const arcLift = val(CLOUDS.arcLift, u) * cloudRow.arcLift;
   const rJitter = val(CLOUDS.rJitter, u);
-  const lobeCount = Math.max(3, Math.round(val(CLOUDS.lobeCount, u)));
+  const lobeCount = Math.max(3, Math.round(val(CLOUDS.lobeCount, u) * cloudRow.lobeCount));
+  const rBaseFromHeight = hTop * val(CLOUDS.rBaseK, u) * cloudRow.radius;
+  const rBaseFromWidth = wEnv / Math.max(4.5, lobeCount * cloudRow.radiusFromWidth);
+  const rBase = Math.max(rBaseFromHeight, rBaseFromWidth);
+  const continuitySpan = Math.max(
+    rBase * 2.2,
+    (lobeCount - 1) * rBase * particleBucketRange(rowBucket.t, 0.90, 1.35)
+  );
+  const spreadX = Math.max(0.22, Math.min(spreadXBase, continuitySpan / Math.max(1, wEnv)));
 
   const lobes = makeArchLobes(
     anchorX, anchorY, wEnv, hEnv,
@@ -166,12 +200,20 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     phase: opts?.oscPhase ?? 0,
   });
 
+  const cloudLight = sampleDirectionalLightRect(
+    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
+    opts.lightCtx ?? null
+  );
+  cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
+  const cloudHighlight = mixRgb(cloudRgb, cloudLight.lightColor, 0.36);
+  const cloudShadow = mixRgb(cloudRgb, cloudLight.shadowColor, 0.24);
+
   /* ── Wobble ── */
-  const wobbleK = val(CLOUDS.wobbleAmp, u) * val(WOBBLE.ampScale, u);
+  const wobbleK = val(CLOUDS.wobbleAmp, u) * val(WOBBLE.ampScale, u) * cloudRow.wobbleAmp;
   const ampX = (opts?.dispAmp ?? Math.min(12, Math.max(6, Math.round(hTop * 0.12)))) * wobbleK;
   const ampY = ((typeof opts?.dispAmpY === 'number') ? opts.dispAmpY : Math.round(ampX * 0.85)) * wobbleK;
   const ampS = (Math.max(0, Math.min(0.25, opts?.dispScale ?? 0.12))) * wobbleK;
-  const fX = Math.max(0.01, opts?.dispSpeed ?? 0.22);
+  const fX = Math.max(0.01, (opts?.dispSpeed ?? 0.22) * cloudRow.wobbleHz);
   const fY = fX * 0.85;
   const fS = fX * 0.60;
 
@@ -196,19 +238,19 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   const cloudAlpha = (typeof appear.alpha === 'number') ? appear.alpha : (Number.isFinite(opts?.cloudAlpha) ? opts.cloudAlpha : 235);
 
   /* ── RAIN under clouds ── */
-  if (RAIN.enabled) {
+  if (drawRain && RAIN.enabled) {
     const rect = { x: x0, y: y0 + hTop * 0.5, w: wTop, h: hTop * 2.5 };
 
-     const speedMin    = val(RAIN.speedMin, u) * PARTICLE_PX_SCALE;
-    const speedMax    = val(RAIN.speedMax, u) * PARTICLE_PX_SCALE;
+     const speedMin    = val(RAIN.speedMin, u) * PARTICLE_MOTION_SCALE;
+    const speedMax    = val(RAIN.speedMax, u) * PARTICLE_MOTION_SCALE;
     const jitterPos   = val(RAIN.jitterPos, u);
     const jitterAngle = val(RAIN.jitterAngle, u);
-    const count       = Math.max(8, Math.floor(val(RAIN.count, u)));
+    const count       = Math.max(8, Math.floor(val(RAIN.count, u) * PARTICLE_COUNT_SCALE));
 
-    const sizeMin     = val(RAIN.sizeMin, u)   * PARTICLE_PX_SCALE;
-    const sizeMax     = Math.max(sizeMin, val(RAIN.sizeMax, u) * PARTICLE_PX_SCALE);
-    const lengthMin   = val(RAIN.lengthMin, u) * PARTICLE_PX_SCALE;
-    const lengthMax   = val(RAIN.lengthMax, u) * PARTICLE_PX_SCALE;
+    const sizeMin     = val(RAIN.sizeMin, u)   * PARTICLE_SIZE_SCALE;
+    const sizeMax     = Math.max(sizeMin, val(RAIN.sizeMax, u) * PARTICLE_SIZE_SCALE);
+    const lengthMin   = val(RAIN.lengthMin, u) * PARTICLE_SIZE_SCALE;
+    const lengthMax   = val(RAIN.lengthMax, u) * PARTICLE_SIZE_SCALE;
 
     const baseAlpha   = Math.round(val(RAIN.alpha, u));
     const syncedAlpha = Math.round(baseAlpha * (cloudAlpha / 255));
@@ -246,9 +288,9 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
       sizeHz: 8,
       lenHz: 6,
 
-      thicknessScale: PARTICLE_PX_SCALE,
+      thicknessScale: PARTICLE_SIZE_SCALE,
 
-      lifetime: { min: RAIN.lifeMin, max: RAIN.lifeMax },
+      lifetime: { min: RAIN.lifeMin * PARTICLE_LIFE_SCALE, max: RAIN.lifeMax * PARTICLE_LIFE_SCALE },
       fadeInFrac: RAIN.fadeInFrac,
       fadeOutFrac: RAIN.fadeOutFrac,
 
@@ -258,22 +300,48 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   }
 
   /* ── CLOUDS above rain ── */
-  p.push();
-  p.translate(appear.x, appear.y);
-  p.scale(appear.scaleX, appear.scaleY);
-  p.translate(-anchorX, -anchorY);
+  if (drawCloudBody) {
+    p.push();
+    p.translate(appear.x, appear.y);
+    p.scale(appear.scaleX, appear.scaleY);
+    p.translate(-anchorX, -anchorY);
 
-  p.noStroke();
-  p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);
+    p.noStroke();
+    p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);
 
-  for (const l of lobes) {
-    const { dx, dy, sc } = displacementOsc(t, l.i, {
-      ampX, ampY, ampScale: ampS, freqX: fX, freqY: fY, freqScale: fS, seed
-    });
-    const lx = l.x;
-    const ly = l.y;
-    p.circle(lx + dx, ly + dy, l.r * sc * 2);
+    for (const l of lobes) {
+      const { dx, dy, sc } = displacementOsc(t, l.i, {
+        ampX, ampY, ampScale: ampS, freqX: fX, freqY: fY, freqScale: fS, seed
+      });
+      const lx = l.x;
+      const ly = l.y;
+      const rr = l.r * sc * 2;
+      const cx2 = lx + dx;
+      const cy2 = ly + dy;
+      p.circle(cx2, cy2, rr);
+
+      if (cloudLight.overallK > 0.01) {
+        const offX = cloudLight.xBias * l.r * 0.22;
+        const offY = cloudLight.yBias * l.r * 0.18;
+        p.fill(
+          cloudHighlight.r,
+          cloudHighlight.g,
+          cloudHighlight.b,
+          Math.round(cloudAlpha * 0.18 * Math.max(cloudLight.leftK, cloudLight.rightK, cloudLight.topK))
+        );
+        p.circle(cx2 + offX, cy2 + offY, rr * 0.62);
+
+        p.fill(
+          cloudShadow.r,
+          cloudShadow.g,
+          cloudShadow.b,
+          Math.round(cloudAlpha * 0.10 * Math.max(cloudLight.leftK, cloudLight.rightK))
+        );
+        p.circle(cx2 - offX * 0.9, cy2 - offY * 0.5, rr * 0.54);
+
+        p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);
+      }
+    }
+    p.pop();
   }
-
-  p.pop();
 }

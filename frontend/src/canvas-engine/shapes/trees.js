@@ -7,6 +7,11 @@ import {
   clampSaturation,
   oscillateSaturation,
   applyShapeMods,
+  footprintToPx,
+  sampleDirectionalLightRect,
+  mixRgb,
+  paintPixelLightBands,
+  paintDirectionalTriangleBands,
 } from "../modifiers/index";
 
 /* ───────────────────────────────────────────────────────────
@@ -227,10 +232,10 @@ function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, darkMode = f
    drawTrees (1×1 tile) — with sprite-variant randomization
    ─────────────────────────────────────────────────────────── */
 export function drawTrees(p, cx, cy, r, opts = {}) {
-  const pal = opts?.darkMode ? TREES_DARK_PALETTE
+  const pal = opts?.palette ?? (opts?.darkMode ? TREES_DARK_PALETTE
     : opts?.paletteTheme === 'warm' ? TREES_WARM_PALETTE
     : opts?.paletteTheme === 'cool' ? TREES_COOL_PALETTE
-    : TREES_BASE_PALETTE;
+    : TREES_BASE_PALETTE);
   const cell = opts?.cell;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -250,10 +255,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   const seedKey = (opts && (opts.seedKey ?? opts.seed)) ?? `trees|${f.r0}|${f.c0}|${f.w}x${f.h}`;
 
   // Tile rect
-  const x0 = f.c0 * cellW;
-  const y0 = f.r0 * cellH;
-  const w  = f.w * cellW;
-  const h  = f.h * cellH;
+  const { x: x0, y: y0, w, h } = footprintToPx(f, opts);
 
   // Appear (bottom-center)
   const anchorX = x0 + w / 2;
@@ -374,6 +376,16 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
       /* POPLAR */
       const fw = (TREES.poplar.baseWk[0] + (TREES.poplar.baseWk[1] - TREES.poplar.baseWk[0]) * rx) * w * 0.95;
       const fh = (TREES.poplar.baseHk[0] + (TREES.poplar.baseHk[1] - TREES.poplar.baseHk[0]) * rx) * h * scaleBias;
+      const tw = Math.max(1, Math.round(w * (TREES.poplar.trunkWk[0] + (TREES.poplar.trunkWk[1] - TREES.poplar.trunkWk[0]) * rx)));
+      const th = Math.max(2, Math.round(h * (TREES.poplar.trunkHk[0] + (TREES.poplar.trunkHk[1] - TREES.poplar.trunkHk[0]) * rx)));
+      const treeLight = sampleDirectionalLightRect(
+        { x: baseX - fw / 2, y: baseY + heightBoost - th - fh, w: fw, h: fh + th },
+        opts.lightCtx ?? null
+      );
+      leavesTint = mixRgb(leavesTint, treeLight.lightColor, 0.18 * treeLight.overallK);
+      const poplarHighlight = mixRgb(leavesTint, treeLight.lightColor, 0.34);
+      const poplarShadow = mixRgb(leavesTint, treeLight.shadowColor, 0.24);
+      const trunkLit = mixRgb(trunkTint, treeLight.lightColor, 0.14 * treeLight.overallK);
 
       const m = applyShapeMods({
         p, x: baseX, y: baseY + heightBoost, r: fh, opts,
@@ -389,16 +401,28 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
       p.rotate(m.rotation);
 
       // trunk
-      const tw = Math.max(3, Math.round(w * (TREES.poplar.trunkWk[0] + (TREES.poplar.trunkWk[1] - TREES.poplar.trunkWk[0]) * rx)));
-      const th = Math.max(6, Math.round(h * (TREES.poplar.trunkHk[0] + (TREES.poplar.trunkHk[1] - TREES.poplar.trunkHk[0]) * rx)));
       p.noStroke();
-      fillRgb(p, trunkTint, 255);
+      fillRgb(p, trunkLit, 255);
       p.rect(-tw/2, -th, tw, th, 2);
 
       // foliage capsule
       const rad = Math.round(Math.min(fw, fh) * TREES.poplar.radiusK);
       fillRgb(p, leavesTint, 255);
       p.rect(-fw/2, -th - fh, fw, fh, rad);
+      paintPixelLightBands(
+        p,
+        { x: -fw/2, y: -th - fh, w: fw, h: fh },
+        treeLight,
+        {
+          alpha: 255,
+          highlightColor: poplarHighlight,
+          shadowColor: poplarShadow,
+          corner: rad,
+          sideK: 0.40,
+          topK: 0.24,
+          shadowK: 0.18,
+        }
+      );
 
       p.pop();
     } else {
@@ -421,16 +445,24 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
           rotationOsc:{ amp: rotAmp, speed: windSpeed, phase }
         }
       });
+      const th = Math.max(2, Math.round(h * (TREES.conifer.trunkHk[0] + (TREES.conifer.trunkHk[1] - TREES.conifer.trunkHk[0]) * rx)));
+      const treeLight = sampleDirectionalLightRect(
+        { x: baseX - baseHalfW, y: baseY + heightBoost - levelH * levels - th, w: baseHalfW * 2, h: levelH * levels + th },
+        opts.lightCtx ?? null
+      );
+      leavesTint = mixRgb(leavesTint, treeLight.lightColor, 0.16 * treeLight.overallK);
+      const coniferHighlight = mixRgb(leavesTint, treeLight.lightColor, 0.32);
+      const coniferShadow = mixRgb(leavesTint, treeLight.shadowColor, 0.22);
+      const trunkLit = mixRgb(trunkTint, treeLight.lightColor, 0.12 * treeLight.overallK);
 
       p.push();
       p.translate(mRoot.x, mRoot.y);
       p.rotate(mRoot.rotation);
 
       // trunk
-      const tw = Math.max(3, Math.round(w * (TREES.conifer.trunkWk[0] + (TREES.conifer.trunkWk[1] - TREES.conifer.trunkWk[0]) * rx)));
-      const th = Math.max(6, Math.round(h * (TREES.conifer.trunkHk[0] + (TREES.conifer.trunkHk[1] - TREES.conifer.trunkHk[0]) * rx)));
+      const tw = Math.max(1, Math.round(w * (TREES.conifer.trunkWk[0] + (TREES.conifer.trunkWk[1] - TREES.conifer.trunkWk[0]) * rx)));
       p.noStroke();
-      fillRgb(p, trunkTint, 255);
+      fillRgb(p, trunkLit, 255);
       p.rect(-tw/2, -th, tw, th, 2);
 
       // per-level parameters
@@ -445,6 +477,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
                                : (TREES.conifer.triHeightFracs3 || [1.00, 0.62, 0.42]));
       const wFracs = (nT === 2 ? (TREES.conifer.triWidthFracs2  || [1.00, 0.72])
                                : (TREES.conifer.triWidthFracs3  || [1.00, 0.72, 0.52]));
+      let minTipY = -th;
 
       // draw bottom -> top so upper triangles overlap those below
       for (let l = 0; l < levels; l++) {
@@ -465,12 +498,14 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
         p.vertex( tierHW * wFracs[0], baseY);
         p.vertex( 0,                   tipY);
         p.endShape(p.CLOSE);
+        minTipY = Math.min(minTipY, tipY);
 
         // remaining small triangles stacked upward with intra-tier overlap
         for (let t = 1; t < nT; t++) {
           baseY = tipY + intraK * levelH; // overlap downward into previous
           const triH = levelH * hFracs[t];
           tipY  = baseY - triH;
+          minTipY = Math.min(minTipY, tipY);
 
           const hwT = tierHW * wFracs[t];
           p.beginShape();
@@ -480,6 +515,23 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
           p.endShape(p.CLOSE);
         }
       }
+
+      paintDirectionalTriangleBands(
+        p,
+        {
+          leftX: -baseHalfW * wFracs[0],
+          rightX: baseHalfW * wFracs[0],
+          baseY: -th,
+          apexX: 0,
+          apexY: minTipY,
+        },
+        treeLight,
+        {
+          alpha: 255,
+          highlightColor: coniferHighlight,
+          shadowColor: coniferShadow,
+        }
+      );
 
       p.pop();
     }

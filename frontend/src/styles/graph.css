@@ -91,6 +91,21 @@
 .toggle-button:hover { transform: none; }
 
 .graph-container { position: relative; z-index: 4; }
+.graph-stars-canvas-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.graph-stars-canvas-host canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  cursor: default;
+}
 .bar-graph-divider { width: 100%; height: 100%; justify-content: center; align-items: flex-end; }
 .bar-graph-container { justify-content: center; align-items: flex-end; height: 100%; }
 .bar-graph-icons { justify-content: space-around; }
@@ -230,6 +245,10 @@
 
 .graph-container canvas {
   cursor: grab;
+}
+
+.graph-stars-canvas-host canvas {
+  cursor: default;
 }
 
 .graph-container canvas.hovering-shape {

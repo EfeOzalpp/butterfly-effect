@@ -5,6 +5,7 @@ export type SurveyDataState = {
   section: string;
   setSection: (s: string) => void;
   counts: Record<string, number>;
+  allRows: SurveyRow[];
   data: SurveyRow[];
   allFilteredRows: SurveyRow[];
   loading: boolean;

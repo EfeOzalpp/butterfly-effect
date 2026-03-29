@@ -50,6 +50,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
             aria-label={observerMode || hasCompletedSurvey ? "Back" : "View now"}
             data-label={observerLabel}
           >
+            <span className="observe-results__ghost" aria-hidden="true">{observerLabel}</span>
             <span className="observe-results__inner">{observerLabel}</span>
           </button>
         )}

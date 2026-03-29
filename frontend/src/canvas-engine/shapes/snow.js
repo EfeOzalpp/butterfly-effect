@@ -8,7 +8,16 @@ import {
   clampBrightness,
   oscillateSaturation,
   makeArchLobes,
+  displacementOsc,
   stepAndDrawPuffs,
+  particleBucketRange,
+  particleRowBucket,
+  footprintToPx,
+  rowHeightAt,
+  rowWidthAt,
+  sampleDirectionalLightRect,
+  mixRgb,
+  paintPixelLightBands,
 } from "../modifiers/index";
 
 /* Exposure/contrast helper */
@@ -38,10 +47,10 @@ export const SNOW_DARK_PALETTE = {
 /* Cloud tuning */
 const SCLOUD = {
   widthEnv:   [0.76, 0.86],
-  heightEnv:  [0.70, 0.82],
+  heightEnv:  [0.80, 0.92],
   spreadX:    [0.92, 0.80],
   arcLift:    [0.22, 0.30],
-  rBaseK:     [0.34, 0.42],
+  rBaseK:     [0.37, 0.46],
   rJitter:    [0.04, 0.08],
   lobeCount:  [5, 7],
 
@@ -87,8 +96,8 @@ const SNOW = {
   jitterPos:   [0.4, 1.0],
   jitterAngle: [0.02, 0.06],
 
-  fadeInFrac:  0.15,
-  fadeOutFrac: 0.15,
+  fadeInFrac:  0.10,
+  fadeOutFrac: 0.02,
   edgeFadePx:  { left: 2, right: 2, top: 8, bottom: 24 },
 
   sizeHz: 3,
@@ -100,11 +109,20 @@ const SNOW = {
   lightnessRange: [0.9, 0.98],
 };
 
+function snowRowContextScale(t) {
+  return {
+    size: particleBucketRange(t, 0.42, 1.0),
+    motion: particleBucketRange(t, 0.07, 0.50),
+    life: particleBucketRange(t, 1.18, 1.60),
+    count: particleBucketRange(t, 0.60, 1.0),
+  };
+}
+
 /**
  * drawSnow
  */
 export function drawSnow(p, _x, _y, _r, opts = {}) {
-  const pal = opts?.darkMode ? SNOW_DARK_PALETTE : SNOW_BASE_PALETTE;
+  const pal = opts?.palette ?? (opts?.darkMode ? SNOW_DARK_PALETTE : SNOW_BASE_PALETTE);
   const cell = opts?.cell, f = opts?.footprint;
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
@@ -112,18 +130,25 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
 
   const exposure = Number.isFinite(opts?.exposure) ? opts.exposure : 1;
   const contrast = Number.isFinite(opts?.contrast) ? opts.contrast : 1;
+  const rowBucket = particleRowBucket(f, opts);
 
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
   const u = clamp01(opts?.liveAvg ?? 0.5);
+  const snowSeed =
+    (typeof opts?.seed === "number")
+      ? (opts.seed | 0)
+      : (((f.r0 * 73856093) ^ (f.c0 * 19349663) ^ (f.w * 83492791) ^ (f.h * 29791)) >>> 0);
 
   // tile anchors
-  const x0 = f.c0 * cellW;
-  const y0 = f.r0 * cellH;
-  const wTop = f.w * cellW;
-  const hTop = cellH;
+  const { x: fpX, y: y0, w: fpW, h: fpH } = footprintToPx(f, opts);
+  const topCellW = rowWidthAt(f.r0, opts);
+  const wTop = f.w * topCellW;
+  const footprintCx = fpX + fpW / 2;
+  const x0 = footprintCx - wTop / 2;
+  const hTop = rowHeightAt(f.r0, opts);
 
   // cloud visual center (also the local origin for appear transforms)
-  const cx = x0 + wTop / 2;
+  const cx = footprintCx;
   const cy = y0 + hTop * 0.62;
 
   /* ───────── appear (shared by ground + cloud) ───────── */
@@ -152,6 +177,13 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     const cutoffRow = Math.floor(opts.usedRows * frac);
     if (f.r0 <= cutoffRow) showGround = false;
   }
+  if (
+    showGround &&
+    typeof opts.hideGroundBelowBucketT === 'number' &&
+    rowBucket.t < opts.hideGroundBelowBucketT
+  ) {
+    showGround = false;
+  }
 
   /* ───────── GROUND STRIP (translated + scaled with appear) ───────── */
   if (showGround) {
@@ -159,7 +191,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     const kY     = val(SGROUND.scaleY, u);
     const stripH = Math.round(baseH * kY);
     if (stripH > 0) {
-    const bottomY = y0 + f.h * cellH;
+    const bottomY = y0 + fpH;
     const topY    = bottomY - stripH;
 
     const gBlend  = val(SGROUND.blendK, u);
@@ -179,12 +211,32 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     p.scale(appear.scaleX, appear.scaleY);
     p.noStroke();
     p.fill(clamped.r, clamped.g, clamped.b, aDraw); // ← use appear alpha
-    p.rect(
-      (x0 - cx),
+      p.rect(
+      (fpX - cx),
       (topY - cy),
-      wTop,
+      fpW,
       stripH,
       rTop, rTop, 0, 0
+    );
+    const groundLight = sampleDirectionalLightRect(
+      { x: fpX, y: topY, w: fpW, h: stripH },
+      opts.lightCtx ?? null
+    );
+    const groundHighlight = mixRgb(clamped, groundLight.lightColor, 0.34);
+    const groundShadow = mixRgb(clamped, groundLight.shadowColor, 0.24);
+    paintPixelLightBands(
+      p,
+      { x: (fpX - cx), y: (topY - cy), w: fpW, h: stripH },
+      groundLight,
+      {
+        alpha: aDraw,
+        highlightColor: groundHighlight,
+        shadowColor: groundShadow,
+        corner: rTop,
+        sideK: 0.34,
+        topK: 0.26,
+        shadowK: 0.16,
+      }
     );
     p.pop();
     }
@@ -221,6 +273,13 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
   const cloudLRange = opts?.darkMode ? [0.68, 0.82] : SCLOUD.lightnessRange;
   cloudRgb = clampBrightness(cloudRgb, cloudLRange[0], cloudLRange[1]);
   cloudRgb = applyExposureContrast(cloudRgb, exposure, contrast);
+  const cloudLight = sampleDirectionalLightRect(
+    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
+    opts.lightCtx ?? null
+  );
+  cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
+  const cloudHighlight = mixRgb(cloudRgb, cloudLight.lightColor, 0.34);
+  const cloudShadow = mixRgb(cloudRgb, cloudLight.shadowColor, 0.22);
 
   /* ───────── PARTICLES (translate only; no scale) ───────── */
   const of     = Math.max(0, Math.min(1, val(SNOW.emitterOverflowFrac, u)));
@@ -239,13 +298,13 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
 
   const baseCount = Math.max(6, Math.floor(val(SNOW.count, u)));
 
-  // === SPRITE-ONLY scaling (canvas path keeps 1.0) ===
-  const pxK       = Math.max(1, (opts.pixelScale ?? opts.coreScaleMult ?? 1));
-  const sizeK     = Math.pow(pxK, 1.75);  // near-linear, slightly damped
-  const speedK    = pxK * 1.35;                  // maintain coverage over taller rects
-  const gravityK  = pxK * 1.35;                  // keep fall-feel consistent
-  const lifeK     = Math.pow(pxK, 5);  // gentle life boost for lower settling
-  const countK    = Math.sqrt(pxK);       // density compensation on big textures
+  const horizonScale = snowRowContextScale(rowBucket.t);
+  const spriteScale      = Math.max(1, (opts.pixelScale ?? opts.coreScaleMult ?? 1));
+  const sizeK     = horizonScale.size * Math.pow(spriteScale, 1.75);
+  const speedK    = horizonScale.motion * spriteScale * 1.35;
+  const gravityK  = horizonScale.motion * spriteScale * 1.35;
+  const lifeK     = horizonScale.life * Math.pow(spriteScale, 5);
+  const countK    = horizonScale.count * Math.sqrt(spriteScale);
 
   const sizeMin   = val(SNOW.sizeMin, u) * sizeK;
   const sizeMax   = Math.max(sizeMin, val(SNOW.sizeMax, u) * sizeK);
@@ -312,7 +371,44 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     cloudRgb.b,
     Number.isFinite(opts?.cloudAlpha) ? opts.cloudAlpha : aDraw
   );
-  for (const l of lobes) p.circle(l.x - cx, l.y - cy, l.r * 2);
+  const cloudAlpha = Number.isFinite(opts?.cloudAlpha) ? opts.cloudAlpha : aDraw;
+  const wobbleAmpX = Math.max(0.8, hTop * 0.045);
+  const wobbleAmpY = Math.max(0.5, hTop * 0.035);
+  const wobbleAmpS = 0.045;
+  for (const l of lobes) {
+    const { dx: ldx, dy: ldy, sc } = displacementOsc(t, l.i, {
+      ampX: wobbleAmpX,
+      ampY: wobbleAmpY,
+      ampScale: wobbleAmpS,
+      freqX: 0.16,
+      freqY: 0.12,
+      freqScale: 0.10,
+      seed: snowSeed,
+    });
+    const rr = l.r * 2;
+    const lx = l.x - cx + ldx;
+    const ly = l.y - cy + ldy;
+    p.circle(lx, ly, rr * sc);
+    if (cloudLight.overallK > 0.01) {
+      const offX = cloudLight.xBias * l.r * 0.22;
+      const offY = cloudLight.yBias * l.r * 0.18;
+      p.fill(
+        cloudHighlight.r,
+        cloudHighlight.g,
+        cloudHighlight.b,
+        Math.round(cloudAlpha * 0.18 * Math.max(cloudLight.leftK, cloudLight.rightK, cloudLight.topK))
+      );
+      p.circle(lx + offX, ly + offY, rr * sc * 0.62);
+      p.fill(
+        cloudShadow.r,
+        cloudShadow.g,
+        cloudShadow.b,
+        Math.round(cloudAlpha * 0.10 * Math.max(cloudLight.leftK, cloudLight.rightK))
+      );
+      p.circle(lx - offX * 0.9, ly - offY * 0.5, rr * sc * 0.54);
+      p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);
+    }
+  }
   p.pop();
 }
 

@@ -6,8 +6,8 @@ import { makeCellForbidden } from '../grid-layout/forbidden';
 /**
  * Combines grid spec forbidden rules into a single cell-level predicate.
  */
-export function cellForbiddenFromSpec(spec: CanvasPaddingSpec, rows: number, cols: number) {
-  return makeCellForbidden(spec, rows, cols);
+export function cellForbiddenFromSpec(spec: CanvasPaddingSpec, rows: number, cols: number, colsPerRow?: number[]) {
+  return makeCellForbidden(spec, rows, cols, colsPerRow);
 }
 
 /**
@@ -20,10 +20,14 @@ export function footprintAllowed(
   h: number,
   rows: number,
   cols: number,
-  isForbidden: (r: number, c: number) => boolean
+  isForbidden: (r: number, c: number) => boolean,
+  colsPerRow?: number[]
 ) {
-  if (r0 < 0 || c0 < 0 || r0 + h > rows || c0 + w > cols) return false;
-
+  if (r0 < 0 || c0 < 0 || r0 + h > rows) return false;
+  for (let dr = 0; dr < h; dr++) {
+    const rowCols = colsPerRow ? (colsPerRow[r0 + dr] ?? cols) : cols;
+    if (c0 + w > rowCols) return false;
+  }
   for (let dr = 0; dr < h; dr++) {
     for (let dc = 0; dc < w; dc++) {
       if (isForbidden(r0 + dr, c0 + dc)) return false;
@@ -42,25 +46,35 @@ export function allowedSegmentsForRow(
   hCell: number,
   rows: number,
   cols: number,
-  isForbidden: (r: number, c: number) => boolean
+  isForbidden: (r: number, c: number) => boolean,
+  colsPerRow?: number[]
 ): Array<{ cStart: number; cEnd: number }> {
+  // Effective column limit: minimum across all rows spanned by the footprint
+  let effectiveCols = cols;
+  if (colsPerRow) {
+    for (let dr = 0; dr < hCell; dr++) {
+      const rc = colsPerRow[r0 + dr] ?? cols;
+      if (rc < effectiveCols) effectiveCols = rc;
+    }
+  }
+
   const segs: Array<{ cStart: number; cEnd: number }> = [];
   let c = 0;
 
-  while (c <= cols - wCell) {
+  while (c <= effectiveCols - wCell) {
     while (
-      c <= cols - wCell &&
-      !footprintAllowed(r0, c, wCell, hCell, rows, cols, isForbidden)
+      c <= effectiveCols - wCell &&
+      !footprintAllowed(r0, c, wCell, hCell, rows, cols, isForbidden, colsPerRow)
     ) {
       c++;
     }
-    if (c > cols - wCell) break;
+    if (c > effectiveCols - wCell) break;
 
     const cStart = c;
 
     while (
-      c <= cols - wCell &&
-      footprintAllowed(r0, c, wCell, hCell, rows, cols, isForbidden)
+      c <= effectiveCols - wCell &&
+      footprintAllowed(r0, c, wCell, hCell, rows, cols, isForbidden, colsPerRow)
     ) {
       c++;
     }

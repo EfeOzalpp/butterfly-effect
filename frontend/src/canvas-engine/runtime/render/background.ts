@@ -5,6 +5,8 @@ import { BACKGROUNDS, type BackgroundSpec, type RadialGradientSpec, type LinearG
 import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
 import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index";
 import { stepAndDrawParticles } from "../../modifiers/particle-systems/particle-1";
+import type { GridMetrics } from "../layout/gridCache";
+import type { SceneLightContext } from "../../modifiers/lighting";
 
 type RGB = { r: number; g: number; b: number };
 type RGBA = RGB & { a: number };
@@ -283,48 +285,44 @@ export function drawBackground(
   }
 
   const overlay = spec.overlay;
-  if (!overlay) return;
+  if (overlay) {
+    if (overlay.kind === "solid") {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = overlay.color;
+      ctx.fillRect(0, 0, p.width, p.height);
+      ctx.restore();
+    } else if (overlay.kind === "linear") {
+      const { x1, y1, x2, y2 } = resolveLinearPoints(p, overlay);
+      const g = ctx.createLinearGradient(x1, y1, x2, y2);
+      const t = p.millis() / 1000;
+      for (const stop of overlay.stops) {
+        const k = stop.oscK
+          ? Math.max(0, Math.min(1, stop.k + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t)))
+          : stop.k;
+        g.addColorStop(k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
+      }
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, p.width, p.height);
+      ctx.restore();
+    } else {
+      const cx = p.width * overlay.center.xK;
+      const cy = p.height * overlay.center.yK;
+      const inner = Math.min(p.width, p.height) * overlay.innerK;
+      const outer = resolveOuterRadius(p, overlay.outer);
 
-  if (overlay.kind === "solid") {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = overlay.color;
-    ctx.fillRect(0, 0, p.width, p.height);
-    ctx.restore();
-    return;
-  }
-
-  if (overlay.kind === "linear") {
-    const { x1, y1, x2, y2 } = resolveLinearPoints(p, overlay);
-    const g = ctx.createLinearGradient(x1, y1, x2, y2);
-    const t = p.millis() / 1000;
-    for (const stop of overlay.stops) {
-      const k = stop.oscK
-        ? Math.max(0, Math.min(1, stop.k + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t)))
-        : stop.k;
-      g.addColorStop(k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
+      const g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+      for (const stop of overlay.stops) {
+        g.addColorStop(stop.k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
+      }
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, p.width, p.height);
+      ctx.restore();
     }
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, p.width, p.height);
-    ctx.restore();
-  } else {
-    const cx = p.width * overlay.center.xK;
-    const cy = p.height * overlay.center.yK;
-    const inner = Math.min(p.width, p.height) * overlay.innerK;
-    const outer = resolveOuterRadius(p, overlay.outer);
-
-    const g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
-    for (const stop of overlay.stops) {
-      g.addColorStop(stop.k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
-    }
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, p.width, p.height);
-    ctx.restore();
   }
 
   if (spec.stars) {
@@ -333,4 +331,60 @@ export function drawBackground(
     drawStars(p, ctx, spec.stars, liveAvg);
     ctx.restore();
   }
+}
+
+export function drawRowTopLightOverlay(args: {
+  p: PLike;
+  metrics: GridMetrics;
+  light: SceneLightContext | null;
+  alpha?: number;
+}) {
+  const { p, metrics, light, alpha = 1 } = args;
+  if (!light || alpha <= 0) return;
+  const { rowHeights, rowOffsetY } = metrics;
+  if (rowHeights.length < 1 || rowOffsetY.length < 1) return;
+
+  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const minH = Math.min(...rowHeights);
+  const horizonRow = rowHeights.indexOf(minH);
+  const maxBandH = Math.max(4, Math.min(18, p.height * 0.022));
+  const focusRadius = Math.max(p.width * 0.16, Math.min(p.width * 0.72, light.sceneDiag * 0.28));
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  for (let r = 0; r < rowHeights.length; r += 1) {
+    const rowTop = rowOffsetY[r] ?? 0;
+    const rowH = rowHeights[r] ?? 0;
+    if (rowH <= 0) continue;
+
+    const bandH = Math.max(2, Math.min(maxBandH, rowH * 0.16));
+    const rowY = rowTop + bandH * 0.5;
+    const distY = Math.abs(rowY - light.sourceY);
+    const verticalK = clamp01(1 - distY / (p.height * 0.95));
+    const skyK = r <= horizonRow
+      ? 1
+      : clamp01(1 - (r - horizonRow) / Math.max(3, rowHeights.length - horizonRow)) * 0.72;
+    const bandAlpha = 0.27 * verticalK * skyK;
+    if (bandAlpha <= 0.003) continue;
+
+    ctx.fillStyle = `rgba(255,255,255,${bandAlpha})`;
+    ctx.fillRect(0, rowTop, p.width, bandH);
+
+    const focused = ctx.createRadialGradient(
+      light.sourceX,
+      rowY,
+      0,
+      light.sourceX,
+      rowY,
+      focusRadius
+    );
+    focused.addColorStop(0, `rgba(255,255,255,${bandAlpha * 1.15})`);
+    focused.addColorStop(0.35, `rgba(255,255,255,${bandAlpha * 0.46})`);
+    focused.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = focused;
+    ctx.fillRect(0, rowTop, p.width, bandH * 1.2);
+  }
+
+  ctx.restore();
 }

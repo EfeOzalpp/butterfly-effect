@@ -1,19 +1,12 @@
 // src/canvas-engine/scene-logic/scoring.ts
 
 import { rand01Keyed } from "../shared/hash32";
-import type { ShapeName } from "../adjustable-rules/shapeCatalog";
 
 export type PlacedFoot = {
   r0: number;
   c0: number;
   w: number;
   h: number;
-  shape?: ShapeName;
-};
-
-export type separationMetaLike = {
-  group?: string;
-  separation?: number; // in cells
 };
 
 function centerOf(f: { r0: number; c0: number; w: number; h: number }) {
@@ -29,15 +22,11 @@ export function scoreCandidateGeneric(opts: {
   usedRows: number;
   placed: PlacedFoot[];
   salt: number;
-  shape?: ShapeName;
 
   // center of the allowed segment this candidate belongs to (overrides full-grid center)
   effectiveCenterC?: number;
-
-  // pass data, don't import globals
-  getMeta?: (shape?: ShapeName) => separationMetaLike | undefined;
 }) {
-  const { r0, c0, wCell, hCell, cols, usedRows, placed, salt, shape, getMeta, effectiveCenterC } = opts;
+  const { r0, c0, wCell, hCell, cols, usedRows, placed, salt, effectiveCenterC } = opts;
 
   const { x: cx, y: cy } = centerOf({ r0, c0, w: wCell, h: hCell });
 
@@ -47,39 +36,21 @@ export function scoreCandidateGeneric(opts: {
   const dCenter2 = (cx - gridCx) ** 2 + (cy - usedCy) ** 2;
   const centerTerm = -0.08 * dCenter2;
 
-  // group separation (soft) using injected meta
-  let sepPenalty = 0;
-  if (shape && getMeta) {
-    const m = getMeta(shape);
-    const sep = m?.separation ?? 0;
-    const g = m?.group ?? shape; // default: no explicit group → same shape = same group
-
-    if (sep > 0) {
-      let minD = Infinity;
-
-      for (const p of placed) {
-        if (!p.shape) continue;
-        const pm = getMeta(p.shape);
-        const pg = pm?.group ?? p.shape;
-        if (pg !== g) continue;
-
-        const pc = centerOf(p);
-        const dx = cx - pc.x;
-        const dy = cy - pc.y;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d < minD) minD = d;
-      }
-
-      if (minD !== Infinity && minD < sep) {
-        const t = sep - minD;
-        sepPenalty = -3.0 * t * t;
-      }
+  // spread — prefer positions far from the nearest already-placed shape
+  let spreadTerm = 0;
+  if (placed.length > 0) {
+    let minDist2 = Infinity;
+    for (const p of placed) {
+      const pc = centerOf(p);
+      const d2 = (cx - pc.x) ** 2 + (cy - pc.y) ** 2;
+      if (d2 < minDist2) minDist2 = d2;
     }
+    spreadTerm = 0.10 * Math.min(minDist2, 36);
   }
 
   // deterministic jitter
   const jitter =
     (rand01Keyed(`cand|${r0},${c0},${wCell},${hCell}|${salt}`) - 0.5) * 0.25;
 
-  return centerTerm + sepPenalty + jitter;
+  return centerTerm + spreadTerm + jitter;
 }

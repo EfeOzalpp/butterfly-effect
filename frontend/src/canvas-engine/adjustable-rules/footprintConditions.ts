@@ -1,5 +1,4 @@
-// src/canvas-engine/adjustable-rules/conditions.ts
-// (or wherever this file actually lives)
+// src/canvas-engine/adjustable-rules/footprintConditions.ts
 
 import type { ConditionKind, ShapeKind } from "./shapeCatalog";
 import { CONDITION_KINDS, SHAPES } from "./shapeCatalog";
@@ -42,3 +41,12 @@ export const CONDITIONS: Record<ConditionKind, ConditionSpec> = {
     ],
   },
 } as const;
+
+/** Flat lookup: shape name → footprint size. */
+export function footprintForShape(shape: ShapeKind): Size {
+  for (const kind of CONDITION_KINDS) {
+    const hit = CONDITIONS[kind].variants.find((v) => v.shape === shape);
+    if (hit) return hit.footprint;
+  }
+  return { w: 1, h: 1 };
+}

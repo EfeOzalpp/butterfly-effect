@@ -2,7 +2,10 @@
 
 import type { EngineFieldItem } from "../types";
 import type { Ghost } from "./ghosts";
+import type { GridMetrics } from "../../grid-layout/gridMetrics";
+import { metricsDepth } from "../../grid-layout/gridMetrics"; // used for painter's order sort
 import { clamp01, easeOutCubic } from "../util/easing";
+
 
 export type LiveState = {
   shapeKey: string;
@@ -24,28 +27,73 @@ export function drawItems(params: {
   perShapeScale: Record<string, number> | undefined;
   baseR: number;
   baseShared: any;
+  gridMetrics?: GridMetrics;
   renderOne: (it: EngineFieldItem, rEff: number, shared: any, rootAppearK: number) => void;
   shapeKeyOfItem: (it: EngineFieldItem) => string;
   onGhost?: (g: Ghost) => void;
+  onBeforeGroundItem?: (args: { depth: number }) => void;
+  onAfterRowGroup?: (args: { previousDepth: number; nextDepth: number }) => void; // called between consecutive ground row groups for fog interleaving
 }) {
-  const { items, visible, nowMs, appearMs, Z, liveStates, perShapeScale, baseR, baseShared, renderOne, shapeKeyOfItem, onGhost, } = params;
+  const {
+    items,
+    visible,
+    nowMs,
+    appearMs,
+    Z,
+    liveStates,
+    perShapeScale,
+    baseR,
+    baseShared,
+    gridMetrics,
+    renderOne,
+    shapeKeyOfItem,
+    onGhost,
+    onBeforeGroundItem,
+    onAfterRowGroup,
+  } = params;
 
   if (!visible || !items.length) return;
 
-  // Painter's order: draw back -> front.
-  // 1) Smaller y first (top first), so lower items are drawn last/in front.
-  // 2) Shape z-index is only a tie-breaker for near-identical y.
+  // Sort in three tiers:
+  // 1. Band: sky shapes (Z < 2) always behind ground shapes (Z >= 2)
+  // 2. Within band: metricsDepth ascending for painter's order (near-horizon first)
+  // 3. Tiebreaker: Z_INDEX, then id
   const sorted = items.slice().sort((a, b) => {
-    if (a.y !== b.y) return a.y - b.y;
     const za = Z[a.shape] ?? 9;
     const zb = Z[b.shape] ?? 9;
+    const bandA = za < 2 ? 0 : 1;
+    const bandB = zb < 2 ? 0 : 1;
+    if (bandA !== bandB) return bandA - bandB;
+    const da = gridMetrics && a.footprint ? metricsDepth(gridMetrics, a.footprint) : a.y;
+    const db = gridMetrics && b.footprint ? metricsDepth(gridMetrics, b.footprint) : b.y;
+    if (da !== db) return da - db;
     if (za !== zb) return za - zb;
     return String(a.id).localeCompare(String(b.id));
   });
 
   const shapeOccurrence = new Map<string, number>();
 
+  let prevBand: number | undefined;
+  let prevDepth: number | undefined;
+
   for (const it of sorted) {
+    const itZ = Z[it.shape] ?? 9;
+    const itBand = itZ < 2 ? 0 : 1;
+    const itDepth = gridMetrics && it.footprint ? metricsDepth(gridMetrics, it.footprint) : (it as any).y;
+    if (onBeforeGroundItem && itBand === 1) {
+      onBeforeGroundItem({ depth: itDepth });
+    }
+    if (
+      onAfterRowGroup &&
+      itBand === 1 &&
+      prevBand === 1 &&
+      prevDepth !== undefined &&
+      itDepth !== prevDepth
+    ) {
+      onAfterRowGroup({ previousDepth: prevDepth, nextDepth: itDepth });
+    }
+    prevBand = itBand;
+    prevDepth = itDepth;
     let state = liveStates.get(it.id);
       if (!state) {
         state = {
@@ -96,4 +144,3 @@ export function defaultShapeKeyOfItem(it: EngineFieldItem) {
   const f = it.footprint || { w: 0, h: 0, r0: 0, c0: 0 };
   return `${it.shape}|w${f.w}h${f.h}|r${f.r0}c${f.c0}`;
 }
-
