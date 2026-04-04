@@ -56,6 +56,7 @@
 }
 .gp-trigger-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; align-items: center; justify-content: center; pointer-events: none; }
 .gp-trigger-chevron .ui-icon { opacity: 0.95; color: var(--ui-gp-trigger-chevron-fill); }
+.gp-back-icon,
 .gp-chooser-icon svg.ui-icon { color: var(--ui-icon-subtle); }
 
 .gp-listbox-shell {
@@ -119,6 +120,13 @@
   user-select: none;
   -webkit-user-select: none;
 }
+.gp-option--student-chooser,
+.gp-option--staff-chooser {
+  border-top: 1px solid var(--ui-border);
+}
+.gp-option--back {
+  border-bottom: 1px solid var(--ui-border);
+}
 .gp-option.is-active  { background: var(--ui-bg-surface-hover); }
 .gp-option.is-selected { background: var(--ui-bg-surface-selected); }
 
@@ -139,10 +147,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.gp-back-icon { width: 16px; height: 15px; }
 
+.gp-back-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
 @media (max-width: 768px) {
-  .gp-picker { max-width: 200px; }
+  .gp-picker { max-width: 160px; min-width: 160px;}
+  .gp-picker:has(.gp-trigger.is-open) { min-width: 280px; }
   .gp-listbox-shell { width: 280px; }
   .gp-listbox { max-height: 400px; }
 
@@ -165,7 +181,7 @@
   .gp-picker:hover { max-width: 230px; min-width: 230px; transition: 50ms ease-in;}
   .gp-picker:has(.gp-trigger.is-open) { max-width: 320px; min-width: 320px; }
   .gp-listbox-shell { width: 320px; max-width: 320px; min-width: 320px; }
-  .gp-listbox { max-height: 384px; }
+  .gp-listbox { max-height: 386px; }
 }
 
 /* Theme wiring: graph picker */

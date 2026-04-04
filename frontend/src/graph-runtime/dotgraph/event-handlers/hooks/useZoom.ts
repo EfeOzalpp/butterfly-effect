@@ -50,7 +50,10 @@ export default function useZoom({
   const touchStartDistance = useRef<number | null>(null);
 
   useEffect(() => {
-    const WHEEL_SENSITIVITY = 0.85;
+    // Proportional zoom: each wheel notch scales radius by a fixed % regardless of zoom level.
+    // WHEEL_SCALE_PER_PX: radius multiplier per normalised pixel of scroll.
+    // At 120px/notch (typical mouse) → ~14% zoom per notch; trackpad sends 2-5px per event → smooth.
+    const WHEEL_SCALE_PER_PX = 0.0012;
     const CTRL_ZOOM_GAIN = 3.0;
     const PINCH_GAIN = 1.25;
     const PINCH_COOLDOWN_MS = 200;
@@ -62,9 +65,17 @@ export default function useZoom({
     const handleScroll = (event: WheelEvent) => {
       ping();
       const current = zoomTargetRef.current ?? radius;
-      const gain = event.ctrlKey ? CTRL_ZOOM_GAIN : WHEEL_SENSITIVITY;
+
+      // Normalise to approximate pixel units (some browsers report in lines or pages)
+      let dy = event.deltaY;
+      if (event.deltaMode === 1) dy *= 20;       // DOM_DELTA_LINE
+      else if (event.deltaMode === 2) dy *= 300; // DOM_DELTA_PAGE
+
+      const gain = event.ctrlKey ? CTRL_ZOOM_GAIN : 1.0;
+      // Clamp per-event factor so one large event can't jump more than 35%
+      const factor = 1 + clamp(dy * WHEEL_SCALE_PER_PX * gain, -0.35, 0.35);
       // positive deltaY (wheel down) => zoom OUT (radius ↑)
-      const next = clamp(current + event.deltaY * gain, minRadius, maxRadius);
+      const next = clamp(current * factor, minRadius, maxRadius);
       zoomTargetRef.current = next;
     };
 

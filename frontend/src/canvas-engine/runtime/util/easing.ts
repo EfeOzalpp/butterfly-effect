@@ -1,8 +1,8 @@
 // src/canvas-engine/runtime/util/easing.ts
 
-export function clamp01(t: number) {
-  return t < 0 ? 0 : t > 1 ? 1 : t;
-}
+import { clamp01 } from "../../shared/math";
+
+export { clamp01 };
 
 export function easeOutCubic(t: number) {
   t = clamp01(t);

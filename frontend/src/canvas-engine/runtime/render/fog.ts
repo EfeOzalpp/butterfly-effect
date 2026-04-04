@@ -1,7 +1,10 @@
 import type { GridMetrics } from "../layout/gridCache";
 import type { PLike } from "../p/makeP";
+import { clamp01 } from "../../shared/math";
+import { resolveHorizonRow } from "../../shared/horizon";
 
 type FogColor = { r: number; g: number; b: number };
+type FogGradientStop = { k: number; color: FogColor };
 
 export type FogState = {
   fogStartY: number;
@@ -12,8 +15,57 @@ export type FogState = {
   rowOffsetY: number[];
   bottomFogLayerBoundaries: number[];
   fogColor: FogColor;
+  skyFogGradient: readonly FogGradientStop[] | null;
+  bottomFogGradient: readonly FogGradientStop[] | null;
   fogLayerAlpha255: number;
 };
+
+function remap01(v: number, start: number, end: number) {
+  if (end <= start) return v >= end ? 1 : 0;
+  return clamp01((v - start) / (end - start));
+}
+
+function mixFogColor(a: FogColor, b: FogColor, k: number): FogColor {
+  const kk = clamp01(k);
+  return {
+    r: Math.round(a.r + (b.r - a.r) * kk),
+    g: Math.round(a.g + (b.g - a.g) * kk),
+    b: Math.round(a.b + (b.b - a.b) * kk),
+  };
+}
+
+function rgbaString(color: FogColor, alpha: number) {
+  return `rgba(${color.r},${color.g},${color.b},${clamp01(alpha)})`;
+}
+
+function resolveFogFillStyle(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  color: FogColor,
+  alpha: number,
+  gradientStops?: readonly FogGradientStop[] | null
+) {
+  if (!gradientStops || gradientStops.length === 0) {
+    return rgbaString(color, alpha);
+  }
+
+  const g = ctx.createLinearGradient(0, 0, width, 0);
+  for (const stop of gradientStops) {
+    g.addColorStop(clamp01(stop.k), rgbaString(stop.color, alpha));
+  }
+  return g;
+}
+
+function blendGradientStopsTowardFog(
+  stops: readonly FogGradientStop[],
+  fogColor: FogColor,
+  fogBlendK: number
+): readonly FogGradientStop[] {
+  return stops.map((stop) => ({
+    k: stop.k,
+    color: mixFogColor(stop.color, fogColor, fogBlendK),
+  }));
+}
 
 function drawFogBand(args: {
   p: PLike;
@@ -22,8 +74,9 @@ function drawFogBand(args: {
   alpha255: number;
   featherEdge: "top" | "bottom";
   color: FogColor;
+  gradientStops?: readonly FogGradientStop[] | null;
 }) {
-  const { p, top, height, alpha255, featherEdge, color } = args;
+  const { p, top, height, alpha255, featherEdge, color, gradientStops = null } = args;
   if (height <= 0 || alpha255 <= 0) return;
 
   const ctx = p.drawingContext as CanvasRenderingContext2D;
@@ -36,7 +89,7 @@ function drawFogBand(args: {
     const rectTop = top;
     const rectBottom = top + height + outerFeather;
     ctx.save();
-    ctx.fillStyle = `rgba(${color.r},${color.g},${color.b},${alpha})`;
+    ctx.fillStyle = resolveFogFillStyle(ctx, p.width, color, alpha, gradientStops);
     ctx.fillRect(0, rectTop, p.width, rectBottom - rectTop);
     ctx.restore();
     return;
@@ -45,7 +98,7 @@ function drawFogBand(args: {
   const rectTop = top - outerFeather;
   const rectBottom = top + height;
   ctx.save();
-  ctx.fillStyle = `rgba(${color.r},${color.g},${color.b},${alpha})`;
+  ctx.fillStyle = resolveFogFillStyle(ctx, p.width, color, alpha, gradientStops);
   ctx.fillRect(0, rectTop, p.width, rectBottom - rectTop);
   ctx.restore();
 }
@@ -54,12 +107,12 @@ export function computeFogState(args: {
   p: PLike;
   metrics: GridMetrics;
   darkMode: boolean;
+  isRealMobile: boolean;
 }): FogState | null {
-  const { p, metrics, darkMode } = args;
+  const { p, metrics, darkMode, isRealMobile } = args;
   if (metrics.rowHeights.length <= 2) return null;
 
-  const minH = Math.min(...metrics.rowHeights);
-  const horizonRow = metrics.rowHeights.indexOf(minH);
+  const horizonRow = resolveHorizonRow(metrics.rowHeights);
   const fogPeakRow = Math.max(0, horizonRow - 2);
   const fogStartY = metrics.rowOffsetY[fogPeakRow];
   if (!Number.isFinite(fogStartY)) return null;
@@ -70,7 +123,9 @@ export function computeFogState(args: {
     fogCanvasH,
   ].filter((y) => Number.isFinite(y) && y > fogStartY);
 
-  const FOG_LAYER_ALPHA = darkMode ? 48 / 255 : 26 / 255;
+  const FOG_LAYER_ALPHA = darkMode
+    ? (isRealMobile ? 26 / 255 : 42 / 255)
+    : 26 / 255;
   const numBottomFogLayers = bottomFogLayerBoundaries.length;
   const targetHorizonOpacity = numBottomFogLayers > 0
     ? 1 - Math.pow(1 - FOG_LAYER_ALPHA, numBottomFogLayers)
@@ -79,6 +134,43 @@ export function computeFogState(args: {
   const skyLayerAlpha = numSkyFogLayers > 0
     ? 1 - Math.pow(1 - targetHorizonOpacity, 1 / numSkyFogLayers)
     : 0;
+  const skyFogGradient = darkMode
+    ? [
+        ...(isRealMobile
+          ? [
+              { k: 0.0, color: { r: 18, g: 11, b: 28 } },
+              { k: 0.13, color: { r: 33, g: 28, b: 40 } },
+              { k: 0.55, color: { r: 26, g: 19, b: 31 } },
+              { k: 1, color: { r: 14, g: 8, b: 26 } },
+            ] as const
+          : [
+              { k: 0.0, color: { r: 21, g: 12, b: 32 } },
+              { k: 0.14, color: { r: 50, g: 47, b: 54 } },
+              { k: 0.55, color: { r: 30, g: 22, b: 32 } },
+              { k: 1, color: { r: 15, g: 9, b: 30 } },
+            ] as const),
+      ] as const
+    : null;
+  const bottomFogGradient = darkMode
+    ? [
+        ...(isRealMobile
+          ? [
+              { k: 0.0,  color: { r: 14, g: 8, b: 26 } },
+              { k: 0.10, color: { r: 28, g: 21, b: 37 } },
+              { k: 0.18, color: { r: 39, g: 34, b: 55 } },
+              { k: 0.26, color: { r: 28, g: 21, b: 37 } },
+              { k: 1.0,  color: { r: 14, g: 8, b: 26 } },
+            ] as const
+          : [
+              { k: 0.0, color: { r: 34, g: 25, b: 42 } },
+              { k: 0.14, color: { r: 58, g: 50, b: 65 } },
+              { k: 0.45, color: { r: 34, g: 25, b: 42 } },
+              { k: 1.0,  color: { r: 15, g: 9, b: 30 } },
+            ] as const),
+      ] as const
+
+
+    : null;
 
   return {
     fogStartY,
@@ -89,8 +181,12 @@ export function computeFogState(args: {
     rowOffsetY: [...metrics.rowOffsetY],
     bottomFogLayerBoundaries,
     fogColor: darkMode
-      ? { r: 18, g: 28, b: 42 }
+      ? (isRealMobile
+          ? { r: 23, g: 14, b: 45 }
+          : { r: 23, g: 14, b: 45 })
       : { r: 229, g: 246, b: 255 },
+    skyFogGradient,
+    bottomFogGradient,
     fogLayerAlpha255: Math.round(FOG_LAYER_ALPHA * 255),
   };
 }
@@ -104,6 +200,16 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
     if (!Number.isFinite(rectBottom)) return;
     const rectTop = fog.fogStartY + fogTopOffsetPx;
     const rectH = rectBottom - rectTop;
+    const layerDepthT = fog.fogCanvasH > fog.fogStartY
+      ? clamp01(rectH / (fog.fogCanvasH - fog.fogStartY))
+      : 0;
+    const gradientUseK = fog.bottomFogGradient
+      ? clamp01(Math.pow(remap01(layerDepthT, 0.30, 1), 1.36))
+      : 0;
+    const fogBlendK = 1 - gradientUseK;
+    const gradientStops = fog.bottomFogGradient
+      ? blendGradientStopsTowardFog(fog.bottomFogGradient, fog.fogColor, fogBlendK)
+      : null;
     bottomFogLayerIndex += 1;
     if (rectH <= 0) return;
     drawFogBand({
@@ -113,6 +219,7 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
       alpha255: fog.fogLayerAlpha255,
       featherEdge: "bottom",
       color: fog.fogColor,
+      gradientStops,
     });
   };
 
@@ -134,6 +241,38 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
   return { drawNext, drawUntilDepth, drawRemaining };
 }
 
+// Offscreen cache for drawSkyFog — pure gradient geometry, no time dependency.
+export function createSkyFogCache() {
+  let offscreen: HTMLCanvasElement | null = null;
+  let cacheKey = "";
+
+  return function drawSkyFogCached(p: PLike, fog: FogState | null) {
+    if (!fog || fog.skyLayerAlpha <= 0 || fog.fogPeakRow <= 0) return;
+
+    const w = p.width;
+    const h = p.height;
+    const key = `${w}|${h}|${fog.fogStartY.toFixed(1)}|${fog.fogPeakRow}|${fog.skyLayerAlpha.toFixed(4)}|${fog.fogColor.r}|${fog.fogColor.g}|${fog.fogColor.b}|${fog.skyFogGradient ? 1 : 0}|${fog.rowOffsetY.join(",")}`;
+
+    if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
+      if (!offscreen) offscreen = document.createElement("canvas");
+      offscreen.width = w;
+      offscreen.height = h;
+      cacheKey = "";
+    }
+
+    if (key !== cacheKey) {
+      const offCtx = offscreen.getContext("2d")!;
+      offCtx.clearRect(0, 0, w, h);
+      const fakeP = { drawingContext: offCtx, width: w, height: h } as unknown as PLike;
+      drawSkyFog(fakeP, fog);
+      cacheKey = key;
+    }
+
+    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    ctx.drawImage(offscreen, 0, 0);
+  };
+}
+
 export function drawSkyFog(p: PLike, fog: FogState) {
   if (fog.skyLayerAlpha <= 0 || fog.fogPeakRow <= 0) return;
 
@@ -142,6 +281,20 @@ export function drawSkyFog(p: PLike, fog: FogState) {
     const rectBottom = fog.fogStartY;
     const rectH = rectBottom - rectTop;
     if (rectH <= 0) continue;
+    const layersFromHorizon = fog.fogPeakRow - 1 - r;
+    const horizonFogBlendK =
+      layersFromHorizon === 0 ? 0.9 :
+      layersFromHorizon === 1 ? 0.7 :
+      layersFromHorizon === 2 ? 0.25 :
+      layersFromHorizon === 3 ? 1 :
+      0;
+    const gradientStops = fog.skyFogGradient
+      ? (
+          horizonFogBlendK > 0
+            ? blendGradientStopsTowardFog(fog.skyFogGradient, fog.fogColor, horizonFogBlendK)
+            : fog.skyFogGradient
+        )
+      : null;
     drawFogBand({
       p,
       top: rectTop,
@@ -149,6 +302,7 @@ export function drawSkyFog(p: PLike, fog: FogState) {
       alpha255: Math.round(fog.skyLayerAlpha * 255),
       featherEdge: "top",
       color: fog.fogColor,
+      gradientStops,
     });
   }
 }

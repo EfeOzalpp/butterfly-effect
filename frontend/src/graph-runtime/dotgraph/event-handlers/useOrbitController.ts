@@ -258,7 +258,7 @@ void lastMouseMoveTsRef;
     }
   });
 
-  // Tooltip offset (extracted computation; still uses dynamicOffset + zoom factor)
+  // Tooltip offset (extracted computation; uses dynamicOffset + zoom factor)
   const dynamicOffset = useDynamicOffset();
 
   const tooltipOffsetPx = computeTooltipOffsetPx({

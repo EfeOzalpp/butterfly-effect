@@ -7,13 +7,11 @@ import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index";
 import { stepAndDrawParticles } from "../../modifiers/particle-systems/particle-1";
 import type { GridMetrics } from "../layout/gridCache";
 import type { SceneLightContext } from "../../modifiers/lighting";
+import { clamp01 } from "../../shared/math";
+import { resolveHorizonRow } from "../../shared/horizon";
 
 type RGB = { r: number; g: number; b: number };
 type RGBA = RGB & { a: number };
-
-function clamp01(v: number) {
-  return Math.max(0, Math.min(1, v));
-}
 
 function mix(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -269,7 +267,8 @@ export function drawBackground(
   sceneLookup: SceneLookupKey,
   override: BackgroundSpec | null = null,
   alpha: number = 1,
-  liveAvg: number = 0.5
+  liveAvg: number = 0.5,
+  skipStars = false
 ) {
   const spec = resolveBackgroundSpec(sceneLookup, override);
   const ctx = p.drawingContext as CanvasRenderingContext2D;
@@ -325,12 +324,109 @@ export function drawBackground(
     }
   }
 
-  if (spec.stars) {
+  if (!skipStars && spec.stars) {
     ctx.save();
     ctx.globalAlpha = alpha;
     drawStars(p, ctx, spec.stars, liveAvg);
     ctx.restore();
   }
+}
+
+export function drawBackgroundStarsOnly(
+  p: PLike,
+  sceneLookup: SceneLookupKey,
+  override: BackgroundSpec | null = null,
+  alpha: number = 1,
+  liveAvg: number = 0.5
+) {
+  const spec = resolveBackgroundSpec(sceneLookup, override);
+  if (!spec.stars) return;
+  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  drawStars(p, ctx, spec.stars, liveAvg);
+  ctx.restore();
+}
+
+// Offscreen cache for background base + overlay (stars excluded — they animate).
+// Only redraws when scene, liveAvg (quantized), or canvas dimensions change.
+export function createBgCache() {
+  let offscreen: HTMLCanvasElement | null = null;
+  let cacheKey = "";
+  let lastOverride: BackgroundSpec | null | undefined = undefined;
+
+  return function drawBgCached(
+    p: PLike,
+    sceneLookup: SceneLookupKey,
+    override: BackgroundSpec | null,
+    liveAvg: number
+  ) {
+    const w = p.width;
+    const h = p.height;
+    const liveAvgQ = Math.round(liveAvg * 100);
+    const key = `${w}|${h}|${sceneLookup}|${liveAvgQ}`;
+
+    if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
+      if (!offscreen) offscreen = document.createElement("canvas");
+      offscreen.width = w;
+      offscreen.height = h;
+      cacheKey = "";
+    }
+
+    if (key !== cacheKey || override !== lastOverride) {
+      const offCtx = offscreen.getContext("2d")!;
+      offCtx.clearRect(0, 0, w, h);
+      const fakeP = {
+        drawingContext: offCtx,
+        width: w,
+        height: h,
+        millis: () => 0,
+        background: (color: string) => {
+          offCtx.fillStyle = color;
+          offCtx.fillRect(0, 0, w, h);
+        },
+      } as unknown as PLike;
+      drawBackground(fakeP, sceneLookup, override, 1, liveAvg, true);
+      cacheKey = key;
+      lastOverride = override;
+    }
+
+    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    ctx.drawImage(offscreen, 0, 0);
+  };
+}
+
+// Offscreen cache for drawRowTopLightOverlay — pure geometry, no time dependency.
+export function createRowLightCache() {
+  let offscreen: HTMLCanvasElement | null = null;
+  let cacheKey = "";
+
+  return function drawRowLightCached(args: Parameters<typeof drawRowTopLightOverlay>[0]) {
+    const { p, metrics, light, alpha = 1 } = args;
+    if (!light || alpha <= 0) return;
+
+    const w = p.width;
+    const h = p.height;
+    const key = `${w}|${h}|${alpha.toFixed(3)}|${light.sourceX.toFixed(1)}|${light.sourceY.toFixed(1)}|${light.sceneDiag.toFixed(1)}|${metrics.rowHeights.join(",")}|${metrics.rowOffsetY.join(",")}`;
+
+    if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
+      if (!offscreen) offscreen = document.createElement("canvas");
+      offscreen.width = w;
+      offscreen.height = h;
+      cacheKey = "";
+    }
+
+    if (key !== cacheKey) {
+      const offCtx = offscreen.getContext("2d")!;
+      offCtx.clearRect(0, 0, w, h);
+      const fakeP = { drawingContext: offCtx, width: w, height: h } as unknown as PLike;
+      drawRowTopLightOverlay({ p: fakeP, metrics, light, alpha });
+      cacheKey = key;
+    }
+
+    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    ctx.drawImage(offscreen, 0, 0);
+  };
 }
 
 export function drawRowTopLightOverlay(args: {
@@ -345,8 +441,7 @@ export function drawRowTopLightOverlay(args: {
   if (rowHeights.length < 1 || rowOffsetY.length < 1) return;
 
   const ctx = p.drawingContext as CanvasRenderingContext2D;
-  const minH = Math.min(...rowHeights);
-  const horizonRow = rowHeights.indexOf(minH);
+  const horizonRow = resolveHorizonRow(rowHeights);
   const maxBandH = Math.max(4, Math.min(18, p.height * 0.022));
   const focusRadius = Math.max(p.width * 0.16, Math.min(p.width * 0.72, light.sceneDiag * 0.28));
 

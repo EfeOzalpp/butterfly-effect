@@ -24,6 +24,8 @@ type ShapesLayerProps = {
   bleedOf: (shapeKey: string) => { top: number; right: number; bottom: number; left: number };
   darkMode?: boolean;
   occasionalRefreshMs?: number;
+  particleFrames?: number;
+  tileSize?: number;
   section?: string;
 };
 
@@ -42,6 +44,8 @@ export default function ShapesLayer({
   bleedOf,
   darkMode = false,
   occasionalRefreshMs = 0,
+  particleFrames = 219,
+  tileSize = 128,
   section = '',
 }: ShapesLayerProps) {
   const setShapeCursor = (active: boolean, e?: any) => {
@@ -121,7 +125,7 @@ export default function ShapesLayer({
               avg={avg}
               position={[0, 0, 0]}
               scale={spriteScale}
-              tileSize={128}
+              tileSize={tileSize}
               alpha={215}
               blend={0.6}
               worldPosition={shape.position}
@@ -129,7 +133,7 @@ export default function ShapesLayer({
               orderIndex={index}
               freezeParticles={true}
               particleStepMs={33}
-              particleFrames={219}
+              particleFrames={particleFrames}
               darkMode={darkMode}
               occasionalRefreshMs={occasionalRefreshMs}
               assignment={assignment}

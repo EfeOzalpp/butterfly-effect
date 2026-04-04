@@ -5,13 +5,12 @@ import type { DeviceType } from '../../shared/responsiveness';
 
 export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   mobile: {
-    rows: 10,
-    useTopRatio: 0.9,
-    forbidden: makeRowForbidden([
-      LR_0, LR_0, LR_0, LR_0, LR_0, LR_0, LR_0, LR_0,
-      CENTER_100, CENTER_100, CENTER_100, CENTER_100,
-      CENTER_100, CENTER_100, CENTER_100, CENTER_100,
-    ]),
+    rows: 26,
+    useTopRatio: 1,
+    horizonPos: 0.5,
+    forbidden: makeRowForbidden(
+      Array.from( { length: 20 } , () => ({ ...LR_0}))
+    ),
   },
 
   tablet: {
@@ -30,9 +29,9 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   },
 
   laptop: {
-    rows: 20,
+    rows: 19,
     useTopRatio: 1,
-    horizonPos: 0.5,
+    horizonPos: 0.53,
     forbidden: makeRowForbidden(
       Array.from( { length: 20 } , () => ({ ...LR_0}))
     ),

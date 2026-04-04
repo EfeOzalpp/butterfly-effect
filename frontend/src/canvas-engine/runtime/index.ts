@@ -54,6 +54,7 @@ const REG_STYLE_DEFAULT = {
   appearMs: 300,
   exitMs: 300,
   darkMode: false,
+  isRealMobile: false,
   fog: true,
   debug: { ...DEBUG_DEFAULT } as DebugFlags,
 };
@@ -231,6 +232,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     if (Number.isFinite(appearMs) && appearMs >= 0) style.appearMs = appearMs | 0;
     if (Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
     if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
+    if (typeof args.isRealMobile === "boolean") style.isRealMobile = args.isRealMobile;
     if (typeof args.fog === "boolean") style.fog = args.fog;
 
     if (args.debug && typeof args.debug === "object") {

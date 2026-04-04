@@ -59,7 +59,18 @@ export function isSanityQuotaError(error: any) {
     ''
   ).toLowerCase();
 
+  // Also treat CORS / network failures as a fallback trigger so the app
+  // shows mock data when Sanity is unreachable (e.g. non-localhost origins
+  // that aren't whitelisted in the Sanity project's CORS settings).
+  const isNetworkFailure = !status && (
+    error instanceof TypeError ||
+    message.includes('failed to fetch') ||
+    message.includes('network') ||
+    message.includes('cors')
+  );
+
   return (
+    isNetworkFailure ||
     status === 402 ||
     status === 403 ||
     status === 429 ||

@@ -15,7 +15,7 @@ const OPTIONS = [
 function SelectionIndicator({ selected }: { selected: boolean }) {
   if (selected) {
     return (
-      <CheckIcon className="role-check-icon ui-icon" />
+      <CheckIcon className="role-check-icon" />
     );
   }
   return <span className="role-indicator-spacer" />;
@@ -97,7 +97,7 @@ export default function RolePicker({ value, onChange, errorId }: { value: string
         </div>
 
         {/* MassArt — shared island with center divider */}
-        <div className="role-separator"><span className="role-label">or</span></div>
+        <div className="role-separator"></div>
         <div className="role-group-options">
           {OPTIONS[1].options.map((opt) => {
             const checked = value === opt.val;

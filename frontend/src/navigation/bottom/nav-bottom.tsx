@@ -44,7 +44,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     }
   }, [logsOpen, isNarrow]);
 
-
   if (!cityPanelOpen && !questionnaireOpen && !vizVisible) return null;
 
   return (
@@ -77,7 +76,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             </span>
           </button>
         )}
-        {questionnaireOpen && !cityPanelOpen && (
+        {false && questionnaireOpen && !cityPanelOpen && (
           <div
             className="auto-adjust-wrap"
             onMouseEnter={() => setShowHint(true)}
@@ -108,7 +107,11 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
         )}
         {vizVisible && (
           <div className="widgets-wrap" ref={widgetsRef} style={{ marginLeft: logsSlide > 0 ? `calc(${logsSlide}px + 0.3rem)` : widgetsOpen ? '0.3rem' : undefined }}>
-            <div className={`widgets-popover-shell${widgetsOpen ? " is-open" : ""}`} aria-hidden={!widgetsOpen}>
+            <div
+              className={`widgets-popover-shell${widgetsOpen ? " is-open" : ""}`}
+              aria-hidden={!widgetsOpen}
+              style={isNarrow ? { left: "-64px" } : undefined}
+            >
               <div className="widgets-popover-clip">
                 <div className="widgets-popover" role="dialog" aria-label="Widgets">
                 <div className="widgets-list">
@@ -146,11 +149,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
                       </div>
                     </div>
                   </div>
-                  <div className="widgets-entry widgets-entry--data-controls">
-                    <button type="button" className="widgets-item" aria-label="Data controls coming soon">
-                      <span>Data controls</span>
-                    </button>
-                  </div>
                 </div>
                 <button
                   type="button"
@@ -185,8 +183,8 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       </div>
       {vizVisible && (
         <div
-          className="bottom bottom-center"
-          style={{ transform: `translateX(calc(-50% + ${pickerOffset}px))`, transition: "transform 0.2s ease" }}
+          className={`bottom ${isNarrow ? "bottom-mobile-right" : "bottom-center"}`}
+          style={isNarrow ? undefined : { transform: `translateX(calc(-50% + ${pickerOffset}px))`, transition: "transform 0.2s ease" }}
         >
           <ModeToggle />
         </div>

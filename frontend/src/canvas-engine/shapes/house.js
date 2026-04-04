@@ -254,6 +254,9 @@ function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
 function pickByOccurrence(arr, occurrence = 0, offset = 0) {
   return arr[(Math.max(0, occurrence) + offset) % arr.length];
 }
+function clampMinMax(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
 
 export function houseHasChimney(seedKey) {
   const seed = hash32(String(seedKey));
@@ -271,6 +274,9 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const f = opts?.footprint;
   if (!cell || !f) return;
 
+  const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
+  const spriteScale = Math.max(1, opts.pixelScale ?? opts.coreScaleMult ?? 1);
+
   const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
 
@@ -281,6 +287,10 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const smokeScale = smokeRowContext(rowBucket.t);
 
   const { x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts);
+  const localTileW = pxW / Math.max(1, f.w);
+  const localTileH = pxH / Math.max(1, f.h);
+  const localTile = Math.max(1, Math.min(localTileW, localTileH));
+  const smallScale = localTile <= 8;
 
   // --- Appear envelope anchored to bottom-center of footprint ---
   const anchorX = pxX + pxW / 2;
@@ -317,9 +327,9 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   p.translate(-anchorX, -anchorY);
 
   // grass
-  const grassH = Math.max(4, Math.round(cell / 3));
+  const grassH = Math.max(1, Math.round(localTileH / 3));
   const grassY = pxY + pxH - grassH;
-  const rGrassTop = Math.round(cell * 0.06);
+  const rGrassTop = Math.max(1, Math.round(localTile * 0.06));
 
   const grassSeed = rand01(hash32(`house-grass|${f.r0}|${f.c0}|${f.w}x${f.h}`));
   let grassTint = pick(Array.isArray(pal.grass) ? pal.grass : [pal.grass], grassSeed);
@@ -338,7 +348,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   p.rect(pxX, grassY, pxW, grassH, rGrassTop, rGrassTop, 0, 0);
 
   // body + roof
-  const availH = grassY - pxY;
+  const availH = Math.max(3, grassY - pxY);
   const seedKey = (opts?.seedKey ?? opts?.seed) ?? `house|${f.r0}|${f.c0}|${f.w}x${f.h}`;
   const occurrenceIndex = Number.isFinite(opts?.shapeOccurrenceIndex) ? opts.shapeOccurrenceIndex : 0;
   const seed = hash32(String(seedKey));
@@ -350,9 +360,19 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const r7 = rand01(seed ^ 0xbb67ae85); // panels: orientation
   const r8 = rand01(seed ^ 0x1f83d9ab); // panels: side
 
-  const bodyH = Math.max(6, Math.round(availH * (0.5 + 0.4 * r1)));
+  const desiredBodyH = Math.round(availH * (0.5 + 0.4 * r1));
+  const roofHRaw = Math.round(localTileH * 0.15);
+  const roofH = clampMinMax(
+    roofHRaw,
+    smallScale ? 1 : 2,
+    Math.max(1, Math.floor(availH * 0.28))
+  );
+  const minBodyH = smallScale
+    ? Math.max(2, Math.round(localTileH * 0.9))
+    : Math.max(5, Math.round(localTileH * 1.1));
+  const maxBodyH = Math.max(minBodyH, availH - roofH);
+  const bodyH = clampMinMax(desiredBodyH, minBodyH, maxBodyH);
   const bodyY = grassY - bodyH;
-  const roofH = Math.max(4, Math.round(cell * 0.15));
   const roofY = Math.max(pxY, bodyY - roofH);
 
   const bodyOffset = seed % pal.body.length;
@@ -371,7 +391,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   );
   bodyTint = mixRgb(bodyTint, buildingLight.lightColor, 0.24 * buildingLight.overallK);
   roofTint = mixRgb(roofTint, buildingLight.lightColor, 0.18 * buildingLight.overallK);
-  const rBody = Math.round(cell * 0.06);
+  const rBody = Math.max(1, Math.round(localTile * 0.06));
 
   p.noStroke();
   fillRgb(p, bodyTint, 255);
@@ -412,7 +432,8 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   {
     const hasPanels = Math.floor(r6 * 3) !== 0; // ~2/3 of houses
     const vis = Math.max(0, Math.min(1, (u - 0.80) / 0.20));
-    if (hasPanels && vis > 0) {
+    const allowPanels = !smallScale || (pxW >= 18 && roofH >= 3);
+    if (hasPanels && vis > 0 && allowPanels) {
       // determine which side of the roof they go on
       const chimneyExists = (Math.floor(r4 * 3) === 0);
       const chimneyLeft = chimneyExists ? (r4 < 0.5) : null;
@@ -426,14 +447,14 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const angle = (sideLeft ? -1 : 1) * (Math.PI / 6);
 
       // slightly bigger base sizes than before
-      const basePW = Math.max(10, Math.round(pxW * 0.18));
-      const basePH = Math.max(5, Math.round(roofH * 0.65));
+      const basePW = Math.max(smallScale ? 5 : 10, Math.round(pxW * 0.18));
+      const basePH = Math.max(smallScale ? 2 : 5, Math.round(roofH * 0.65));
       const s = 0.7 + 0.4 * vis; // [0.7..1.1]
       let pW = basePW * s;
       let pH = basePH * s;
 
       // screen-space safe clamp
-      const marginSide = Math.max(4, pxW * 0.08);
+      const marginSide = Math.max(smallScale ? 1 : 4, pxW * 0.08);
       const halfW = pxW / 2;
       const sideW = halfW - marginSide;
 
@@ -441,11 +462,11 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const panelCount = 2 + (r6 < 0.33 ? 1 : 0);
 
       // limit width to side span
-      const maxPW = Math.max(8, (sideW / panelCount) * 0.95);
+      const maxPW = Math.max(smallScale ? 4 : 8, (sideW / panelCount) * 0.95);
       pW = Math.min(pW, maxPW);
 
       // height clamp so they don’t dwarf small roofs
-      pH = Math.min(pH, Math.max(6, roofH * 0.9));
+      pH = Math.min(pH, Math.max(smallScale ? 2 : 6, roofH * 0.9));
 
       // Y: slightly above the roof top line (roofY is the top edge)
       const yOnRoof = roofY - Math.max(2, roofH * 0.6);
@@ -499,23 +520,24 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
 
   // chimney (~1 in 3)
   if (Math.floor(r4 * 3) === 0) {
-    const baseW = Math.max(6, Math.round(pxW * 0.15));
-    const baseH = Math.max(4, Math.round(bodyH * 0.10));
-    const scale = val(HOUSE.chimney.scaleRange, u);
-    const cW = baseW * scale;
-    const cH = baseH * scale;
+    const baseW = Math.max(1, Math.round(pxW * 0.15));
+    const baseH = Math.max(1, Math.round(bodyH * 0.10));
+    const scale = val(HOUSE.chimney.scaleRange, u) * particleBucketRange(rowBucket.t, 0.52, 1.0);
+    const cW = clampMinMax(baseW * scale, 1, Math.max(1, Math.round(pxW * 0.22)));
+    const cH = clampMinMax(baseH * scale, 1, Math.max(1, Math.round(bodyH * 0.30)));
 
     const onLeft = r4 < 0.5;
-    const margin = Math.max(2, pxW * 0.1);
+    const margin = Math.max(1, pxW * 0.1);
     const cx = onLeft ? pxX + margin : pxX + pxW - margin - cW;
     const cy = roofY;
 
     // smoke behind chimney
     {
-      const smokeColW = Math.max(4, Math.round(Math.max(cW, 6) * smokeScale.columnW));
-      const smokeColH = Math.max(18, Math.round(cell * 2 * smokeScale.columnH));
-      const smokeX = cx + cW / 2 - smokeColW / 2;
-      const smokeY = cy - cH - Math.round(cell * 0.7);
+      const smokeColW = Math.max(2, Math.round(Math.max(cW, localTileW * 0.18) * smokeScale.columnW));
+      const smokeColH = Math.max(Math.round(localTileH * 1.3), Math.round(localTileH * 2 * smokeScale.columnH));
+      const smokeX = cx + cW / 2 - smokeColW / 2 + Math.round(smokeColW * 0.12);
+      const smokeY = cy - cH - Math.round(localTileH * 0.7);
+      const bottomFadePx = isSprite ? Math.max(0, Math.round(smokeColH - localTileH * 0.7)) : 0;
 
       const spawnX0 = Math.min(val(SMOKE.spawnX, 0), val(SMOKE.spawnX, u));
       const spawnX1 = Math.max(val(SMOKE.spawnX, u), 1 - (1 - val(SMOKE.spawnX, u)));
@@ -523,8 +545,8 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const spawnY1 = Math.max(val(SMOKE.spawnY, u), 1 - (1 - val(SMOKE.spawnY, u)));
 
       const count     = Math.max(4, Math.floor(val(SMOKE.count, u) * smokeScale.count));
-      const sizeMin   = val(SMOKE.sizeMin, u) * smokeScale.size;
-      const sizeMax   = Math.max(sizeMin, val(SMOKE.sizeMax, u) * smokeScale.size);
+      const sizeMin   = val(SMOKE.sizeMin, u) * smokeScale.size * spriteScale;
+      const sizeMax   = Math.max(sizeMin, val(SMOKE.sizeMax, u) * smokeScale.size * spriteScale);
       const lifeMin   = Math.max(0.05, val(SMOKE.lifeMin, u) * smokeScale.life);
       const lifeMax   = Math.max(lifeMin, val(SMOKE.lifeMax, u) * smokeScale.life);
       const sAlpha    = Math.max(0, Math.min(255, Math.round(val(SMOKE.alpha, u))));
@@ -572,7 +594,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
         lifetime: { min: lifeMin, max: lifeMax },
         fadeInFrac: SMOKE.fadeInFrac,
         fadeOutFrac: SMOKE.fadeOutFrac,
-        edgeFadePx: SMOKE.edgeFadePx,
+        edgeFadePx: { ...SMOKE.edgeFadePx, bottom: bottomFadePx },
 
         color: smokeColor,
         respawn: true,
@@ -611,8 +633,8 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const cfg = DOOR_PROFILES[profile];
 
   // Fractions of body size
-  const doorW = Math.max(3, Math.round(pxW * cfg.W_FRAC));
-  const doorH = Math.max(6, Math.round(bodyH * cfg.H_FRAC));
+  const doorW = Math.max(smallScale ? 2 : 3, Math.round(pxW * cfg.W_FRAC));
+  const doorH = Math.max(smallScale ? 3 : 6, Math.round(bodyH * cfg.H_FRAC));
 
   const doorX = pxX + (pxW - doorW) / 2;
   const doorY = bodyY + bodyH - doorH + Math.round(bodyH * cfg.Y_OFFSET_FRAC);
@@ -660,10 +682,10 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const cols = 2;
   let rows = profile.rows;
 
-  let winW = Math.max(2, Math.round(pxW   * profile.WIN_W_FRAC));
-  let winH = Math.max(2, Math.round(bodyH * profile.WIN_H_FRAC));
-  let gapX = Math.max(2, Math.round(pxW   * profile.H_GAP_FRAC));
-  let gapY = Math.max(2, Math.round(bodyH * profile.V_GAP_FRAC));
+  let winW = Math.max(smallScale ? 1 : 2, Math.round(pxW   * profile.WIN_W_FRAC));
+  let winH = Math.max(smallScale ? 1 : 2, Math.round(bodyH * profile.WIN_H_FRAC));
+  let gapX = Math.max(smallScale ? 1 : 2, Math.round(pxW   * profile.H_GAP_FRAC));
+  let gapY = Math.max(smallScale ? 1 : 2, Math.round(bodyH * profile.V_GAP_FRAC));
 
   const targetRowW = 2 * winW + gapX;
   const maxRowW = Math.floor(pxW * 0.92);

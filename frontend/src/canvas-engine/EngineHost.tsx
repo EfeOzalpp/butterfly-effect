@@ -6,6 +6,7 @@ import { useCanvasEngine } from "./hooks/useCanvasEngine";
 import { useViewportKey } from "./hooks/useViewportKey";
 import { useSceneField } from "./hooks/useSceneField";
 import { stopCanvasEngine } from "./runtime/index";
+import { useRealMobileViewport } from "../lib/hooks/useRealMobileViewport";
 
 import { HOST_DEFS, type HostId, type HostDef } from "./multi-canvas-setup/hostDefs";
 
@@ -69,8 +70,9 @@ export function EngineHost({
   });
 
   const viewportKey = useViewportKey(120);
+  const isRealMobile = useRealMobileViewport();
 
-  useSceneField(engine, id, allocAvg, { questionnaireOpen }, viewportKey);
+  useSceneField(engine, id, allocAvg, { questionnaireOpen, isRealMobile }, viewportKey);
 
   React.useEffect(() => {
     if (!engine.ready.current) return;

@@ -19,11 +19,23 @@ export function installResizeHandlers(opts: {
   const { parentEl, canvasEl, p, dprMode, resizeTo, onAfterResize } = opts;
 
   let resizeRaf: number | null = null;
+  let lastAppliedW = -1;
+  let lastAppliedH = -1;
+  let lastAppliedDpr = -1;
 
   function resizeNow() {
     const { w, h } = resizeTo();
+    const nextDpr = resolvePixelDensity(dprMode);
 
-    p.pixelDensity(resolvePixelDensity(dprMode));
+    if (w === lastAppliedW && h === lastAppliedH && nextDpr === lastAppliedDpr) {
+      return;
+    }
+
+    lastAppliedW = w;
+    lastAppliedH = h;
+    lastAppliedDpr = nextDpr;
+
+    p.pixelDensity(nextDpr);
     p.resizeCanvas(w, h);
 
     canvasEl.style.width = w + "px";

@@ -2,15 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 
 import '../../styles/gamification.css';
 
-import {
-  useGradientColor,
-  DEFAULT_COLOR_OPTS,
-} from "../../lib/utils/color-and-interpolation";
-
 import { useGeneralPools } from "../../lib/hooks/useGamificationPools";
 import { useOptionalPreferences } from "../../app/state/preferences-context";
-
-const NEUTRAL = 'rgba(255,255,255,0.95)';
 
 export default function GamificationGeneral({
   dotId,
@@ -28,25 +21,12 @@ export default function GamificationGeneral({
   const darkMode = preferences?.darkMode ?? false;
   
   const safePct = Math.max(0, Math.min(100, Math.round(Number(percentage) || 0)));
-
-  // small visual bias so the knob matches the lighter bar mid
-  const knobPct = Math.min(100, safePct + 5);
-
-  const knobSample = useGradientColor(knobPct, DEFAULT_COLOR_OPTS);
-  const knobColor  = mode === 'absolute' ? knobSample.css : NEUTRAL;
   const emphasisShadow = useMemo(
     () =>
       darkMode
         ? `0 0 10px color-mix(in srgb, ${color} 52%, var(--gam-glow-dark-base)), 0 0 18px color-mix(in srgb, ${color} 32%, var(--gam-glow-dark-base))`
         : `0 0 8px color-mix(in srgb, ${color} 30%, var(--gam-glow-light-base)), 0 0 14px color-mix(in srgb, ${color} 16%, var(--gam-glow-light-base))`,
     [color, darkMode]
-  );
-  const absoluteShadow = useMemo(
-    () =>
-      darkMode
-        ? `0 0 10px color-mix(in srgb, ${color} 52%, var(--gam-glow-dark-base)), 0 0 18px color-mix(in srgb, ${knobSample.css} 28%, var(--gam-glow-dark-base))`
-        : `0 0 8px color-mix(in srgb, ${color} 30%, var(--gam-glow-light-base)), 0 0 14px color-mix(in srgb, ${knobSample.css} 16%, var(--gam-glow-light-base))`,
-    [color, darkMode, knobSample.css]
   );
     
   const { pick, loaded } = useGeneralPools();
@@ -179,46 +159,18 @@ export default function GamificationGeneral({
     if (!relativeLine) relativeLine = <>In the mix.</>;
   }
 
-  const line =
-    mode === 'relative' ? (
-      <>{relativeLine}</>
-    ) : (
-      <>
-        {' '}
-        <strong style={{ textShadow: absoluteShadow }}>
-          {Math.round(safePct)}
-        </strong>
-        /100
-      </>
-    );
-
   const { description } = currentText;
 
   return (
     <div className="generalized-result">
-      <div className="gam-general">
-        <div className="gam-general-description">
-          {/* no title in either mode */}
-          {mode === 'absolute' && description ? (
-            <h4 className="gam-subline">{description}</h4>
-          ) : null}
-          <h3 className="gam-general-line">{line}</h3>
-        </div>
-
-        {mode === 'absolute' && (
-          <div className="gam-visualization">
-            <div className="gam-percentage-knob">
-              <div
-                className="gam-knob-arrow"
-                style={{
-                  bottom: `${safePct}%`,
-                  borderBottom: `18px solid ${knobColor}`,
-                }}
-              />
-            </div>
-            <div className="gam-percentage-bar" />
-          </div>
-        )}
+      <div className={`gam-general${mode === 'relative' ? ' is-team' : ''}`}>
+        {/* no title in either mode */}
+        {mode === 'absolute' && description ? (
+          <h4 className="gam-subline">{description}</h4>
+        ) : null}
+        {mode === 'relative' ? (
+          <p className="gam-general-copy">{relativeLine}</p>
+        ) : null}
       </div>
     </div>
   );

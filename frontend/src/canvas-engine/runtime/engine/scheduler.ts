@@ -36,7 +36,23 @@ function stopIfIdle() {
   }
 }
 
+// Pause all ticks when the tab is hidden - resume automatically on visibility.
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && rafId == null && entries.size > 0) {
+      ensureRunning();
+    }
+  });
+}
+
 function frame(now: number) {
+  // Skip rendering while tab is hidden but keep the loop alive so it
+  // resumes immediately when the user returns.
+  if (typeof document !== "undefined" && document.hidden) {
+    rafId = requestAnimationFrame(frame);
+    return;
+  }
+
   rafId = requestAnimationFrame(frame);
 
   const list = sortEntries();
@@ -51,8 +67,7 @@ function frame(now: number) {
     try {
       e.tick(now);
     } catch (err) {
-      // Don’t kill the scheduler because one engine threw.
-      // You can add a warnOnce here if you want.
+      // Don't kill the scheduler because one engine threw.
       // eslint-disable-next-line no-console
       console.error(`[engine scheduler] tick failed for "${e.id}"`, err);
     }

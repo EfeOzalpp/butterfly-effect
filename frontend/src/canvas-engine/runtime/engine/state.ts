@@ -18,6 +18,7 @@ export type EngineStyle = {
   appearMs: number;
   exitMs: number;
   darkMode: boolean;
+  isRealMobile: boolean;
   debug: DebugFlags;
 };
 

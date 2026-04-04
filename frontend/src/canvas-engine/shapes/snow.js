@@ -385,10 +385,10 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
       freqScale: 0.10,
       seed: snowSeed,
     });
-    const rr = l.r * 2;
+    const radius = l.r * sc;
     const lx = l.x - cx + ldx;
     const ly = l.y - cy + ldy;
-    p.circle(lx, ly, rr * sc);
+    p.circle(lx, ly, radius * 2);
     if (cloudLight.overallK > 0.01) {
       const offX = cloudLight.xBias * l.r * 0.22;
       const offY = cloudLight.yBias * l.r * 0.18;
@@ -398,14 +398,14 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
         cloudHighlight.b,
         Math.round(cloudAlpha * 0.18 * Math.max(cloudLight.leftK, cloudLight.rightK, cloudLight.topK))
       );
-      p.circle(lx + offX, ly + offY, rr * sc * 0.62);
+      p.circle(lx + offX, ly + offY, radius * 2 * 0.62);
       p.fill(
         cloudShadow.r,
         cloudShadow.g,
         cloudShadow.b,
         Math.round(cloudAlpha * 0.10 * Math.max(cloudLight.leftK, cloudLight.rightK))
       );
-      p.circle(lx - offX * 0.9, ly - offY * 0.5, rr * sc * 0.54);
+      p.circle(lx - offX * 0.9, ly - offY * 0.5, radius * 2 * 0.54);
       p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);
     }
   }

@@ -185,7 +185,7 @@ const Graph = () => {
   const dpr = useMemo(() => {
     const max = typeof window !== 'undefined' ? window.devicePixelRatio || 1.5 : 1.5;
     const hi = isIOS ? Math.min(1.5, max) : Math.min(2, max);
-    return lowFidelity ? ([1, 1.25] as [number, number]) : ([1, hi] as [number, number]);
+    return [1, hi] as [number, number];
   }, [lowFidelity]);
 
   // Fresh Canvas per open (new WebGL context every time)

@@ -24,16 +24,29 @@ export function footprintAllowed(
   colsPerRow?: number[]
 ) {
   if (r0 < 0 || c0 < 0 || r0 + h > rows) return false;
-  for (let dr = 0; dr < h; dr++) {
-    const rowCols = colsPerRow ? (colsPerRow[r0 + dr] ?? cols) : cols;
-    if (c0 + w > rowCols) return false;
-  }
-  for (let dr = 0; dr < h; dr++) {
-    for (let dc = 0; dc < w; dc++) {
-      if (isForbidden(r0 + dr, c0 + dc)) return false;
-    }
+  const { refRow, refCols } = horizontalReferenceForFootprint(r0, h, cols, colsPerRow);
+  if (c0 + w > refCols) return false;
+
+  for (let dc = 0; dc < w; dc++) {
+    if (isForbidden(refRow, c0 + dc)) return false;
   }
   return true;
+}
+
+/**
+ * Returns the row that governs horizontal placement for a footprint.
+ * Horizontal fit/projection intentionally lives in the footprint's bottom-row
+ * space so multi-row shapes use the same row reference as pixel sizing.
+ */
+export function horizontalReferenceForFootprint(
+  r0: number,
+  hCell: number,
+  cols: number,
+  colsPerRow?: number[]
+): { refRow: number; refCols: number } {
+  const refRow = r0 + hCell - 1;
+  const refCols = colsPerRow ? (colsPerRow[refRow] ?? cols) : cols;
+  return { refRow, refCols };
 }
 
 /**
@@ -49,14 +62,7 @@ export function allowedSegmentsForRow(
   isForbidden: (r: number, c: number) => boolean,
   colsPerRow?: number[]
 ): Array<{ cStart: number; cEnd: number }> {
-  // Effective column limit: minimum across all rows spanned by the footprint
-  let effectiveCols = cols;
-  if (colsPerRow) {
-    for (let dr = 0; dr < hCell; dr++) {
-      const rc = colsPerRow[r0 + dr] ?? cols;
-      if (rc < effectiveCols) effectiveCols = rc;
-    }
-  }
+  const { refCols: effectiveCols } = horizontalReferenceForFootprint(r0, hCell, cols, colsPerRow);
 
   const segs: Array<{ cStart: number; cEnd: number }> = [];
   let c = 0;

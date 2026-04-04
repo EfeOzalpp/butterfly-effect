@@ -1,5 +1,5 @@
-import { KEYS } from './geometry';
-import type { ShapeKey } from './geometry';
+export type ShapeKey = 'A' | 'B' | 'C' | 'D';
+const KEYS: ShapeKey[] = ['A', 'B', 'C', 'D'];
 
 export const SIMPLEX_DEFAULT: Record<ShapeKey, number> = {
   A: 0.25,

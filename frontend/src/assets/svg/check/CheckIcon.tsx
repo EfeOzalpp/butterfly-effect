@@ -1,30 +1,31 @@
 import { useId, useMemo } from "react";
 
 import checkSvg from "./check.svg?raw";
+import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
 type CheckIconProps = {
   className?: string;
 };
 
-const injectSvgClasses = (svg: string, className: string) =>
-  svg.replace(/<svg\b([^>]*)>/, `<svg$1 class="${className}" aria-hidden="true" focusable="false">`);
+function sanitizeCheckIconClassName(className: string) {
+  return className
+    .split(/\s+/)
+    .filter((token) => token && token !== "ui-icon")
+    .join(" ");
+}
 
-const scopeSvgIds = (svg: string, prefix: string) =>
-  svg
-    .replace(/id="([^"]+)"/g, (_, id) => `id="${prefix}-${id}"`)
-    .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${prefix}-${id})`);
-
-export default function CheckIcon({ className = "ui-icon" }: CheckIconProps) {
+export default function CheckIcon({ className = "" }: CheckIconProps) {
   const iconId = useId().replace(/:/g, "");
+  const resolvedClassName = sanitizeCheckIconClassName(className);
 
   const markup = useMemo(() => {
-    return injectSvgClasses(scopeSvgIds(checkSvg, `check-${iconId}`), className);
-  }, [className, iconId]);
+    return prepareRawSvgMarkup(checkSvg, `check-${iconId}`, resolvedClassName);
+  }, [iconId, resolvedClassName]);
 
   return (
     <span
       aria-hidden="true"
-      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", lineHeight: 0, verticalAlign: "middle" }}
+      style={RAW_SVG_WRAPPER_STYLE}
       dangerouslySetInnerHTML={{ __html: markup }}
     />
   );

@@ -128,11 +128,13 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
           tieKeyForId={ties.tieKeyForId}
           setSelectedTieKey={ties.setSelectedTieKey}
           selectedTieKey={ties.selectedTieKey}
-spriteScale={scene.spriteScale}
+          spriteScale={scene.spriteScale}
           bagSeed={scene.bagSeed}
           bleedOf={scene.bleedOf}
           darkMode={darkMode}
-          occasionalRefreshMs={2000}
+          occasionalRefreshMs={scene.isRealMobile ? 3000 : 2000}
+          particleFrames={scene.particleFrames}
+          tileSize={scene.tileSize}
           section={section ?? ''}
         />
 

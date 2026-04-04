@@ -1,6 +1,11 @@
 // graph-runtime/sprites/textures/registry.ts
 import * as THREE from 'three';
 import { makeTextureFromDrawer } from './makeTextureFromDrawer';
+
+const isMobileDevice =
+  typeof window !== 'undefined' &&
+  (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
+
 import { enqueueTexture } from './queue';
 import { spriteCachingDisabled } from '../internal/debug-flags';
 
@@ -67,7 +72,7 @@ class TextureRegistry {
           pixelScaleBoost: args.pixelScaleBoost,
         });
         tex.generateMipmaps = true;
-        (tex as any).anisotropy = 8;
+        (tex as any).anisotropy = isMobileDevice ? 4 : 8;
         tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;

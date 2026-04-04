@@ -31,4 +31,9 @@ export function applyThemeToDocument(darkMode: boolean) {
   const root = document.documentElement;
   root.dataset.theme = darkMode ? "dark" : "light";
   root.classList.toggle("dark", darkMode);
+
+  const color = darkMode ? "#1a1e23" : "#f8f0ea";
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(m => {
+    m.content = color;
+  });
 }

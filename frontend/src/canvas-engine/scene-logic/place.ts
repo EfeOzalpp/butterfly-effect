@@ -8,7 +8,7 @@ import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
 import type { ScenePlacementRules } from "../adjustable-rules/placement-rules/index";
 import type { PoolItem, PlacedItem, FootRect } from "./types";
 import { buildFallbackCells } from "./candidates";
-import { cellForbiddenFromSpec, allowedSegmentsForRow, footprintAllowed } from "./constraints";
+import { cellForbiddenFromSpec, allowedSegmentsForRow, footprintAllowed, horizontalReferenceForFootprint } from "./constraints";
 import { scoreCandidateGeneric } from "./scoring";
 
 export function placePoolItems(opts: {
@@ -33,9 +33,11 @@ export function placePoolItems(opts: {
 
   const isForbidden = cellForbiddenFromSpec(spec, rows, cols, colsPerRow);
   const occ = createOccupancy(rows, cols, (r, c) => isForbidden(r, c), colsPerRow);
+  const occClouds = createOccupancy(rows, cols, undefined, colsPerRow);
   const fallbackCells = buildFallbackCells(rows, cols, spec);
 
   const placedAccum: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];
+  const placedClouds: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];
   const outPlaced: PlacedItem[] = [];
   let cursor = 0;
 
@@ -43,6 +45,9 @@ export function placePoolItems(opts: {
     const { shape, zoneIndex, size } = item;
     const wCell = size.w;
     const hCell = size.h;
+    const ignoreForbidden = shape === "clouds";
+    const itemForbidden = ignoreForbidden ? (() => false) : isForbidden;
+    const targetOcc = shape === "clouds" ? occClouds : occ;
 
     // Resolve zone bounds for this item
     const zone = placements[shape]?.zones[zoneIndex];
@@ -54,7 +59,8 @@ export function placePoolItems(opts: {
     const rMin = Math.max(0, Math.floor(usedRows * topK));
     const rMax = Math.min(usedRows - hCell, Math.floor(usedRows * botK));
 
-    const placedForScore = placedAccum.map((p) => ({
+    const scoreSource = shape === "clouds" ? [] : placedAccum;
+    const placedForScore = scoreSource.map((p) => ({
       r0: p.footprint.r0,
       c0: p.footprint.c0,
       w: p.footprint.w,
@@ -64,18 +70,18 @@ export function placePoolItems(opts: {
     const candidates: Array<{ r0: number; c0: number; score: number }> = [];
 
     for (let r0 = rMin; r0 <= Math.min(rMax, rows - hCell); r0++) {
-      // Use per-row column count so horizontalK is a consistent fraction of
-      // each row's actual width, not the max columns at the horizon.
-      const rowCols = colsPerRow?.[r0] ?? cols;
-      const cMin = Math.max(0, Math.floor(rowCols * leftK));
-      const cMax = Math.min(rowCols - wCell, Math.floor(rowCols * rightK));
+      const { refCols } = horizontalReferenceForFootprint(r0, hCell, cols, colsPerRow);
+      const cMin = Math.max(0, Math.floor(refCols * leftK));
+      const cMax = Math.min(refCols - wCell, Math.floor(refCols * rightK));
 
-      const segs = allowedSegmentsForRow(r0, wCell, hCell, rows, cols, isForbidden, colsPerRow);
+      const segs = allowedSegmentsForRow(r0, wCell, hCell, rows, cols, itemForbidden, colsPerRow);
 
       for (const seg of segs) {
-        const effectiveCenterC = (seg.cStart + seg.cEnd) / 2;
         const c0Start = Math.max(seg.cStart, cMin);
         const c0End   = Math.min(seg.cEnd,   cMax);
+        // Score relative to the zone's own center, not the full segment center.
+        // This prevents edge zones from being penalized for being far from grid center.
+        const effectiveCenterC = (c0Start + c0End) / 2;
 
         for (let c0 = c0Start; c0 <= c0End; c0++) {
           const score = scoreCandidateGeneric({
@@ -95,12 +101,12 @@ export function placePoolItems(opts: {
       for (let k = cursor; k < fallbackCells.length; k++) {
         const { r, c } = fallbackCells[k];
         if (r < rMin || r > rMax) continue;
-        const fbRowCols = colsPerRow?.[r] ?? cols;
-        const fbCMin = Math.max(0, Math.floor(fbRowCols * leftK));
-        const fbCMax = Math.min(fbRowCols - wCell, Math.floor(fbRowCols * rightK));
+        const { refCols: fbRefCols } = horizontalReferenceForFootprint(r, hCell, cols, colsPerRow);
+        const fbCMin = Math.max(0, Math.floor(fbRefCols * leftK));
+        const fbCMax = Math.min(fbRefCols - wCell, Math.floor(fbRefCols * rightK));
         if (c < fbCMin || c > fbCMax) continue;
-        if (!footprintAllowed(r, c, wCell, hCell, rows, cols, isForbidden, colsPerRow)) continue;
-        const hit = occ.tryPlaceAt(r, c, wCell, hCell);
+        if (!footprintAllowed(r, c, wCell, hCell, rows, cols, itemForbidden, colsPerRow)) continue;
+        const hit = targetOcc.tryPlaceAt(r, c, wCell, hCell);
         if (hit) {
           rectHit = hit;
           cursor = Math.max(k - 2, 0);
@@ -110,7 +116,7 @@ export function placePoolItems(opts: {
     } else {
       candidates.sort((a, b) => b.score - a.score);
       for (const cand of candidates) {
-        const hit = occ.tryPlaceAt(cand.r0, cand.c0, wCell, hCell);
+        const hit = targetOcc.tryPlaceAt(cand.r0, cand.c0, wCell, hCell);
         if (hit) { rectHit = hit; break; }
       }
     }
@@ -127,7 +133,11 @@ export function placePoolItems(opts: {
     item.x = x;
     item.y = y;
 
-    placedAccum.push({ id: item.id, x, y, footprint: rectHit });
+    if (shape === "clouds") {
+      placedClouds.push({ id: item.id, x, y, footprint: rectHit });
+    } else {
+      placedAccum.push({ id: item.id, x, y, footprint: rectHit });
+    }
     outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
   }
 

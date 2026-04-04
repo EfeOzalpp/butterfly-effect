@@ -29,6 +29,15 @@ function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
 
+const PLACEHOLDER_MATERIAL = new THREE.SpriteMaterial({
+  transparent: true,
+  opacity: 0.12,
+  color: '#888888',
+  depthWrite: false,
+  depthTest: false,
+  toneMapped: false,
+});
+
 const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();
 function track(tex: THREE.CanvasTexture) {
   __GLOBAL_TEX.add(tex);
@@ -536,7 +545,7 @@ export function SpriteShape({
 
   return (
     <sprite ref={spriteRef as any} position={pos as any} scale={[sx, sy, 1]} renderOrder={5}>
-      <primitive object={material} attach="material" dispose={null} />
+      <primitive object={material ?? PLACEHOLDER_MATERIAL} attach="material" dispose={null} />
     </sprite>
   );
 }

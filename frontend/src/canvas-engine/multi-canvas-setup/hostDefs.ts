@@ -36,6 +36,7 @@ export const HOST_DEFS = defineHosts({
     mount: "#canvas-root",
     zIndex: 2,
     dprMode: "cap3",
+    fpsCap: 30,
     canvasDimensions: { kind: "parent" },
     scene: { baseMode: "start", ruleset: SCENE_RULESETS.intro },
   },

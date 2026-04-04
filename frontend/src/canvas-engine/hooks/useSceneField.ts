@@ -49,6 +49,7 @@ function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
 
 export type SceneSignals = {
   questionnaireOpen: boolean;
+  isRealMobile: boolean;
 };
 
 export function useSceneField(
@@ -68,7 +69,7 @@ export function useSceneField(
   if (!ruleset) throw new Error(`[${hostId}] missing scene.ruleset`);
 
   const baseMode: BaseMode = hostDef.scene?.baseMode ?? "start";
-  const { questionnaireOpen } = signals;
+  const { questionnaireOpen, isRealMobile } = signals;
 
   // Build the full scene state (base + modifiers)
   const sceneState: SceneState = resolveSceneState(
@@ -147,7 +148,7 @@ export function useSceneField(
     engine.controls.current?.setBackgroundSpec?.(
       backgroundForTheme(hostId === "city" ? "city" : "start", sceneLookupKey, darkMode)
     );
-    engine.controls.current?.setFieldStyle?.({ darkMode });
+    engine.controls.current?.setFieldStyle?.({ darkMode, isRealMobile });
 
     engine.controls.current?.setFieldItems?.(result.placed);
     engine.controls.current?.setFieldVisible?.(result.placed.length > 0);
@@ -167,5 +168,6 @@ export function useSceneField(
     sceneState.baseMode,
     profile,
     darkMode,
+    isRealMobile,
   ]);
 }

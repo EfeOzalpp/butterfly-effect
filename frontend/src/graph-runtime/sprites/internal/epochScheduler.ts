@@ -15,6 +15,7 @@ let keys: string[] = [];
 let rrIdx = 0;
 
 function schedulerTick() {
+  if (typeof document !== 'undefined' && document.hidden) return;
   const visible: string[] = [];
   for (const k of keys) {
     const e = entries.get(k);

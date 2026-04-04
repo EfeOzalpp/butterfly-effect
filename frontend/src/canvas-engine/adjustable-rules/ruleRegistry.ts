@@ -26,7 +26,7 @@ function baseProfileFor(mode: BaseMode): SceneProfile {
   };
 }
 
-function applyQuestionnaireOverrides(profile: SceneProfile): SceneProfile {
+function applyOverrides(profile: SceneProfile): SceneProfile {
   return {
     ...profile,
     padding: CANVAS_PADDING.questionnaire,
@@ -36,7 +36,7 @@ function applyQuestionnaireOverrides(profile: SceneProfile): SceneProfile {
 
 export function resolveProfile(state: SceneState): SceneProfile {
   const base = baseProfileFor(state.baseMode);
-  if (isQuestionnaire(state)) return applyQuestionnaireOverrides(base);
+  if (isQuestionnaire(state)) return applyOverrides(base);
   return base;
 }
 

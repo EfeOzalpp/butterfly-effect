@@ -57,7 +57,6 @@ export function cellAnchorToPx2(
   const bottomRow = rect.r0 + rect.h - 1;
 
   if (size.cellWPerRow && size.rowHeights && size.rowOffsetY) {
-    // Use bottom row as the unit tile — matches footprintToPx
     const unitW = size.cellWPerRow[bottomRow] ?? size.cellW;
     const unitH = size.rowHeights[bottomRow] ?? size.cellH;
     const unitOY = size.rowOffsetY[bottomRow] ?? bottomRow * size.cellH;

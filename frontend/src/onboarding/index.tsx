@@ -8,8 +8,7 @@ import { useIdentity } from "../app/state/identity-context";
 import "../styles/onboarding.css";
 
 import { ROLE_SECTIONS } from "./section-picker/sections";
-import QuestionFlow from "./questionnaire/question-flow";
-import { WEIGHTED_QUESTIONS } from "./questionnaire/questions";
+import { ButtonQuestionnaireFlow, WEIGHTED_QUESTIONS } from "./questionnaire";
 
 import { saveUserResponse } from "../services/sanity/saveUserResponse";
 type Audience = 'student' | 'staff' | 'visitor' | '';
@@ -44,6 +43,7 @@ export default function Survey({
   const [submitting, setSubmitting] = useState(false);
   const [fadeState, setFadeState] = useState<'fade-in' | 'fade-out'>('fade-in');
   const [introActive, setIntroActive] = useState(true);
+  const shouldScrollToSectionRef = useRef(false);
 
   // latches
   const [finished, setFinished] = useState(false); // hide QuestionFlow right after submit
@@ -68,6 +68,23 @@ export default function Survey({
     if (stage !== 'section') setSectionOpen(false);
     return () => { setSectionOpen(false); };
   }, [stage, setSectionOpen]);
+
+  useEffect(() => {
+    if (stage !== 'section' || !shouldScrollToSectionRef.current) return;
+    shouldScrollToSectionRef.current = false;
+
+    const scrollToSection = () => {
+      const target = document.querySelector('.survey-step.section-select');
+      if (!(target instanceof HTMLElement)) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const rafId = window.requestAnimationFrame(() => {
+      window.setTimeout(scrollToSection, 40);
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [stage]);
 
   // Phone detection
   const [isPhone, setIsPhone] = useState(() =>
@@ -182,6 +199,7 @@ export default function Survey({
       });
       return;
     }
+    shouldScrollToSectionRef.current = true;
     transitionTo('section', () => setSurveySection(''));
   };
 
@@ -308,8 +326,7 @@ export default function Survey({
           )}
 
           {stage === 'questions' && !finished && (
-            <QuestionFlow
-              questions={WEIGHTED_QUESTIONS}
+            <ButtonQuestionnaireFlow
               onAnswersUpdate={onAnswersUpdate}
               onSubmit={handleSubmitFromQuestions}
               submitting={submitting}

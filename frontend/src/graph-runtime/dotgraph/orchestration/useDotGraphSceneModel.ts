@@ -89,20 +89,24 @@ export default function useDotGraphSceneModel({
   const shapes: any[] = useDotPoints(safeData, dotPointOptions as any);
   const bagSeed = 'dotgraph-bag-v1';
 
+  const particleFrames = isRealMobile ? 60 : 219;
+  const tileSize = isRealMobile ? 64 : 128;
+  const prewarmLimit = isRealMobile ? 30 : shapes.length;
+
   const prewarmItems = useMemo(
     () =>
-      shapes.map((shape, i) => ({
+      shapes.slice(0, prewarmLimit).map((shape, i) => ({
         avg: Number.isFinite(shape?.averageWeight) ? shape.averageWeight : 0.5,
         orderIndex: i,
         seed: bagSeed,
       })),
-    [shapes]
+    [shapes, prewarmLimit]
   );
 
   useEffect(() => {
     if (!prewarmItems.length) return;
-    prewarmSpriteTextures(prewarmItems, { tileSize: 128, alpha: 215, blend: 0.6, darkMode } as any);
-  }, [prewarmItems, darkMode]);
+    prewarmSpriteTextures(prewarmItems, { tileSize, alpha: 215, blend: 0.6, darkMode } as any);
+  }, [prewarmItems, tileSize, darkMode]);
 
   const posById = useMemo(() => new Map(shapes.map((shape) => [shape._id, shape.position])), [shapes]);
 
@@ -133,6 +137,7 @@ export default function useDotGraphSceneModel({
 
   return {
     isSmallScreen,
+    isRealMobile,
     useDesktopLayout,
     groupRef,
     radius,
@@ -146,5 +151,7 @@ export default function useDotGraphSceneModel({
     spriteScale,
     bleedOf,
     bagSeed,
+    particleFrames,
+    tileSize,
   };
 }

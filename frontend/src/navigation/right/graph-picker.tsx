@@ -13,9 +13,11 @@ import ExpandIcon from "../../assets/svg/expand/ExpandIcon";
 export default function GraphPicker({
   value = "all",
   onChange,
+  onOpenChange,
 }: {
   value?: string;
   onChange?: (id: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { setMenuOpen } = useInteraction();
   const { yourIdsSet, ALL_LABELS, STUDENT_OPTS, STAFF_OPTS, MAIN_OPTS, studentIdSet, staffIdSet, counts } =
@@ -31,8 +33,8 @@ export default function GraphPicker({
   const listRef = useRef<HTMLDivElement>(null);
 
   const VISIBLE_OPTS = useMemo(() => {
-    if (mode === "student") return [{ id: GO_BACK, label: "‹ Back" }, ...STUDENT_OPTS];
-    if (mode === "staff") return [{ id: GO_BACK, label: "‹ Back" }, ...STAFF_OPTS];
+    if (mode === "student") return [{ id: GO_BACK, label: "Back" }, ...STUDENT_OPTS];
+    if (mode === "staff") return [{ id: GO_BACK, label: "Back" }, ...STAFF_OPTS];
     return MAIN_OPTS;
   }, [mode, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS]);
 
@@ -46,7 +48,8 @@ export default function GraphPicker({
 
   useEffect(() => {
     setMenuOpen(open);
-  }, [open, setMenuOpen]);
+    onOpenChange?.(open);
+  }, [open, setMenuOpen, onOpenChange]);
 
   useEffect(() => {
     if (!open) setMode(null);
@@ -177,6 +180,8 @@ export default function GraphPicker({
               const active = idx === activeIndex;
               const isBack = opt.id === GO_BACK;
               const isChooser = opt.id === CHOOSE_STUDENT || opt.id === CHOOSE_STAFF;
+              const isStudentChooser = opt.id === CHOOSE_STUDENT;
+              const isStaffChooser = opt.id === CHOOSE_STAFF;
               const showCount = !(isBack || isChooser);
               const n = counts?.[opt.id] ?? 0;
               const isPersonal = yourIdsSet.has(opt.id) && !NON_PERSONAL_IDS.has(opt.id);
@@ -187,7 +192,7 @@ export default function GraphPicker({
                   key={opt.id}
                   role="option"
                   aria-selected={value === opt.id}
-                  className={`gp-option${active ? " is-active" : ""}${value === opt.id ? " is-selected" : ""}`}
+                  className={`gp-option${active ? " is-active" : ""}${value === opt.id ? " is-selected" : ""}${isStudentChooser ? " gp-option--student-chooser" : ""}${isStaffChooser ? " gp-option--staff-chooser" : ""}${isBack ? " gp-option--back" : ""}`}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => chooseIndex(idx)}
@@ -195,11 +200,11 @@ export default function GraphPicker({
                   {isBack ? (
                     <>
                       <span className="gp-back-icon" aria-hidden>
-                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M9 14L4 9M4 9L9 4M4 9H10.4C13.7603 9 15.4405 9 16.7239 9.65396C17.8529 10.2292 18.7708 11.1471 19.346 12.2761C20 13.5595 20 15.2397 20 18.6V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <polyline points="15 6 9 12 15 18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </span>
-                      <span className="gp-label">{opt.label.replace("‹ ", "")}</span>
+                      <span className="gp-label">Back</span>
                     </>
                   ) : isChooser ? (
                     <>

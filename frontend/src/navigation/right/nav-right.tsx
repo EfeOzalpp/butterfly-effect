@@ -3,6 +3,7 @@ import GraphPicker from "./graph-picker";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
+import { useState } from "react";
 
 const DEFAULT_SECTION = "fine-arts";
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
@@ -11,8 +12,11 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const { isSurveyActive, setSurveyActive, hasCompletedSurvey, observerMode, setObserverMode, openGraph, closeGraph, resetToStart, logsOpen, widgetsOpen } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const windowWidth = useWindowWidth();
+  const [pickerOpen, setPickerOpen] = useState(false);
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
+  const pickerOffset = windowWidth > 768
+    ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio
+    : (pickerOpen ? 0 : -30);
 
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
@@ -57,7 +61,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
 
         {showPicker && (
           <div className="graph-picker" style={{ transform: `translateX(calc(-50% + ${pickerOffset}px))`, transition: "transform 0.2s ease" }}>
-            <GraphPicker value={section} onChange={setSection} />
+            <GraphPicker value={section} onChange={setSection} onOpenChange={setPickerOpen} />
           </div>
         )}
       </div>

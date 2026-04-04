@@ -1,6 +1,6 @@
 // src/components/survey/questions/QuestionFlow.tsx
 import type { Question } from "../types";
-import AnswersList from "./answers-list";
+import SliderInput from "./weight-input";
 import { useQuestionFlowState } from "./useQuestionFlowState";
 
 export default function QuestionFlow({
@@ -34,14 +34,16 @@ export default function QuestionFlow({
           Question {current + 1} of {questions.length}
         </p>
 
-        <AnswersList
-          question={q}
-          sliderVals={slidersByQ[q.id] ?? {}}
-          onSliderChange={handleSliderChange}
-          onCommit={handleCommit}
-          qIndex={current}
-          qTotal={questions.length}
-        />
+        {false && (
+          <SliderInput
+            question={q}
+            sliderVals={slidersByQ[q.id] ?? {}}
+            onSliderChange={handleSliderChange}
+            onCommit={handleCommit}
+            qIndex={current}
+            qTotal={questions.length}
+          />
+        )}
 
         <div className="survey-actions">
           <button

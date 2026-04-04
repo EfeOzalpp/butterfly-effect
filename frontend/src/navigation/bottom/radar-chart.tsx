@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSurveyData } from "../../app/state/survey-data-context";
+import PlayPauseIcon from "../../assets/svg/play/PlayPauseIcon";
 import { GO_BACK, NON_PERSONAL_IDS, useGraphPickerData } from "../right/useGraphPickerData";
 
 const Q_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
@@ -191,7 +192,12 @@ export default function RadarChart() {
           aria-label={paused ? "Resume section autoplay" : "Pause section autoplay"}
           onClick={() => setPaused((cur) => !cur)}
         >
-          <span aria-hidden="true">{paused ? "Play" : "Pause"}</span>
+          <span className="radar-footer-btn__ghost" aria-hidden="true">
+            <PlayPauseIcon mode="play" className="radar-footer-btn__icon" />
+          </span>
+          <span className="radar-footer-btn__inner" aria-hidden="true">
+            <PlayPauseIcon mode={paused ? "play" : "pause"} className="radar-footer-btn__icon" />
+          </span>
         </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/logs.css";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
@@ -27,7 +27,20 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
   const setOpen = onOpenChange;
   const [page, setPage] = useState(0);
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [filterFocused, setFilterFocused] = useState(false);
+  const filterInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    filterInputRef.current?.focus();
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (open) return;
+    setFilterFocused(false);
+    if (!query.trim()) setSearchOpen(false);
+  }, [open, query]);
 
   // Sort ascending by submittedAt (earliest = #1)
   const sorted = useMemo(() => {
@@ -93,6 +106,15 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
     setPage(0);
   }
 
+  function openSearch() {
+    setSearchOpen(true);
+  }
+
+  function closeSearchIfEmpty() {
+    setFilterFocused(false);
+    if (!query.trim()) setSearchOpen(false);
+  }
+
   return (
     <div className="logs-wrap">
       <div className={`logs-popover-shell${open ? " is-open" : ""}`} aria-hidden={!open}>
@@ -100,28 +122,54 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
           <div className="logs-popover" role="dialog" aria-label="Submission logs">
           <div className="logs-header">
             <span className="logs-title">Submission logs</span>
-            <label
-              className={`logs-filter-field${filterFocused ? " is-focused" : ""}`}
-              htmlFor="logs-filter-input"
-              data-focused={filterFocused ? "true" : "false"}
-            >
-              <SearchIcon className="ui-icon" />
-              <input
-                id="logs-filter-input"
-                type="text"
-                className="logs-filter-input"
-                value={query}
-                placeholder={`${sorted.length} entries`}
-                aria-label={filterFocused ? "Filtering submission logs" : "Filter submission logs"}
-                aria-expanded={filterFocused}
-                onFocus={() => setFilterFocused(true)}
-                onBlur={() => setFilterFocused(false)}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setPage(0);
-                }}
-              />
-            </label>
+            <div className="logs-header-tools">
+              {!searchOpen && <span className="logs-entry-count">{sorted.length} logs</span>}
+
+              {searchOpen ? (
+                <label
+                  className={`logs-filter-field${filterFocused ? " is-focused" : ""}`}
+                  htmlFor="logs-filter-input"
+                  data-focused={filterFocused ? "true" : "false"}
+                >
+                  <SearchIcon className="ui-icon" />
+                  <input
+                    ref={filterInputRef}
+                    id="logs-filter-input"
+                    type="text"
+                    className="logs-filter-input"
+                    value={query}
+                    placeholder="search"
+                    aria-label={filterFocused ? "Filtering submission logs" : "Filter submission logs"}
+                    aria-expanded={searchOpen}
+                    onFocus={() => setFilterFocused(true)}
+                    onBlur={closeSearchIfEmpty}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Escape") return;
+                      if (query.trim()) {
+                        setQuery("");
+                        setPage(0);
+                        return;
+                      }
+                      setSearchOpen(false);
+                      setFilterFocused(false);
+                    }}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setPage(0);
+                    }}
+                  />
+                </label>
+              ) : (
+                <button
+                  type="button"
+                  className="logs-filter-trigger"
+                  aria-label="Open log search"
+                  onClick={openSearch}
+                >
+                  <SearchIcon className="ui-icon" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="logs-table-wrap" onWheel={(e) => e.stopPropagation()}>

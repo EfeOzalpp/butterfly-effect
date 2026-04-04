@@ -47,7 +47,13 @@ class ParticleLRU {
   clear() {
     const g = getGlobals();
     for (const { tex } of this.map.values()) {
-      try { tex.dispose(); } catch {}
+      try {
+        if (tex.image instanceof HTMLCanvasElement) {
+          tex.image.width = 0;
+          tex.image.height = 0;
+        }
+        tex.dispose();
+      } catch {}
       try { g.__GP_TEX_REGISTRY.delete(tex); } catch {}
     }
     this.map.clear();

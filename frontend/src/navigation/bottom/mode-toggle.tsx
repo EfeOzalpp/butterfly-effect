@@ -71,7 +71,7 @@ export default function ModeToggle() {
 
   const ToggleCheckIcon = () => (
     <span className="mode-toggle-check">
-      <CheckIcon className="switch-check-icon ui-icon" />
+      <CheckIcon className="switch-check-icon" />
     </span>
   );
 

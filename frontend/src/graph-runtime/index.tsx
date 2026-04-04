@@ -4,6 +4,7 @@ import React, { Suspense, useMemo } from 'react';
 
 import { useSurveyData } from "../app/state/survey-data-context";
 import { GraphDataProvider } from "./GraphDataContext";
+import { useRealMobileViewport } from "../lib/hooks/useRealMobileViewport";
 
 import "../styles/graph.css";
 
@@ -11,8 +12,12 @@ const Graph = React.lazy(() =>
   import(/* webpackChunkName: "graph" */ "./dotgraph/index")
 );
 
+const MOBILE_DATA_LIMIT = 150;
+
 export default function VisualizationPage() {
   const { data } = useSurveyData();
+  const isRealMobile = useRealMobileViewport();
+  const cappedData = isRealMobile ? data.slice(0, MOBILE_DATA_LIMIT) : data;
 
   const pageLoadingFallback = useMemo(
     () => (
@@ -37,7 +42,7 @@ export default function VisualizationPage() {
   );
 
   return (
-    <GraphDataProvider data={data}>
+    <GraphDataProvider data={cappedData}>
       <Suspense fallback={pageLoadingFallback}>
         <Graph />
       </Suspense>

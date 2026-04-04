@@ -10,8 +10,8 @@ import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 import { getPaddingSpecForState } from "../layout/padding";
 import { computeGridCached, type GridCacheState } from "../layout/gridCache";
 
-import { drawBackground, drawFogOverlay, drawRowTopLightOverlay } from "../render/background";
-import { computeFogState, createBottomFogStepper, drawSkyFog } from "../render/fog";
+import { drawBackground, drawBackgroundStarsOnly, drawFogOverlay, drawRowTopLightOverlay, createBgCache, createRowLightCache } from "../render/background";
+import { computeFogState, createBottomFogStepper, drawSkyFog, createSkyFogCache } from "../render/fog";
 import { drawGridOverlay } from "../render/gridOverlay";
 import { getGradientRGB, type PaletteCache } from "../render/palette";
 import { drawGhosts, type Ghost } from "../render/ghosts";
@@ -42,6 +42,7 @@ export type LoopDeps = {
     appearMs: number;
     exitMs: number;
     darkMode: boolean;
+    isRealMobile: boolean;
     fog: boolean;
     debug: DebugFlags;
   };
@@ -92,6 +93,11 @@ export function createEngineTicker(deps: LoopDeps) {
 
   let running = true;
 
+  // Offscreen caches — redrawn only when inputs change, blitted each frame
+  const bgCache = createBgCache();
+  const rowLightCache = createRowLightCache();
+  const skyFogCache = createSkyFogCache();
+
   // Background crossfade state
   const BG_TRANSITION_MS = 50;
   let prevBgSpec: BackgroundSpec | null = null;
@@ -125,13 +131,13 @@ export function createEngineTicker(deps: LoopDeps) {
       const fp = (it as any).footprint;
       const m = gridCache.metrics;
       if (fp != null && m.rowHeights.length > 0) {
-        // Use the bottom row of the footprint — matches footprintToPx which uses
-        // bottomRow as the unit tile (unitH = rowHeights[bottomRow], pxH = f.h * unitH).
-        // Using r0 (top row) caused cell/pxH mismatch on multi-row shapes.
-        const bottomRow = (fp.r0 ?? 0) + (fp.h ?? 1) - 1;
+        // cellH/cell use bottomRow to avoid pxH mismatch on multi-row shapes.
+        // cellW uses r0 (top row) to match cellAnchorToPx2 which uses r0 for x.
+        const r0 = fp.r0 ?? 0;
+        const bottomRow = r0 + (fp.h ?? 1) - 1;
         opts2.cell  = m.rowHeights[bottomRow]  ?? gridCache.cellH;
         opts2.cellH = m.rowHeights[bottomRow]  ?? gridCache.cellH;
-        opts2.cellW = m.cellWPerRow[bottomRow] ?? gridCache.cellW;
+        opts2.cellW = m.cellWPerRow[r0]        ?? gridCache.cellW;
 
       }
 
@@ -157,12 +163,15 @@ export function createEngineTicker(deps: LoopDeps) {
     }
     const liveAvgSignal = inputs.liveAvg;
     if (bgFrom !== null) {
+      // Crossfade: skip cache, draw directly with alpha (rare, ~50ms transition)
       const t = Math.min(1, (now - bgTransitionStart) / BG_TRANSITION_MS);
-      drawBackground(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
-      drawBackground(p, sceneLookup, bgFrom, 1 - t, liveAvgSignal);
+      drawBackground(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, true);
+      drawBackground(p, sceneLookup, bgFrom, 1 - t, liveAvgSignal, true);
+      drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
       if (t >= 1) bgFrom = null;
     } else {
-      drawBackground(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
+      bgCache(p, sceneLookup, currentBgSpec, liveAvgSignal);
+      drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
     }
 
     const spec = getPaddingSpecForState(
@@ -217,7 +226,7 @@ export function createEngineTicker(deps: LoopDeps) {
       ...grid.metrics,
     });
 
-    drawRowTopLightOverlay({
+    rowLightCache({
       p,
       metrics: grid.metrics,
       light: sceneLight,
@@ -261,6 +270,7 @@ export function createEngineTicker(deps: LoopDeps) {
       p,
       metrics: grid.metrics,
       darkMode: style.darkMode,
+      isRealMobile: style.isRealMobile,
     }) : null;
     const bottomFogStepper = fog ? createBottomFogStepper(p, fog) : null;
 
@@ -292,7 +302,7 @@ export function createEngineTicker(deps: LoopDeps) {
     }
 
     if (fog) {
-      drawSkyFog(p, fog);
+      skyFogCache(p, fog);
     }
 
     drawFogOverlay(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);

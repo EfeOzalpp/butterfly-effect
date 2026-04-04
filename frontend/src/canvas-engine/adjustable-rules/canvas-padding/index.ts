@@ -7,10 +7,9 @@ export type { CanvasPaddingSpec } from './helpers';
 
 import { START_PADDING }         from './start';
 import { CITY_PADDING }          from './city';
-import { QUESTIONNAIRE_PADDING } from './questionnaire';
 
 export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, import('./helpers').CanvasPaddingSpec | null>> = {
   start:         START_PADDING,
   city:          CITY_PADDING,
-  questionnaire: QUESTIONNAIRE_PADDING,
+  questionnaire: START_PADDING,
 };
