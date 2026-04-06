@@ -12,8 +12,23 @@ export type { ResolveColsOpts }                   from "./resolveCols";
 
 // ── Tier 2: grid primitives (depend on Tier 1 types only) ──────────────────
 export { cellAnchorToPx2, cellRectToPx2 }         from "./coords";
+export {
+  justifyContentForUiPlacement,
+  resolveUiGridBandPlacement,
+  resolveUiGridPlacement,
+  uiGridPlacementToPx,
+  uiGridRectToPx,
+}                                                 from "./uiPlacement";
 export type { CellSize }                          from "./footprint";
 export type { Footprint, PlaceOpts }              from "./footprint";
+export type {
+  UiGridBandPlacement,
+  UiGridPlacement,
+  UiGridPlacementInput,
+  UiGridPlacementPx,
+  UiGridRect,
+  UiGridResolver,
+}                                                 from "./uiPlacement";
 export {
   rectFromFootprint2,
   pointInFootprint2,

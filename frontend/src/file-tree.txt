@@ -1,0 +1,516 @@
+Folder PATH listing for volume Windows-SSD
+Volume serial number is 8829-2B60
+C:.
+¦   file-tree.txt
+¦   index.tsx
+¦   
++---app
+¦   ¦   error-boundary.tsx
+¦   ¦   main.tsx
+¦   ¦   session.ts
+¦   ¦   store.tsx
+¦   ¦   types.ts
+¦   ¦   useMockBanner.ts
+¦   ¦   
+¦   +---state
+¦           canvas-runtime-context.ts
+¦           identity-context.ts
+¦           interaction-context.ts
+¦           preferences-context.ts
+¦           survey-data-context.ts
+¦           ui-context.ts
+¦           useCanvasRuntimeState.ts
+¦           useIdentityState.ts
+¦           usePreferencesState.ts
+¦           useSurveyDataState.ts
+¦           useUiState.ts
+¦           
++---assets
+¦   +---fonts
+¦   ¦   ¦   fonts1.css
+¦   ¦   ¦   
+¦   ¦   +---heebo
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1E1yysd0mg7UiCXC5VkK8.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1E1yysdUmg7UiCXC5V.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1ECSysd0mg7UiCXC5VkK8.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1ECSysdUmg7UiCXC5V.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiS2sd0mg7UiCXC5VkK8.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiS2sdUmg7UiCXC5V.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysd0mg7UiCXC5VkK8.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysdUmg7UiCXC5V.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1Euyysd0mg7UiCXC5VkK8.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EuyysdUmg7UiCXC5V.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EVyusd0mg7UiCXC5VkK8.woff
+¦   ¦   ¦       NGSpv5_NC0k9P_v6ZUCbLRAHxK1EVyusdUmg7UiCXC5V.woff
+¦   ¦   ¦       
+¦   ¦   +---libre-baskerville
+¦   ¦   ¦       kmKhZrc3Hgbbcjq75U4uslyuy4kn0qNcWx8QDP2V.woff2
+¦   ¦   ¦       kmKhZrc3Hgbbcjq75U4uslyuy4kn0qNcWxEQDA.woff2
+¦   ¦   ¦       kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNXaxMICA.woff2
+¦   ¦   ¦       kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNZaxM.woff2
+¦   ¦   ¦       
+¦   ¦   +---poppins
+¦   ¦   ¦       pxiAyp8kv8JHgFVrJJLmE0tCMPShSkFE.woff
+¦   ¦   ¦       pxiAyp8kv8JHgFVrJJLmE0tDMPShSkFEkm8.woff
+¦   ¦   ¦       pxiAyp8kv8JHgFVrJJLmE0tMMPShSkFEkm8.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLDz8Z11lE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLDz8Z1JlE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLDz8Z1xlE92JQEk.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLEj6Z11lE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLEj6Z1JlE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLEj6Z1xlE92JQEk.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLFj_Z11lE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLFj_Z1JlE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLFj_Z1xlE92JQEk.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLGT9Z11lE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLGT9Z1JlE92JQEl8qw.woff
+¦   ¦   ¦       pxiByp8kv8JHgFVrLGT9Z1xlE92JQEk.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLm21lVF9eIYktMqg.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLm21lVFteIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLm21lVGdeIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmg1hVF9eIYktMqg.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmg1hVFteIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmg1hVGdeIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmr19VF9eIYktMqg.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmr19VFteIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmr19VGdeIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmv1pVF9eIYktMqg.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmv1pVFteIYktMqlap.woff
+¦   ¦   ¦       pxiDyp8kv8JHgFVrJJLmv1pVGdeIYktMqlap.woff
+¦   ¦   ¦       pxiEyp8kv8JHgFVrJJbedHFHGPezSQ.woff
+¦   ¦   ¦       pxiEyp8kv8JHgFVrJJfedHFHGPc.woff
+¦   ¦   ¦       pxiEyp8kv8JHgFVrJJnedHFHGPezSQ.woff
+¦   ¦   ¦       pxiGyp8kv8JHgFVrJJLucHtGOvWDSA.woff
+¦   ¦   ¦       pxiGyp8kv8JHgFVrJJLucXtGOvWDSHFF.woff
+¦   ¦   ¦       pxiGyp8kv8JHgFVrJJLufntGOvWDSHFF.woff
+¦   ¦   ¦       pxiGyp8kv8JHgFVrLPTucHtGOvWDSA.woff
+¦   ¦   ¦       pxiGyp8kv8JHgFVrLPTucXtGOvWDSHFF.woff
+¦   ¦   ¦       pxiGyp8kv8JHgFVrLPTufntGOvWDSHFF.woff
+¦   ¦   ¦       
+¦   ¦   +---roboto
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkaHkaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkAnkaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkBnka.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkBXkaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkC3kaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkCHkaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkCnkaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkCXkaWzU.woff2
+¦   ¦   ¦       KFO5CnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmkenkaWzU.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3-UBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3CUBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3GUBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3iUBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3OUBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMawCUBGEe.woff2
+¦   ¦   ¦       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMaxKUBGEe.woff2
+¦   ¦   ¦       
+¦   ¦   +---roboto-serif
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-w0kpEzi.woff2
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-w8kpEzi.woff2
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-wIkpA (1).woff2
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-wIkpA.woff2
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-wwkpEzi (1).woff2
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-wwkpEzi.woff2
+¦   ¦           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-wYkpEzi.woff2
+¦   ¦           R707jywflP6FLr3gZx7K8UyuXDs9zVwDmXCb8lxYgmuimXPEWoRldX4VgtLDywA8oA.woff2
+¦   ¦           R707jywflP6FLr3gZx7K8UyuXDs9zVwDmXCb8lxYgmuimXPEWoRldX4VgtLHywA.woff2
+¦   ¦           R707jywflP6FLr3gZx7K8UyuXDs9zVwDmXCb8lxYgmuimXPEWoRldX4VgtLIywA8oA (1).woff2
+¦   ¦           R707jywflP6FLr3gZx7K8UyuXDs9zVwDmXCb8lxYgmuimXPEWoRldX4VgtLIywA8oA.woff2
+¦   ¦           R707jywflP6FLr3gZx7K8UyuXDs9zVwDmXCb8lxYgmuimXPEWoRldX4VgtLJywA8oA.woff2
+¦   ¦           R707jywflP6FLr3gZx7K8UyuXDs9zVwDmXCb8lxYgmuimXPEWoRldX4VgtLKywA8oA.woff2
+¦   ¦           
+¦   +---lottie
+¦   ¦       hand.json
+¦   ¦       LottieOption.tsx
+¦   ¦       radio-button.json
+¦   ¦       tree1.json
+¦   ¦       tree2.json
+¦   ¦       tree3.json
+¦   ¦       
+¦   +---svg
+¦       +---check
+¦       ¦       check.svg
+¦       ¦       CheckIcon.tsx
+¦       ¦       
+¦       +---close
+¦       ¦       close.svg
+¦       ¦       CloseIcon.tsx
+¦       ¦       
+¦       +---expand
+¦       ¦       collapse_all.svg
+¦       ¦       ExpandIcon.tsx
+¦       ¦       expand_all.svg
+¦       ¦       
+¦       +---search
+¦       ¦       search.svg
+¦       ¦       SearchIcon.tsx
+¦       ¦       
+¦       +---shared
+¦       ¦       rawSvg.ts
+¦       ¦       
+¦       +---theme
+¦               dark_mode.svg
+¦               light_mode.svg
+¦               ThemeIcon.tsx
+¦               
++---canvas-engine
+¦   ¦   EngineHost.tsx
+¦   ¦   
+¦   +---adjustable-rules
+¦   ¦   ¦   backgrounds.ts
+¦   ¦   ¦   canvasPadding.ts
+¦   ¦   ¦   footprintConditions.ts
+¦   ¦   ¦   resolveCanvasPadding.ts
+¦   ¦   ¦   ruleRegistry.ts
+¦   ¦   ¦   sceneMode.ts
+¦   ¦   ¦   shapeCatalog.ts
+¦   ¦   ¦   
+¦   ¦   +---backgrounds
+¦   ¦   ¦       city.ts
+¦   ¦   ¦       helpers.ts
+¦   ¦   ¦       index.ts
+¦   ¦   ¦       start.ts
+¦   ¦   ¦       
+¦   ¦   +---canvas-padding
+¦   ¦   ¦       city.ts
+¦   ¦   ¦       helpers.ts
+¦   ¦   ¦       index.ts
+¦   ¦   ¦       questionnaire.ts
+¦   ¦   ¦       start.ts
+¦   ¦   ¦       
+¦   ¦   +---placement-rules
+¦   ¦           city.ts
+¦   ¦           helpers.ts
+¦   ¦           index.ts
+¦   ¦           questionnaire.ts
+¦   ¦           start.ts
+¦   ¦           
+¦   +---condition
+¦   ¦       domain.ts
+¦   ¦       types.ts
+¦   ¦       
+¦   +---grid-layout
+¦   ¦       buildGrid.ts
+¦   ¦       coords.ts
+¦   ¦       footprint.ts
+¦   ¦       forbidden.ts
+¦   ¦       gridMath.ts
+¦   ¦       gridMetrics.ts
+¦   ¦       horizonRowHeights.ts
+¦   ¦       index.ts
+¦   ¦       occupancy.ts
+¦   ¦       resolveCols.ts
+¦   ¦       
+¦   +---hooks
+¦   ¦       useCanvasEngine.ts
+¦   ¦       useSceneField.ts
+¦   ¦       useViewportKey.ts
+¦   ¦       
+¦   +---modifiers
+¦   ¦   ¦   context.ts
+¦   ¦   ¦   footprintPx.ts
+¦   ¦   ¦   index.ts
+¦   ¦   ¦   lighting.ts
+¦   ¦   ¦   particlePerspective.ts
+¦   ¦   ¦   
+¦   ¦   +---color-modifiers
+¦   ¦   ¦       adapter.ts
+¦   ¦   ¦       blend.ts
+¦   ¦   ¦       colorspace.ts
+¦   ¦   ¦       effects.ts
+¦   ¦   ¦       fog.ts
+¦   ¦   ¦       gradient.ts
+¦   ¦   ¦       math.ts
+¦   ¦   ¦       stops.ts
+¦   ¦   ¦       style.ts
+¦   ¦   ¦       types.ts
+¦   ¦   ¦       
+¦   ¦   +---particle-systems
+¦   ¦   ¦       particle-1.ts
+¦   ¦   ¦       particle-2.ts
+¦   ¦   ¦       
+¦   ¦   +---shape-modifiers
+¦   ¦           appear.ts
+¦   ¦           geom.ts
+¦   ¦           osc.ts
+¦   ¦           shapeMods.apply.ts
+¦   ¦           shapeMods.math.ts
+¦   ¦           shapeMods.ts
+¦   ¦           shapeMods.types.ts
+¦   ¦           useLerp.ts
+¦   ¦           
+¦   +---multi-canvas-setup
+¦   ¦       hostDefs.ts
+¦   ¦       sceneProfile.ts
+¦   ¦       types.ts
+¦   ¦       
+¦   +---runtime
+¦   ¦   ¦   index.ts
+¦   ¦   ¦   types.ts
+¦   ¦   ¦   
+¦   ¦   +---debug
+¦   ¦   ¦       flags.ts
+¦   ¦   ¦       
+¦   ¦   +---engine
+¦   ¦   ¦       itemLifecycle.ts
+¦   ¦   ¦       loop.ts
+¦   ¦   ¦       registry.ts
+¦   ¦   ¦       scheduler.ts
+¦   ¦   ¦       state.ts
+¦   ¦   ¦       
+¦   ¦   +---layout
+¦   ¦   ¦       bounds.ts
+¦   ¦   ¦       gridCache.ts
+¦   ¦   ¦       padding.ts
+¦   ¦   ¦       
+¦   ¦   +---p
+¦   ¦   ¦       makeP.ts
+¦   ¦   ¦       
+¦   ¦   +---platform
+¦   ¦   ¦       mount.ts
+¦   ¦   ¦       resize.ts
+¦   ¦   ¦       viewport.ts
+¦   ¦   ¦       
+¦   ¦   +---render
+¦   ¦   ¦       background.ts
+¦   ¦   ¦       fog.ts
+¦   ¦   ¦       ghosts.ts
+¦   ¦   ¦       gridOverlay.ts
+¦   ¦   ¦       items.ts
+¦   ¦   ¦       palette.ts
+¦   ¦   ¦       
+¦   ¦   +---shapes
+¦   ¦   ¦       draw.ts
+¦   ¦   ¦       registry.ts
+¦   ¦   ¦       zIndex.ts
+¦   ¦   ¦       
+¦   ¦   +---util
+¦   ¦           easing.ts
+¦   ¦           transform.ts
+¦   ¦           
+¦   +---scene-logic
+¦   ¦       candidates.ts
+¦   ¦       composeField.ts
+¦   ¦       constraints.ts
+¦   ¦       index.ts
+¦   ¦       math.ts
+¦   ¦       place.ts
+¦   ¦       scoring.ts
+¦   ¦       types.ts
+¦   ¦       
+¦   +---shapes
+¦   ¦       bus.js
+¦   ¦       car.js
+¦   ¦       carFactory.js
+¦   ¦       clouds.js
+¦   ¦       house.js
+¦   ¦       index.js
+¦   ¦       power.js
+¦   ¦       sea.js
+¦   ¦       snow.js
+¦   ¦       sun.js
+¦   ¦       trees.js
+¦   ¦       villa.js
+¦   ¦       
+¦   +---shared
+¦   ¦       hash32.ts
+¦   ¦       horizon.ts
+¦   ¦       math.ts
+¦   ¦       responsiveness.ts
+¦   ¦       rowHeightBuckets.ts
+¦   ¦       visualState.ts
+¦   ¦       
+¦   +---validation
+¦           defineRuleSet.ts
+¦           index.ts
+¦           invariant.ts
+¦           validateSceneProfile.ts
+¦           warnOnce.ts
+¦           
++---canvas-instances
+¦       CityEntry.tsx
+¦       OnboardingEntry.tsx
+¦       
++---graph-runtime
+¦   ¦   GraphDataContext.tsx
+¦   ¦   index.tsx
+¦   ¦   useGraphData.ts
+¦   ¦   
+¦   +---bargraph
+¦   ¦       EmptyArt.tsx
+¦   ¦       index.tsx
+¦   ¦       
+¦   +---dotgraph
+¦   ¦   ¦   dot-graph.tsx
+¦   ¦   ¦   dotgraph.scoping.ts
+¦   ¦   ¦   index.tsx
+¦   ¦   ¦   
+¦   ¦   +---components
+¦   ¦   ¦       GeneralizedLayer.tsx
+¦   ¦   ¦       GraphLoading.tsx
+¦   ¦   ¦       PersonalizedLayer.tsx
+¦   ¦   ¦       ShapesLayer.tsx
+¦   ¦   ¦       
+¦   ¦   +---event-handlers
+¦   ¦   ¦   ¦   index.ts
+¦   ¦   ¦   ¦   useOrbitController.ts
+¦   ¦   ¦   ¦   
+¦   ¦   ¦   +---compute
+¦   ¦   ¦   ¦       tooltipOffset.ts
+¦   ¦   ¦   ¦       zoomTarget.ts
+¦   ¦   ¦   ¦       
+¦   ¦   ¦   +---hooks
+¦   ¦   ¦   ¦       useActivity.ts
+¦   ¦   ¦   ¦       usePixelOffsets.ts
+¦   ¦   ¦   ¦       useRotation.ts
+¦   ¦   ¦   ¦       useZoom.ts
+¦   ¦   ¦   ¦       
+¦   ¦   ¦   +---shared
+¦   ¦   ¦           sharedGesture.ts
+¦   ¦   ¦           
+¦   ¦   +---hooks
+¦   ¦   ¦       useDotPoints.ts
+¦   ¦   ¦       useDynamicOffset.ts
+¦   ¦   ¦       useHoverBubble.ts
+¦   ¦   ¦       useObserverDelay.ts
+¦   ¦   ¦       useObserverSpotlight.ts
+¦   ¦   ¦       useViewerScope.ts
+¦   ¦   ¦       
+¦   ¦   +---orchestration
+¦   ¦   ¦       useDotGraphPersonalizationGate.ts
+¦   ¦   ¦       useDotGraphPersonalizationModel.ts
+¦   ¦   ¦       useDotGraphSceneModel.ts
+¦   ¦   ¦       useDotGraphTieState.ts
+¦   ¦   ¦       
+¦   ¦   +---utils
+¦   ¦           colorBoost.ts
+¦   ¦           dotPoints.ts
+¦   ¦           dynamicOffset.ts
+¦   ¦           hoverViewport.ts
+¦   ¦           math.ts
+¦   ¦           positions.ts
+¦   ¦           tieGraph.ts
+¦   ¦           
+¦   +---gamification
+¦   ¦       gamification-general.tsx
+¦   ¦       gamification-personal.tsx
+¦   ¦       rankLogic.js
+¦   ¦       
+¦   +---sprites
+¦       ¦   entry.ts
+¦       ¦   
+¦       +---api
+¦       ¦       dispose.ts
+¦       ¦       keys.ts
+¦       ¦       prewarm.ts
+¦       ¦       spriteShape.ts
+¦       ¦       
+¦       +---cache
+¦       ¦       frozenRegistry.ts
+¦       ¦       particleLRU.ts
+¦       ¦       
+¦       +---internal
+¦       ¦       debug-flags.ts
+¦       ¦       epochScheduler.ts
+¦       ¦       spritePolicy.ts
+¦       ¦       spriteRuntime.ts
+¦       ¦       spriteShape.tsx
+¦       ¦       
+¦       +---selection
+¦       ¦       drawers.ts
+¦       ¦       footprints.ts
+¦       ¦       probabilitySpec.ts
+¦       ¦       shapeForAvg.ts
+¦       ¦       types.ts
+¦       ¦       
+¦       +---textures
+¦               animatedTexture.ts
+¦               canvasFacade.ts
+¦               makeTextureFromDrawer.ts
+¦               queue.ts
+¦               registry.ts
+¦               useQueueProgress.ts
+¦               
++---lib
+¦   +---hooks
+¦   ¦       useAbsoluteScore.ts
+¦   ¦       useGamificationPools.ts
+¦   ¦       useGamificationTextPreload.ts
+¦   ¦       usePreventPageZoom.ts
+¦   ¦       useRealMobileViewport.ts
+¦   ¦       useRelativeScore.ts
+¦   ¦       useWindowWidth.ts
+¦   ¦       
+¦   +---utils
+¦           color-and-interpolation.ts
+¦           live-average.ts
+¦           quantize-average.ts
+¦           
++---navigation
+¦   ¦   navigation.tsx
+¦   ¦   
+¦   +---bottom
+¦   ¦       logs-button.tsx
+¦   ¦       mode-toggle.tsx
+¦   ¦       nav-bottom.tsx
+¦   ¦       radar-chart.tsx
+¦   ¦       
+¦   +---left
+¦   ¦       logo.tsx
+¦   ¦       nav-left.tsx
+¦   ¦       
+¦   +---right
+¦           color-toggle.tsx
+¦           graph-picker.tsx
+¦           nav-right.tsx
+¦           system-color.tsx
+¦           useGraphPickerData.ts
+¦           
++---onboarding
+¦   ¦   index.tsx
+¦   ¦   types.ts
+¦   ¦   
+¦   +---questionnaire
+¦   ¦   ¦   answers-list.tsx
+¦   ¦   ¦   question-flow.tsx
+¦   ¦   ¦   questions.ts
+¦   ¦   ¦   useQuestionFlowState.ts
+¦   ¦   ¦   
+¦   ¦   +---weight-input
+¦   ¦           balance.ts
+¦   ¦           geometry.ts
+¦   ¦           index.tsx
+¦   ¦           
+¦   +---role-picker
+¦   ¦       index.tsx
+¦   ¦       role-step.tsx
+¦   ¦       
+¦   +---section-picker
+¦           index.tsx
+¦           sections.js
+¦           
++---services
+¦   +---sanity
+¦           api.ts
+¦           client.ts
+¦           config.ts
+¦           mockData.ts
+¦           normalizeSurveyRow.ts
+¦           saveUserResponse.ts
+¦           sections.ts
+¦           
++---styles
+        fonts.css
+        gamification.css
+        global-styles.css
+        graph-picker.css
+        graph.css
+        logs.css
+        navigation.css
+        onboarding.css
+        ui-system.css
+        widgets.css
+        

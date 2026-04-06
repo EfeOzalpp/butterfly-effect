@@ -190,7 +190,7 @@ const HOUSE = {
 
 const SMOKE = {
   spawnX: [0.10, 0.80],
-  spawnY: [0.30, 0.30],
+  spawnY: [0.02, 0.06],
   count: [36, 22],
   sizeMin: [3, 0],
   sizeMax: [6, 1],
@@ -536,7 +536,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const smokeColW = Math.max(2, Math.round(Math.max(cW, localTileW * 0.18) * smokeScale.columnW));
       const smokeColH = Math.max(Math.round(localTileH * 1.3), Math.round(localTileH * 2 * smokeScale.columnH));
       const smokeX = cx + cW / 2 - smokeColW / 2 + Math.round(smokeColW * 0.12);
-      const smokeY = cy - cH - Math.round(localTileH * 0.7);
+      const smokeY = cy - cH;
       const bottomFadePx = isSprite ? Math.max(0, Math.round(smokeColH - localTileH * 0.7)) : 0;
 
       const spawnX0 = Math.min(val(SMOKE.spawnX, 0), val(SMOKE.spawnX, u));

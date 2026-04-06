@@ -98,7 +98,9 @@
 /* Responsive scaffolding */
 
 @media (max-width: 767px) {
- .logs-table-wrap { max-height: calc(100svh - 8.8rem); }
+ .logs-table-wrap { max-height: calc(100svh - 8.8rem); overflow-x: auto; }
+ .logs-table-wrap .logs-table { width: 620px; table-layout: auto; }
+ .logs-th--section, .logs-td--section { min-width: 120px; max-width: 180px; }
  .logs-popover-shell, .widgets-popover-shell { width: min(540px, calc(100vw - 2.4rem)); }
 }
 

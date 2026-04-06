@@ -85,7 +85,6 @@ export type OrbitReturn = {
 
 export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
   const ROTATE_EVT = 'gp:orbit-rot';
-  const MENU_EVT = 'gp:menu-open'; // listen for InfoPanel open/close
   const DESKTOP_IDLE_MOUSE_DELAY_MS = 4000;
 
   const {
@@ -235,7 +234,7 @@ void lastMouseMoveTsRef;
 
   useFrame((_, delta) => {
     const userInteracting =
-      effectiveDraggingRef.current || isTouchRotatingRef.current || isPinchingRef.current;
+      !!effectiveDraggingRef.current || !!isTouchRotatingRef.current || !!isPinchingRef.current;
 
     const idleActive = isIdleWrapped({ userInteracting, hasInteractedRef, lastActivityRef });
     applyRotationFrame({ idleActive, delta });

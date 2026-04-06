@@ -443,10 +443,11 @@ export function drawRowTopLightOverlay(args: {
   const ctx = p.drawingContext as CanvasRenderingContext2D;
   const horizonRow = resolveHorizonRow(rowHeights);
   const maxBandH = Math.max(4, Math.min(18, p.height * 0.022));
-  const focusRadius = Math.max(p.width * 0.16, Math.min(p.width * 0.72, light.sceneDiag * 0.28));
 
   ctx.save();
   ctx.globalAlpha = alpha;
+
+  const sourceKx = clamp01(light.sourceX / p.width);
 
   for (let r = 0; r < rowHeights.length; r += 1) {
     const rowTop = rowOffsetY[r] ?? 0;
@@ -463,22 +464,18 @@ export function drawRowTopLightOverlay(args: {
     const bandAlpha = 0.27 * verticalK * skyK;
     if (bandAlpha <= 0.003) continue;
 
-    ctx.fillStyle = `rgba(255,255,255,${bandAlpha})`;
-    ctx.fillRect(0, rowTop, p.width, bandH);
+    // horizontal gradient: bright near light source, fading toward edges
+    const peakLeft  = clamp01(sourceKx - 0.18);
+    const peakRight = clamp01(sourceKx + 0.18);
+    const g = ctx.createLinearGradient(0, 0, p.width, 0);
+    g.addColorStop(0,          `rgba(255,255,255,0)`);
+    g.addColorStop(peakLeft,   `rgba(255,255,255,${bandAlpha * 0.45})`);
+    g.addColorStop(sourceKx,   `rgba(255,255,255,${bandAlpha})`);
+    g.addColorStop(peakRight,  `rgba(255,255,255,${bandAlpha * 0.45})`);
+    g.addColorStop(1,          `rgba(255,255,255,0)`);
 
-    const focused = ctx.createRadialGradient(
-      light.sourceX,
-      rowY,
-      0,
-      light.sourceX,
-      rowY,
-      focusRadius
-    );
-    focused.addColorStop(0, `rgba(255,255,255,${bandAlpha * 1.15})`);
-    focused.addColorStop(0.35, `rgba(255,255,255,${bandAlpha * 0.46})`);
-    focused.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = focused;
-    ctx.fillRect(0, rowTop, p.width, bandH * 1.2);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, rowTop, p.width, bandH);
   }
 
   ctx.restore();

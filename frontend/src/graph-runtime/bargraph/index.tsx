@@ -201,9 +201,10 @@ export default function BarGraph() {
                           : '0%',
                     }}
                   >
+                    <div className="percentage-line" aria-hidden="true" />
                     <div className="percentage-indicator">
-                      <p>You</p>
-                      <p>{youPercentile}%</p>
+                      <p className="percentage-indicator-title">You</p>
+                      <p className="percentage-indicator-score">{youPercentile}%</p>
                     </div>
                   </div>
                 )}

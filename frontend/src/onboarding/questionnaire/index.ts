@@ -1,9 +1,8 @@
 // Public API for the questionnaire module.
-// Import from here — do not reach into subfolders directly.
-
-export { default as QuestionFlow } from './question-flow';
+export { default as QuestionFlow } from './weight-input/question-flow';
 export { default as ButtonQuestionnaireFlow } from './button-input/questionnaire-flow';
-export { WEIGHTED_QUESTIONS } from './questions';
-export { default as SliderInput } from './weight-input';
+export { WEIGHTED_QUESTIONS } from './weight-input/questions';
+export { default } from './weight-input/slider';
+export type { SliderInputProps } from './weight-input/slider';
 export { default as LiveAvgButtonGroup } from './button-input';
 export type { LiveAvgButtonChange, LiveAvgButtonItem } from './button-input';

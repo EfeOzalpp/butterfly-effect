@@ -120,11 +120,10 @@
 
 .widgets-panel.bar-graph .bar-graph-container {
   width: 100%;
-  height: 220px;
 }
 
 .widgets-panel.bar-graph .bar-graph-bar {
-  width: 30%;
+  width: 33%;
 }
 
 
@@ -157,6 +156,7 @@
 
 .rc-data {
   fill: var(--ui-bg-surface-selected);
+  fill-opacity: 0.65;
   stroke: var(--ui-text);
   stroke-width: 1.5;
   stroke-linejoin: bevel;
@@ -193,7 +193,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
-  padding: 0.25rem 0.35rem 0 0.35rem;
+  padding: 0.75rem 0.35rem 0 0.35rem;
   border-top: 1px solid var(--ui-border);
   min-height: 40px;
 }
@@ -213,8 +213,6 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  min-width: 28px;
-  height: 32px;
   padding: 0;
   border: none;
   background: none;
@@ -231,43 +229,18 @@
   background: none;
 }
 
-.radar-footer-btn__ghost {
-  grid-area: 1 / 1;
-  display: inline-flex;
+.radar-footer-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  visibility: hidden;
-  padding: 0.35rem 0.45rem;
 }
 
-.radar-footer-btn__inner {
-  grid-area: 1 / 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 100%;
-  height: 100%;
-  padding: 0.35rem 0.45rem;
-  border-radius: inherit;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-
-.radar-footer-btn:hover .radar-footer-btn__inner {
-  background: var(--ui-bg-surface-hover);
-}
-
-.radar-footer-btn__icon {
-  width: 16px;
-  height: 16px;
-  color: currentColor;
-}
-
-.radar-footer-btn__icon path {
-  fill: currentColor;
-}
 
 .radar-footer-btn--pause {
-  min-width: 44px;
+  min-width: 32px;
+  min-height: 24px;
 }
 
 
@@ -304,14 +277,26 @@
 }
 
 @media (max-width: 767px) {
-  /* mobile */
+  .widgets-panel.bar-graph .bar-graph-container {
+  min-height: 400px; max-height: 400px; height: 400px;
+ }
+ .radar-chart-caption { padding: 0.3rem 0;}
+ .widgets-popover-shell { width: min(320px, calc(100vw - 3.2rem)); }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
-  /* tablet */
+  .widgets-panel.bar-graph .bar-graph-container {
+  min-height: 300px; max-height: 300px; height: 300px;
+ }
+ .radar-chart-caption { padding: 0.3rem 0;}
 }
 
 @media (min-width: 1024px) {
+ .widgets-panel.bar-graph .bar-graph-container {
+  min-height: 320px; max-height: 320px; height: 320px;
+ }
+ .radar-chart-caption { padding: 0.3rem 0;}
  .widgets-popover-clip { margin-left: -1px; }
  .widgets-wrap { margin-left: -0.2rem; }
+ .widgets-popover-shell { width: min(290px, calc(100vw - 6.4rem)); }
 }

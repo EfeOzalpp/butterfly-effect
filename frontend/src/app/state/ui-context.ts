@@ -1,5 +1,12 @@
 import { createContext, useContext } from "react";
 
+export type QuestionnaireNavState = {
+  step: number;
+  total: number;
+  nextLabel: string;
+  nextDisabled: boolean;
+};
+
 export type UiState = {
   vizVisible: boolean;
   openGraph: () => void;
@@ -27,6 +34,11 @@ export type UiState = {
   setLogsOpen: (v: boolean) => void;
   widgetsOpen: boolean;
   setWidgetsOpen: (v: boolean) => void;
+  questionnaireNav: QuestionnaireNavState;
+  setQuestionnaireNav: (next: Partial<QuestionnaireNavState>) => void;
+  questionnaireAdvanceTick: number;
+  requestQuestionnaireAdvance: () => void;
+  resetQuestionnaireNav: () => void;
 };
 
 export const UiCtx = createContext<UiState | null>(null);

@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { CondAvgs } from "../types";
+import type { Place } from "../../canvas-engine/grid-layout/occupancy";
 
 export type CanvasRuntimeState = {
   liveAvg: number;
@@ -8,6 +9,8 @@ export type CanvasRuntimeState = {
   commitAllocAvg: (avg?: number) => void;
   condAvgs: CondAvgs;
   setCondAvgs: (avgs: CondAvgs) => void;
+  reservedFootprints: Place[];
+  setReservedFootprints: (next: Place[]) => void;
 };
 
 export const CanvasRuntimeCtx = createContext<CanvasRuntimeState | null>(null);

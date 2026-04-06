@@ -1,5 +1,5 @@
 // src/components/survey/questions/questions.ts
-import type { Question } from '../types';
+import type { Question } from '../../types';
 
 export const WEIGHTED_QUESTIONS: Question[] = [
   {

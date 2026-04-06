@@ -33,15 +33,13 @@ export const BACKGROUNDS_START: BackgroundsByMode = {
       stops: [
         { k: 0.0,  rgba: "rgba(158, 222, 248, 1.0)" },
         { k: 0.20, rgba: "rgba(186, 232, 255, 0.99)", oscK: { amp: 0.03, hz: 0.015 } },
-        { k: 0.40, rgba: "rgba(214, 242, 255, 0.97)" },
-        { k: 0.52, rgba: "rgba(255, 236, 166, 0.95)" },
-        { k: 0.56, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },
+        { k: 0.27, rgba: "rgba(214, 242, 255, 0.97)" },
+        { k: 0.35, rgba: "rgba(255, 236, 166, 0.95)" },
+        { k: 0.54, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },
         { k: 0.75, rgba: "rgba(82, 184, 146, 0.97)", liveBlend: [0.02, 0.08] },
         { k: 0.96, rgba: "rgba(82, 184, 146, 0.97)" },
-        { k: 0.96, rgba: "rgba(120, 156, 102, 1)" },
-        { k: 0.98, rgba: "rgba(120, 156, 102, 1)" },
-        { k: 0.98, rgba: "rgb(248, 240, 234)" },
-        { k: 1.0, rgba: "rgb(248, 240, 234)" },
+        { k: 0.96, rgba: "rgb(93, 173, 148)" },
+        { k: 1, rgba: "rgb(86, 168, 142)" },
       ] as const,
     },
   },
@@ -70,12 +68,12 @@ const START_DARK: BackgroundSpec = {
     to: { xK: 0.5, yK: 1.0 },
     stops: [
       { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },                                     // Adventure times navy sky
-      { k: 0.20, rgba: "rgba(41, 57, 113, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
+      { k: 0.20, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
       { k: 0.40, rgba: "rgba(36, 60, 116, 0.95)" },                                   // mid blue
-      { k: 0.47, rgba: "rgba(64, 118, 165, 0.93)" },                                   // horizon blue
-      { k: 0.58, rgba: "rgba(105, 157, 167, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
+      { k: 0.58, rgba: "rgba(64, 118, 165, 0.93)" },                                   // horizon blue
+      { k: 0.7, rgba: "rgba(105, 157, 167, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
       { k: 0.78, rgba: "rgba(76, 129, 116, 0.97)", liveBlend: [0.02, 0.08] },         // Adventure times teal ground
-      { k: 0.98, rgba: "rgba(84, 120, 103, 0.97)"}, 
+      { k: 0.98, rgba: "rgba(85, 122, 86, 0.97)"}, 
       { k: 0.98,  rgba: "rgba(41, 40, 39, 1)" }, 
       { k: 1.0,  rgba: "rgba(41, 40, 39, 1)" },                                      
     ] as const,
@@ -105,9 +103,7 @@ export const BACKGROUNDS_START_DARK: BackgroundsByMode = {
         { k: 0.47, rgba: "rgba(64, 118, 165, 0.93)" },
         { k: 0.58, rgba: "rgba(105, 157, 167, 0.95)", liveBlend: [0.04, 0.12] },
         { k: 0.78, rgba: "rgba(76, 129, 116, 0.97)", liveBlend: [0.02, 0.08] },
-        { k: 0.98, rgba: "rgba(84, 120, 103, 0.97)"},
-        { k: 0.98,  rgba: "rgba(26, 30, 35, 1)" },
-        { k: 1.0,  rgba: "rgba(26, 30, 35, 1)" },
+        { k: 1, rgba: "rgba(85, 122, 86, 0.97)", liveBlend: [0.08, 0.12] },
       ] as const,
     },
     stars: {

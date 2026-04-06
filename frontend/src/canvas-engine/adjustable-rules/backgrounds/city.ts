@@ -3,17 +3,23 @@
 import type { BackgroundsByMode, BackgroundSpec } from "./helpers";
 
 export const CITY_BACKGROUND: BackgroundSpec = {
-  base: "rgb(214, 224, 244)",
+  base: "rgb(158, 222, 248)",
   overlay: {
     kind: "linear",
-    from: { xK: 0.36, yK: 0.0 },
-    to: { xK: 0.62, yK: 1.0 },
+    from: { xK: 0.5, yK: 0.0 },
+    to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { k: 0.0, rgba: "rgba(247, 249, 255, 1.00)" },
-      { k: 0.18, rgba: "rgba(224, 228, 255, 0.84)" },
-      { k: 0.52, rgba: "rgba(185, 202, 244, 0.62)", liveBlend: [0.12, 0.04] },
-      { k: 0.74, rgba: "rgba(123, 158, 220, 0.44)", liveBlend: [0.18, 0.06] },
-      { k: 1.0, rgba: "rgba(72, 108, 186, 0.82)" },
+      { k: 0.0,  rgba: "rgba(158, 222, 248, 1.0)" },
+      { k: 0.20, rgba: "rgba(186, 232, 255, 0.99)", oscK: { amp: 0.03, hz: 0.015 } },
+      { k: 0.40, rgba: "rgba(214, 242, 255, 0.97)" },
+      { k: 0.52, rgba: "rgba(255, 236, 166, 0.95)" },
+      { k: 0.56, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },
+      { k: 0.75, rgba: "rgba(82, 184, 146, 0.97)", liveBlend: [0.02, 0.08] },
+      { k: 0.96, rgba: "rgba(82, 184, 146, 0.97)" },
+      { k: 0.96, rgba: "rgba(120, 156, 102, 1)" },
+      { k: 0.98, rgba: "rgba(120, 156, 102, 1)" },
+      { k: 0.98, rgba: "rgb(248, 240, 234)" },
+      { k: 1.0,  rgba: "rgb(248, 240, 234)" },
     ] as const,
   },
 } as const;
@@ -27,26 +33,30 @@ export const BACKGROUNDS_CITY: BackgroundsByMode = {
 // ── Dark ─────────────────────────────────────────────────────────────────────
 
 export const CITY_BACKGROUND_DARK: BackgroundSpec = {
-  base: "rgb(17, 19, 35)",
+  base: "rgb(18, 26, 62)",
   overlay: {
     kind: "linear",
-    from: { xK: 0.38, yK: 0.0 },
-    to: { xK: 0.64, yK: 1.0 },
+    from: { xK: 0.5, yK: 0.0 },
+    to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { k: 0, rgba: "#242233" },
-      { k: 0.25, rgba: "#4D5586", oscK: { amp: 0.04, hz: 0.02 } },
-      { k: 0.58, rgba: "#acbdf1" },
-      { k: 0.58, rgba: "rgba(68, 96, 158, 0.95)", liveBlend: [0.24, 0.08] },
-      { k: 1.0, rgba: "#292d3d", oscK: { amp: 0.03, hz: 0.02 } },
+      { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },
+      { k: 0.20, rgba: "rgba(41, 57, 113, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },
+      { k: 0.40, rgba: "rgba(36, 60, 116, 0.95)" },
+      { k: 0.47, rgba: "rgba(64, 118, 165, 0.93)" },
+      { k: 0.58, rgba: "rgba(105, 157, 167, 0.95)", liveBlend: [0.04, 0.12] },
+      { k: 0.78, rgba: "rgba(76, 129, 116, 0.97)", liveBlend: [0.02, 0.08] },
+      { k: 0.98, rgba: "rgba(84, 120, 103, 0.97)" },
+      { k: 0.98, rgba: "rgba(41, 40, 39, 1)" },
+      { k: 1.0,  rgba: "rgba(41, 40, 39, 1)" },
     ] as const,
   },
   stars: {
-    count: [10, 18],
-    topBandK: 0.34,
-    minR: 0.8,
-    maxR: 1.7,
-    alpha: [[0.05, 0.3], [0.16, 0.54]],
-    flickerHz: [[0.34, 0.78], [0.12, 0.26]],
+    count: [24, 36],
+    topBandK: 0.3,
+    minR: 0.9,
+    maxR: 2.1,
+    alpha: [[0.5, 1.5], [0.6, 1.6]],
+    flickerHz: [[0.42, 0.98], [0.14, 0.34]],
   },
 } as const;
 

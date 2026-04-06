@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePreferences } from '../../app/state/preferences-context';
 
-const ROOT_ID = 'gp-darkmode-root';
+const ROOT_ID = 'darkmode-root';
 
 export default function DarkMode() {
   const { darkMode } = usePreferences();

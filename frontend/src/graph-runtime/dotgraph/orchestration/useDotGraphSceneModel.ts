@@ -124,7 +124,10 @@ export default function useDotGraphSceneModel({
 
   const spriteScale = useMemo(() => {
     const denom = Math.max(1e-6, maxRadius - minRadius);
-    const t = Math.max(0, Math.min(1, (radius - minRadius) / denom));
+    // Quantize to 32 steps so zoom re-renders happen at discrete thresholds
+    // rather than every frame, preventing per-frame remount of ShapesLayer sprites
+    const tRaw = Math.max(0, Math.min(1, (radius - minRadius) / denom));
+    const t = Math.round(tRaw * 32) / 32;
     const SCALE_MIN = 8;
     const SCALE_MAX = 13.5;
     return nonlinearLerp(SCALE_MAX, SCALE_MIN, t);

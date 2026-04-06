@@ -474,8 +474,8 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   /* === TURBINE MODE === */
 
   const insetX   = Math.round(pxW * val(POWER.mast.insetX, u));
-  const baseW    = Math.max(6, Math.round(pxW * val(POWER.mast.widthK, u)));
-  const waistW   = Math.max(4, Math.round(baseW * val(POWER.mast.waistK, u)));
+  const baseW    = Math.max(Math.min(3, Math.round(localTileW * 0.18)), Math.round(pxW * val(POWER.mast.widthK, u)));
+  const waistW   = Math.max(Math.min(2, Math.round(localTileW * 0.14)), Math.round(baseW * val(POWER.mast.waistK, u)));
   const topRFrac = val(POWER.mast.topRound, u);
 
   const groundTop   = pxY + pxH;
@@ -503,7 +503,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   if (opts.gradientRGB) mastTint2 = blendRGB(mastTint2, opts.gradientRGB, 0.10);
   mastTint2 = applyExposureContrast(mastTint2, ex, ct);
 
-  const hubR   = Math.max(3, Math.round(localTileW * val(POWER.rotor.hubRk, u)));
+  const hubR   = Math.max(Math.min(2, Math.round(localTileW * 0.10)), Math.round(localTileW * val(POWER.rotor.hubRk, u)));
   const hubCx  = cxTile;
   const hubCy  = mastTopY + Math.round(mastH * val(POWER.rotor.hubYOffsetK, u));
 
@@ -552,7 +552,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
 
   {
     p.push();
-    p.strokeWeight(3);
+    p.strokeWeight(Math.max(1, Math.round(localTileW * 0.08)));
     strokeRgb(p, pal.mastCore, 255);
     p.noFill();
     const lineEndY = capTopY + 2;
@@ -560,8 +560,9 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     p.pop();
   }
 
-  const bladeL = Math.max(hubR * 2, Math.round(localTileW * val(POWER.rotor.bladeLk, u)));
-  const bladeW = Math.max(2, Math.round(localTileW * val(POWER.rotor.bladeWk, u)));
+  const bladeRef = Math.max(localTileW, localTileH);
+  const bladeL = Math.max(hubR * 2, Math.round(bladeRef * val(POWER.rotor.bladeLk, u)));
+  const bladeW = Math.max(3, Math.round(bladeRef * val(POWER.rotor.bladeWk, u)));
   const tipR   = Math.round(bladeW * POWER.rotor.bladeTipRound);
 
   const tSec  = (typeof opts.timeMs === 'number' ? opts.timeMs : (p.millis?.() || 0)) / 1000;
@@ -599,7 +600,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
 
   const lineW   = Math.max(1, Math.round(val(POWER.rotor.line.weight, u)));
   const lineLen = Math.round(bladeL * val(POWER.rotor.line.lenK, u));
-  const lineOff = Math.round(val(POWER.rotor.line.offset, u));
+  const lineOff = Math.round(Math.min(val(POWER.rotor.line.offset, u), hubR * 0.5));
   const lineA   = Math.round(val(POWER.rotor.line.alpha, u));
   const lineY   = Math.round(bladeW / 2 - Math.max(1, lineW));
 

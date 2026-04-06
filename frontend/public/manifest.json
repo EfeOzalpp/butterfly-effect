@@ -3,24 +3,10 @@
   "name": "Butterfly Effect",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "butterfly-habits-logo.svg",
-      "type": "image/svg",
-      "sizes": "192x192"
-    },
-    {
-      "src": "butterfly-habits-logo-mini.svg",
-      "type": "image/svg",
-      "sizes": "768x768"
-    },
-    {
-      "src": "butterfly-habits-logo.png",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "be-icon.svg",
+      "sizes": "256x256",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "start_url": ".",

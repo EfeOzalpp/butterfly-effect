@@ -4,7 +4,7 @@ import type { SceneProfile } from "../multi-canvas-setup/sceneProfile";
 import type { SceneState, BaseMode } from "./sceneMode";
 import { isQuestionnaire } from "./sceneMode";
 
-import { CANVAS_PADDING } from "./canvasPadding";
+import { CANVAS_PADDING }        from './canvas-padding/index';
 import { SHAPE_PLACEMENTS } from "./placement-rules/index";
 import { BACKGROUNDS } from "./backgrounds";
 

@@ -26,8 +26,25 @@ export function placePoolItems(opts: {
   usedRows: number;
   salt: number;
   placements: ScenePlacementRules;
+  reservedFootprints?: FootRect[];
 }): { placed: PlacedItem[] } {
-  const { pool, spec, device, rows, cols, cell, cellW, cellH, ox, oy, usedRows, salt, placements, metrics } = opts;
+  const {
+    pool,
+    spec,
+    device,
+    rows,
+    cols,
+    cell,
+    cellW,
+    cellH,
+    ox,
+    oy,
+    usedRows,
+    salt,
+    placements,
+    metrics,
+    reservedFootprints = [],
+  } = opts;
 
   const { rowHeights, rowOffsetY, colsPerRow, cellWPerRow } = metrics ?? {};
 
@@ -35,6 +52,10 @@ export function placePoolItems(opts: {
   const occ = createOccupancy(rows, cols, (r, c) => isForbidden(r, c), colsPerRow);
   const occClouds = createOccupancy(rows, cols, undefined, colsPerRow);
   const fallbackCells = buildFallbackCells(rows, cols, spec);
+
+  for (const reserved of reservedFootprints) {
+    occ.tryPlaceAt(reserved.r0, reserved.c0, reserved.w, reserved.h);
+  }
 
   const placedAccum: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];
   const placedClouds: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];

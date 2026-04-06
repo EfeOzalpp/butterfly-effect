@@ -1,6 +1,6 @@
 // src/components/survey/questions/QuestionFlow.tsx
-import type { Question } from "../types";
-import SliderInput from "./weight-input";
+import type { Question } from "../../types";
+import SliderInput from "./slider";
 import { useQuestionFlowState } from "./useQuestionFlowState";
 
 export default function QuestionFlow({
@@ -25,7 +25,13 @@ export default function QuestionFlow({
         aria-describedby={`question-progress-${q.id}`}
       >
         <div className={`questions ${slabClass}`}>
-          <h2 className="q-title" id={`question-title-${q.id}`}>{q.prompt}</h2>
+          <h2
+            key={q.id}
+            className="q-title questionnaire-question-title"
+            id={`question-title-${q.id}`}
+          >
+            {q.prompt}
+          </h2>
         </div>
         <p
           id={`question-progress-${q.id}`}

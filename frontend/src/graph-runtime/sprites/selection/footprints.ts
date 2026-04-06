@@ -29,16 +29,16 @@ export const BLEED: Partial<Record<ShapeKey, { top?: number; right?: number; bot
   sun:   { top: 2, bottom: 2, left: 2, right: 2 },
 };
 
-export const VISUAL_SCALE: Partial<Record<ShapeKey, number>> = { car: 0.86, snow: 1.18 };
+export const VISUAL_SCALE: Partial<Record<ShapeKey, number>> = { car: 0.86, snow: 0.9 };
 export const ANCHOR_BIAS_Y: Partial<Record<ShapeKey, number>> = { car: -0.14 };
 
 export const PARTICLE_SHAPES = new Set<ShapeKey>(['snow', 'clouds', 'house', 'sea', 'carFactory', 'power']);
 
 /** Extra pixelScale multiplier passed to frozen texture builder for particle-heavy shapes. */
 export const PARTICLE_SCALE_BOOST: Partial<Record<ShapeKey, number>> = {
-  snow: 2,
+  snow: 1.2,
   clouds: 2.5,
-  sea: 2.5,
+  sea: 1.6,
   house: 2,
 };
 

@@ -38,6 +38,12 @@ function rgbaString(color: FogColor, alpha: number) {
   return `rgba(${color.r},${color.g},${color.b},${clamp01(alpha)})`;
 }
 
+function fogOpacityScaleForRowCount(rowCount: number) {
+  const referenceRows = 18;
+  const rawScale = referenceRows / Math.max(1, rowCount);
+  return Math.max(0.45, Math.min(1, rawScale));
+}
+
 function resolveFogFillStyle(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -113,7 +119,7 @@ export function computeFogState(args: {
   if (metrics.rowHeights.length <= 2) return null;
 
   const horizonRow = resolveHorizonRow(metrics.rowHeights);
-  const fogPeakRow = Math.max(0, horizonRow - 2);
+  const fogPeakRow = Math.max(0, horizonRow - 3);
   const fogStartY = metrics.rowOffsetY[fogPeakRow];
   if (!Number.isFinite(fogStartY)) return null;
 
@@ -123,9 +129,10 @@ export function computeFogState(args: {
     fogCanvasH,
   ].filter((y) => Number.isFinite(y) && y > fogStartY);
 
-  const FOG_LAYER_ALPHA = darkMode
-    ? (isRealMobile ? 26 / 255 : 42 / 255)
-    : 26 / 255;
+  const rowCount = metrics.rowHeights.length;
+  const fogOpacityScale = fogOpacityScaleForRowCount(rowCount);
+  const baseFogLayerAlpha = darkMode ? 42 / 255 : 26 / 255;
+  const FOG_LAYER_ALPHA = baseFogLayerAlpha * fogOpacityScale;
   const numBottomFogLayers = bottomFogLayerBoundaries.length;
   const targetHorizonOpacity = numBottomFogLayers > 0
     ? 1 - Math.pow(1 - FOG_LAYER_ALPHA, numBottomFogLayers)
@@ -139,14 +146,14 @@ export function computeFogState(args: {
         ...(isRealMobile
           ? [
               { k: 0.0, color: { r: 18, g: 11, b: 28 } },
-              { k: 0.13, color: { r: 33, g: 28, b: 40 } },
+              { k: 0.16, color: { r: 33, g: 28, b: 40 } },
               { k: 0.55, color: { r: 26, g: 19, b: 31 } },
               { k: 1, color: { r: 14, g: 8, b: 26 } },
             ] as const
           : [
-              { k: 0.0, color: { r: 21, g: 12, b: 32 } },
-              { k: 0.14, color: { r: 50, g: 47, b: 54 } },
-              { k: 0.55, color: { r: 30, g: 22, b: 32 } },
+              { k: 0.0, color: { r: 53, g: 49, b: 49 } },
+              { k: 0.08, color: { r: 57, g: 52, b: 54 } },
+              { k: 0.75, color: { r: 30, g: 18, b: 30 } },
               { k: 1, color: { r: 15, g: 9, b: 30 } },
             ] as const),
       ] as const
@@ -162,9 +169,9 @@ export function computeFogState(args: {
               { k: 1.0,  color: { r: 14, g: 8, b: 26 } },
             ] as const
           : [
-              { k: 0.0, color: { r: 34, g: 25, b: 42 } },
-              { k: 0.14, color: { r: 58, g: 50, b: 65 } },
-              { k: 0.45, color: { r: 34, g: 25, b: 42 } },
+              { k: 0.0, color: { r: 18, g: 12, b: 32 } },
+              { k: 0.08, color: { r: 48, g: 40, b: 55 } },
+              { k: 0.12, color: { r: 34, g: 25, b: 42 } },
               { k: 1.0,  color: { r: 15, g: 9, b: 30 } },
             ] as const),
       ] as const
@@ -241,6 +248,61 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
   return { drawNext, drawUntilDepth, drawRemaining };
 }
 
+export function createSkyFogStepper(p: PLike, fog: FogState) {
+  let skyRowIndex = 0; // starts at top row (r=0), advances toward fogPeakRow
+
+  const drawNext = () => {
+    const r = skyRowIndex;
+    if (r >= fog.fogPeakRow) return;
+    skyRowIndex += 1;
+
+    const rectTop = fog.rowOffsetY[r] ?? 0;
+    const rectBottom = fog.fogStartY;
+    const rectH = rectBottom - rectTop;
+    if (rectH <= 0) return;
+
+    const layersFromHorizon = fog.fogPeakRow - 1 - r;
+    const horizonFogBlendK =
+      layersFromHorizon === 0 ? 1 :
+      layersFromHorizon === 1 ? 0.75 :
+      layersFromHorizon === 2 ? 0.6 :
+      0;
+    const gradientStops = fog.skyFogGradient
+      ? (horizonFogBlendK > 0
+          ? blendGradientStopsTowardFog(fog.skyFogGradient, fog.fogColor, horizonFogBlendK)
+          : fog.skyFogGradient)
+      : null;
+
+    drawFogBand({
+      p,
+      top: rectTop,
+      height: rectH,
+      alpha255: Math.round(fog.skyLayerAlpha * 255),
+      featherEdge: "top",
+      color: fog.fogColor,
+      gradientStops,
+    });
+  };
+
+  // draw all sky fog layers up to (but not including) the row containing depthY
+  const drawUntilDepth = (depthY: number) => {
+    while (
+      skyRowIndex < fog.fogPeakRow &&
+      (fog.rowOffsetY[skyRowIndex] ?? 0) <= depthY
+    ) {
+      drawNext();
+    }
+  };
+
+  const drawRemaining = () => {
+    while (skyRowIndex < fog.fogPeakRow) {
+      drawNext();
+    }
+  };
+
+  return { drawNext, drawUntilDepth, drawRemaining };
+}
+
 // Offscreen cache for drawSkyFog — pure gradient geometry, no time dependency.
 export function createSkyFogCache() {
   let offscreen: HTMLCanvasElement | null = null;
@@ -283,10 +345,9 @@ export function drawSkyFog(p: PLike, fog: FogState) {
     if (rectH <= 0) continue;
     const layersFromHorizon = fog.fogPeakRow - 1 - r;
     const horizonFogBlendK =
-      layersFromHorizon === 0 ? 0.9 :
-      layersFromHorizon === 1 ? 0.7 :
-      layersFromHorizon === 2 ? 0.25 :
-      layersFromHorizon === 3 ? 1 :
+      layersFromHorizon === 0 ? 1:
+      layersFromHorizon === 1 ? 0.75 :
+      layersFromHorizon === 2 ? 0.6 :
       0;
     const gradientStops = fog.skyFogGradient
       ? (

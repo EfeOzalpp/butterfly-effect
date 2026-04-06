@@ -11,8 +11,8 @@ const W = 260;
 const H = 240;
 const CX = W / 2;
 const CY = 122;
-const R = 82;
-const LABEL_R = R + 16;
+const R = 100;
+const LABEL_R = R + 18;
 const VALUE_OFFSET = 10;
 const TICKS = [0.2, 0.4, 0.6, 0.8, 1.0];
 const AUTOPLAY_MS = 2600;
@@ -165,7 +165,7 @@ export default function RadarChart() {
         })}
       </svg>
 
-      <p className="radar-chart-caption">Sustainability score per question for this group</p>
+      <p className="radar-chart-caption">Sustainability score per question</p>
 
       <div className="radar-chart-footer">
         <button
@@ -174,7 +174,9 @@ export default function RadarChart() {
           aria-label="Previous section"
           onClick={() => stepSection(-1)}
         >
-          <span aria-hidden="true">‹</span>
+          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="15 6 9 12 15 18" />
+          </svg>
         </button>
         <div className="radar-footer-section" title={currentSectionLabel}>{currentSectionLabel}</div>
         <button
@@ -183,7 +185,9 @@ export default function RadarChart() {
           aria-label="Next section"
           onClick={() => stepSection(1)}
         >
-          <span aria-hidden="true">›</span>
+          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
         </button>
         <button
           type="button"
@@ -192,12 +196,7 @@ export default function RadarChart() {
           aria-label={paused ? "Resume section autoplay" : "Pause section autoplay"}
           onClick={() => setPaused((cur) => !cur)}
         >
-          <span className="radar-footer-btn__ghost" aria-hidden="true">
-            <PlayPauseIcon mode="play" className="radar-footer-btn__icon" />
-          </span>
-          <span className="radar-footer-btn__inner" aria-hidden="true">
-            <PlayPauseIcon mode={paused ? "play" : "pause"} className="radar-footer-btn__icon" />
-          </span>
+          <PlayPauseIcon mode={paused ? "play" : "pause"} className="ui-icon" />
         </button>
       </div>
     </div>

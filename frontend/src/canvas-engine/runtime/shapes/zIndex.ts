@@ -11,5 +11,5 @@ export const Z_INDEX: Record<string, number> = {
   bus: 11,
   sun: 0,
   trees: 12,
-  clouds: 9,
+  clouds: 1,
 };

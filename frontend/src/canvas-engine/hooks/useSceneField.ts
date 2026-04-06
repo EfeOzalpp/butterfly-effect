@@ -14,6 +14,7 @@ import { backgroundForTheme } from "../adjustable-rules/backgrounds";
 
 import { getViewportSize } from "../shared/responsiveness";
 import { usePreferences } from "../../app/state/preferences-context";
+import type { Place } from "../grid-layout/occupancy";
 
 type Engine = {
   ready: React.RefObject<boolean>;
@@ -57,6 +58,7 @@ export function useSceneField(
   hostId: HostId,
   allocAvg: number | undefined,
   signals: SceneSignals,
+  reservedFootprints: Place[] | undefined,
   viewportKey?: number | string
 ) {
   const [canvasResizeTick, setCanvasResizeTick] = useState(0);
@@ -136,6 +138,7 @@ export function useSceneField(
       padding: profile.padding,
       placements: profile.placements,
       allocAvg,
+      reservedFootprints,
       viewportKey,
       ruleWidthPx,
       canvas: { w, h },
@@ -167,6 +170,7 @@ export function useSceneField(
     sceneLookupKey,
     sceneState.baseMode,
     profile,
+    reservedFootprints,
     darkMode,
     isRealMobile,
   ]);

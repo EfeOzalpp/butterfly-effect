@@ -287,7 +287,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   // grass (two blocks with seeded tall side)
   const blockCount = Math.max(1, f.w);
   const colW = pxW / blockCount;
-  const baseGrassH = Math.max(1, Math.round(localTileH / 3));
+  const baseGrassH = Math.max(1, Math.min(Math.round(localTileH / 3), Math.round(pxH * 0.10)));
   const tallK = 1.55;
 
   const leftIsTaller = seeded01(seedKey, 'grassSide') < 0.5;

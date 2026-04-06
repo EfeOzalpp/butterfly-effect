@@ -51,9 +51,21 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     vizVisible, openGraph, closeGraph, setVizVisible,
     logsOpen, setLogsOpen,
     widgetsOpen, setWidgetsOpen,
+    questionnaireNav, setQuestionnaireNav,
+    questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
   } = useUiState();
 
-  const { liveAvgState, setLiveAvg, allocAvgState, commitAllocAvg, condAvgsState, setCondAvgs, resetCanvasRuntimeState } = useCanvasRuntimeState();
+  const {
+    liveAvgState,
+    setLiveAvg,
+    allocAvgState,
+    commitAllocAvg,
+    condAvgsState,
+    setCondAvgs,
+    reservedFootprintsState,
+    setReservedFootprints,
+    resetCanvasRuntimeState,
+  } = useCanvasRuntimeState();
 
   const { counts, allRows, data, allFilteredRows, loading, subscribeToSurveyData } = useSurveyDataState({ section, mySection, setSection });
 
@@ -134,15 +146,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       radarMode, setRadarMode,
       logsOpen, setLogsOpen,
       widgetsOpen, setWidgetsOpen,
+      questionnaireNav, setQuestionnaireNav,
+      questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vizVisible, isSurveyActive, hasCompletedSurvey, questionnaireOpen, sectionOpen, cityPanelOpen, observerMode, animationVisible, openPersonalized, radarMode, resetToStart, logsOpen, widgetsOpen]
+    [vizVisible, isSurveyActive, hasCompletedSurvey, questionnaireOpen, sectionOpen, cityPanelOpen, observerMode, animationVisible, openPersonalized, radarMode, resetToStart, logsOpen, widgetsOpen, questionnaireNav, questionnaireAdvanceTick]
   );
 
   const canvasRuntimeValue = useMemo<CanvasRuntimeState>(
-    () => ({ liveAvg: liveAvgState, setLiveAvg, allocAvg: allocAvgState, commitAllocAvg, condAvgs: condAvgsState, setCondAvgs }),
+    () => ({
+      liveAvg: liveAvgState,
+      setLiveAvg,
+      allocAvg: allocAvgState,
+      commitAllocAvg,
+      condAvgs: condAvgsState,
+      setCondAvgs,
+      reservedFootprints: reservedFootprintsState,
+      setReservedFootprints,
+    }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [liveAvgState, allocAvgState, condAvgsState]
+    [liveAvgState, allocAvgState, condAvgsState, reservedFootprintsState]
   );
 
   const identityValue = useMemo<IdentityState>(

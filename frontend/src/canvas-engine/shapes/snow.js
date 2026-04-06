@@ -77,8 +77,8 @@ const SNOW = {
   spawnY: [0.00, 0.30],
 
   count:   [14, 26],
-  sizeMin: [0.4, 1.4],
-  sizeMax: [1.2, 2.2],
+  sizeMin: [0.6, 1.8],
+  sizeMax: [1.6, 2.8],
 
   lifeMin: [1.4, 8.0],
   lifeMax: [2.4, 12.0],

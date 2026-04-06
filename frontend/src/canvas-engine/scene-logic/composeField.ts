@@ -88,6 +88,7 @@ export function composeField(opts: ComposeOpts): ComposeResult {
     salt,
     placements: opts.placements,
     metrics,
+    reservedFootprints: opts.reservedFootprints,
   });
 
   return { placed, meta };

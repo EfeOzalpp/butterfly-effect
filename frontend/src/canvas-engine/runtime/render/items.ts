@@ -32,7 +32,8 @@ export function drawItems(params: {
   shapeKeyOfItem: (it: EngineFieldItem) => string;
   onGhost?: (g: Ghost) => void;
   onBeforeGroundItem?: (args: { depth: number }) => void;
-  onAfterRowGroup?: (args: { previousDepth: number; nextDepth: number }) => void; // called between consecutive ground row groups for fog interleaving
+  onAfterRowGroup?: (args: { previousDepth: number; nextDepth: number }) => void;
+  onBeforeSkyItem?: (args: { depth: number }) => void;
 }) {
   const {
     items,
@@ -50,6 +51,7 @@ export function drawItems(params: {
     onGhost,
     onBeforeGroundItem,
     onAfterRowGroup,
+    onBeforeSkyItem,
   } = params;
 
   if (!visible || !items.length) return;
@@ -80,6 +82,9 @@ export function drawItems(params: {
     const itZ = Z[it.shape] ?? 9;
     const itBand = itZ < 2 ? 0 : 1;
     const itDepth = gridMetrics && it.footprint ? metricsDepth(gridMetrics, it.footprint) : (it as any).y;
+    if (onBeforeSkyItem && itBand === 0) {
+      onBeforeSkyItem({ depth: itDepth });
+    }
     if (onBeforeGroundItem && itBand === 1) {
       onBeforeGroundItem({ depth: itDepth });
     }

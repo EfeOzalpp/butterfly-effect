@@ -181,12 +181,12 @@ const Graph = () => {
   const isNarrow = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   const lowFidelity = isRealMobile || isNarrow;
 
-  // DPR clamp (tighter on iOS)
+  // DPR clamp — allow up to 3 on mobile (high-DPI phones), up to 2 on desktop
   const dpr = useMemo(() => {
     const max = typeof window !== 'undefined' ? window.devicePixelRatio || 1.5 : 1.5;
-    const hi = isIOS ? Math.min(1.5, max) : Math.min(2, max);
+    const hi = isRealMobile ? Math.min(3, max) : Math.min(2, max);
     return [1, hi] as [number, number];
-  }, [lowFidelity]);
+  }, [isRealMobile]);
 
   // Fresh Canvas per open (new WebGL context every time)
   const [mountVersion, setMountVersion] = useState(0);

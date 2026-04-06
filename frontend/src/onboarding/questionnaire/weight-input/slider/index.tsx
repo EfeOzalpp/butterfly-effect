@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import type { Question } from '../../../types';
-import { defaultSliderVal } from '../../useQuestionFlowState';
+import { defaultSliderVal } from '../useQuestionFlowState';
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 

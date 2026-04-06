@@ -4,7 +4,7 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--font-title); font-optical-sizing:
 
 h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 320; }
 h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); letter-spacing: -0.08rem; font-weight: 300; }
-h3 { font-size: var(--type-h3-size); line-height: var(--type-tight-line); font-weight: 300; }
+h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 300; }
 h4 { font-size: var(--type-h4-size); line-height: var(--tyle-h4-line); font-weight: 420; }
 
 p, li, label, input, select, textarea { font-family: var(--font-body); font-size: var(--type-p-size); line-height: var(--type-body-line); font-weight: var(--font-ui-weight); color: var(--ui-text); }
@@ -100,6 +100,26 @@ button.next-button:hover .next-button__inner { padding: var(--btn-primary-paddin
 .section-continue-button__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); border-radius: inherit; transition: padding 120ms ease, background-color 120ms ease, box-shadow 120ms ease; padding: var(--btn-primary-padding); background: var(--btn-primary-bg); }
 
 button.questionnaire:hover .questionnaire__inner { padding: var(--btn-primary-padding-hover); background: var(--btn-primary-hover-bg); box-shadow: 0 0 24px var(--btn-box-shadow); }
+
+button.questionnaire:disabled,
+button.questionnaire.is-disabled,
+button.questionnaire[aria-disabled="true"] { cursor: default; }
+
+button.questionnaire:disabled .questionnaire__inner,
+button.questionnaire.is-disabled .questionnaire__inner,
+button.questionnaire[aria-disabled="true"] .questionnaire__inner {
+  background: color-mix(in srgb, var(--btn-primary-bg) 52%, black 48%);
+  box-shadow: none;
+  opacity: 0.58;
+}
+
+button.questionnaire:disabled:hover .questionnaire__inner,
+button.questionnaire.is-disabled:hover .questionnaire__inner,
+button.questionnaire[aria-disabled="true"]:hover .questionnaire__inner {
+  padding: var(--btn-primary-padding);
+  background: color-mix(in srgb, var(--btn-primary-bg) 52%, black 48%);
+  box-shadow: none;
+}
 
 button.section-continue-button:hover .section-continue-button__inner { padding: var(--btn-primary-padding-hover); background: var(--btn-primary-hover-bg); box-shadow: 0 0 24px var(--btn-box-shadow); }
 

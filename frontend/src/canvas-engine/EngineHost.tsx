@@ -7,6 +7,7 @@ import { useViewportKey } from "./hooks/useViewportKey";
 import { useSceneField } from "./hooks/useSceneField";
 import { stopCanvasEngine } from "./runtime/index";
 import { useRealMobileViewport } from "../lib/hooks/useRealMobileViewport";
+import type { Place } from "./grid-layout/occupancy";
 
 import { HOST_DEFS, type HostId, type HostDef } from "./multi-canvas-setup/hostDefs";
 
@@ -18,6 +19,7 @@ export function EngineHost({
   allocAvg = 0.5,
   questionnaireOpen = false,
   condAvgs,
+  reservedFootprints,
 }: {
   id: HostId;
   open?: boolean;
@@ -26,6 +28,7 @@ export function EngineHost({
   allocAvg?: number;
   questionnaireOpen?: boolean;
   condAvgs?: Partial<Record<'A' | 'B' | 'C' | 'D', number>>;
+  reservedFootprints?: Place[];
 }) {
   const hostDef = React.useMemo(() => {
     const def = HOST_DEFS[id];
@@ -72,7 +75,14 @@ export function EngineHost({
   const viewportKey = useViewportKey(120);
   const isRealMobile = useRealMobileViewport();
 
-  useSceneField(engine, id, allocAvg, { questionnaireOpen, isRealMobile }, viewportKey);
+  useSceneField(
+    engine,
+    id,
+    allocAvg,
+    { questionnaireOpen, isRealMobile },
+    reservedFootprints,
+    viewportKey
+  );
 
   React.useEffect(() => {
     if (!engine.ready.current) return;

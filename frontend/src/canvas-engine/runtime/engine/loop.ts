@@ -4,7 +4,7 @@ import type { PLike } from "../p/makeP";
 import { normalizeDprTransform, reassertDprTransformIfMutated } from "../util/transform";
 
 import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
 import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 
 import { getPaddingSpecForState } from "../layout/padding";
@@ -97,7 +97,6 @@ export function createEngineTicker(deps: LoopDeps) {
   const bgCache = createBgCache();
   const rowLightCache = createRowLightCache();
   const skyFogCache = createSkyFogCache();
-
   // Background crossfade state
   const BG_TRANSITION_MS = 50;
   let prevBgSpec: BackgroundSpec | null = null;
@@ -225,6 +224,7 @@ export function createEngineTicker(deps: LoopDeps) {
       cellH: grid.cellH,
       ...grid.metrics,
     });
+
 
     rowLightCache({
       p,

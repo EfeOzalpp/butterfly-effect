@@ -153,8 +153,6 @@ export default function SectionPickerIntro({
   useEffect(() => {
     if (!open) return;
     if (openedByPointer.current) setSearch('');
-    const t = setTimeout(() => inputRef.current && inputRef.current.focus(), 0);
-    return () => clearTimeout(t);
   }, [open]);
 
   useEffect(() => {

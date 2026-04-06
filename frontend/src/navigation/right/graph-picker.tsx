@@ -140,10 +140,10 @@ export default function GraphPicker({
     else if (e.key === "Escape") { e.preventDefault(); setOpen(false); buttonRef.current?.focus(); }
   };
 
-  const listboxId = "gp-listbox";
+  const listboxId = "listbox";
 
   return (
-    <div ref={wrapperRef} className="gp-picker">
+    <div ref={wrapperRef} className="picker">
       <div
         ref={buttonRef}
         role="combobox"
@@ -151,28 +151,28 @@ export default function GraphPicker({
         aria-owns={listboxId}
         aria-expanded={open}
         aria-controls={listboxId}
-        aria-activedescendant={VISIBLE_OPTS[activeIndex] ? `gp-opt-${VISIBLE_OPTS[activeIndex].id}` : undefined}
-        className={`gp-trigger ${open ? "is-open" : ""}`}
+        aria-activedescendant={VISIBLE_OPTS[activeIndex] ? `opt-${VISIBLE_OPTS[activeIndex].id}` : undefined}
+        className={`trigger ${open ? "is-open" : ""}`}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={onTriggerKeyDown}
         tabIndex={0}
       >
-        <span className="gp-trigger-label"><h4>{triggerCoreLabel}</h4></span>
-        <span className="gp-trigger-chevron" aria-hidden>
+        <span className="trigger-label"><h4>{triggerCoreLabel}</h4></span>
+        <span className="trigger-chevron" aria-hidden>
           <ExpandIcon expanded={open} className="section-chevron-svg ui-icon" />
         </span>
       </div>
 
       <div
-        className={`gp-listbox-shell ${placement === "down" ? "drop-down" : "drop-up"}${open ? " is-open" : ""}`}
+        className={`listbox-shell ${placement === "down" ? "drop-down" : "drop-up"}${open ? " is-open" : ""}`}
         aria-hidden={!open}
       >
-        <div className="gp-listbox-clip">
+        <div className="listbox-clip">
           <div
             ref={listRef}
             id={listboxId}
             role="listbox"
-            className="gp-listbox"
+            className="listbox"
             tabIndex={-1}
             onKeyDown={onListKeyDown}
           >
@@ -188,39 +188,39 @@ export default function GraphPicker({
 
               return (
                 <div
-                  id={`gp-opt-${opt.id}`}
+                  id={`opt-${opt.id}`}
                   key={opt.id}
                   role="option"
                   aria-selected={value === opt.id}
-                  className={`gp-option${active ? " is-active" : ""}${value === opt.id ? " is-selected" : ""}${isStudentChooser ? " gp-option--student-chooser" : ""}${isStaffChooser ? " gp-option--staff-chooser" : ""}${isBack ? " gp-option--back" : ""}`}
+                  className={`option${active ? " is-active" : ""}${value === opt.id ? " is-selected" : ""}${isStudentChooser ? " option--student-chooser" : ""}${isStaffChooser ? " option--staff-chooser" : ""}${isBack ? " option--back" : ""}`}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => chooseIndex(idx)}
                 >
                   {isBack ? (
                     <>
-                      <span className="gp-back-icon" aria-hidden>
+                      <span className="back-icon" aria-hidden>
                         <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                           <polyline points="15 6 9 12 15 18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </span>
-                      <span className="gp-label">Back</span>
+                      <span className="label">Back</span>
                     </>
                   ) : isChooser ? (
                     <>
-                      <span className="gp-label-wrap">
-                        <span className="gp-label">{opt.label}</span>
+                      <span className="label-wrap">
+                        <span className="label">{opt.label}</span>
                         {(() => {
                           const set = opt.id === CHOOSE_STUDENT ? studentIdSet : staffIdSet;
                           if (!set.has(value)) return null;
                           return (
-                            <span className="gp-selected-child">
+                            <span className="selected-child">
                               {ALL_LABELS.get(value) ?? titleFromId(value)}
                             </span>
                           );
                         })()}
                       </span>
-                      <span className="gp-chooser-icon" aria-hidden>
+                      <span className="chooser-icon" aria-hidden>
                         <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                           <polyline points="9 6 15 12 9 18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
@@ -228,11 +228,11 @@ export default function GraphPicker({
                     </>
                   ) : (
                     <>
-                      <span className="gp-label">
+                      <span className="label">
                         {ALL_LABELS.get(opt.id) ?? titleFromId(opt.id)}
-                        {isPersonal && <span className="gp-you"> (you)</span>}
+                        {isPersonal && <span className="you"> (you)</span>}
                       </span>
-                      {showCount && <span className="gp-count">({n})</span>}
+                      {showCount && <span className="count">({n})</span>}
                     </>
                   )}
                 </div>

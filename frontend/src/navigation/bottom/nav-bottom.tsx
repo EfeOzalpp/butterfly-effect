@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import "../../styles/widgets.css";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
 import { useUiFlow } from "../../app/state/ui-context";
@@ -12,20 +12,46 @@ import RadarChart from "./radar-chart";
 const BarGraph = lazy(() => import("../../graph-runtime/bargraph/index"));
 
 export default function NavBottom({ introActive = false }: { introActive?: boolean }) {
-  const { cityPanelOpen, setCityPanelOpen, questionnaireOpen, radarMode, setRadarMode, vizVisible, logsOpen, setLogsOpen, widgetsOpen, setWidgetsOpen } = useUiFlow();
+  const {
+    cityPanelOpen,
+    setCityPanelOpen,
+    questionnaireOpen,
+    radarMode,
+    setRadarMode,
+    vizVisible,
+    logsOpen,
+    setLogsOpen,
+    widgetsOpen,
+    setWidgetsOpen,
+    questionnaireNav,
+    requestQuestionnaireAdvance,
+  } = useUiFlow();
   const { data } = useSurveyData();
   const windowWidth = useWindowWidth();
   const isNarrow = windowWidth <= 768;
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
   const pickerOffset = windowWidth > 768 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
   const [showHint, setShowHint] = useState(false);
-  const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>(null);
+  const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>("radar");
   const barGraphExpanded = expandedWidget === "bar";
   const radarChartExpanded = expandedWidget === "radar";
   const toggleWidget = (w: "bar" | "radar") => setExpandedWidget((cur) => (cur === w ? null : w));
   const widgetsRef = useRef<HTMLDivElement | null>(null);
   const logsWrapRef = useRef<HTMLDivElement | null>(null);
+  const questionnaireHintTimerRef = useRef<number | null>(null);
   const [logsSlide, setLogsSlide] = useState(0);
+  const [showQuestionnaireDisabledHint, setShowQuestionnaireDisabledHint] = useState(false);
+
+  const flashQuestionnaireDisabledHint = useCallback(() => {
+    if (questionnaireHintTimerRef.current != null) {
+      window.clearTimeout(questionnaireHintTimerRef.current);
+    }
+    setShowQuestionnaireDisabledHint(true);
+    questionnaireHintTimerRef.current = window.setTimeout(() => {
+      setShowQuestionnaireDisabledHint(false);
+      questionnaireHintTimerRef.current = null;
+    }, 2200);
+  }, []);
 
   useEffect(() => {
     if (!vizVisible) {
@@ -43,6 +69,24 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       setLogsSlide(0);
     }
   }, [logsOpen, isNarrow]);
+
+  useEffect(() => {
+    if (!questionnaireNav.nextDisabled) {
+      setShowQuestionnaireDisabledHint(false);
+      if (questionnaireHintTimerRef.current != null) {
+        window.clearTimeout(questionnaireHintTimerRef.current);
+        questionnaireHintTimerRef.current = null;
+      }
+    }
+  }, [questionnaireNav.nextDisabled]);
+
+  useEffect(() => {
+    return () => {
+      if (questionnaireHintTimerRef.current != null) {
+        window.clearTimeout(questionnaireHintTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!cityPanelOpen && !questionnaireOpen && !vizVisible) return null;
 
@@ -181,6 +225,49 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
           </div>
         )}
       </div>
+      {questionnaireOpen && !vizVisible && questionnaireNav.total > 0 && (
+        <div className={`bottom bottom-right${introActive ? " nav-first-enter" : ""}`}>
+          <div className="questionnaire-nav-stack">
+            <p className="q-step-indicator questionnaire-nav-progress">
+              {questionnaireNav.step} / {questionnaireNav.total}
+            </p>
+            <div className="questionnaire-nav-action">
+              <div
+                className={`questionnaire-nav-hint${showQuestionnaireDisabledHint ? " is-visible" : ""}`}
+                role="status"
+                aria-live="polite"
+              >
+                <span>Select at least one answer.</span>
+              </div>
+              <button
+                type="button"
+                className={`questionnaire${questionnaireNav.nextDisabled ? " is-disabled" : ""}`}
+                data-label={questionnaireNav.nextLabel}
+                aria-disabled={questionnaireNav.nextDisabled}
+                onClick={() => {
+                  if (questionnaireNav.nextDisabled) {
+                    flashQuestionnaireDisabledHint();
+                    return;
+                  }
+                  requestQuestionnaireAdvance();
+                }}
+                aria-label={
+                  questionnaireNav.nextLabel === "Finish"
+                    ? "Finish survey and open results"
+                    : "Next question"
+                }
+              >
+                <span className="questionnaire__ghost" aria-hidden="true">
+                  <span>{questionnaireNav.nextLabel}</span>
+                </span>
+                <span className="questionnaire__inner">
+                  <span>{questionnaireNav.nextLabel}</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {vizVisible && (
         <div
           className={`bottom ${isNarrow ? "bottom-mobile-right" : "bottom-center"}`}

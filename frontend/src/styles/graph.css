@@ -106,10 +106,10 @@
   pointer-events: none;
   cursor: default;
 }
-.bar-graph-divider { width: 100%; height: 100%; justify-content: center; align-items: flex-end; }
+.bar-graph-divider { position: relative; width: 100%; height: 100%; justify-content: center; align-items: flex-end; overflow: visible; }
 .bar-graph-container { justify-content: center; align-items: flex-end; height: 100%; }
 .bar-graph-icons { justify-content: space-around; }
-.bar-graph-bar { flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.bar-graph-bar { position: relative; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
 .bar-graph-fill {
   width: 100%;
   height: 0;
@@ -175,6 +175,79 @@
 .percentage-indicator {
   position: absolute;
   pointer-events: none;
+}
+
+.percentage-section {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  overflow: visible;
+}
+
+.percentage-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.16) 12%,
+    rgba(255, 255, 255, 0.08) 26%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-top: 1px solid color-mix(in srgb, var(--hint-text) 28%, transparent);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.06);
+}
+
+.percentage-indicator {
+  top: 0;
+  left: 50%;
+  min-width: 86px;
+  max-width: 112px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--hint-border);
+  border-radius: var(--radius-lg);
+  background: var(--hint-bg);
+  color: var(--hint-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+  text-align: center;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 12px));
+}
+
+.percentage-indicator::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--hint-bg);
+  border: 1px solid var(--hint-border);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.percentage-indicator p {
+  margin: 0;
+  color: var(--hint-text);
+}
+
+.percentage-indicator-title {
+  font-size: var(--type-label-size);
+  line-height: var(--type-tight-line);
+  opacity: 0.86;
+}
+
+.percentage-indicator-score {
+  font-size: clamp(0.86rem, 1vw, 0.96rem);
+  line-height: 1.1;
+  font-weight: 700;
+  margin-top: 0.14rem;
 }
 
 .empty-center {

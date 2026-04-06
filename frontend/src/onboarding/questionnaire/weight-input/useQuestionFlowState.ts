@@ -1,10 +1,10 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import type { Question } from "../types";
-import { simplexSet, simplexNormalize, SIMPLEX_DEFAULT } from "./weight-input/balance";
-import type { ShapeKey } from "./weight-input/balance";
-import { DEFAULT_AVG } from "../../app/store";
-import { useUiFlow } from "../../app/state/ui-context";
-import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
+import type { Question } from "../../types";
+import { simplexSet, simplexNormalize, SIMPLEX_DEFAULT } from "./balance";
+import type { ShapeKey } from "./balance";
+import { DEFAULT_AVG } from "../../../app/store";
+import { useUiFlow } from "../../../app/state/ui-context";
+import { useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
 
 const TRANSITION_MS = 100 as const;
 

@@ -1,84 +1,39 @@
 // src/canvas-engine/adjustable-rules/canvas-padding/city.ts
 
-import { makeRowForbidden, CENTER_100, type CanvasPaddingSpec } from './helpers';
+import { makeRowForbidden, CENTER_100, LR_0, type CanvasPaddingSpec } from './helpers';
 import type { DeviceType } from '../../shared/responsiveness';
 
 export const CITY_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   mobile: {
-    rows: 44,
+    rows: 26,
     useTopRatio: 1,
-    forbidden: makeRowForbidden([
-      CENTER_100, CENTER_100, CENTER_100, CENTER_100,
-      { left: '6%', right: '6%', center: '56%' },
-      { left: '6%', right: '6%', center: '56%' },
-      { left: '6%', right: '6%', center: '56%' },
-      { left: '6%', right: '6%', center: '56%' },
-      { left: '6%', right: '6%', center: '44%' },
-      { left: '6%', right: '6%', center: '44%' },
-      { left: '6%', right: '6%', center: '40%' },
-      { left: '6%', right: '6%', center: '40%' },
-      { left: '6%', right: '6%', center: '34%' },
-      { left: '6%', right: '6%', center: '34%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '6%', right: '6%' },
-      { left: '5%', right: '5%' },
-      { left: '5%', right: '5%' },
-    ]),
+    horizonPos: 0.5,
+    forbidden: makeRowForbidden(
+      Array.from( { length: 20 } , () => ({ ...LR_0}))
+    ),
   },
 
   tablet: {
-    rows: 44,
+    rows: 17,
     useTopRatio: 1,
+    horizonPos: 0.55,
     forbidden: makeRowForbidden([
-      CENTER_100, CENTER_100, CENTER_100,
-      { left: '4%', right: '4%', center: '52%' },
-      { left: '4%', right: '4%', center: '52%' },
-      { left: '4%', right: '4%', center: '52%' },
-      { left: '4%', right: '4%', center: '48%' },
-      { left: '4%', right: '4%', center: '48%' },
-      { left: '4%', right: '4%', center: '40%' },
-      { left: '4%', right: '4%', center: '40%' },
-      { left: '4%', right: '4%', center: '32%' },
-      { left: '4%', right: '4%', center: '32%' },
-      { left: '4%', right: '4%', center: '26%' },
-      { left: '4%', right: '4%', center: '26%' },
+      CENTER_100, CENTER_100,
+      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
+      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
       { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
+      CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
     ]),
   },
 
   laptop: {
-    rows: 18,
+    rows: 19,
     useTopRatio: 1,
-    forbidden: makeRowForbidden([
-      CENTER_100,
-      { left: '5%', right: '4%', center: '34%' },
-      { left: '5%', right: '4%', center: '34%' },
-      { left: '5%', right: '4%', center: '28%' },
-      { left: '5%', right: '4%', center: '28%' },
-      { left: '5%', right: '4%', center: '22%' },
-      { left: '5%', right: '4%', center: '22%' },
-      { left: '5%', right: '4%', center: '18%' },
-      { left: '5%', right: '4%', center: '18%' },
-      { left: '5%', right: '4%' },
-      { left: '5%', right: '4%' },
-      { left: '5%', right: '4%' },
-      { left: '5%', right: '4%' },
-      { left: '5%', right: '4%' },
-      { left: '5%', right: '4%' },
-      { left: '5%', right: '4%' },
-      { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-    ]),
+    horizonPos: 0.55,
+    forbidden: makeRowForbidden(
+      Array.from( { length: 20 } , () => ({ ...LR_0}))
+    ),
   },
 };

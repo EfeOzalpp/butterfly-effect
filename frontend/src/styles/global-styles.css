@@ -6,16 +6,17 @@
   --font-ui-weight: 450;
   --fw-bold: 500;
 
-  --type-h1-size: clamp(3.2rem, 3.25rem + 2.1vw, 5.6rem);
-  --type-h2-size: clamp(1.45rem, 1.25rem + 0.75vw, 2rem);
+  --type-h1-size: clamp(3.2rem, 3.65rem + 1.8vw, 7.2rem);
+  --type-h2-size: clamp(1.6rem, 1.25rem + 1.2vw, 2.4rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.82rem, 0.90rem + 0.3vw, 1rem);
   --type-p-size: 0.98rem;
   --type-small-size: 0.94rem;
   --type-label-size: 0.9rem;
 
-  --type-h-line: 1.2;
+  --type-h-line: 1.15;
   --type-h2-line: 1.42;
+  --type-h3-line: 1.65;
   --type-body-line: 1.4;
   --tyle-h4-line: 1.4;
   --type-tight-line: 1.25;
@@ -41,14 +42,16 @@
   /* input active */
   --active-accent-color: #7fba7e;
   --active-accent-color-hover:#70a56f;
-  --inactive-accent-color: #d8cac2;
-  --inactive-accent-color-hover: #c1b0a5;
+  --inactive-accent-color: #d7cac1;
+  --inactive-accent-color-hover: #c4b5aa;
 
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
   --btn-drop-shadow: #ffffff;
 
   /* Text and misc color */
   --ui-text-title: rgba(51, 155, 224, 0.6); 
+  --ui-questionnaire-title: linear-gradient(180deg, #deebf2e3 0%, #547690 50%);
+  
   --ui-text: #000000;
   --ui-text-secondary: #35453c;
   --ui-text-muted: #4b5563;
@@ -64,8 +67,8 @@
   --ui-icon-subtle-fill: var(--ui-icon-subtle);
   --ui-icon-subtle-stroke: var(--ui-icon-subtle);
   --ui-close-fill: rgb(63, 63, 63);
-  --ui-gp-chooser-fill: rgb(40, 108, 56);
-  --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
+  --ui-chooser-fill: rgb(40, 108, 56);
+  --ui-trigger-chevron-fill: rgb(79, 85, 81);
   --ui-check-fill: rgb(40, 108, 56);
 
   --scroll-bar: rgb(195, 195, 195);
@@ -129,28 +132,25 @@
   --ui-bg-onboarding: #161616;
 
   /* Main UI surface colors */
-  --ui-bg-surface: #484743;
+  --ui-bg-surface: #434241;
   --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
-  --ui-bg-surface-hover: #3a3a3a;
+  --ui-bg-surface-hover: #706a6884;
   --ui-bg-surface-selected: rgb(70, 117, 82);
 
   /* input fields color */
-  --ui-bg-input: #615b59;
-  --ui-bg-input-hover: #706c68;
+  --ui-bg-input: #706a68;
+  --ui-bg-input-hover: #5b5854;
 
   /* input active */
   --active-accent-color: #6d976c;
   --active-accent-color-hover: #6d976c;
   --inactive-accent-color: #524c48;
-  --inactive-accent-color-hover: #64605d;
+  --inactive-accent-color-hover: #706a68;
   --ui-bg-surface-active: #474747;
 
   --ui-drop-shadow: rgba(0, 0, 0, 0.4);
   --btn-drop-shadow: #0a0a0a;
   --panel-open-dropdown: 0 8px 32px rgba(23, 23, 23, 1);
-
-  /* Text and misc color */
-  --ui-text-title: linear-gradient(120deg, #b9d5e3df 0%, rgba(88, 144, 187, 0.726) 50%);
 
   --ui-text: #ffffff;
   --ui-text-secondary: rgba(255, 255, 255, 0.85);
@@ -167,8 +167,8 @@
   --ui-icon-subtle-fill: var(--ui-icon-subtle);
   --ui-icon-subtle-stroke: var(--ui-icon-subtle);
   --ui-close-fill: #ffffff;
-  --ui-gp-chooser-fill: rgb(40, 108, 56);
-  --ui-gp-trigger-chevron-fill: rgb(79, 85, 81);
+  --ui-chooser-fill: rgb(40, 108, 56);
+  --ui-trigger-chevron-fill: rgb(79, 85, 81);
   --ui-check-fill: rgb(40, 108, 56);
   --scroll-bar: #595959;
   --ui-error: #ff8f8f;
@@ -212,7 +212,7 @@
   --hint-svg: var(--hint-text); 
 
   /* Graph */
-  --graph-bg:#292827;
+  --graph-bg:#232221;
   --inactive-accent-color-border: #1d1c1c;
 
   /* graph signal colors — blue-shifted for dark bg */
@@ -239,9 +239,9 @@
     --space-md: 0.6rem;
     --space-lg: 0.9rem;
 
-    --btn-primary-padding: 0.72rem 1rem;
-    --btn-primary-padding-hover: 0.66rem 1.1rem;
-    --btn-primary-padding-reserve-block: 0.72rem;
+    --btn-primary-padding: 0.9rem 1rem;
+    --btn-primary-padding-hover: 0.72rem 1.1rem;
+    --btn-primary-padding-reserve-block: 0.95rem;
     --btn-primary-padding-reserve-inline: 1.1rem;
 
     --btn-secondary-padding: 0.52rem 0.72rem;
@@ -255,6 +255,11 @@
     --input-padding: 0.72rem 0.85rem;
     --input-padding-hover: 0.68rem 0.95rem;
   }
+  :root[data-theme="dark"] {
+    /* Text and misc color */
+  --ui-text-title: linear-gradient(180deg, #e2eff7e3 0%, rgba(169, 187, 199, 0.708) 50%);
+  --ui-questionnaire-title: linear-gradient(180deg, #e2eff7e3 0%, #dcecf8 33%);
+}
 }
 
 @media (min-width: 769px) {
@@ -284,6 +289,11 @@
     --input-padding: 0.9rem 1rem;
     --input-padding-hover: 0.75rem 1rem;
     }
+    :root[data-theme="dark"] {
+        /* Text and misc color */
+    --ui-text-title: linear-gradient(120deg, #cfe3edf0 0%, #849fb3b9 100%);
+    --ui-questionnaire-title: linear-gradient(180deg, #e2eff7e3 0%, #dcecf8 33%);  
+  }
   }
 
  /* exception informatino label svg */
@@ -328,11 +338,11 @@
     height: 1rem !important;
   }
 
-  .gp-chooser-icon svg.ui-icon, .gp-back-icon svg.ui-icon {
+  .chooser-icon svg.ui-icon, .back-icon svg.ui-icon {
     width: 1em !important; 
     height: 1em !important; 
   }
-  .gp-trigger-chevron svg.ui-icon {
+  .trigger-chevron svg.ui-icon {
     width: 1.3em !important;
     height: 1.3em !important;
   }
@@ -350,17 +360,17 @@
   fill: var(--ui-close-fill);
 }
 
-.gp-chooser-icon svg.ui-icon [fill],
-.gp-back-icon svg.ui-icon [fill] {
-  fill: var(--ui-gp-chooser-fill);
+.chooser-icon svg.ui-icon [fill],
+.back-icon svg.ui-icon [fill] {
+  fill: var(--ui-chooser-fill);
 }
 
-.gp-trigger-chevron svg.ui-icon {
+.trigger-chevron svg.ui-icon {
   fill: var(--ui-icon) !important;
 }
 
-.gp-trigger-chevron svg.ui-icon [fill] {
-  fill: var(--ui-gp-trigger-chevron-fill);
+.trigger-chevron svg.ui-icon [fill] {
+  fill: var(--ui-trigger-chevron-fill);
 }
 
 .role-check-icon [fill],

@@ -219,7 +219,7 @@ export function SpriteShape({
   React.useEffect(() => {
     if (!occasionalRefreshMs || !wantsEpochRefresh) return;
     return registerEpochShape({
-      isVisible: () => isVisibleRef.current && fogOpacityRef.current > 0.3,
+      isVisible: () => isVisibleRef.current && fogOpacityRef.current > 0.72,
       tick: () => setRefreshEpochRef.current((e) => e + 1),
     });
   }, [occasionalRefreshMs, wantsEpochRefresh]);
@@ -486,6 +486,8 @@ export function SpriteShape({
   const _frustum = React.useRef(new THREE.Frustum());
   const _projScreenMatrix = React.useRef(new THREE.Matrix4());
   const fogOpacityRef = React.useRef(1);
+  const smoothZoomFadeRef = React.useRef(0);
+  const smoothFogTRef = React.useRef(0);
   const epochTexRef = React.useRef<THREE.CanvasTexture | null>(null);
   React.useEffect(() => {
     return () => { releaseEpochTex(epochTexRef.current); };
@@ -514,10 +516,13 @@ export function SpriteShape({
                 + (_wp.current.z - camera.position.z) * fwdZ;
     const fogNear = cameraToOrigin + 1.5;
     const fogFar  = cameraToOrigin + 24;
-    const fogT = Math.max(0, Math.min(1, (depth - fogNear) / Math.max(1, fogFar - fogNear)));
-    const t = fogT * fogT * (3 - 2 * fogT);
+    const fogTRaw = Math.max(0, Math.min(1, (depth - fogNear) / Math.max(1, fogFar - fogNear)));
+    smoothFogTRef.current += (fogTRaw - smoothFogTRef.current) * 0.10;
+    const t = smoothFogTRef.current * smoothFogTRef.current * (3 - 2 * smoothFogTRef.current);
     // Fade fog out entirely when camera is close — thresholds match scene minRadius (~20)
-    const zoomFade = Math.max(0, Math.min(1, (cameraToOrigin - 25) / 50));
+    const rawZoomFade = Math.max(0, Math.min(1, (cameraToOrigin - 25) / 50));
+    smoothZoomFadeRef.current += (rawZoomFade - smoothZoomFadeRef.current) * 0.07;
+    const zoomFade = smoothZoomFadeRef.current;
     const fogStrength = 0.74;
     const minOpacity = 0.34;
     const newOpacity = Math.max(minOpacity, 1.0 - t * fogStrength * zoomFade);

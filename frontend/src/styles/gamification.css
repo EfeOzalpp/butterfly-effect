@@ -1,14 +1,14 @@
 /* Gamification skeleton */
-.gp-root { opacity: 0; transition: opacity 200ms ease; }
-.gp-root.is-visible { opacity: 1; }
+.personalized-root { opacity: 0; transition: opacity 200ms ease; }
+.personalized-root.is-visible { opacity: 1; }
 
-.gp-toggle { align-items: center; justify-content: center; }
-.gp-toggle-icon { position: relative; width: 18px; height: 18px; line-height: 0; }
-.gp-toggle-icon svg { position: absolute; inset: 0; transition: transform 0.15s ease-out, opacity 0.15s ease-out; }
-.gp-toggle-icon.is-closed .icon-plus { opacity: 1; transform: scale(1) rotate(0deg); }
-.gp-toggle-icon.is-closed .icon-minus { opacity: 0; transform: scale(0.85) rotate(-90deg); }
-.gp-toggle-icon.is-open .icon-plus { opacity: 0; transform: scale(0.85) rotate(90deg); }
-.gp-toggle-icon.is-open .icon-minus { opacity: 1; transform: scale(1) rotate(0deg); }
+.toggle { align-items: center; justify-content: center; }
+.toggle-icon { position: relative; width: 18px; height: 18px; line-height: 0; }
+.toggle-icon svg { position: absolute; inset: 0; transition: transform 0.15s ease-out, opacity 0.15s ease-out; }
+.toggle-icon.is-closed .icon-plus { opacity: 1; transform: scale(1) rotate(0deg); }
+.toggle-icon.is-closed .icon-minus { opacity: 0; transform: scale(0.85) rotate(-90deg); }
+.toggle-icon.is-open .icon-plus { opacity: 0; transform: scale(0.85) rotate(90deg); }
+.toggle-icon.is-open .icon-minus { opacity: 1; transform: scale(1) rotate(0deg); }
 
 .knob-arrow,
 .gam-knob-arrow {
@@ -23,7 +23,7 @@
 }
 
 /* Toggle button anchor used by JS-expanded state */
-.toggle-button.gp-toggle { position: absolute; z-index: 3; pointer-events: all; }
+.toggle-button.toggle { position: absolute; z-index: 3; pointer-events: all; }
 
 /* generalized results general styles */
 .gam-general {
@@ -35,7 +35,7 @@
 }
 .gam-subline,
 .gam-general-copy {
-  margin: 0;
+  margin: 0.2rem 0;
 }
 .gam-inline-lines {
   display: inline-flex;
@@ -46,11 +46,11 @@
 .gam-inline-lines > span {
   display: block;
 }
-.gam-general {
+.gam-general, .gam-general.is-team {
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-hero);
-  padding: var(--space-md);
+  padding: 0 var(--space-md) var(--space-md) var(--space-md);
   height: fit-content;
 }
 
@@ -102,9 +102,23 @@
 .is-left .generalized-result { transform: translateX(var(--offset-px)); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-start; }
 
 /* personalized results orientation */
-.personalized-result { pointer-events: all; transform: translateX(var(--offset-px)); }
-.toggle-button.gp-toggle[aria-expanded="false"] { position: relative; }
-
+.personalized-anchor { transform: translateX(var(--offset-px)); }
+.personalized-result {
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-bg-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-hero);
+  overflow: hidden;
+}
+.personalized-result .gam-general {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.toggle-button.toggle[aria-expanded="false"] { position: relative; }
+.personalized-root { display: flex; align-items: flex-start; justify-content: flex-start; }
 @media screen and (max-width: 767px) {
   /* ALL BOTTOM */
   /* bottom + right */
@@ -112,7 +126,7 @@
   /* bottom + left */
   .is-bottom.is-left .generalized-result { top: -80px; left: 90px; }
   /* bottom + mid */
-  .is-bottom.is-mid .generalized-result { top: -80px; left: 0; }
+  .is-bottom.is-mid .generalized-result { top: -20px; left: 0; }
 
   /* ALL TOP */
   /* top + right */
@@ -120,18 +134,17 @@
   /* top + left */
   .is-top.is-left .generalized-result { top: 65px; left: 90px; }
   /* top + mid */
-  .is-top.is-mid .generalized-result { top: 80px; left: 0; }
+  .is-top.is-mid .generalized-result { top: 20px; left: 0; }
 
   /* CENTRAL BANDS */
   /* left + mid (is-left covers mid when its not is-bottom or is-top) */
-  .is-left .generalized-result { left: -15px; }
+  .is-left .generalized-result { left: 80px; }
   /* right */
-  .is-right .generalized-result { left: -200px; }
+  .is-right .generalized-result { left: -210px; }
 
   /* personalized results */
-  .personalized-result { width: max-content; min-width: 210px; left: -8px; }
-  .toggle-button.gp-toggle { top: -44px; right: 49px; }
-  .toggle-button.gp-toggle[aria-expanded="false"] { top: 0; right: -24px; }
+  .personalized-result { min-width: 150px; max-width: 150px; left: -32px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: 110px; }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1024px) {
@@ -141,7 +154,7 @@
   /* bottom + left */
   .is-bottom.is-left .generalized-result { top: -80px; left: 90px; }
   /* bottom + mid */
-  .is-bottom.is-mid .generalized-result { top: -80px; left: 0; }
+  .is-bottom.is-mid .generalized-result { top: -65px; left: 0; }
 
   /* ALL TOP */
   /* top + right */
@@ -153,14 +166,14 @@
 
   /* CENTRAL BANDS */
   /* left + mid (is-left covers mid when its not is-bottom or is-top) */
-  .is-left .generalized-result { left: 30px; }
+  .is-left .generalized-result { left: 140px; }
   /* right */
-  .is-right .generalized-result { left: -245px; }
+  .is-right .generalized-result { left: -220px; }
 
   /* personalized results */
   .personalized-result { width: max-content; min-width: 280px; left: 165px; }
-  .toggle-button.gp-toggle { top: -67px; right: 47px; }
-  .toggle-button.gp-toggle[aria-expanded="false"] { top: -2px; right: -24px; }
+  .toggle-button.toggle { top: -67px; right: 164px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: -24px; }
 }
 
 @media screen and (min-width: 1025px) {
@@ -184,28 +197,45 @@
   /* CENTRAL BANDS */
   /* left + mid */
   .is-left .generalized-result { left: 170px; }
-  .is-mid .generalized-result { left: 40px; }
+  .is-mid .generalized-result { left: 12px; }
   /* right */
   .is-right .generalized-result { left: -260px; }
 
   /* personalized results */
-  .personalized-result { width: max-content; min-width: 280px; left: 160px; }
-  .toggle-button.gp-toggle { top: -48px; right: 76px; }
-  .toggle-button.gp-toggle[aria-expanded="false"] { top: -2px; right: -24px; }
+  .personalized-result { max-width: 200px; min-width: 200px; left: 32px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: 80px; }
 }
+
+/* Personalized close button — top-right of result panel */
+.personal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--ui-text);
+  font-size: var(--type-label-size);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  flex-shrink: 0;
+}
+.personal-close-btn:hover { background: var(--ui-bg-surface-hover); }
+.personal-close-btn .ui-close { width: 16px; height: 16px; flex: 0 0 auto; }
 
 /* additional */
 /* Color cascades down from root — inner elements inherit */
-.gp-root {
+.personalized-root {
   color: var(--ui-text);
 }
 /* Toggle button — separate interactive element */
-.toggle-button.gp-toggle {
-  background: var(--ui-bg-surface);
+.toggle-button.toggle {
+  background: var(--btn-secondary-bg);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   color: var(--ui-text);
 }
-.toggle-button.gp-toggle:hover {
-  background: var(--ui-bg-surface-hover);
+.toggle-button.toggle:hover {
+  background: var(--btn-secondary-hover-bg);
 }

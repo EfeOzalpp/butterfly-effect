@@ -17,6 +17,7 @@ type PersonalizedLayerProps = {
   myStats: { below: number; equal: number; above: number };
   myClass: { position: string; tieContext: string };
   setPersonalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  viewportClass?: string;
   darkMode?: boolean;
 };
 
@@ -34,6 +35,7 @@ export default function PersonalizedLayer({
   myStats,
   myClass,
   setPersonalOpen,
+  viewportClass,
   darkMode = false,
 }: PersonalizedLayerProps) {
   if (!shouldRenderPersonalUI) return null;
@@ -68,6 +70,7 @@ export default function PersonalizedLayer({
           position={effectiveMyShape.position}
           center
           zIndexRange={[110, 130]}
+          className={viewportClass}
           style={{
             pointerEvents: "none",
             ["--offset-px" as any]: `${offsetPx}px`,

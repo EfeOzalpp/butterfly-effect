@@ -60,7 +60,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
         )}
 
         {showPicker && (
-          <div className="graph-picker" style={{ transform: `translateX(calc(-50% + ${pickerOffset}px))`, transition: "transform 0.2s ease" }}>
+          <div className="graph-picker" style={{ ["--picker-offset" as any]: `${pickerOffset}px`, transition: "transform 0.2s ease" }}>
             <GraphPicker value={section} onChange={setSection} onOpenChange={setPickerOpen} />
           </div>
         )}

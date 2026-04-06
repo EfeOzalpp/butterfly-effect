@@ -33,6 +33,7 @@ export type ComposeOpts = {
   padding: Record<DeviceType, CanvasPaddingSpec | null>;
   placements: ScenePlacementRules;
   allocAvg: number | undefined;
+  reservedFootprints?: FootRect[];
   viewportKey?: number | string;
   ruleWidthPx?: number;
   canvas: { w: number; h: number };
