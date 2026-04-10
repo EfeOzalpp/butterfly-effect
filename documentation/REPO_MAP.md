@@ -3,8 +3,9 @@
 ## Root
 - `frontend/`: React app (UI, survey, canvas engine, graph runtime).
 - `sanity/`: CMS content schema and backend project setup.
+- `supabase/`: edge functions and local Supabase project config.
 - `screenshots+gifs/`: portfolio/demo visuals.
-- `docs/`: architecture and engineering docs.
+- `documentation/`: architecture and engineering docs (renamed from `docs/`).
 
 ## Frontend Source Map
 - `src/app/`
@@ -15,8 +16,8 @@
   - consolidated style entry points and theme variables.
 - `src/navigation/`
   - navigation controls and view toggles.
-- `src/weighted-survey/`
-  - onboarding flow, sliders, role/section selection.
+- `src/onboarding/`
+  - onboarding flow, questionnaire, role/section selection.
 - `src/canvas-engine/`
   - 2D renderer and placement system.
   - `adjustable-rules/`: padding, pools, placement, backgrounds.
