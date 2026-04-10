@@ -86,7 +86,7 @@ export function resolveUiGridBandPlacement(
     placement.h,
     grid.colsPerRow
   );
-  const maxColStart = Math.max(0, refCols - placement.w);
+  const maxColStart = Math.max(0, refCols - placement.w - 1);
   const leftK = Math.max(0, Math.min(1, placement.horizontalK?.[0] ?? 0));
   const rightK = Math.max(leftK, Math.min(1, placement.horizontalK?.[1] ?? 1));
   const cMin = clampInt(Math.floor(refCols * leftK), 0, maxColStart);
