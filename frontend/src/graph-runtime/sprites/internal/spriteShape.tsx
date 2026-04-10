@@ -10,7 +10,8 @@ import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, 
 
 import { DRAWERS } from '../selection/drawers';
 import { houseHasChimney } from '../../../canvas-engine/shapes/house.js';
-import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES, PARTICLE_SCALE_BOOST } from '../selection/footprints';
+import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES, resolveParticleScaleBoost } from '../selection/footprints';
+import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
 import { textureRegistry } from '../textures/registry';
 import { makeTextureFromDrawer } from '../textures/makeTextureFromDrawer';
@@ -31,18 +32,15 @@ function clamp01(v: number) {
 
 const PLACEHOLDER_MATERIAL = new THREE.SpriteMaterial({
   transparent: true,
-  opacity: 0.12,
-  color: '#888888',
+  opacity: 0.24,
+  color: '#a6a6a6',
   depthWrite: false,
   depthTest: false,
   toneMapped: false,
 });
 
-const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();
-function track(tex: THREE.CanvasTexture) {
-  __GLOBAL_TEX.add(tex);
-  return tex;
-}
+import { trackTexture } from '../textures/textureTracker';
+const track = trackTexture;
 
 /** Dispose an epoch texture fully: zeros its canvas backing store (releases 2D context
  *  slot) then disposes the WebGL handle. Epoch textures must NOT go through track() so
@@ -176,6 +174,7 @@ export function SpriteShape({
 
   const TILE = Math.min(tileSize, 128);
   const dpr = resolveDpr(1);
+  const dev = deviceType(getViewportSize().w);
 
   const isParticleShape = PARTICLE_SHAPES.has(shape);
   const [animationReady, setAnimationReady] = React.useState(false);
@@ -202,7 +201,7 @@ export function SpriteShape({
   }, [darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stableSeedKey = React.useMemo(() => {
-    const base = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: PARTICLE_SCALE_BOOST[shape] });
+    const base = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) });
     return `${base}|seed:${shape}|${variant}`;
   }, [shape, TILE, dpr, alphaUse, bucketId, variant, localDarkMode]);
 
@@ -221,11 +220,12 @@ export function SpriteShape({
     return registerEpochShape({
       isVisible: () => isVisibleRef.current && fogOpacityRef.current > 0.72,
       tick: () => setRefreshEpochRef.current((e) => e + 1),
+      intervalMs: occasionalRefreshMs,
     });
   }, [occasionalRefreshMs, wantsEpochRefresh]);
 
   const key = React.useMemo(() => {
-    const staticBase = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: PARTICLE_SCALE_BOOST[shape] });
+    const staticBase = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) });
     // Epoch refreshes always use cheap static textures — frozen rebuilds are too expensive
     if (refreshEpoch > 0) return `${staticBase}|e:${refreshEpoch}`;
     return wantsFrozen
@@ -309,7 +309,7 @@ export function SpriteShape({
         bucketId,
         variant,
         darkMode: localDarkMode,
-        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
       });
 
       const existing = textureRegistry.get(sKey);
@@ -333,7 +333,7 @@ export function SpriteShape({
           seedKey: `${sKey}|seed:${shape}|${variant}`,
           prio: 0,
           darkMode: localDarkMode,
-          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+          pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
         },
         (t) => setIfAlive(t)
       );
@@ -365,7 +365,7 @@ export function SpriteShape({
         stepMs: particleStepMs,
         darkMode: localDarkMode,
         background: true,
-        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
         onReady: (t) => setIfAlive(t),
         onFail: () => { requestStatic(); },
       });
@@ -405,7 +405,7 @@ export function SpriteShape({
           bleed,
           seedKey: common.seedKey,
           darkMode: localDarkMode,
-          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+          pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
         });
         epochTexRef.current = newTex;
         // Bypass track() — set state directly so this texture is NOT pinned in __GLOBAL_TEX
@@ -432,7 +432,7 @@ export function SpriteShape({
         seedKey: common.seedKey,
         prio: 0,
         darkMode: localDarkMode,
-        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
       },
       (t) => setIfAlive(t)
     );

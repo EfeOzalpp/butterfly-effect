@@ -9,8 +9,9 @@ import {
   FOOTPRINTS,
   BLEED,
   PARTICLE_SHAPES,
-  PARTICLE_SCALE_BOOST,
+  resolveParticleScaleBoost,
 } from '../selection/footprints';
+import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
 import { makeFrozenTextureFromDrawer } from '../textures/animatedTexture';
 import { textureRegistry, type MakeArgs } from '../textures/registry';
@@ -38,21 +39,12 @@ import {
   DEFAULT_VARIANT_SLOTS,
 } from './spritePolicy';
 
-/* texture tracking */
-const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();
-function track(tex: THREE.CanvasTexture) {
-  __GLOBAL_TEX.add(tex);
-  return tex;
-}
+import { trackTexture, disposeAllTrackedTextures } from '../textures/textureTracker';
+
+const track = trackTexture;
 
 export function disposeAllSpriteTextures() {
-  try {
-    for (const t of __GLOBAL_TEX) {
-      try { t.dispose(); } catch {}
-    }
-  } catch {}
-  __GLOBAL_TEX.clear();
-
+  disposeAllTrackedTextures();
   try { frozenClearAll(); } catch {}
   try { (textureRegistry as any)?.clear?.(); } catch {}
 }
@@ -134,6 +126,7 @@ export function prewarmSpriteTextures(
 ) {
   const TILE = Math.min(tileSize, 128);
   const simulateMs = Math.max(0, particleFrames * particleStepMs);
+  const dev = deviceType(getViewportSize().w);
 
   const seen = new Set<string>(); // (shape,bucketId,variant)
   const jobs: MakeArgs[] = [];
@@ -173,7 +166,7 @@ export function prewarmSpriteTextures(
         bucketId,
         variant,
         darkMode,
-        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
       });
       if (!textureRegistry.get(sKeyEarly)) {
         jobs.push({
@@ -190,7 +183,7 @@ export function prewarmSpriteTextures(
           seedKey: `${sKeyEarly}|seed:${shape}|${variant}`,
           prio: 1,
           darkMode,
-          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+          pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
         });
       }
 
@@ -245,7 +238,7 @@ export function prewarmSpriteTextures(
               bucketId,
               variant,
               darkMode,
-              pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+              pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
             });
             if (!textureRegistry.get(sKey)) {
               textureRegistry.ensure({
@@ -262,7 +255,7 @@ export function prewarmSpriteTextures(
                 seedKey: `${sKey}|seed:${shape}|${variant}`,
                 prio: 0,
                 darkMode,
-                pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+                pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
               });
             }
           } finally {
@@ -279,7 +272,7 @@ export function prewarmSpriteTextures(
         bucketId,
         variant,
         darkMode,
-        pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
       });
       if (!textureRegistry.get(key2)) {
         jobs.push({
@@ -296,7 +289,7 @@ export function prewarmSpriteTextures(
           seedKey: `${key2}|seed:${shape}|${variant}`,
           prio: 0,
           darkMode,
-          pixelScaleBoost: PARTICLE_SCALE_BOOST[shape],
+          pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
         });
       }
     }
