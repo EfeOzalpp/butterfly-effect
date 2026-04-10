@@ -19,8 +19,8 @@ export const BACKGROUNDS_START: BackgroundsByMode = {
         { k: 0.96, rgba: "rgba(82, 184, 146, 0.97)" }, 
         { k: 0.96, rgba: "rgba(120, 156, 102, 1)" },
         { k: 0.98, rgba: "rgba(120, 156, 102, 1)" },
-        { k: 0.98,  rgba: "rgb(248, 240, 234)" },
-        { k: 1.0,  rgba: "rgb(248, 240, 234)" },
+        { k: 0.98,  rgba: "rgb(228, 219, 212)" },
+        { k: 1.0,  rgba: "rgb(237, 227, 219)" },
       ] as const,
     },
   },
@@ -31,15 +31,13 @@ export const BACKGROUNDS_START: BackgroundsByMode = {
       from: { xK: 0.5, yK: 0.0 },
       to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0.0,  rgba: "rgba(158, 222, 248, 1.0)" },
-        { k: 0.20, rgba: "rgba(186, 232, 255, 0.99)", oscK: { amp: 0.03, hz: 0.015 } },
-        { k: 0.27, rgba: "rgba(214, 242, 255, 0.97)" },
-        { k: 0.35, rgba: "rgba(255, 236, 166, 0.95)" },
-        { k: 0.54, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },
-        { k: 0.75, rgba: "rgba(82, 184, 146, 0.97)", liveBlend: [0.02, 0.08] },
-        { k: 0.96, rgba: "rgba(82, 184, 146, 0.97)" },
-        { k: 0.96, rgba: "rgb(93, 173, 148)" },
-        { k: 1, rgba: "rgb(86, 168, 142)" },
+        { k: 0.0,  rgba: "rgba(158, 222, 248, 1.0)" },                                     // Adventure-bright sky blue
+        { k: 0.12, rgba: "rgba(186, 232, 255, 0.99)", oscK: { amp: 0.03, hz: 0.015 } },   // airy drift
+        { k: 0.21, rgba: "rgba(214, 242, 255, 0.97)" },                                    // pale candy sky
+        { k: 0.35, rgba: "rgba(255, 236, 166, 0.95)" },                                    // warm horizon glow
+        { k: 0.4, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },          // teal break
+        { k: 0.7, rgba: "rgba(82, 184, 146, 0.97)", liveBlend: [0.02, 0.08] },           // adventure grass-teal
+        { k: 1, rgba: "rgba(82, 184, 126, 0.97)" }, 
       ] as const,
     },
   },
@@ -69,20 +67,20 @@ const START_DARK: BackgroundSpec = {
     stops: [
       { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },                                     // Adventure times navy sky
       { k: 0.20, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
-      { k: 0.40, rgba: "rgba(36, 60, 116, 0.95)" },                                   // mid blue
-      { k: 0.58, rgba: "rgba(64, 118, 165, 0.93)" },                                   // horizon blue
-      { k: 0.7, rgba: "rgba(105, 157, 167, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
-      { k: 0.78, rgba: "rgba(76, 129, 116, 0.97)", liveBlend: [0.02, 0.08] },         // Adventure times teal ground
-      { k: 0.98, rgba: "rgba(85, 122, 86, 0.97)"}, 
-      { k: 0.98,  rgba: "rgba(41, 40, 39, 1)" }, 
-      { k: 1.0,  rgba: "rgba(41, 40, 39, 1)" },                                      
+      { k: 0.35, rgba: "rgba(40, 65, 122, 0.95)" },                                   // mid blue
+      { k: 0.47, rgba: "rgba(48, 107, 159, 0.93)" },                                   // horizon blue
+      { k: 0.53, rgba: "rgba(38, 133, 180, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
+      { k: 0.58, rgba: "rgba(77, 167, 143, 0.97)", liveBlend: [0.02, 0.08] },         // Adventure times teal ground
+      { k: 0.98, rgba: "rgba(117, 164, 143, 0.97)"},
+      { k: 0.98,  rgba: "rgba(53, 48, 42, 1)" },
+      { k: 1.0,  rgba: "rgba(53, 48, 42, 1)" },
     ] as const,
   },
   stars: {
-    count: [24, 36],
-    topBandK: 0.3,
+    count: [24, 32],
+    topBandK: 0.35,
     minR: 0.9,
-    maxR: 2.1,
+    maxR: 1.6,
     alpha: [[0.5, 1.5], [0.6, 1.6]],
     flickerHz: [[0.42, 0.98], [0.14, 0.34]],
   },
@@ -97,20 +95,20 @@ export const BACKGROUNDS_START_DARK: BackgroundsByMode = {
       from: { xK: 0.5, yK: 0.0 },
       to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },
-        { k: 0.20, rgba: "rgba(41, 57, 113, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },
-        { k: 0.40, rgba: "rgba(36, 60, 116, 0.95)" },
-        { k: 0.47, rgba: "rgba(64, 118, 165, 0.93)" },
-        { k: 0.58, rgba: "rgba(105, 157, 167, 0.95)", liveBlend: [0.04, 0.12] },
-        { k: 0.78, rgba: "rgba(76, 129, 116, 0.97)", liveBlend: [0.02, 0.08] },
-        { k: 1, rgba: "rgba(85, 122, 86, 0.97)", liveBlend: [0.08, 0.12] },
+        { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },                                     // Adventure times navy sky
+        { k: 0.12, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
+        { k: 0.21, rgba: "rgba(45, 84, 146, 0.95)" },                                   // mid blue
+        { k: 0.3, rgba: "rgba(83, 139, 163, 0.93)" },                                   // horizon blue
+        { k: 0.35, rgba: "rgba(119, 161, 153, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
+        { k: 0.65, rgba: "rgba(102, 142, 125, 0.97)", liveBlend: [0.02, 0.08] },         // Adventure times teal ground
+        { k: 1, rgba: "rgba(99, 128, 99, 0.97)"},                                      
       ] as const,
     },
     stars: {
-      count: [24, 36],
-      topBandK: 0.3,
-      minR: 0.9,
-      maxR: 2.1,
+      count: [32, 44],
+      topBandK: 0.26,
+      minR: 0.6,
+      maxR: 1.2,
       alpha: [[0.5, 1.5], [0.6, 1.6]],
       flickerHz: [[0.42, 0.98], [0.14, 0.34]],
     },
