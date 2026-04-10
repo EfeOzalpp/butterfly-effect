@@ -27,7 +27,7 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
   const { darkMode, mode } = usePreferences();
   const { observerMode } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
-  const { section } = useSurveyData();
+  const { section, data: fullSurveyData } = useSurveyData();
 
   const {
     safeData,
@@ -71,7 +71,7 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
     getRelForValue,
     getAbsForId,
     getAbsForValue,
-    safeData,
+    fullData: Array.isArray(fullSurveyData) ? fullSurveyData : safeData,
     section,
     shouldShowPersonalized: personalizationGate.shouldShowPersonalized,
     hasPersonalizedInDataset: personalizationGate.hasPersonalizedInDataset,

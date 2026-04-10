@@ -14,7 +14,7 @@ type UseDotGraphPersonalizationModelParams = {
   getRelForValue: (value: number) => number;
   getAbsForId: (id: string) => number;
   getAbsForValue: (value: number) => number;
-  safeData: any[];
+  fullData: any[];
   section: string;
   shouldShowPersonalized: boolean;
   hasPersonalizedInDataset: boolean;
@@ -30,7 +30,7 @@ export default function useDotGraphPersonalizationModel({
   getRelForValue,
   getAbsForId,
   getAbsForValue,
-  safeData,
+  fullData,
   section,
   shouldShowPersonalized,
   hasPersonalizedInDataset,
@@ -97,7 +97,7 @@ export default function useDotGraphPersonalizationModel({
 
   const myStats =
     effectiveMyEntry && myEntry
-      ? getTieStats({ data: safeData, targetId: myEntry._id })
+      ? getTieStats({ data: fullData, targetId: myEntry._id })
       : { below: 0, equal: 0, above: 0, totalOthers: 0 };
 
   const myClass = classifyPosition(myStats);
