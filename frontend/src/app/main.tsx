@@ -40,16 +40,23 @@ function DeferredGamificationPreloader() {
 const AppInner: React.FC = () => {
   const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
   const { visible: bannerVisible, setDismissed, quotaResetMonth } = useMockBanner();
+  const zoomAllowedZones = questionnaireOpen
+    ? [
+        ".graph-container",
+        ".dot-graph-container",
+        "#city-canvas-root",
+      ]
+    : [
+        ".graph-container",
+        ".dot-graph-container",
+        "#canvas-root",
+        "#city-canvas-root",
+      ];
 
 
   // Global zoom prevention policy
   usePreventPageZoomOutsideZones({
-    allowWithin: [
-      ".graph-container",
-      ".dot-graph-container",
-      "#canvas-root",
-      "#city-canvas-root",
-    ],
+    allowWithin: zoomAllowedZones,
   });
 
   // Idle prefetch of CanvasEntry while user is in the heavy viz
