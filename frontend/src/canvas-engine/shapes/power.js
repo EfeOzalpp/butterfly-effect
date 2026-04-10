@@ -61,7 +61,7 @@ const POWER = {
     bladeLk: [0.82, 1.10],
     bladeWk: [0.10, 0.14],
     bladeTipRound: 0.6,
-    spinSpeed: [0.20, 0.55],
+    spinSpeed: [0.1, 0.35],
     spinJitter: Math.PI * 0.6,
     scaleK: [1.15, 1],
     hubYOffsetK: [0.28, 0.16],
@@ -71,7 +71,7 @@ const POWER = {
       offset: [5, 7],
       alpha:  [150, 125],
     },
-    bladeOsc: { amp: [0.18, 0.6], speed: [2.4, 0.8] },
+    bladeOsc: { amp: [0, 0.4], speed: [0.2, 0.4] },
   },
   kindBalance: {
     midpoint: 0.5,
@@ -165,9 +165,10 @@ function factorySmokeRowContext(t) {
   };
 }
 
-/* Probability */
+/* Probability — S-curve: factory dominant below 0.35, turbine dominant above 0.65 */
 function windProbability(u) {
-  return clamp01(u);
+  const t = clamp01((u - 0.30) / (0.70 - 0.30));
+  return t * t * (3 - 2 * t); // smoothstep
 }
 
 /* ====== NEW: seed helpers not tied to footprint/bleed ====== */
@@ -473,6 +474,7 @@ export function drawPower(p, cx, cy, r, opts = {}) {
 
   /* === TURBINE MODE === */
 
+  const compactTurbine = localTile <= 10 || pxW < 18;
   const insetX   = Math.round(pxW * val(POWER.mast.insetX, u));
   const baseW    = Math.max(Math.min(3, Math.round(localTileW * 0.18)), Math.round(pxW * val(POWER.mast.widthK, u)));
   const waistW   = Math.max(Math.min(2, Math.round(localTileW * 0.14)), Math.round(baseW * val(POWER.mast.waistK, u)));
@@ -483,8 +485,9 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   const mastTopFrac = val(POWER.mast.topFrac, u);
   const headroom    = val(POWER.mast.headroom, u);
   const tileTopY    = pxY + Math.round(pxH * mastTopFrac);
-  const mastTopY    = Math.min(tileTopY + Math.round(pxH * headroom * 0.22), mastBottomY - 32);
-  const mastH       = Math.max(16, mastBottomY - mastTopY);
+  const mastClearance = compactTurbine ? Math.max(14, Math.round(localTileH * 2.1)) : 32;
+  const mastTopY    = Math.min(tileTopY + Math.round(pxH * headroom * 0.22), mastBottomY - mastClearance);
+  const mastH       = Math.max(compactTurbine ? 12 : 16, mastBottomY - mastTopY);
 
   const cxTile = pxX + pxW / 2;
   const baseX0 = cxTile - baseW / 2;
@@ -503,7 +506,9 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   if (opts.gradientRGB) mastTint2 = blendRGB(mastTint2, opts.gradientRGB, 0.10);
   mastTint2 = applyExposureContrast(mastTint2, ex, ct);
 
-  const hubR   = Math.max(Math.min(2, Math.round(localTileW * 0.10)), Math.round(localTileW * val(POWER.rotor.hubRk, u)));
+  const hubR   = compactTurbine
+    ? Math.max(1, Math.round(localTileW * 0.10))
+    : Math.max(Math.min(2, Math.round(localTileW * 0.10)), Math.round(localTileW * val(POWER.rotor.hubRk, u)));
   const hubCx  = cxTile;
   const hubCy  = mastTopY + Math.round(mastH * val(POWER.rotor.hubYOffsetK, u));
 
@@ -561,9 +566,14 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   }
 
   const bladeRef = Math.max(localTileW, localTileH);
-  const bladeL = Math.max(hubR * 2, Math.round(bladeRef * val(POWER.rotor.bladeLk, u)));
-  const bladeW = Math.max(3, Math.round(bladeRef * val(POWER.rotor.bladeWk, u)));
-  const tipR   = Math.round(bladeW * POWER.rotor.bladeTipRound);
+  const bladeScale = compactTurbine ? 0.72 : 1;
+  const bladeL = Math.max(hubR * 2, Math.round(bladeRef * val(POWER.rotor.bladeLk, u) * bladeScale));
+  const bladeW = compactTurbine
+    ? Math.max(2, Math.round(bladeRef * val(POWER.rotor.bladeWk, u) * 0.78))
+    : Math.max(3, Math.round(bladeRef * val(POWER.rotor.bladeWk, u)));
+  const tipR   = compactTurbine
+    ? Math.max(1, Math.round(bladeW * 0.4))
+    : Math.round(bladeW * POWER.rotor.bladeTipRound);
 
   const tSec  = (typeof opts.timeMs === 'number' ? opts.timeMs : (p.millis?.() || 0)) / 1000;
   const seed  = hash32(`power|${seedKey}`) >>> 0;
@@ -585,7 +595,11 @@ export function drawPower(p, cx, cy, r, opts = {}) {
     opts: { timeMs: opts.timeMs, liveAvg: opts.liveAvg },
     mods: {
       rotation: { speed, phase },
-      scale2D:  { x: val(POWER.rotor.scaleK, u), y: val(POWER.rotor.scaleK, u), anchor: 'bottom-center' },
+      scale2D:  {
+        x: compactTurbine ? 1 : val(POWER.rotor.scaleK, u),
+        y: compactTurbine ? 1 : val(POWER.rotor.scaleK, u),
+        anchor: 'bottom-center'
+      },
     }
   });
 
@@ -598,30 +612,35 @@ export function drawPower(p, cx, cy, r, opts = {}) {
   p.scale(sc, sc);
   p.translate(0, -hubR);
 
-  const lineW   = Math.max(1, Math.round(val(POWER.rotor.line.weight, u)));
+  const showBladeLine = !compactTurbine && bladeL >= 10 && bladeW >= 3;
+  const lineW   = showBladeLine ? Math.max(1, Math.round(val(POWER.rotor.line.weight, u))) : 0;
   const lineLen = Math.round(bladeL * val(POWER.rotor.line.lenK, u));
   const lineOff = Math.round(Math.min(val(POWER.rotor.line.offset, u), hubR * 0.5));
   const lineA   = Math.round(val(POWER.rotor.line.alpha, u));
-  const lineY   = Math.round(bladeW / 2 - Math.max(1, lineW));
+  const lineY   = Math.round(bladeW / 2 - Math.max(1, lineW || 1));
 
   for (let i = 0; i < 3; i++) {
     const ang = i * (Math.PI * 2 / 3);
     p.push();
     p.rotate(ang);
 
-    p.strokeWeight(lineW);
-    strokeRgb(p, lineTint, Math.min(alpha, lineA));
-    p.noFill();
-    p.line(hubR + lineOff, lineY, hubR + lineOff + lineLen, lineY);
+    if (showBladeLine) {
+      p.strokeWeight(lineW);
+      strokeRgb(p, lineTint, Math.min(alpha, lineA));
+      p.noFill();
+      p.line(hubR + lineOff, lineY, hubR + lineOff + lineLen, lineY);
+    }
 
     p.noStroke();
     fillRgb(p, bladeTint, alpha);
     p.rectMode(p.CENTER);
-    const rootGap = Math.max(1, Math.round(hubR * 0.2));
+    const rootGap = Math.max(1, Math.round(hubR * (compactTurbine ? 0.12 : 0.2)));
     p.rect(bladeL / 2, 0, bladeL - rootGap, bladeW, tipR);
 
     p.rectMode(p.CORNER);
-    const rootLen = Math.max(6, Math.round(bladeL * 0.18));
+    const rootLen = compactTurbine
+      ? Math.max(3, Math.round(bladeL * 0.14))
+      : Math.max(6, Math.round(bladeL * 0.18));
     p.rect(-rootGap, -Math.round(bladeW * 0.65), rootLen, Math.round(bladeW * 1.3), Math.round(bladeW * 0.6));
 
     p.pop();
