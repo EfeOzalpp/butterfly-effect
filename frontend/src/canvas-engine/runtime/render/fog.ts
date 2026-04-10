@@ -78,20 +78,20 @@ function drawFogBand(args: {
   top: number;
   height: number;
   alpha255: number;
-  featherEdge: "top" | "bottom";
+  overhangEdge: "top" | "bottom";
   color: FogColor;
   gradientStops?: readonly FogGradientStop[] | null;
 }) {
-  const { p, top, height, alpha255, featherEdge, color, gradientStops = null } = args;
+  const { p, top, height, alpha255, overhangEdge, color, gradientStops = null } = args;
   if (height <= 0 || alpha255 <= 0) return;
 
   const ctx = p.drawingContext as CanvasRenderingContext2D;
   const alpha = Math.max(0, Math.min(1, alpha255 / 255));
-  const outerFeather = featherEdge === "top"
+  const outerFeather = overhangEdge === "top"
     ? Math.max(18, Math.min(72, height * 0.6))
     : Math.max(10, Math.min(42, height * 0.35));
 
-  if (featherEdge === "bottom") {
+  if (overhangEdge === "bottom") {
     const rectTop = top;
     const rectBottom = top + height + outerFeather;
     ctx.save();
@@ -131,7 +131,7 @@ export function computeFogState(args: {
 
   const rowCount = metrics.rowHeights.length;
   const fogOpacityScale = fogOpacityScaleForRowCount(rowCount);
-  const baseFogLayerAlpha = darkMode ? 42 / 255 : 26 / 255;
+  const baseFogLayerAlpha = darkMode ? 28 / 255 : 26 / 255;
   const FOG_LAYER_ALPHA = baseFogLayerAlpha * fogOpacityScale;
   const numBottomFogLayers = bottomFogLayerBoundaries.length;
   const targetHorizonOpacity = numBottomFogLayers > 0
@@ -171,7 +171,7 @@ export function computeFogState(args: {
           : [
               { k: 0.0, color: { r: 18, g: 12, b: 32 } },
               { k: 0.08, color: { r: 48, g: 40, b: 55 } },
-              { k: 0.12, color: { r: 34, g: 25, b: 42 } },
+              { k: 0.45, color: { r: 34, g: 25, b: 42 } },
               { k: 1.0,  color: { r: 15, g: 9, b: 30 } },
             ] as const),
       ] as const
@@ -189,9 +189,9 @@ export function computeFogState(args: {
     bottomFogLayerBoundaries,
     fogColor: darkMode
       ? (isRealMobile
-          ? { r: 23, g: 14, b: 45 }
-          : { r: 23, g: 14, b: 45 })
-      : { r: 229, g: 246, b: 255 },
+          ? { r: 33, g: 32, b: 40 }
+          : { r: 33, g: 32, b: 40 })
+      : { r: 246, g: 246, b: 248 },
     skyFogGradient,
     bottomFogGradient,
     fogLayerAlpha255: Math.round(FOG_LAYER_ALPHA * 255),
@@ -224,7 +224,7 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
       top: rectTop,
       height: rectH,
       alpha255: fog.fogLayerAlpha255,
-      featherEdge: "bottom",
+      overhangEdge: "bottom",
       color: fog.fogColor,
       gradientStops,
     });
@@ -263,9 +263,9 @@ export function createSkyFogStepper(p: PLike, fog: FogState) {
 
     const layersFromHorizon = fog.fogPeakRow - 1 - r;
     const horizonFogBlendK =
-      layersFromHorizon === 0 ? 1 :
-      layersFromHorizon === 1 ? 0.75 :
-      layersFromHorizon === 2 ? 0.6 :
+      layersFromHorizon === 0 ? 0.85 :
+      layersFromHorizon === 1 ? 0.7 :
+      layersFromHorizon === 2 ? 0.55 :
       0;
     const gradientStops = fog.skyFogGradient
       ? (horizonFogBlendK > 0
@@ -278,7 +278,7 @@ export function createSkyFogStepper(p: PLike, fog: FogState) {
       top: rectTop,
       height: rectH,
       alpha255: Math.round(fog.skyLayerAlpha * 255),
-      featherEdge: "top",
+      overhangEdge: "top",
       color: fog.fogColor,
       gradientStops,
     });
@@ -361,7 +361,7 @@ export function drawSkyFog(p: PLike, fog: FogState) {
       top: rectTop,
       height: rectH,
       alpha255: Math.round(fog.skyLayerAlpha * 255),
-      featherEdge: "top",
+      overhangEdge: "top",
       color: fog.fogColor,
       gradientStops,
     });
