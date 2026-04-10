@@ -19,11 +19,12 @@ export function computeHoverViewportClass({
   if (isSmallScreen || !useDesktopLayout) {
     const xFrac = x / width;
     const yFrac = y / height;
+    const vCls = yFrac < 0.33 ? 'is-top' : yFrac > 0.67 ? 'is-bottom' : '';
 
     if (xFrac < 0.25) {
-      cls = 'is-left';
+      cls = vCls ? `${vCls} is-left` : 'is-left';
     } else if (xFrac > 0.75) {
-      cls = 'is-right';
+      cls = vCls ? `${vCls} is-right` : 'is-right';
     } else {
       // middle horizontal band - vertical position decides top vs bottom
       cls = yFrac < 0.33 ? 'is-top is-mid' : 'is-bottom is-mid';

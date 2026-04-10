@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import "../../styles/widgets.css";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
 import { useUiFlow } from "../../app/state/ui-context";
@@ -28,9 +28,11 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   } = useUiFlow();
   const { data } = useSurveyData();
   const windowWidth = useWindowWidth();
-  const isNarrow = windowWidth <= 768;
+  const isMobileGraphNav = windowWidth < 768;
+  const isTabletGraphNav = windowWidth >= 768 && windowWidth <= 1024;
+  const useCompactGraphNav = windowWidth <= 1024;
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 768 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
+  const pickerOffset = windowWidth > 1024 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
   const [showHint, setShowHint] = useState(false);
   const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>("radar");
   const barGraphExpanded = expandedWidget === "bar";
@@ -38,9 +40,11 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const toggleWidget = (w: "bar" | "radar") => setExpandedWidget((cur) => (cur === w ? null : w));
   const widgetsRef = useRef<HTMLDivElement | null>(null);
   const logsWrapRef = useRef<HTMLDivElement | null>(null);
+  const modeToggleRef = useRef<HTMLDivElement | null>(null);
   const questionnaireHintTimerRef = useRef<number | null>(null);
   const [logsSlide, setLogsSlide] = useState(0);
   const [showQuestionnaireDisabledHint, setShowQuestionnaireDisabledHint] = useState(false);
+  const [modeToggleShiftPx, setModeToggleShiftPx] = useState(0);
 
   const flashQuestionnaireDisabledHint = useCallback(() => {
     if (questionnaireHintTimerRef.current != null) {
@@ -61,14 +65,16 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   }, [vizVisible]);
 
   useEffect(() => {
-    if (logsOpen && !isNarrow && logsWrapRef.current) {
-      const panelWidth = Math.min(540, window.innerWidth - 51.2);
+    if (logsOpen && !isMobileGraphNav && logsWrapRef.current) {
+      const panelWidth = isTabletGraphNav
+        ? window.innerWidth * 0.6
+        : Math.min(540, window.innerWidth - 51.2);
       const btnWidth = logsWrapRef.current.offsetWidth;
       setLogsSlide(Math.max(0, panelWidth - btnWidth));
     } else {
       setLogsSlide(0);
     }
-  }, [logsOpen, isNarrow]);
+  }, [logsOpen, isMobileGraphNav, isTabletGraphNav]);
 
   useEffect(() => {
     if (!questionnaireNav.nextDisabled) {
@@ -87,6 +93,56 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       }
     };
   }, []);
+
+  useLayoutEffect(() => {
+    if (!vizVisible || !modeToggleRef.current || isMobileGraphNav || isTabletGraphNav) {
+      setModeToggleShiftPx(0);
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const modeToggleWidth = modeToggleRef.current?.offsetWidth ?? 0;
+      const rootFontSize =
+        typeof window !== "undefined"
+          ? parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
+          : 16;
+      const gapPx = rootFontSize * 0.4;
+
+      const logsShell = logsWrapRef.current?.querySelector(".logs-popover-shell.is-open") as HTMLElement | null;
+      const logsButton = logsWrapRef.current?.querySelector(".logs-button") as HTMLElement | null;
+      const widgetsShell = widgetsRef.current?.querySelector(".widgets-popover-shell.is-open") as HTMLElement | null;
+      const widgetsButton = widgetsRef.current?.querySelector(".widgets-button") as HTMLElement | null;
+
+      const logsOccupiedRight = logsOpen
+        ? logsShell?.getBoundingClientRect().right ?? logsButton?.getBoundingClientRect().right ?? 0
+        : 0;
+      const widgetsOccupiedRight = widgetsOpen
+        ? widgetsShell?.getBoundingClientRect().right ?? widgetsButton?.getBoundingClientRect().right ?? 0
+        : 0;
+      const occupiedRight = Math.max(logsOccupiedRight, widgetsOccupiedRight);
+
+      let shiftPx = 0;
+
+      shiftPx = pickerOffset;
+      const projectedLeft = window.innerWidth / 2 - modeToggleWidth / 2 + shiftPx;
+      const overlapPx = occupiedRight + gapPx - projectedLeft;
+
+      if (overlapPx > 0) shiftPx += overlapPx;
+
+      setModeToggleShiftPx((prev) => (Math.abs(prev - shiftPx) < 0.5 ? prev : shiftPx));
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    vizVisible,
+    isMobileGraphNav,
+    isTabletGraphNav,
+    logsOpen,
+    widgetsOpen,
+    logsSlide,
+    pickerOffset,
+    windowWidth,
+  ]);
 
   if (!cityPanelOpen && !questionnaireOpen && !vizVisible) return null;
 
@@ -154,7 +210,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             <div
               className={`widgets-popover-shell${widgetsOpen ? " is-open" : ""}`}
               aria-hidden={!widgetsOpen}
-              style={isNarrow ? { left: "-64px" } : undefined}
+              style={isMobileGraphNav ? { left: "-64px" } : undefined}
             >
               <div className="widgets-popover-clip">
                 <div className="widgets-popover" role="dialog" aria-label="Widgets">
@@ -270,8 +326,19 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       )}
       {vizVisible && (
         <div
-          className={`bottom ${isNarrow ? "bottom-mobile-right" : "bottom-center"}`}
-          style={isNarrow ? undefined : { transform: `translateX(calc(-50% + ${pickerOffset}px))`, transition: "transform 0.2s ease" }}
+          ref={modeToggleRef}
+          className={`bottom ${useCompactGraphNav ? "bottom-mobile-right" : "bottom-center"}`}
+          style={
+            useCompactGraphNav
+              ? {
+                  transform:
+                    isTabletGraphNav && logsOpen && widgetsOpen
+                      ? "translateX(calc(100% + 1.7rem))"
+                      : "translateX(0px)",
+                  transition: "transform 0.2s ease",
+                }
+              : { transform: `translateX(calc(-50% + ${modeToggleShiftPx}px))`, transition: "transform 0.2s ease" }
+          }
         >
           <ModeToggle />
         </div>

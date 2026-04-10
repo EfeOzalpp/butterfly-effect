@@ -108,6 +108,5 @@ export function pointInFootprint2(size: CellSize, f: Footprint, opts: PlaceOpts 
   return { x: bx + px[0], y: by + px[1], w, h, cx, cy };
 }
 
-/* Legacy square API stays as-is below */
 export function rectFromFootprint(cell: number, f: Footprint) { /* unchanged */ }
 export function pointInFootprint(cell: number, f: Footprint, opts: PlaceOpts = {}) { /* unchanged */ }

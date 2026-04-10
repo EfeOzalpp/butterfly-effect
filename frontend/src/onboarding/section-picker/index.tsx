@@ -63,6 +63,24 @@ export default function SectionPickerIntro({
   const listRef = useRef<HTMLDivElement | null>(null);
   const listboxId = 'section-listbox';
   const openedByPointer = useRef(false);
+  const outsideTouchRef = useRef<{
+    active: boolean;
+    moved: boolean;
+    startX: number;
+    startY: number;
+  }>({
+    active: false,
+    moved: false,
+    startX: 0,
+    startY: 0,
+  });
+
+  const closePicker = useCallback(() => {
+    setOpen(false);
+    window.setTimeout(() => {
+      inputRef.current?.blur();
+    }, 0);
+  }, []);
 
   const current = useMemo(() => baseFocusable.find((o: any) => o.value === value) || null, [baseFocusable, value]);
 
@@ -135,20 +153,58 @@ export default function SectionPickerIntro({
   }, [open, onOpenChange]);
 
   useEffect(() => {
-    const onDoc = (e: MouseEvent | TouchEvent) => {
-      if (!wrapperRef.current) return;
-      const t = e.target as Element | null;
-      if (!t || wrapperRef.current.contains(t)) return;
-      if (t.closest('button, a, [role="button"], [role="radio"], label')) return;
-      setOpen(false);
+    if (!open) return;
+
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) closePicker();
     };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('touchstart', onDoc);
+
+    const onDocTouchStart = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const isInside = !!wrapperRef.current?.contains(e.target as Node);
+      outsideTouchRef.current = {
+        active: !isInside,
+        moved: false,
+        startX: touch.clientX,
+        startY: touch.clientY,
+      };
+    };
+
+    const onDocTouchMove = (e: TouchEvent) => {
+      if (!outsideTouchRef.current.active) return;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const dx = Math.abs(touch.clientX - outsideTouchRef.current.startX);
+      const dy = Math.abs(touch.clientY - outsideTouchRef.current.startY);
+      if (dx > 10 || dy > 10) outsideTouchRef.current.moved = true;
+    };
+
+    const onDocTouchEnd = () => {
+      if (outsideTouchRef.current.active && !outsideTouchRef.current.moved) closePicker();
+      outsideTouchRef.current.active = false;
+      outsideTouchRef.current.moved = false;
+    };
+
+    const onDocTouchCancel = () => {
+      outsideTouchRef.current.active = false;
+      outsideTouchRef.current.moved = false;
+    };
+
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('touchstart', onDocTouchStart, { passive: true });
+    document.addEventListener('touchmove', onDocTouchMove, { passive: true });
+    document.addEventListener('touchend', onDocTouchEnd);
+    document.addEventListener('touchcancel', onDocTouchCancel);
+
     return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('touchstart', onDoc);
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('touchstart', onDocTouchStart);
+      document.removeEventListener('touchmove', onDocTouchMove);
+      document.removeEventListener('touchend', onDocTouchEnd);
+      document.removeEventListener('touchcancel', onDocTouchCancel);
     };
-  }, []);
+  }, [open, closePicker]);
 
   useEffect(() => {
     if (!open) return;
@@ -177,12 +233,12 @@ export default function SectionPickerIntro({
       if (source === 'pointer') {
         setSearch('');
         // Delay close so the Lottie selection animation (frames 0→15) can play
-        setTimeout(() => setOpen(false), 260);
+        setTimeout(() => closePicker(), 260);
       } else {
-        setOpen(false);
+        closePicker();
       }
     },
-    [renderedFocusable, onChange]
+    [renderedFocusable, onChange, closePicker]
   );
 
   const activeRenderedId =
@@ -260,7 +316,7 @@ export default function SectionPickerIntro({
                 else setOpen(true);
               } else if (e.key === 'Escape') {
                 e.preventDefault();
-                setOpen(false);
+                closePicker();
               }
             }}
             autoComplete="off"
@@ -302,8 +358,7 @@ export default function SectionPickerIntro({
                   chooseIndex(activeIndex, 'keyboard');
                 } else if (e.key === 'Escape') {
                   e.preventDefault();
-                  setOpen(false);
-                  inputRef.current && inputRef.current.focus();
+                  closePicker();
                 }
               }}
             >

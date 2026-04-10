@@ -35,6 +35,40 @@ const decaySpinAxis = (value: number, tau: number, delta: number) => {
   return Math.abs(next) <= ROT_STOP_EPSILON ? 0 : next;
 };
 
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+const getZoomRatio = (radius: number, minRadius: number, maxRadius: number) => {
+  const span = Math.max(1e-6, maxRadius - minRadius);
+  return clamp01((radius - minRadius) / span);
+};
+
+const getDragTuning = ({
+  radius,
+  minRadius,
+  maxRadius,
+  isTouch,
+  isTabletLike,
+}: {
+  radius: number;
+  minRadius: number;
+  maxRadius: number;
+  isTouch: boolean;
+  isTabletLike: boolean;
+}) => {
+  const zoomRatio = Math.pow(getZoomRatio(radius, minRadius, maxRadius), 0.85);
+
+  return {
+    // Close zooms need less angular travel, but also less deadzone so the motion
+    // still starts promptly instead of feeling sticky before it suddenly jumps.
+    deadzoneMul: isTouch ? lerp(0.72, 1, zoomRatio) : lerp(0.9, 1, zoomRatio),
+    sensitivityMul: isTouch
+      ? lerp(isTabletLike ? 0.66 : 0.6, 1, zoomRatio)
+      : lerp(0.9, 1, zoomRatio),
+  };
+};
+
 export type GestureState = {
   pinching: boolean;
   touchCount: number;
@@ -166,6 +200,8 @@ export default function useRotation({
   const isMovingRef = useRef(false);
 
   const isDraggingRef = useRef(false);
+  const zoomMetricsRef = useRef({ radius, minRadius, maxRadius });
+  zoomMetricsRef.current = { radius, minRadius, maxRadius };
 
   useEffect(() => {
     const dpr = window.devicePixelRatio || 1;
@@ -231,8 +267,17 @@ export default function useRotation({
       const dt = Math.max(1, now - last.t);
       const rawDx = event.clientX - last.x;
       const rawDy = event.clientY - last.y;
-      const dx = mapResponsiveDelta(rawDx, DESKTOP_DEADZONE_PX);
-      const dy = mapResponsiveDelta(rawDy, DESKTOP_DEADZONE_PX);
+      const { radius, minRadius, maxRadius } = zoomMetricsRef.current;
+      const { deadzoneMul, sensitivityMul } = getDragTuning({
+        radius,
+        minRadius,
+        maxRadius,
+        isTouch: false,
+        isTabletLike,
+      });
+      const dx = mapResponsiveDelta(rawDx, DESKTOP_DEADZONE_PX * deadzoneMul);
+      const dy = mapResponsiveDelta(rawDy, DESKTOP_DEADZONE_PX * deadzoneMul);
+      const desktopPxToRad = DESKTOP_PX_TO_RAD * sensitivityMul;
       const moving = Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005;
       isMovingRef.current = moving;
 
@@ -243,14 +288,14 @@ export default function useRotation({
 
       const g = groupRef.current;
       if (g) {
-        _rotQ.setFromAxisAngle(_axisX, -dy * DESKTOP_PX_TO_RAD);
+        _rotQ.setFromAxisAngle(_axisX, -dy * desktopPxToRad);
         g.quaternion.premultiply(_rotQ);
-        _rotQ.setFromAxisAngle(_axisY, -dx * DESKTOP_PX_TO_RAD);
+        _rotQ.setFromAxisAngle(_axisY, -dx * desktopPxToRad);
         g.quaternion.premultiply(_rotQ);
       }
 
-      const vx = (-dy / dt) * 1000 * DESKTOP_PX_TO_RAD;
-      const vy = (-dx / dt) * 1000 * DESKTOP_PX_TO_RAD;
+      const vx = (-dy / dt) * 1000 * desktopPxToRad;
+      const vy = (-dx / dt) * 1000 * desktopPxToRad;
       spinVelRef.current = {
         x: (spinVelRef.current.x + vx) * 0.5,
         y: (spinVelRef.current.y + vy) * 0.5,
@@ -369,8 +414,17 @@ export default function useRotation({
         const dt = Math.max(1, now2 - last.t);
         const rawDx = t.clientX - last.x;
         const rawDy = t.clientY - last.y;
-        const dx = mapResponsiveDelta(rawDx, TOUCH_DEADZONE_PX);
-        const dy = mapResponsiveDelta(rawDy, TOUCH_DEADZONE_PX);
+        const { radius, minRadius, maxRadius } = zoomMetricsRef.current;
+        const { deadzoneMul, sensitivityMul } = getDragTuning({
+          radius,
+          minRadius,
+          maxRadius,
+          isTouch: true,
+          isTabletLike,
+        });
+        const dx = mapResponsiveDelta(rawDx, TOUCH_DEADZONE_PX * deadzoneMul);
+        const dy = mapResponsiveDelta(rawDy, TOUCH_DEADZONE_PX * deadzoneMul);
+        const touchPxToRad = TOUCH_PX_TO_RAD * sensitivityMul;
 
         const moving = Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005;
         isMovingRef.current = moving;
@@ -382,14 +436,14 @@ export default function useRotation({
 
         const g = groupRef.current;
         if (g) {
-          _rotQ.setFromAxisAngle(_axisX, -dy * TOUCH_PX_TO_RAD);
+          _rotQ.setFromAxisAngle(_axisX, -dy * touchPxToRad);
           g.quaternion.premultiply(_rotQ);
-          _rotQ.setFromAxisAngle(_axisY, -dx * TOUCH_PX_TO_RAD);
+          _rotQ.setFromAxisAngle(_axisY, -dx * touchPxToRad);
           g.quaternion.premultiply(_rotQ);
         }
 
-        const vx = (-dy / dt) * 1000 * TOUCH_PX_TO_RAD;
-        const vy = (-dx / dt) * 1000 * TOUCH_PX_TO_RAD;
+        const vx = (-dy / dt) * 1000 * touchPxToRad;
+        const vy = (-dx / dt) * 1000 * touchPxToRad;
         spinVelRef.current = {
           x: (spinVelRef.current.x + vx) * 0.5,
           y: (spinVelRef.current.y + vy) * 0.5,

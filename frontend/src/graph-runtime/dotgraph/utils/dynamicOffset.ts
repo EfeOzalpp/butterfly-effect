@@ -1,4 +1,5 @@
 // src/components/dotgraph/utils/dynamicOffset.ts
+// anchors non-scaling tooltips to the scaling 3D objects as zoom happens.
 
 type Viewport = { width: number; height: number };
 

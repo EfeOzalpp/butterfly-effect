@@ -5,10 +5,8 @@ import NavBottom from "./bottom/nav-bottom";
 import { usePreferences } from "../app/state/preferences-context";
 import "../styles/navigation.css";
 
-const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
-
 const Navigation = () => {
-  const { navVisible, darkMode } = usePreferences();
+  const { darkMode } = usePreferences();
   const [introActive, setIntroActive] = React.useState(true);
 
   React.useEffect(() => {
@@ -20,7 +18,7 @@ const Navigation = () => {
 
   return (
     <>
-      <nav className={cx("navigation", !navVisible && "nav-hidden-mobile")}>
+      <nav className="navigation">
         <NavLeft introActive={introActive} />
         <NavRight isDark={!!darkMode} introActive={introActive} />
       </nav>

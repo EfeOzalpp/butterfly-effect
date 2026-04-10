@@ -14,7 +14,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const windowWidth = useWindowWidth();
   const [pickerOpen, setPickerOpen] = useState(false);
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 768
+  const pickerOffset = windowWidth > 1024
     ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio
     : (pickerOpen ? 0 : -30);
 

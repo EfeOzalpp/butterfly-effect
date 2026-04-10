@@ -36,7 +36,7 @@ export const SEA_COOL_PALETTE = {
 
 // grass for composite bowl
 export const GRASS_BASE = { r: 130, g: 180, b: 110 };
-export const GRASS_DARK  = { r: 25, g: 77, b: 156 };
+export const GRASS_DARK  = { r: 38, g: 82, b: 130 };
 
 // tuning (override with opts.tuning)
 export const SEA_TUNING = {
@@ -55,7 +55,7 @@ export const SEA_TUNING = {
   },
 
   scale: {
-    baseYRange: [0.7, 0.45],
+    baseYRange: [0.88, 0.45],
     oscHzRange:  [0.45, 0.85],
     oscAmpRange: [0.04, 0.008]
   },
@@ -140,19 +140,18 @@ export const SEA_TUNING = {
     // particle sizes
     sizePx: [1.0, 2.2],
 
-    // speeds (right side intentionally smaller)
     leftSpeedPxSec:  [60, 120],
-    rightSpeedPxSec: [14, 30],
+    rightSpeedPxSec: [60, 120],
 
     gravity: 360,
     drag: 6,
-    lifetimeSec: [0.9, 1.6],
+    lifetimeSec: [1.2, 2.0],
 
     spillPx: 40, // how far outside the tile spawn may extend horizontally
 
     fadeInFrac: 0.15,
     fadeOutFrac: 0.35,
-    edgeFadePx: { left: 8, right: 8, top: 8, bottom: 36 },
+    edgeFadePx: { left: 2, right: 8, top: 8, bottom: 36 },
 
     // widening cone accel (pushes outward as it falls)
     coneAccelX: 120, // px/s^2, sign set per side
@@ -512,8 +511,9 @@ export function drawSea(p, _x, _y, _r, opts = {}) {
       const leftNudge  = isSprite ? 0 : ((T.spill.leftNudgePx  ?? 0) + (isMobile ? (T.spill.mobile?.leftNudgePx  ?? 0) : 0));
       const rightNudge = isSprite ? 0 : ((T.spill.rightNudgePx ?? 0) + (isMobile ? (T.spill.mobile?.rightNudgePx ?? 0) : 0));
 
-      const leftCorridorW  = colWBase + (isMobile ? Math.round(cell * 0.25) : (T.spill.leftExtraRoomPx ?? 24));
-      const rightCorridorW = colWBase + spill;
+      const extraRoom = isMobile ? Math.round(cell * 0.25) : (T.spill.leftExtraRoomPx ?? 24);
+      const leftCorridorW  = colWBase + extraRoom;
+      const rightCorridorW = colWBase + (isSprite ? extraRoom : spill);
 
       const leftBaseX  = isSprite
         ? (x0 - leftCorridorW)  // corridor ends at bowl left wall, falls into left bleed

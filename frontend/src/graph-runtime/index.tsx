@@ -30,7 +30,9 @@ export default function VisualizationPage() {
           justifyContent: 'center',
           zIndex: 5,
           pointerEvents: 'none',
-          height: '100vh',
+          height: '100dvh',
+          top: '-16px',
+          background: 'var(--ui-bg-page)'
         }}
         aria-busy="true"
         aria-live="polite"

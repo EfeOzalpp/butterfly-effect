@@ -9,31 +9,25 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
     useTopRatio: 1,
     horizonPos: 0.55,
     forbidden: makeRowForbidden(
-      Array.from( { length: 20 } , () => ({ ...LR_0}))
+      Array.from( { length: 26 } , () => ({ ...LR_0}))
     ),
   },
 
   tablet: {
-    rows: 17,
+    rows: 22,
     useTopRatio: 1,
-    horizonPos: 0.55,
-    forbidden: makeRowForbidden([
-      CENTER_100, CENTER_100,
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
-    ]),
+    horizonPos: 0.54,
+    forbidden: makeRowForbidden(
+      Array.from( { length: 22 }, () => ({ ...LR_0}))
+    ),
   },
 
   laptop: {
     rows: 18,
     useTopRatio: 1,
-    horizonPos: 0.56,
+    horizonPos: 0.545,
     forbidden: makeRowForbidden(
-      Array.from( { length: 20 } , () => ({ ...LR_0}))
+      Array.from( { length: 19 } , () => ({ ...LR_0}))
     ),
   },
 };

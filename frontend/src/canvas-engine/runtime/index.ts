@@ -20,7 +20,7 @@ import { clamp01 } from "./util/easing";
 // Scene lookup key (BaseMode | SceneModifier) is used by runtime ticker to pick rules.
 import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
 
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
 
 import { resolveBounds } from "./layout/bounds";
@@ -49,8 +49,10 @@ const REG_STYLE_DEFAULT = {
   perShapeScale: {} as Record<string, number>,
   gradientRGBOverride: null as null | { r: number; g: number; b: number },
   blend: 0.5,
-  exposure: 1.0,
-  contrast: 1.0,
+  // Most shape palettes are clamped into fairly soft midtones before exposure is applied.
+  // A slight default lift keeps the world from reading muddy under fog and scene overlays.
+  exposure: 1.08,
+  contrast: 1.03,
   appearMs: 300,
   exitMs: 300,
   darkMode: false,

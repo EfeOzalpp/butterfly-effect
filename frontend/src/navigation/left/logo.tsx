@@ -9,9 +9,7 @@ const Logo = () => {
       className="logo-divider"
       aria-label="Back to home"
       onClick={resetToStart}
-    >
-      <span className="logo-text" aria-hidden="true">be</span>
-    </button>
+    ><span className="logo-text" >be</span></button>
   );
 };
 

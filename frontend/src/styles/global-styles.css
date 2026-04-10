@@ -10,11 +10,11 @@
   --type-h2-size: clamp(1.6rem, 1.25rem + 1.2vw, 2.4rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.82rem, 0.90rem + 0.3vw, 1rem);
-  --type-p-size: 0.98rem;
+  --type-p-size: 1rem;
   --type-small-size: 0.94rem;
   --type-label-size: 0.9rem;
 
-  --type-h-line: 1.15;
+  --type-h-line: 1.25;
   --type-h2-line: 1.42;
   --type-h3-line: 1.65;
   --type-body-line: 1.4;
@@ -32,25 +32,25 @@
   /* Main UI surface colors */
   --ui-bg-surface: #f8fafc;
   --ui-bg-surface-glass: rgba(248, 250, 252, 0.7);
-  --ui-bg-surface-hover: #eeeeee;
-  --ui-bg-surface-selected: #d5f2d4;
+  --ui-bg-surface-hover: #dfdfdf;
+  --ui-bg-surface-selected: rgba(186, 227, 156, 0.6);
 
   /* input fields color */
   --ui-bg-input: #c9c7c2;
-  --ui-bg-input-hover: rgb(178, 173, 169);
+  --ui-bg-input-hover: rgb(185, 173, 164);
 
   /* input active */
   --active-accent-color: #7fba7e;
   --active-accent-color-hover:#70a56f;
-  --inactive-accent-color: #d7cac1;
-  --inactive-accent-color-hover: #c4b5aa;
+  --inactive-accent-color: rgba(211, 202, 194, 0.9);
+  --inactive-accent-color-hover: rgb(185, 173, 164);
 
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
   --btn-drop-shadow: #ffffff;
 
   /* Text and misc color */
-  --ui-text-title: rgba(51, 155, 224, 0.6); 
-  --ui-questionnaire-title: linear-gradient(180deg, #deebf2e3 0%, #547690 50%);
+  --ui-text-title: linear-gradient(180deg, #8eafd7 0%, #6c89b6 100%);
+  --ui-questionnaire-title: linear-gradient(180deg, #465c71 0%, rgb(50, 69, 83) 60%);
   
   --ui-text: #000000;
   --ui-text-secondary: #35453c;
@@ -114,7 +114,7 @@
   --hint-svg: var(--hint-text); 
 
   /* Graph */
-  --graph-bg: #f8f0ea;
+  --graph-bg: #f8f3ef;
 
   /* graph signal colors — RGB triplets for rgba() composition in keyframes */
   --graph-green-hi-rgb: 0, 220, 60;
@@ -128,24 +128,24 @@
 }
 
 :root[data-theme="dark"] {
-  --ui-bg-page: #292827;
+  --ui-bg-page: #2c2823;
   --ui-bg-onboarding: #161616;
 
   /* Main UI surface colors */
   --ui-bg-surface: #434241;
   --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
-  --ui-bg-surface-hover: #706a6884;
-  --ui-bg-surface-selected: rgb(70, 117, 82);
+  --ui-bg-surface-hover: #827e7d84;
+  --ui-bg-surface-selected: rgba(109, 151, 108, 0.85);
 
   /* input fields color */
-  --ui-bg-input: #706a68;
-  --ui-bg-input-hover: #5b5854;
+  --ui-bg-input: #5c5755;
+  --ui-bg-input-hover: #847f7e;
 
   /* input active */
   --active-accent-color: #6d976c;
   --active-accent-color-hover: #6d976c;
-  --inactive-accent-color: #524c48;
-  --inactive-accent-color-hover: #706a68;
+  --inactive-accent-color:#5c5755;
+  --inactive-accent-color-hover: #847f7e;
   --ui-bg-surface-active: #474747;
 
   --ui-drop-shadow: rgba(0, 0, 0, 0.4);
@@ -212,7 +212,7 @@
   --hint-svg: var(--hint-text); 
 
   /* Graph */
-  --graph-bg:#232221;
+  --graph-bg:#21201e;
   --inactive-accent-color-border: #1d1c1c;
 
   /* graph signal colors — blue-shifted for dark bg */
@@ -257,8 +257,8 @@
   }
   :root[data-theme="dark"] {
     /* Text and misc color */
-  --ui-text-title: linear-gradient(180deg, #e2eff7e3 0%, rgba(169, 187, 199, 0.708) 50%);
   --ui-questionnaire-title: linear-gradient(180deg, #e2eff7e3 0%, #dcecf8 33%);
+  --ui-text-title: linear-gradient(180deg, rgba(235, 220, 200, 0.785) 45%, rgba(88, 141, 206, 0.92) 100%);
 }
 }
 
@@ -291,8 +291,8 @@
     }
     :root[data-theme="dark"] {
         /* Text and misc color */
-    --ui-text-title: linear-gradient(120deg, #cfe3edf0 0%, #849fb3b9 100%);
     --ui-questionnaire-title: linear-gradient(180deg, #e2eff7e3 0%, #dcecf8 33%);  
+    --ui-text-title: linear-gradient(180deg, rgb(212, 195, 173) 15%, rgba(132, 187, 255, 0.92) 85%);
   }
   }
 

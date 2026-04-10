@@ -34,6 +34,9 @@ export default function useDotGraphSceneModel({
   const isTabletLike = width >= 768 && width <= 1024;
   const useDesktopLayout = !(isSmallScreen || isRealMobile || isTabletLike);
 
+  const graphNavOffsetPx =
+    windowWidth > 1024 ? (ui?.logsOpen ? 130 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0;
+
   const {
     groupRef,
     radius,
@@ -49,7 +52,7 @@ export default function useDotGraphSceneModel({
       isTabletLike,
       xOffset: 0,
       yOffset: 0,
-      xOffsetPx: (wantsSkew ? -112 : 0) + (windowWidth > 768 ? (ui?.logsOpen ? 130 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0),
+      xOffsetPx: (wantsSkew ? -112 : 0) + graphNavOffsetPx,
       yOffsetPx: wantsSkew ? 12 : 0,
     },
     bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },

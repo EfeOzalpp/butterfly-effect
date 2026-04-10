@@ -39,7 +39,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const { mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole } = useIdentityState();
 
-  const { mode, setMode, darkMode, setDarkMode, navPanelOpen, setNavPanelOpen, navVisible, setNavVisible, radarMode, setRadarMode } = usePreferencesState();
+  const { mode, setMode, darkMode, setDarkMode, navPanelOpen, setNavPanelOpen, radarMode, setRadarMode } = usePreferencesState();
 
   const {
     isSurveyActive, setSurveyActive,
@@ -126,9 +126,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   // --- per-context memos (only state values in deps, setters are stable) ---
   const preferencesValue = useMemo<PreferencesState>(
-    () => ({ darkMode, setDarkMode, mode, setMode, navPanelOpen, setNavPanelOpen, navVisible, setNavVisible }),
+    () => ({ darkMode, setDarkMode, mode, setMode, navPanelOpen, setNavPanelOpen }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [darkMode, mode, navPanelOpen, navVisible]
+    [darkMode, mode, navPanelOpen]
   );
 
   const uiValue = useMemo<UiState>(

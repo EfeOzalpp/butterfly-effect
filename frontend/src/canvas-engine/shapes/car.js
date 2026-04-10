@@ -3,6 +3,7 @@ import {
   applyShapeMods,
   blendRGB,
   clampBrightness,
+  clampSaturation,
   clamp01,
   val,
   footprintToPx,
@@ -465,6 +466,10 @@ export function drawCar(p, cx, cy, r, opts = {}) {
   const g2 = pick(pal.grass, rGrass2);
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(CAR.grass.colorBlend, u));
+  if (opts?.darkMode) {
+    grassTint = clampSaturation(grassTint, 0.0, 0.22, 1);
+    grassTint = clampBrightness(grassTint, 0.30, 0.48);
+  }
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   p.noStroke();

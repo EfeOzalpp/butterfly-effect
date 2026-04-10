@@ -105,7 +105,10 @@
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-
+ .logs-table-wrap { max-height: calc(90svh - 8rem); overflow-x: auto; }
+ .logs-table-wrap .logs-table { width: 620px; table-layout: auto; }
+ .logs-th--section, .logs-td--section { min-width: 120px; max-width: 180px; }
+ .logs-popover-shell { width: 60dvw; }
 }
 
 @media (min-width: 1024px) {

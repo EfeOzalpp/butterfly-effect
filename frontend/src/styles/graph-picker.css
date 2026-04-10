@@ -172,7 +172,9 @@
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
-  .picker { max-width: 320px; min-width: 320px; }
+  .picker { max-width: 230px; min-width: 230px; }
+  .picker:hover { max-width: 260px; min-width: 260px; transition: 50ms ease-in;}
+  .picker:has(.trigger.is-open) { max-width: 320px; min-width: 320px; }
   .listbox-shell { width: 320px; }
   .listbox { max-height: 400px; }
 }
@@ -182,7 +184,7 @@
   .picker:hover { max-width: 230px; min-width: 230px; transition: 50ms ease-in;}
   .picker:has(.trigger.is-open) { max-width: 320px; min-width: 320px; }
   .listbox-shell { width: 320px; max-width: 320px; min-width: 320px; }
-  .listbox { max-height: 386px; }
+  .listbox { max-height: 390px; }
 }
 
 /* Theme wiring: graph picker */

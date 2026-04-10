@@ -43,11 +43,14 @@ export default function useZoom({
     Number.isFinite(initialTarget) ? clamp(initialTarget as number, minRadius, maxRadius) : null
   );
   const zoomVelRef = useRef(0);
+  const radiusRef = useRef(radius);
 
   // local pinch state
   const pinchCooldownRef = useRef(false);
   const pinchTimeoutRef = useRef<number | null>(null);
+  const pinchCooldownTimerRef = useRef<number | null>(null);
   const touchStartDistance = useRef<number | null>(null);
+  radiusRef.current = radius;
 
   useEffect(() => {
     // Proportional zoom: each wheel notch scales radius by a fixed % regardless of zoom level.
@@ -64,7 +67,7 @@ export default function useZoom({
 
     const handleScroll = (event: WheelEvent) => {
       ping();
-      const current = zoomTargetRef.current ?? radius;
+      const current = zoomTargetRef.current ?? radiusRef.current;
 
       // Normalise to approximate pixel units (some browsers report in lines or pages)
       let dy = event.deltaY;
@@ -88,7 +91,7 @@ export default function useZoom({
 
       const [t1, t2] = [event.touches[0], event.touches[1]];
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-      const current = zoomTargetRef.current ?? radius;
+      const current = zoomTargetRef.current ?? radiusRef.current;
 
       if (touchStartDistance.current != null) {
         const pinchDelta = dist - touchStartDistance.current; // >0 when fingers move apart
@@ -133,7 +136,11 @@ export default function useZoom({
         }, 120);
 
         pinchCooldownRef.current = true;
-        window.setTimeout(() => (pinchCooldownRef.current = false), 160);
+        if (pinchCooldownTimerRef.current) window.clearTimeout(pinchCooldownTimerRef.current);
+        pinchCooldownTimerRef.current = window.setTimeout(() => {
+          pinchCooldownRef.current = false;
+          pinchCooldownTimerRef.current = null;
+        }, 160);
       }
     };
 
@@ -142,14 +149,15 @@ export default function useZoom({
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
 
-    return () => {
-      if (pinchTimeoutRef.current) window.clearTimeout(pinchTimeoutRef.current);
-      window.removeEventListener('wheel', handleScroll);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [minRadius, maxRadius, radius, markActivity, gestureRef]);
+      return () => {
+        if (pinchTimeoutRef.current) window.clearTimeout(pinchTimeoutRef.current);
+        if (pinchCooldownTimerRef.current) window.clearTimeout(pinchCooldownTimerRef.current);
+        window.removeEventListener('wheel', handleScroll);
+        window.removeEventListener('touchstart', handleTouchStart);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+      };
+  }, [minRadius, maxRadius, markActivity, gestureRef]);
 
   // critically damped spring to target
   const ZOOM_OMEGA = 18.0;

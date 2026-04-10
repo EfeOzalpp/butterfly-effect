@@ -9,29 +9,23 @@ export const QUESTIONNAIRE_PADDING: Record<DeviceType, CanvasPaddingSpec | null>
     useTopRatio: 1,
     horizonPos: 0.35,
     forbidden: makeRowForbidden(
-      Array.from( { length: 20 } , () => ({ ...LR_0}))
+      Array.from( { length: 36 } , () => ({ ...LR_0}))
     ),
   },
 
   tablet: {
-    rows: 17,
+    rows: 36,
     useTopRatio: 1,
-    horizonPos: 0.55,
-    forbidden: makeRowForbidden([
-      CENTER_100, CENTER_100,
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
-    ]),
+    horizonPos: 0.35,
+    forbidden: makeRowForbidden(
+      Array.from( { length: 36 } , () => ({ ...LR_0}))
+    ),
   },
 
   laptop: {
-    rows: 24,
+    rows: 20,
     useTopRatio: 1,
-    horizonPos: 0.45,
+    horizonPos: 0.35,
     forbidden: makeRowForbidden(
       Array.from( { length: 20 } , () => ({ ...LR_0}))
     ),

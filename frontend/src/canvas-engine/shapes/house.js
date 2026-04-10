@@ -189,31 +189,33 @@ const HOUSE = {
 };
 
 const SMOKE = {
-  spawnX: [0.10, 0.80],
-  spawnY: [0.02, 0.06],
+  spawnX: [0.04, 0.05],
+  spawnY: [0.80, 0.90],
   count: [36, 22],
   sizeMin: [3, 0],
   sizeMax: [6, 1],
-  lifeMin: [2, 3],
-  lifeMax: [4, 5],
+  lifeMin: [3, 3.8],
+  lifeMax: [5.5, 6.8],
   alpha: [225, 0],
   dir: 'up',
   spreadAngle: [4, 0.26],
-  speedMin: [6, 14],
-  speedMax: [12, 22],
-  gravity: [-16, -8],
+  speedMin: [4, 6],
+  speedMax: [6, 9],
+  gravity: [-10, -5],
   drag: [0.55, 0.72],
   jitterPos: [0.4, 1.2],
   jitterAngle: [0.06, 0.16],
   fadeInFrac: 0.22,
   fadeOutFrac: 0.38,
-  edgeFadePx: { left: 6, right: 0, top: 2, bottom: 0 },
+  edgeFadePx: { left: 2, right: 0, top: 2, bottom: 0 },
   sizeHz: 4,
   base: { r: 232, g: 235, b: 240 },
   blendK: [0.30, 0.10],
   satOscAmp: [0.04, 0.08],
   satOscSpeed: [0.12, 0.20],
   brightnessRange: [0.20, 0.95],
+  colHk: 2.85,
+  offsetXFrac: -0.04,
 };
 
 const WINDOW_OSC = {
@@ -227,11 +229,11 @@ const WINDOW_OSC = {
 function smokeRowContext(t) {
   return {
     size: particleBucketRange(t, 0.26, 1.0),
-    motion: particleBucketRange(t, 0.12, 1.0),
-    life: particleBucketRange(t, 1.18, 1.0),
+    motion: particleBucketRange(t, 0.18, 1.0),
+    life: particleBucketRange(t, 1.28, 1.0),
     count: particleBucketRange(t, 0.52, 1.0),
     columnW: particleBucketRange(t, 0.62, 1.0),
-    columnH: particleBucketRange(t, 0.72, 1.0),
+    columnH: particleBucketRange(t, 0.9, 1.0),
   };
 }
 
@@ -432,7 +434,9 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   {
     const hasPanels = Math.floor(r6 * 3) !== 0; // ~2/3 of houses
     const vis = Math.max(0, Math.min(1, (u - 0.80) / 0.20));
-    const allowPanels = !smallScale || (pxW >= 18 && roofH >= 3);
+    const tinyRoof = localTile <= 8 || pxW < 18 || roofH < 3;
+    const compactRoof = !tinyRoof && (localTile <= 11 || pxW < 24 || roofH < 5);
+    const allowPanels = !tinyRoof;
     if (hasPanels && vis > 0 && allowPanels) {
       // determine which side of the roof they go on
       const chimneyExists = (Math.floor(r4 * 3) === 0);
@@ -444,36 +448,42 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       }
 
       // link tilt angle to side (±30°)
-      const angle = (sideLeft ? -1 : 1) * (Math.PI / 6);
+      const angle = compactRoof ? 0 : (sideLeft ? -1 : 1) * (Math.PI / 6);
 
       // slightly bigger base sizes than before
-      const basePW = Math.max(smallScale ? 5 : 10, Math.round(pxW * 0.18));
-      const basePH = Math.max(smallScale ? 2 : 5, Math.round(roofH * 0.65));
+      const basePW = compactRoof
+        ? Math.max(7, Math.round(pxW * 0.26))
+        : Math.max(smallScale ? 5 : 10, Math.round(pxW * 0.18));
+      const basePH = compactRoof
+        ? Math.max(2, Math.round(roofH * 0.55))
+        : Math.max(smallScale ? 2 : 5, Math.round(roofH * 0.65));
       const s = 0.7 + 0.4 * vis; // [0.7..1.1]
       let pW = basePW * s;
       let pH = basePH * s;
 
       // screen-space safe clamp
-      const marginSide = Math.max(smallScale ? 1 : 4, pxW * 0.08);
+      const marginSide = Math.max(compactRoof ? 2 : (smallScale ? 1 : 4), pxW * 0.08);
       const halfW = pxW / 2;
       const sideW = halfW - marginSide;
 
       // 2 or 3 panels
-      const panelCount = 2 + (r6 < 0.33 ? 1 : 0);
+      const panelCount = compactRoof ? 1 : 2 + (r6 < 0.33 ? 1 : 0);
 
       // limit width to side span
       const maxPW = Math.max(smallScale ? 4 : 8, (sideW / panelCount) * 0.95);
       pW = Math.min(pW, maxPW);
 
       // height clamp so they don’t dwarf small roofs
-      pH = Math.min(pH, Math.max(smallScale ? 2 : 6, roofH * 0.9));
+      pH = Math.min(pH, Math.max(compactRoof ? 2 : (smallScale ? 2 : 6), roofH * 0.9));
 
       // Y: slightly above the roof top line (roofY is the top edge)
-      const yOnRoof = roofY - Math.max(2, roofH * 0.6);
+      const yOnRoof = compactRoof
+        ? roofY + Math.max(1, roofH * 0.28)
+        : roofY - Math.max(2, roofH * 0.6);
 
       // X: pack on chosen side
       let startX;
-      const spacing = pW * 0.2;
+      const spacing = compactRoof ? 0 : pW * 0.2;
       if (sideLeft) {
         startX = pxX + marginSide + pW / 2;
       } else {
@@ -490,9 +500,11 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       fillRgb(p, panelTint, Math.round(alpha * vis));
 
       for (let i = 0; i < panelCount; i++) {
-        const jitter = (i === 0) ? 0 : ((r7 * 2 - 1) * pW * 0.06);
+        const jitter = compactRoof ? 0 : ((i === 0) ? 0 : ((r7 * 2 - 1) * pW * 0.06));
         const cx = startX + i * (pW + spacing) + jitter;
-        const cy = yOnRoof - (r8 * 2 - 1) * Math.min(3, roofH * 0.06);
+        const cy = compactRoof
+          ? yOnRoof
+          : yOnRoof - (r8 * 2 - 1) * Math.min(3, roofH * 0.06);
 
         p.push();
         p.translate(cx, cy);
@@ -500,18 +512,20 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
         p.rect(0, 0, pW, pH, Math.round(Math.min(pW, pH) * 0.12));
         p.pop();
 
-        // subtle highlight stripe
-        p.push();
-        p.translate(cx, cy);
-        p.rotate(angle);
-        const hi = {
-          r: Math.min(255, panelTint.r + 22),
-          g: Math.min(255, panelTint.g + 22),
-          b: Math.min(255, panelTint.b + 22)
-        };
-        fillRgb(p, hi, Math.round(alpha * vis * 0.35));
-        p.rect(-pW * 0.18, -pH * 0.06, pW * 0.70, pH * 0.10, Math.round(Math.min(pW, pH) * 0.12));
-        p.pop();
+        if (!compactRoof) {
+          // subtle highlight stripe
+          p.push();
+          p.translate(cx, cy);
+          p.rotate(angle);
+          const hi = {
+            r: Math.min(255, panelTint.r + 22),
+            g: Math.min(255, panelTint.g + 22),
+            b: Math.min(255, panelTint.b + 22)
+          };
+          fillRgb(p, hi, Math.round(alpha * vis * 0.35));
+          p.rect(-pW * 0.18, -pH * 0.06, pW * 0.70, pH * 0.10, Math.round(Math.min(pW, pH) * 0.12));
+          p.pop();
+        }
       }
       p.pop();
     }
@@ -534,9 +548,16 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     // smoke behind chimney
     {
       const smokeColW = Math.max(2, Math.round(Math.max(cW, localTileW * 0.18) * smokeScale.columnW));
-      const smokeColH = Math.max(Math.round(localTileH * 1.3), Math.round(localTileH * 2 * smokeScale.columnH));
-      const smokeX = cx + cW / 2 - smokeColW / 2 + Math.round(smokeColW * 0.12);
-      const smokeY = cy - cH;
+      const smokeColH = Math.max(
+        Math.round(localTileH * 1.6),
+        Math.round(localTileH * (SMOKE.colHk ?? 2.85) * smokeScale.columnH)
+      );
+      const smokeX =
+        cx +
+        cW / 2 -
+        smokeColW / 2 +
+        Math.round(smokeColW * (SMOKE.offsetXFrac ?? 0));
+      const smokeY = cy - cH - smokeColH + Math.round(localTileH * 0.55);
       const bottomFadePx = isSprite ? Math.max(0, Math.round(smokeColH - localTileH * 0.7)) : 0;
 
       const spawnX0 = Math.min(val(SMOKE.spawnX, 0), val(SMOKE.spawnX, u));
@@ -575,7 +596,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       const dt = Math.max(0.001, (p.deltaTime || 16) / 1000);
 
       stepAndDrawPuffs(p, {
-        key: `chimney-smoke:${f.r0}:${f.c0}:${f.w}x${f.h}`,
+        key: `chimney-smoke:${f.r0}:${f.c0}:${f.w}x${f.h}:${seedKey}`,
         rect: { x: smokeX, y: smokeY, w: smokeColW, h: smokeColH },
         dir: SMOKE.dir,
         spreadAngle: spreadAng,

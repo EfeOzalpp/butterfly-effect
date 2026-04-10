@@ -1,7 +1,6 @@
 // src/components/survey/survey.tsx
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
-import { usePreferences } from "../app/state/preferences-context";
 import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
 import { useIdentity } from "../app/state/identity-context";
@@ -53,7 +52,6 @@ export default function Survey({
   const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
-  const { setNavVisible } = usePreferences();
 
   // Keep questionnaireOpen in sync with our stage (and finished latch)
   useEffect(() => {
@@ -86,33 +84,10 @@ export default function Survey({
     return () => window.cancelAnimationFrame(rafId);
   }, [stage]);
 
-  // Phone detection
-  const [isPhone, setIsPhone] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia
-      ? window.matchMedia('(max-width: 768px)').matches
-      : false
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mql = window.matchMedia('(max-width: 768px)');
-    const handler = (ev: MediaQueryListEvent | MediaQueryList) =>
-      setIsPhone((ev as MediaQueryList).matches ?? (ev as MediaQueryListEvent).matches);
-    mql.addEventListener ? mql.addEventListener('change', handler) : mql.addListener(handler);
-    return () => {
-      mql.removeEventListener ? mql.removeEventListener('change', handler) : mql.removeListener(handler);
-    };
-  }, []);
-
   useEffect(() => {
     const timer = window.setTimeout(() => setIntroActive(false), 520);
     return () => window.clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    const shouldHideNav = isPhone && stage === 'questions' && !hasCompletedSurvey && !finished;
-    setNavVisible(!shouldHideNav);
-  }, [isPhone, stage, hasCompletedSurvey, finished, setNavVisible]);
 
   useEffect(() => {
     if (observerMode) {
@@ -134,14 +109,12 @@ export default function Survey({
       setQuestionnaireOpen(false);
       setSectionOpen(false);
       setAnimationVisible(false);
-      setNavVisible(true);
     }
 
     prevCompletedRef.current = hasCompletedSurvey;
   }, [
     hasCompletedSurvey,
     setAnimationVisible,
-    setNavVisible,
     setQuestionnaireOpen,
     setSectionOpen,
   ]);

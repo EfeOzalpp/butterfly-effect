@@ -24,86 +24,6 @@ type PoolState = {
   loaded: boolean;  // true after first live fetch completes
 };
 
-const GENERAL_MOCK_DOCS: Doc[] = [
-  {
-    _id: 'mock-general-0-20',
-    _updatedAt: 'mock',
-    range: { minPct: 0, maxPct: 20 },
-    titles: ['Early Climate Learner', 'Starting the Journey'],
-    secondary: ['A few small shifts can move this quickly.', 'You are at the beginning, not the end.'],
-  },
-  {
-    _id: 'mock-general-21-40',
-    _updatedAt: 'mock',
-    range: { minPct: 21, maxPct: 40 },
-    titles: ['Building Better Habits', 'Momentum Matters'],
-    secondary: ['There is movement here, but still room to grow.', 'A couple stronger choices would lift this band.'],
-  },
-  {
-    _id: 'mock-general-41-60',
-    _updatedAt: 'mock',
-    range: { minPct: 41, maxPct: 60 },
-    titles: ['Holding the Middle', 'Balanced but Open'],
-    secondary: ['You are in the middle of the pack.', 'This is a stable baseline with room to improve.'],
-  },
-  {
-    _id: 'mock-general-61-80',
-    _updatedAt: 'mock',
-    range: { minPct: 61, maxPct: 80 },
-    titles: ['Strong Climate Habits', 'Reliable Low-Impact Choices'],
-    secondary: ['A strong band with a clear positive pattern.', 'These habits are trending in the right direction.'],
-  },
-  {
-    _id: 'mock-general-81-100',
-    _updatedAt: 'mock',
-    range: { minPct: 81, maxPct: 100 },
-    titles: ['Top Climate Habits', 'Leading by Example'],
-    secondary: ['This sits near the top of the community.', 'High-impact choices are showing up consistently here.'],
-  },
-];
-
-const PERSONALIZED_MOCK_DOCS: Doc[] = [
-  {
-    _id: 'mock-personal-0-20',
-    _updatedAt: 'mock',
-    range: { minPct: 0, maxPct: 20 },
-    titles: ['Reset Point', 'Fresh Start'],
-    secondary: ['Your current habits leave a lot of room for improvement.', 'This is a clear place to start building better patterns.'],
-  },
-  {
-    _id: 'mock-personal-21-40',
-    _updatedAt: 'mock',
-    range: { minPct: 21, maxPct: 40 },
-    titles: ['Room to Grow', 'On the Way'],
-    secondary: ['Some better choices are present, but not consistent yet.', 'You have movement, but the pattern is still uneven.'],
-  },
-  {
-    _id: 'mock-personal-41-60',
-    _updatedAt: 'mock',
-    range: { minPct: 41, maxPct: 60 },
-    titles: ['Steady Middle', 'Balanced Pattern'],
-    secondary: ['You are around the middle right now.', 'Your habits are mixed, but stable enough to build on.'],
-  },
-  {
-    _id: 'mock-personal-61-80',
-    _updatedAt: 'mock',
-    range: { minPct: 61, maxPct: 80 },
-    titles: ['Good Direction', 'Strong Pattern'],
-    secondary: ['Your daily choices are landing in a strong range.', 'This reflects a consistent low-impact direction.'],
-  },
-  {
-    _id: 'mock-personal-81-100',
-    _updatedAt: 'mock',
-    range: { minPct: 81, maxPct: 100 },
-    titles: ['Excellent Habits', 'Leading Pattern'],
-    secondary: ['Your choices place you near the top end.', 'This reflects a strong and consistent climate profile.'],
-  },
-];
-
-function mockDocsFor(schemaName: 'gamificationGeneralCopy' | 'gamificationPersonalizedCopy') {
-  return schemaName === 'gamificationGeneralCopy' ? GENERAL_MOCK_DOCS : PERSONALIZED_MOCK_DOCS;
-}
-
 const buildQuery = (schemaName: string) => `
 *[
   !(_id in path('drafts.**')) &&
@@ -146,14 +66,16 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
     clearTimeout(refreshTimer);
   };
 
-  const setMockDocs = () => {
+  const setFallbackReady = () => {
     stop();
-    store.set({ docs: mockDocsFor(schemaName), rev: 'mock', loaded: true });
+    // When CMS copy is unavailable or mock reads are active, let the
+    // consuming component's local fallback buckets provide the text.
+    store.set({ docs: [], rev: 'fallback', loaded: true });
   };
 
   subscribeMockSanityReadMode(() => {
     if (!started) return;
-    if (shouldUseMockSanityReads()) setMockDocs();
+    if (shouldUseMockSanityReads()) setFallbackReady();
   });
 
   const start = () => {
@@ -161,7 +83,7 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
     started = true;
 
     if (shouldUseMockSanityReads()) {
-      setMockDocs();
+      setFallbackReady();
       return;
     }
 
@@ -176,7 +98,7 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
     liveClient.fetch<Doc[]>(QUERY, {}).then(pump).catch((error) => {
       if (isSanityQuotaError(error)) {
         enableMockSanityReadFallback(error);
-        setMockDocs();
+        setFallbackReady();
         return;
       }
       console.error(error);
@@ -190,13 +112,13 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
           clearTimeout(refreshTimer);
           refreshTimer = setTimeout(() => {
             if (shouldUseMockSanityReads()) {
-              setMockDocs();
+              setFallbackReady();
               return;
             }
             liveClient.fetch<Doc[]>(QUERY, {}).then(pump).catch((error) => {
               if (isSanityQuotaError(error)) {
                 enableMockSanityReadFallback(error);
-                setMockDocs();
+                setFallbackReady();
                 return;
               }
               console.error(error);
@@ -206,7 +128,7 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
         error: (error) => {
           if (isSanityQuotaError(error)) {
             enableMockSanityReadFallback(error);
-            setMockDocs();
+            setFallbackReady();
             return;
           }
           console.error(error);

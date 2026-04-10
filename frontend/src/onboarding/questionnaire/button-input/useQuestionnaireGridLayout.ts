@@ -5,6 +5,10 @@ import { useUiFlow } from "../../../app/state/ui-context";
 import { CANVAS_PADDING } from "../../../canvas-engine/adjustable-rules/canvas-padding/index";
 import { resolveCanvasPaddingSpec } from "../../../canvas-engine/adjustable-rules/resolveCanvasPadding";
 import {
+  deviceType,
+  type DeviceType,
+} from "../../../canvas-engine/shared/responsiveness";
+import {
   justifyContentForUiPlacement,
   makeCenteredSquareGrid,
   resolveUiGridPlacement,
@@ -121,6 +125,7 @@ export function useQuestionnaireGridLayout() {
     return {
       width: canvasBox.width,
       height: canvasBox.height,
+      device: deviceType(canvasBox.width) as DeviceType,
       rows: grid.rows,
       cols: grid.cols,
       usedRows: usedRowsFromSpec(grid.rows, spec.useTopRatio),
@@ -172,6 +177,7 @@ export function useQuestionnaireGridLayout() {
 
   return {
     ready: !!layout,
+    device: layout?.device ?? "laptop",
     layout,
     getPlacementStyle,
     resolvePlacement,

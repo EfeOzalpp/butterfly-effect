@@ -8,8 +8,6 @@ export type PreferencesState = {
   setMode: (m: Mode) => void;
   navPanelOpen: boolean;
   setNavPanelOpen: (v: boolean) => void;
-  navVisible: boolean;
-  setNavVisible: (v: boolean) => void;
 };
 
 export const PreferencesCtx = createContext<PreferencesState | null>(null);

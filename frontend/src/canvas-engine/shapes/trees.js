@@ -289,7 +289,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(TREES.grass.colorBlend, u));
   if (opts?.darkMode) {
     grassTint = clampSaturation(grassTint, TREES.grass.satRange[0], TREES.grass.satRange[1], 1);
-    grassTint = clampBrightness(grassTint, 0.32, 0.48);
+    grassTint = clampBrightness(grassTint, 0.38, 0.58);
   }
   grassTint = applyExposureContrast(grassTint, ex, ct);
 

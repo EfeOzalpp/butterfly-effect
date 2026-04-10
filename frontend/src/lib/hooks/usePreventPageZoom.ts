@@ -14,9 +14,11 @@ function isElement(x: unknown): x is Element {
 
 function isZoomGesture(event: any) {
   const ctrlKey = !!event?.ctrlKey;
-  const touches = event?.touches;
-  const multiTouch = Array.isArray(touches) ? touches.length > 1 : false;
-  return ctrlKey || multiTouch;
+  const touchCount =
+    typeof event?.touches?.length === "number" ? event.touches.length : 0;
+  const multiTouch = touchCount > 1;
+  const safariGestureEvent = /^gesture/.test(String(event?.type || ""));
+  return ctrlKey || multiTouch || safariGestureEvent;
 }
 
 export function usePreventPageZoomOutsideZones({ allowWithin, disabled }: Options) {

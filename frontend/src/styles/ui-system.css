@@ -2,7 +2,7 @@
 
 h1, h2, h3, h4 { margin: 0; font-family: var(--font-title); font-optical-sizing: auto; font-variation-settings: "wdth" 112.5, "GRAD" 0; color: var(--ui-text); }
 
-h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 320; }
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 300; }
 h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); letter-spacing: -0.08rem; font-weight: 300; }
 h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 300; }
 h4 { font-size: var(--type-h4-size); line-height: var(--tyle-h4-line); font-weight: 420; }
@@ -170,18 +170,18 @@ button.city-button:hover .city-button__inner { padding: var(--btn-secondary-padd
 .system-color:hover { background: var(--btn-tertiary-hover-bg); }
 
 @media (max-width: 767px) {
-  button.begin-button { width: 100%; box-sizing: border-box; margin: 0 0.4rem; }
+  button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
   .system-color { max-height: 40px; max-width: 40px; min-height: 40px; min-width: 40px; }
   .mock-read-banner-close { width: 20px !important; height: 20px !important; }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  button.begin-button { width: 100%; box-sizing: border-box; margin: 0 0.4rem; }
+  button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
   .system-color { max-height: 52px; max-width: 52px; min-height: 52px; min-width: 52px; }
   .mock-read-banner-close { width: 20px !important; height: 20px !important; }
 }
 @media (min-width: 1024px) {
-  button.begin-button { width: 100%; box-sizing: border-box; margin: 0 0.4rem; }
+  button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
   .system-color { max-height: 48px; max-width: 48px; min-height: 48px; min-width: 48px; }
   .mock-read-banner-close { width: 20px !important; height: 20px !important; }
 }
