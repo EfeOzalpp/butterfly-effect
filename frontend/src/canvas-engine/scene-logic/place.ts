@@ -4,7 +4,7 @@ import { createOccupancy } from "../grid-layout/occupancy";
 import { cellAnchorToPx2 } from "../grid-layout/coords";
 import type { GridMetrics } from "../grid-layout/gridMetrics";
 import type { DeviceType } from "../shared/responsiveness";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { ScenePlacementRules } from "../adjustable-rules/placement-rules/index";
 import type { PoolItem, PlacedItem, FootRect } from "./types";
 import { buildFallbackCells } from "./candidates";

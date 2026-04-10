@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/engine/state.ts
 import type { PLike } from "../p/makeP";
 import type { EngineFieldItem } from "../types";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
 
 import type { GridCacheState } from "../layout/gridCache";
 import type { LiveState } from "../render/items";

@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/types.ts
 
 import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
 import type { EngineLayoutMode } from "./platform/mount";
 import type { DprMode } from "./platform/viewport";

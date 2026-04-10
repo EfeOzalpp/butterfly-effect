@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/layout/gridCache.ts
 
 import type { PLike } from "../p/makeP";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../../grid-layout/buildGrid";
 import type { GridMetrics } from "../../grid-layout/gridMetrics";
 

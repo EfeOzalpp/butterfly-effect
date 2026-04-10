@@ -1,6 +1,6 @@
 // src/canvas/scene-logic/constraints.ts
 
-import type { CanvasPaddingSpec } from '../adjustable-rules/canvasPadding';
+import type { CanvasPaddingSpec } from '../adjustable-rules/canvas-padding';
 import { makeCellForbidden } from '../grid-layout/forbidden';
 
 /**

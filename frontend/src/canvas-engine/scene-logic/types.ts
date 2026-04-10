@@ -1,7 +1,7 @@
 // src/canvas-engine/scene-logic/types.ts
 
 import type { DeviceType } from "../shared/responsiveness";
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvasPadding";
+import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { Place } from "../grid-layout/occupancy";
 import type { ConditionKind, ShapeName, Size } from "../condition/domain";
 import type { SceneLookupKey } from "../adjustable-rules/sceneMode";

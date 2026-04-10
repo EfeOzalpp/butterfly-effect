@@ -1,6 +1,6 @@
 // src/canvas/scene-logic/candidates.ts
 
-import type { CanvasPaddingSpec } from '../adjustable-rules/canvasPadding';
+import type { CanvasPaddingSpec } from '../adjustable-rules/canvas-padding';
 
 /**
  * Produces an ordered list of candidate (r,c) cells for fallback placement.
