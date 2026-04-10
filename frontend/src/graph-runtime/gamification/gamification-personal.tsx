@@ -105,6 +105,13 @@ export default function GamificationPersonalized({
       },
     [color]
   );
+  const Lines = useMemo(
+    () =>
+      function Lines({ children }: { children: React.ReactNode }) {
+        return <span className="gam-inline-lines">{children}</span>;
+      },
+    []
+  );
 
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
 
@@ -189,11 +196,11 @@ export default function GamificationPersonalized({
     if (percentage === undefined || !userData) return;
 
     const fallbackBuckets = {
-      '0-20':   { titles: ['Low Impact', 'Early Stage', 'Starting Out'],  secondary: ['Low effort, just ahead of a few'] },
-      '21-40':  { titles: ['Below Average', 'Getting Started'],           secondary: ['Slow start, keep going'] },
-      '41-60':  { titles: ['Average', 'Middle Ground'],                   secondary: ['Right in the pack'] },
-      '61-80':  { titles: ['Above Average', 'Solid Standing'],            secondary: ['Solid progress'] },
-      '81-100': { titles: ['High Impact', 'Leading Group'],               secondary: ['Top of the class'] },
+      '0-20':   { titles: ['Light Footprint', 'Just Starting', 'Small Steps'],      secondary: ['It\'s not about being perfect; it\'s about direction.'] },
+      '21-40':  { titles: ['Stepping Lighter', 'Building Momentum', 'On the Way'], secondary: ['What we buy travels farther than most people ever do.'] },
+      '41-60':  { titles: ['Finding Balance', 'In the Mix', 'Middle Path'],         secondary: ['Put yogurt and tomato paste, and butter on poached eggs.'] },
+      '61-80':  { titles: ['Leaving a Mark', 'Making Moves', 'Full Life'],          secondary: ['Tree branches that hold the cloud...'] },
+      '81-100': { titles: ['Deep Footprint', 'Full Throttle', 'Heavy Load'],        secondary: ['Learning from past to prepare for future, today.'] },
     };
 
     const chosen = pick(safePct, 'gp', String(userData._id || 'me'), fallbackBuckets);
@@ -227,34 +234,34 @@ export default function GamificationPersonalized({
         break;
       case 'top':
         relativeLine = tie === 'tiedTop'
-          ? <>You're sharing the very <Strong>Top</Strong> with {ee}.</>
-          : <>You're on <Strong>Top</Strong>, ahead of everyone else.</>;
+          ? <Lines><span>Sharing the very <Strong>top</Strong>.</span><span>Tied with {ee}.</span></Lines>
+          : <Lines><span>You're on <Strong>top</Strong>,</span><span>ahead of everyone else.</span></Lines>;
         break;
       case 'nearTop':
         relativeLine = ee > 0
-          ? <>You're close to the <Strong>Top</Strong>, tied with {ee} and behind {aa}.</>
-          : <>You're close to the <Strong>Top</Strong>, behind {aa}.</>;
+          ? <Lines><span>Close to the <Strong>top</Strong>.</span><span>Tied with {ee}.</span><span>Behind {aa}</span></Lines>
+          : <Lines><span>Close to the <Strong>top</Strong>.</span><span>Behind {aa}</span></Lines>;
         break;
       case 'bottom':
         relativeLine = tie === 'tiedBottom'
-          ? <>You're at the <Strong>Bottom</Strong>, tied with {ee}.</>
-          : <>You're at the <Strong>Bottom</Strong>, everyone else is ahead.</>;
+          ? <Lines><span>At the <Strong>bottom</Strong>.</span><span>Tied with {ee}.</span></Lines>
+          : <Lines><span>At the <Strong>bottom</Strong>.</span><span>Everyone else is ahead.</span></Lines>;
         break;
       case 'nearBottom':
         relativeLine = ee > 0
-          ? <>You're near the <Strong>Bottom</Strong>, tied with {ee} and ahead of {bb}.</>
-          : <>You're near the <Strong>Bottom</Strong>, ahead of {bb}.</>;
+          ? <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Tied with {ee}.</span><span>Ahead of {bb}</span></Lines>
+          : <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Ahead of {bb}</span></Lines>;
         break;
       default: {
         // middle
         if (tie === 'tiedMiddle') {
-          relativeLine = <>You're in the <Strong>Middle</Strong>, tied with {ee}.</>;
+          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Tied with {ee}.</span></Lines>;
         } else if (aa < bb) {
-          relativeLine = <>You're in the <Strong>Middle</Strong>, behind {aa}.</>;
+          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Behind {aa}</span></Lines>;
         } else if (bb < aa) {
-          relativeLine = <>You're in the <Strong>Middle</Strong>, ahead of {bb}.</>;
+          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Ahead of {bb}</span></Lines>;
         } else {
-          relativeLine = <>You're in the <Strong>Middle</Strong>, ahead of {bb} and behind {aa}.</>;
+          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Ahead of {bb}</span><span>Behind {aa}</span></Lines>;
         }
       }
     }

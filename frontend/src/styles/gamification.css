@@ -37,6 +37,7 @@
 .gam-general-copy {
   margin: 0.2rem 0;
 }
+.gam-copy-line { display: block; }
 .gam-inline-lines {
   display: inline-flex;
   flex-direction: column;
@@ -150,17 +151,17 @@
 @media screen and (min-width: 768px) and (max-width: 1024px) {
   /* ALL BOTTOM */
   /* bottom + right */
-  .is-bottom.is-right .generalized-result { top: -80px; left: -225px; }
+  .is-bottom.is-right .generalized-result { top: -80px; left: -170px; }
   /* bottom + left */
-  .is-bottom.is-left .generalized-result { top: -80px; left: 90px; }
+  .is-bottom.is-left .generalized-result { top: -80px; left: 150px; }
   /* bottom + mid */
-  .is-bottom.is-mid .generalized-result { top: -65px; left: 0; }
+  .is-bottom.is-mid .generalized-result { top: -80px; left: 0; }
 
   /* ALL TOP */
   /* top + right */
-  .is-top.is-right .generalized-result { top: 65px; left: -225px; }
+  .is-top.is-right .generalized-result { top: 80px; left: -170px; }
   /* top + left */
-  .is-top.is-left .generalized-result { top: 65px; left: 90px; }
+  .is-top.is-left .generalized-result { top: 80px; left: 150px; }
   /* top + mid */
   .is-top.is-mid .generalized-result { top: 80px; left: 0; }
 
@@ -171,9 +172,8 @@
   .is-right .generalized-result { left: -220px; }
 
   /* personalized results */
-  .personalized-result { width: max-content; min-width: 280px; left: 165px; }
-  .toggle-button.toggle { top: -67px; right: 164px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: -24px; }
+  .personalized-result { min-width: 200px; left: 32px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: 2px; right: 72px; }
 }
 
 @media screen and (min-width: 1025px) {
@@ -182,7 +182,7 @@
   /* bottom + right */
   .is-bottom.is-right .generalized-result { top: -80px; left: -225px; }
   /* bottom + left */
-  .is-bottom.is-left .generalized-result { top: -80px; left: 90px; }
+  .is-bottom.is-left .generalized-result { top: -80px; left: 190px; }
   /* bottom + mid */
   .is-bottom.is-mid .generalized-result { top: -80px; left: 0; }
 
@@ -190,7 +190,7 @@
   /* top + right */
   .is-top.is-right .generalized-result { top: 65px; left: -225px; }
   /* top + left */
-  .is-top.is-left .generalized-result { top: 65px; left: 90px; }
+  .is-top.is-left .generalized-result { top: 65px; left: 190px; }
   /* top + mid */
   .is-top.is-mid .generalized-result { top: 80px; left: 0; }
 
@@ -202,8 +202,8 @@
   .is-right .generalized-result { left: -260px; }
 
   /* personalized results */
-  .personalized-result { max-width: 200px; min-width: 200px; left: 32px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: 80px; }
+  .personalized-result { max-width: 200px; min-width: 200px; left: 16px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: 72px; }
 }
 
 /* Personalized close button — top-right of result panel */

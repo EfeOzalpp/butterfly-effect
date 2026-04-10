@@ -69,6 +69,9 @@ export default function GamificationGeneral({
   const isBottomBand = !isSolo && b === 0;
   const isNearTop = !isSolo && !isTopBand && (SMALL ? a === 1 : q >= TOP_Q - NEAR_M);
   const isNearBottom = !isSolo && !isBottomBand && (SMALL ? b === 1 : q <= BOTTOM_Q + NEAR_M);
+  // middle thirds
+  const isUpperMid = !isTopBand && !isBottomBand && !isNearTop && !isNearBottom && q > 0.60;
+  const isLowerMid = !isTopBand && !isBottomBand && !isNearTop && !isNearBottom && q < 0.40;
 
   // canonical tie state (derived)
   const canonicalTie =
@@ -79,24 +82,24 @@ export default function GamificationGeneral({
 
     const fallbackBuckets = {
       '0-20': {
-        titles: ['Low Impact', 'Early Stage'],
-        secondary: ['Low effort, just ahead of a few'],
+        titles: ['The warmest years in history? Almost all in the past decade.'],
+        secondary: ['Hope grows when we do.'],
       },
       '21-40': {
         titles: ['Below Average', 'Getting Started'],
-        secondary: ['Slow start, keep going'],
+        secondary: ['Most carbon still comes from how we move and what we power.'],
       },
       '41-60': {
-        titles: ['Average'],
-        secondary: ['Right in the pack'],
+        titles: ['Reuse is just creativity in disguise.'],
+        secondary: ['Little acts, lasting impact.'],
       },
       '61-80': {
         titles: ['Above Average', 'Solid Standing'],
-        secondary: ['Solid progress'],
+        secondary: ['Cool the planet, warm the heart.'],
       },
       '81-100': {
-        titles: ['High Impact', 'Leading Group'],
-        secondary: ['Top of the class'],
+        titles: ['No one\'s too small to make an impact.'],
+        secondary: ['Among the strongest here.'],
       },
     };
 
@@ -116,7 +119,7 @@ export default function GamificationGeneral({
   let relativeLine = null;
 
   if (mode === 'relative') {
-    const band = isSolo ? 'solo' : isTopBand ? 'top' : isBottomBand ? 'bottom' : isNearTop ? 'nearTop' : isNearBottom ? 'nearBottom' : 'middle';
+    const band = isSolo ? 'solo' : isTopBand ? 'top' : isBottomBand ? 'bottom' : isNearTop ? 'nearTop' : isNearBottom ? 'nearBottom' : isUpperMid ? 'upperMid' : isLowerMid ? 'lowerMid' : 'middle';
 
     switch (band) {
       case 'solo':
@@ -124,34 +127,44 @@ export default function GamificationGeneral({
         break;
       case 'top':
         relativeLine = canonicalTie === 'tiedTop'
-          ? <Lines><span><Strong>Top</Strong> spot.</span><span>Tied with {e}</span></Lines>
-          : <><Strong>Top</Strong> of the group</>;
+          ? <Lines><span><Strong>top</Strong> spot.</span><span>Tied with {e}</span></Lines>
+          : <><Strong>top</Strong> of the group</>;
         break;
       case 'nearTop':
         relativeLine = e > 0
-          ? <Lines><span>Near <Strong>Top</Strong>.</span><span>Tied with {e}</span><span>Behind {a}</span></Lines>
-          : <Lines><span>Near <Strong>Top</Strong>.</span><span>Behind {a}</span></Lines>;
+          ? <Lines><span>Near <Strong>top</Strong>.</span><span>Tied with {e}</span><span>Behind {a}</span></Lines>
+          : <Lines><span>Near <Strong>top</Strong>.</span><span>Behind {a}</span></Lines>;
         break;
       case 'bottom':
         relativeLine = canonicalTie === 'tiedBottom'
-          ? <Lines><span><Strong>Bottom</Strong>.</span><span>Tied with {e}</span></Lines>
-          : <><Strong>Bottom</Strong></>;
+          ? <Lines><span><Strong>bottom</Strong>.</span><span>Tied with {e}</span></Lines>
+          : <><Strong>bottom</Strong></>;
         break;
       case 'nearBottom':
         relativeLine = e > 0
-          ? <Lines><span>Near <Strong>Bottom</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span></Lines>
-          : <Lines><span>Near <Strong>Bottom</Strong>.</span><span>Ahead of {b}</span></Lines>;
+          ? <Lines><span>Near <Strong>bottom</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span></Lines>
+          : <Lines><span>Near <Strong>bottom</Strong>.</span><span>Ahead of {b}</span></Lines>;
+        break;
+      case 'upperMid':
+        relativeLine = e > 0
+          ? <Lines><span><Strong>upper half</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>
+          : <Lines><span><Strong>upper half</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
+        break;
+      case 'lowerMid':
+        relativeLine = e > 0
+          ? <Lines><span><Strong>lower half</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>
+          : <Lines><span><Strong>lower half</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
         break;
       default: {
         // middle
         if (canonicalTie === 'tiedMiddle') {
-          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
+          relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
         } else if (a < b) {
-          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Behind {a}</span></Lines>;
+          relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Behind {a}</span></Lines>;
         } else if (b < a) {
-          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Ahead of {b}</span></Lines>;
+          relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Ahead of {b}</span></Lines>;
         } else {
-          relativeLine = <Lines><span><Strong>Middle</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
+          relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
         }
       }
     }
