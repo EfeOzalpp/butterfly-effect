@@ -17,7 +17,7 @@ export default function RoleStep({ value, onChange, onNext, error }) {
     <div className="role-select-shell">
       <section className="survey survey-step role-select">
         <div className="onboarding">
-          <h3 className="welcome-text">Decisions That<br />Affect the Environment.</h3>
+          <h2 className="welcome-text">Join an <span style={{ color: 'var(--welcome-indie)' }}>Indie</span><br /> <span style={{ color: 'var(--welcome-sustainability)' }}>Sustainability</span> Project.</h2>
 
           <RolePicker value={value} onChange={onChange} errorId={errorId} />
 

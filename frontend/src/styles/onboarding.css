@@ -1,4 +1,5 @@
 /* Survey skeleton */
+
 .fade-out { animation: fadeOut 100ms ease-in forwards; }
 .fade-in { animation: fadeIn 100ms ease-in forwards; }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -8,15 +9,16 @@
 
 /* Onboarding foundation */
 .survey.survey-step.role-select, .survey.survey-step.questionnaire { display: flex; justify-content: center; align-items: center; flex-direction: column; }
-.survey.survey-step.questionnaire { width: 100%; min-height: 100dvh; position: relative; }
+.survey.survey-step.questionnaire { width: 100%; min-height: 100dvh; position: relative; overflow: hidden; overflow: clip; }
 .role-select-shell { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; }
 .survey.survey-step.role-select > .onboarding { display: flex; flex-direction: column; align-items: center; }
 .user-flow { display: flex; inset: 0; align-items: center; pointer-events: none; z-index: 6; }
+.user-flow.questionnaire-active { width: 100%; max-width: 100vw; overflow: hidden; overflow: clip; }
 .welcome-title-layer { position: relative; display: flex; justify-content: center; pointer-events: none; align-items: center; z-index: 5; }
 .welcome-text { opacity: 0.9; }
 
 /* Canvas goes full-screen during questionnaire on all breakpoints */
-.onboarding-canvas.questionnaire-active { position: fixed; inset: 0; width: 100dvw; min-height: 100dvh !important; max-height: 100dvh !important; height: 100dvh !important; }
+.onboarding-canvas.questionnaire-active { position: fixed; inset: 0; width: 100dvw; min-height: 100dvh !important; max-height: 100dvh !important; height: 100dvh !important; overflow: hidden; overflow: clip; }
 
 .radio-button { display: inline-flex; align-items: center; justify-content: center; }
 .lottie-skeleton { width: 100%; height: 100%; border-radius: 999px; border: 2px solid currentColor; opacity: 0.35; }
@@ -231,6 +233,8 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  overflow: hidden;
+  overflow: clip;
 }
 
 .button-questionnaire__slot {
@@ -246,7 +250,7 @@
   justify-content: center;
   position: relative;
   padding: var(--btn-secondary-padding);
-  border: 1px solid var(--ui-border);
+  border: 2px solid var(--ui-border);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--ui-bg-surface-glass) 90%, transparent);
   color: var(--ui-text);
@@ -422,7 +426,7 @@ button.city-button,
   .button-questionnaire__button { font-size: 0.92rem; }
   /* canvas flow for pre-questionnaire */
   .onboarding-canvas { top: 0; right: 0; width: 100%; height: 640px; min-height: 640px; max-height: 640px; position: absolute; overflow: hidden; }
-  .welcome-title-layer { height: 640px; top: 0px; }
+  .welcome-title-layer { height: 640px; top: -16px; }
   .radio-group { width: 90%; }
 
   /* Section picker spacing */
@@ -454,7 +458,7 @@ button.city-button,
 @media (min-width: 1025px) {
   /* canvas flow for pre-questionnaire */
   .onboarding-canvas { top: 0; right: 0; width: 100%; height: clamp(650px, 2.6vw, 860px); position: absolute; overflow: hidden; }
-  .welcome-title-layer { height: clamp(600px, 2.6vw, 860px); }
+  .welcome-title-layer { height: clamp(600px, 2.6vw, 860px); top: -8px; }
 }
 
 /* 768 and above */
