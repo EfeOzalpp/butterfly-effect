@@ -1,11 +1,5 @@
 /* Graph skeleton */
 
-/* ==========================================================================
-   JS-DRIVEN MOTION CORE (keep)
-   ==========================================================================
-   These animation class names are toggled/relied on by runtime logic.
-   -------------------------------------------------------------------------- */
-
 .green-animation { animation: greenFluctuation 3.6s ease-in-out infinite; }
 .yellow-animation { animation: yellowFluctuation 3.6s ease-in-out infinite; }
 .red-animation { animation: redFluctuation 3.6s ease-in-out infinite; }

@@ -38,6 +38,13 @@ function rgbaString(color: FogColor, alpha: number) {
   return `rgba(${color.r},${color.g},${color.b},${clamp01(alpha)})`;
 }
 
+function gradientCacheKey(gradientStops: readonly FogGradientStop[] | null | undefined) {
+  if (!gradientStops || gradientStops.length === 0) return "none";
+  return gradientStops
+    .map((stop) => `${stop.k}:${stop.color.r},${stop.color.g},${stop.color.b}`)
+    .join("|");
+}
+
 function fogOpacityScaleForRowCount(rowCount: number) {
   const referenceRows = 18;
   const rawScale = referenceRows / Math.max(1, rowCount);
@@ -131,7 +138,7 @@ export function computeFogState(args: {
 
   const rowCount = metrics.rowHeights.length;
   const fogOpacityScale = fogOpacityScaleForRowCount(rowCount);
-  const baseFogLayerAlpha = darkMode ? 28 / 255 : 26 / 255;
+  const baseFogLayerAlpha = darkMode ? 36 / 255 : 26 / 255;
   const FOG_LAYER_ALPHA = baseFogLayerAlpha * fogOpacityScale;
   const numBottomFogLayers = bottomFogLayerBoundaries.length;
   const targetHorizonOpacity = numBottomFogLayers > 0
@@ -146,13 +153,13 @@ export function computeFogState(args: {
         ...(isRealMobile
           ? [
               { k: 0.0, color: { r: 18, g: 11, b: 28 } },
-              { k: 0.16, color: { r: 33, g: 28, b: 40 } },
+              { k: 0.18, color: { r: 33, g: 28, b: 40 } },
               { k: 0.55, color: { r: 26, g: 19, b: 31 } },
               { k: 1, color: { r: 14, g: 8, b: 26 } },
             ] as const
           : [
               { k: 0.0, color: { r: 53, g: 49, b: 49 } },
-              { k: 0.08, color: { r: 57, g: 52, b: 54 } },
+              { k: 0.1, color: { r: 77, g: 72, b: 74 } },
               { k: 0.75, color: { r: 30, g: 18, b: 30 } },
               { k: 1, color: { r: 15, g: 9, b: 30 } },
             ] as const),
@@ -170,7 +177,7 @@ export function computeFogState(args: {
             ] as const
           : [
               { k: 0.0, color: { r: 18, g: 12, b: 32 } },
-              { k: 0.08, color: { r: 48, g: 40, b: 55 } },
+              { k: 0.08, color: { r: 68, g: 60, b: 65 } },
               { k: 0.45, color: { r: 34, g: 25, b: 42 } },
               { k: 1.0,  color: { r: 15, g: 9, b: 30 } },
             ] as const),
@@ -313,7 +320,7 @@ export function createSkyFogCache() {
 
     const w = p.width;
     const h = p.height;
-    const key = `${w}|${h}|${fog.fogStartY.toFixed(1)}|${fog.fogPeakRow}|${fog.skyLayerAlpha.toFixed(4)}|${fog.fogColor.r}|${fog.fogColor.g}|${fog.fogColor.b}|${fog.skyFogGradient ? 1 : 0}|${fog.rowOffsetY.join(",")}`;
+    const key = `${w}|${h}|${fog.fogStartY.toFixed(1)}|${fog.fogPeakRow}|${fog.skyLayerAlpha.toFixed(4)}|${fog.fogColor.r}|${fog.fogColor.g}|${fog.fogColor.b}|${gradientCacheKey(fog.skyFogGradient)}|${fog.rowOffsetY.join(",")}`;
 
     if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
       if (!offscreen) offscreen = document.createElement("canvas");

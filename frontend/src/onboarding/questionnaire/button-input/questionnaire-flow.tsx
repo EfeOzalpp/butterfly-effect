@@ -148,7 +148,10 @@ export default function ButtonQuestionnaireFlow({
   }, []);
 
   useEffect(() => {
-    if (!gridReady || !layout) return;
+    if (!gridReady || !layout) {
+      setReservedFootprints([]);
+      return;
+    }
 
     const reserved = question.options
       .map((_, optionIndex) =>
@@ -161,6 +164,7 @@ export default function ButtonQuestionnaireFlow({
   }, [device, gridReady, layout, question.id, question.options, resolvePlacement, setReservedFootprints]);
 
   useEffect(() => {
+    setReservedFootprints([]);
     return () => {
       setReservedFootprints([]);
     };

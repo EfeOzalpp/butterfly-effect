@@ -1,8 +1,8 @@
 /* Navigation shell, logo, left panel, auto-adjust, mode-toggle, city, bottom */
 
 :root { --logo-wrap-w-desktop: 2.6rem; --logo-wrap-h-desktop: 2.6rem; --logo-w-desktop: 3.2rem; --logo-h-desktop: 3.2rem; --nav-control-h-desktop: 40px;
---logo-wrap-w-tablet: 2.6rem; --logo-wrap-h-tablet: 2.6rem; --logo-w-desktop: 3.2rem; --logo-h-tablet: 3.2rem; --nav-control-h-tablet: 40px; 
-  --logo-wrap-w-mobile: 2.6rem; --logo-wrap-h-mobile: 2.6rem; --logo-w-desktop: 3.2rem; --logo-h-mobile: 3.2rem; --nav-control-h-mobile: 40px; }
+--logo-wrap-w-tablet: 2.6rem; --logo-wrap-h-tablet: 2.6rem; --logo-h-tablet: 3.2rem; --nav-control-h-tablet: 40px; 
+  --logo-wrap-w-mobile: 2.6rem; --logo-wrap-h-mobile: 2.6rem; --logo-h-mobile: 3.2rem; --nav-control-h-mobile: 40px; }
 
 .navigation { position: fixed; inset: 0 0 auto 0; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; pointer-events: none; z-index: 202; gap: 1rem; }
 

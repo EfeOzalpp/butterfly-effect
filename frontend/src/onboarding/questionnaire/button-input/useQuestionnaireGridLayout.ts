@@ -6,6 +6,7 @@ import { CANVAS_PADDING } from "../../../canvas-engine/adjustable-rules/canvas-p
 import { resolveCanvasPaddingSpec } from "../../../canvas-engine/adjustable-rules/resolveCanvasPadding";
 import {
   deviceType,
+  getViewportSize,
   type DeviceType,
 } from "../../../canvas-engine/shared/responsiveness";
 import {
@@ -23,7 +24,10 @@ type CanvasBox = {
   height: number;
 };
 
-function findActiveGridHost(preferCityCanvas: boolean): HTMLElement | null {
+function findActiveGridHost(
+  preferCityCanvas: boolean,
+  preferQuestionnaireHost: boolean
+): HTMLElement | null {
   if (typeof document === "undefined") return null;
 
   if (preferCityCanvas) {
@@ -31,10 +35,12 @@ function findActiveGridHost(preferCityCanvas: boolean): HTMLElement | null {
     if (cityHost instanceof HTMLElement) return cityHost;
   }
 
-  const onboardingHost =
-    document.getElementById("canvas-root") ??
-    document.querySelector(".onboarding-canvas.questionnaire-active") ??
-    document.querySelector(".onboarding-canvas");
+  const questionnaireHost = document.querySelector(".onboarding-canvas.questionnaire-active");
+  const canvasRoot = document.getElementById("canvas-root");
+
+  const onboardingHost = preferQuestionnaireHost
+    ? questionnaireHost ?? canvasRoot ?? document.querySelector(".onboarding-canvas")
+    : canvasRoot ?? questionnaireHost ?? document.querySelector(".onboarding-canvas");
 
   return onboardingHost instanceof HTMLElement ? onboardingHost : null;
 }
@@ -42,20 +48,33 @@ function findActiveGridHost(preferCityCanvas: boolean): HTMLElement | null {
 function readCanvasBox(host: HTMLElement | null): CanvasBox | null {
   if (!(host instanceof HTMLElement)) return null;
 
+  const rect = host.getBoundingClientRect();
   const next = {
-    width: Math.round(host.clientWidth),
-    height: Math.round(host.clientHeight),
+    width: Math.floor(rect.width || host.clientWidth),
+    height: Math.floor(rect.height || host.clientHeight),
   };
 
   if (next.width <= 0 || next.height <= 0) return null;
   return next;
 }
 
+function readViewportBox(): CanvasBox | null {
+  if (typeof window === "undefined") return null;
+
+  const vv: VisualViewport | undefined = (window as any).visualViewport;
+  const width = Math.floor(vv?.width || getViewportSize().w);
+  const height = Math.floor(vv?.height || getViewportSize().h);
+
+  if (width <= 0 || height <= 0) return null;
+  return { width, height };
+}
+
 export function useQuestionnaireGridLayout() {
   const { cityPanelOpen, questionnaireOpen } = useUiFlow();
   const preferCityCanvas = cityPanelOpen && questionnaireOpen;
+  const preferQuestionnaireHost = questionnaireOpen && !preferCityCanvas;
   const [canvasBox, setCanvasBox] = useState<CanvasBox | null>(() =>
-    readCanvasBox(findActiveGridHost(preferCityCanvas))
+    readCanvasBox(findActiveGridHost(preferCityCanvas, preferQuestionnaireHost))
   );
 
   useEffect(() => {
@@ -63,6 +82,8 @@ export function useQuestionnaireGridLayout() {
     let resizeObserver: ResizeObserver | null = null;
     let mutationObserver: MutationObserver | null = null;
     let observedHost: HTMLElement | null = null;
+    const visualViewport: VisualViewport | undefined =
+      typeof window !== "undefined" ? (window as any).visualViewport : undefined;
 
     const syncObserverTarget = (host: HTMLElement | null) => {
       if (observedHost === host) return;
@@ -75,11 +96,13 @@ export function useQuestionnaireGridLayout() {
     };
 
     const measure = () => {
-      const host = findActiveGridHost(preferCityCanvas);
+      const host = findActiveGridHost(preferCityCanvas, preferQuestionnaireHost);
       syncObserverTarget(host);
 
-      const nextBox = readCanvasBox(host);
-      setCanvasBox((prev) => nextBox ?? (questionnaireOpen ? prev : null));
+      const nextBox = preferQuestionnaireHost
+        ? readViewportBox()
+        : readCanvasBox(host);
+      setCanvasBox(nextBox);
     };
 
     const scheduleMeasure = () => {
@@ -89,6 +112,8 @@ export function useQuestionnaireGridLayout() {
 
     scheduleMeasure();
     window.addEventListener("resize", scheduleMeasure);
+    window.addEventListener("orientationchange", scheduleMeasure);
+    visualViewport?.addEventListener?.("resize", scheduleMeasure);
     if (typeof MutationObserver !== "undefined" && typeof document !== "undefined") {
       mutationObserver = new MutationObserver(() => scheduleMeasure());
       mutationObserver.observe(document.body, { childList: true, subtree: true });
@@ -99,8 +124,10 @@ export function useQuestionnaireGridLayout() {
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
       window.removeEventListener("resize", scheduleMeasure);
+      window.removeEventListener("orientationchange", scheduleMeasure);
+      visualViewport?.removeEventListener?.("resize", scheduleMeasure);
     };
-  }, [preferCityCanvas, questionnaireOpen]);
+  }, [preferCityCanvas, preferQuestionnaireHost]);
 
   const layout = useMemo(() => {
     if (!canvasBox) return null;

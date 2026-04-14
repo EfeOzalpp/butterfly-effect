@@ -144,6 +144,7 @@ export default function useDotGraphSceneModel({
   return {
     isSmallScreen,
     isRealMobile,
+    isTabletLike,
     useDesktopLayout,
     groupRef,
     radius,

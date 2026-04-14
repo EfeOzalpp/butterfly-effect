@@ -1,11 +1,4 @@
 // src/canvas-engine/adjustable-rules/placement-rules/start.ts
-//
-// Scene concept:
-//   Left third  — residential neighbourhood (house + villa) bordered by trees
-//   Right third — industrial pocket (power + carFactory) bordered by trees
-//   Center gap  — breathing room / trees separating the two communities
-//   Sky         — sun top-left, clouds sparse, snow mid-sky depth
-//   Street      — cars + bus at the very bottom, sea far-right corner
 
 import type { ScenePlacementRules } from "./helpers";
 
@@ -175,6 +168,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 1, tablet: 2, laptop: 1 } },
       { verticalK: [0.5, 0.55], horizontalK: [0.8, 0.9],
         count: { mobile: 1, tablet: 2, laptop: 3 } },
+      { verticalK: [0.65, 0.65], horizontalK: [0.95, 1],
+        count: { mobile: 1, tablet: 0, laptop: 1 } },
 
       // mid far
       { verticalK: [0.5, 0.55], horizontalK: [0.5, 0.55],
@@ -193,9 +188,9 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 0, laptop: 2 } },
 
       // mid close
-      { verticalK: [0.7, 0.75], horizontalK: [0.3, 0.34],
+      { verticalK: [0.7, 0.75], horizontalK: [0.4, 0.45],
         count: { mobile: 0, tablet: 0, laptop: 1  } },
-      { verticalK: [0.75, 0.8], horizontalK: [0.44, 0.5],
+      { verticalK: [0.85, 0.85], horizontalK: [0.44, 0.5],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
       { verticalK: [0.8, 0.8], horizontalK: [0.34, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
@@ -211,6 +206,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 0, laptop: 3 } },
       { verticalK: [0.6, 0.6], horizontalK: [0.0, 0.1],
         count: { mobile: 1, tablet: 0, laptop: 2 } },
+      { verticalK: [0.65, 0.7], horizontalK: [0.15, 0.2],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
     ],
   },
 
@@ -224,13 +221,15 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 1, tablet: 0, laptop: 2 } },
       { verticalK: [0.5, 0.5], horizontalK: [0.02, 0.08],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
+      { verticalK: [0.6, 0.63], horizontalK: [0.2, 0.25],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
             
       // mid 
       { verticalK: [0.55, 0.55], horizontalK: [0.5, 0.6],
         count: { mobile: 0, tablet: 0, laptop: 2 } }, 
-      { verticalK: [0.45, 0.50], horizontalK: [0.3, 0.35],
+      { verticalK: [0.45, 0.50], horizontalK: [0.35, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.5, 0.55], horizontalK: [0.3, 0.4],
+      { verticalK: [0.5, 0.55], horizontalK: [0.4, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // mobile addition
@@ -238,6 +237,10 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 1, tablet: 0, laptop: 0 } },
       { verticalK: [0.55, 0.65], horizontalK: [0.55, 0.6],
         count: { mobile: 1, tablet: 0, laptop: 0 } },
+      { verticalK: [0.55, 0.65], horizontalK: [0.01, 0.06],
+        count: { mobile: 2, tablet: 0, laptop: 0 } },
+      { verticalK: [0.75, 0.85], horizontalK: [0.01, 0.06],
+        count: { mobile: 2, tablet: 0, laptop: 0 } },
 
       // tablet addition  
       { verticalK: [0.65, 0.75], horizontalK: [0.05, 0.1],
@@ -261,13 +264,13 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       // right close community
       { verticalK: [0.65, 0.7], horizontalK: [0.75, 0.85],
         count: { mobile: 0, tablet: 1, laptop: 1 } },
-      { verticalK: [0.8, 0.8], horizontalK: [0.15, 0.2],
-        count: { mobile: 0, tablet: 0, laptop: 1 } },,
       { verticalK: [0.7, 0.72], horizontalK: [0.75, 0.82],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // mobile only
       { verticalK: [0.8, 0.9], horizontalK: [0.7, 0.8],
+        count: { mobile: 1, tablet: 0, laptop: 0 } },
+      { verticalK: [0.7, 0.75], horizontalK: [0.1, 0.14],
         count: { mobile: 1, tablet: 0, laptop: 0 } },
 
       // tablet only 
@@ -275,10 +278,14 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 1, laptop: 0 } },
 
       // left
-      { verticalK: [0.7, 0.75], horizontalK: [0.1, 0.14],
-        count: { mobile: 1, tablet: 0, laptop: 1 } },
       { verticalK: [0.55, 0.65], horizontalK: [0.1, 0.14],
         count: { mobile: 1, tablet: 0, laptop: 2 } },
+      { verticalK: [0.8, 0.8], horizontalK: [0.15, 0.2],
+        count: { mobile: 0, tablet: 0, laptop: 0 } },
+
+      // mid  
+      { verticalK: [0.7, 0.8], horizontalK: [0.4, 0.5],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
     ],
   },
 
@@ -397,16 +404,26 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 2, laptop: 2 } },
 
       // mid close
+      { verticalK: [0.75, 0.8], horizontalK: [0.4, 0.45],
+        count: { mobile: 1, tablet: 0, laptop: 3 } },
       { verticalK: [0.74, 0.82], horizontalK: [0.3, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 2 } },
       { verticalK: [0.85, 0.88], horizontalK: [0.35, 0.35],
         count: { mobile: 1, tablet: 0, laptop: 2 } },
       { verticalK: [0.82, 0.87], horizontalK: [0.4, 0.5],
         count: { mobile: 1, tablet: 0, laptop: 1 } },
-      { verticalK: [0.9, 0.9], horizontalK: [0.4, 0.47],
-        count: { mobile: 1, tablet: 0, laptop: 3 } },
+      { verticalK: [0.9, 0.9], horizontalK: [0.43, 0.47],
+        count: { mobile: 1, tablet: 0, laptop: 1 } },
+      { verticalK: [0.9, 0.9], horizontalK: [0.36, 0.43],
+        count: { mobile: 1, tablet: 0, laptop: 1 } },
+      { verticalK: [0.85, 0.85], horizontalK: [0.45, 0.55],
+        count: { mobile: 1, tablet: 0, laptop: 1 } },
+      { verticalK: [0.8, 0.8], horizontalK: [0.47, 0.6],
+        count: { mobile: 1, tablet: 0, laptop: 1 } },
 
       // left 
+      { verticalK: [0.65, 0.7], horizontalK: [0.16, 0.26],
+        count: { mobile: 0, tablet: 0, laptop: 12 } },
       { verticalK: [0.5, 0.55], horizontalK: [0.2, 0.35],
         count: { mobile: 1, tablet: 2, laptop: 4 } },
       { verticalK: [0.55, 0.55], horizontalK: [0.2, 0.4],
@@ -452,8 +469,12 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       { verticalK: [0.85, 0.85], horizontalK: [0.85, 0.95],
         count: { mobile: 1, tablet: 1, laptop: 2 } },
 
-      // left mid
-      { verticalK: [0.8, 0.85], horizontalK: [0.05, 0.1],
+      // left
+      { verticalK: [0.75, 0.75], horizontalK: [0.2, 0.25],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },  
+
+      // mid
+      { verticalK: [0.85, 0.85], horizontalK: [0.4, 0.45],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // mobile only
@@ -494,7 +515,15 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 1, tablet: 1, laptop: 1 } },
       { verticalK: [0.8, 0.85], horizontalK: [0.12, 0.15],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-    ],
+      { verticalK: [0.9, 0.95], horizontalK: [0.06, 0.1],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
+ 
+       // far 
+      { verticalK: [0.65, 0.7], horizontalK: [0.1, 0.2],
+        count: { mobile: 0, tablet: 0, laptop: 2 } },
+      { verticalK: [0.65, 0.7], horizontalK: [0.7, 0.8],
+        count: { mobile: 0, tablet: 0, laptop: 2 } },
+      ],
   },
 
   sea: {
@@ -502,6 +531,10 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       // far right
       { verticalK: [0.8, 0.85], horizontalK: [0.7, 0.7],
         count: { mobile: 1, tablet: 1, laptop: 1 } },
+
+      // left  
+      { verticalK: [0.9, 0.95], horizontalK: [0.1, 0.15],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // mobile only
       { verticalK: [0.92, 0.95], horizontalK: [0.2, 0.4],

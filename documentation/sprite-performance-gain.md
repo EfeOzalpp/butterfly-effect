@@ -1,5 +1,13 @@
-For the first 3 seconds of the initial 3D scene load
-with 80 visible shapes:
+# Sprite Performance Memory Note
+
+Chrome DevTools heap snapshot numbers for the first 3 seconds of initial 3D
+scene load. These are JS/object-retention measurements, not GPU/VRAM numbers.
+
+Why this still matters: the optimization here was about reducing sprite
+material/texture churn, retained objects, and cache pressure on the JS side.
+GPU memory should be measured separately with browser/WebGL tools or Task Manager.
+
+With 80 visible shapes:
 
 Without quantization and material caching:
 
@@ -28,7 +36,7 @@ Measured reduction:
 - Total shallow size: `11.9%`
 - Total retained size: `18.6%`
 
-At 300 visible shapes:
+With 300 visible shapes:
 
 Without quantization and material caching:
 

@@ -3,7 +3,12 @@
 // visible shapes so the budget concentrates on what the camera sees.
 
 const TICK_MS = 60;        // scheduler fires every 60ms
-const SHAPES_PER_TICK = 3; // shapes refreshed per tick → ~50 refreshes/sec total
+
+function shapesPerTick() {
+  if (typeof window === 'undefined') return 3;
+  const w = window.innerWidth;
+  return w >= 768 && w <= 1024 ? 5 : 3;
+}
 
 type EntryInput = {
   isVisible: () => boolean;
@@ -30,12 +35,18 @@ function schedulerTick() {
   }
   if (!visible.length) return;
 
-  for (let i = 0; i < SHAPES_PER_TICK; i++) {
+  const perTick = shapesPerTick();
+  const naturalTurnMs = Math.max(TICK_MS, Math.ceil(visible.length / Math.max(1, perTick)) * TICK_MS);
+
+  for (let i = 0; i < perTick; i++) {
     const k = visible[rrIdx % visible.length];
     const entry = entries.get(k);
     if (entry) {
       entry.tick();
-      entry.nextAtMs = now + Math.max(TICK_MS, entry.intervalMs);
+      // Respect the requested cadence when the visible set is dense, but
+      // don't make sparse desktop scenes wait the full interval when the
+      // old round-robin would naturally cycle sooner.
+      entry.nextAtMs = now + Math.min(Math.max(TICK_MS, entry.intervalMs), naturalTurnMs);
     }
     rrIdx = (rrIdx + 1) % visible.length;
   }

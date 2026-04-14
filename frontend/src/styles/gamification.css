@@ -1,4 +1,5 @@
 /* Gamification skeleton */
+
 .personalized-root { opacity: 0; transition: opacity 200ms ease; }
 .personalized-root.is-visible { opacity: 1; }
 
@@ -59,7 +60,7 @@
 /* offset-px is a dynamic value that anchors the popup in the 3D space */
 
 /* default */
-.generalized-result { transform: translateX(var(--offset-px)); }
+.generalized-result { transform: translateX(var(--offset-px)); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-start; }
 
 /* container, MID + RIGHT + LEFT */
 .is-right .generalized-result .gam-general,
@@ -197,7 +198,7 @@
   /* CENTRAL BANDS */
   /* left + mid */
   .is-left .generalized-result { left: 170px; }
-  .is-mid .generalized-result { left: 12px; }
+  .is-mid .generalized-result { left: 170px; }
   /* right */
   .is-right .generalized-result { left: -260px; }
 

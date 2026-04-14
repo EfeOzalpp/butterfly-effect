@@ -128,7 +128,7 @@ export function useSceneField(
     const { w, h } = getCanvasLogicalSize(canvas);
     const viewportW = getViewportSize().w;
     const ruleWidthPx =
-      hostId === "start" && !questionnaireOpen ? viewportW : w;
+      hostId === "start" ? viewportW : w;
 
     // inform runtime about the current lookup key (used by ticker/renderer)
     engine.controls.current?.setSceneMode?.(sceneLookupKey);

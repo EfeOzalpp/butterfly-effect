@@ -35,8 +35,8 @@ export const SEA_COOL_PALETTE = {
 };
 
 // grass for composite bowl
-export const GRASS_BASE = { r: 130, g: 180, b: 110 };
-export const GRASS_DARK  = { r: 38, g: 82, b: 130 };
+export const GRASS_BASE = { r: 150, g: 190, b: 150 };
+export const GRASS_DARK  = { r: 72, g: 102, b: 130 };
 
 // tuning (override with opts.tuning)
 export const SEA_TUNING = {

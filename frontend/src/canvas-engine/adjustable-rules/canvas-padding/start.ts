@@ -27,7 +27,7 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
     useTopRatio: 1,
     horizonPos: 0.545,
     forbidden: makeRowForbidden(
-      Array.from( { length: 19 } , () => ({ ...LR_0}))
+      Array.from( { length: 18 } , () => ({ ...LR_0}))
     ),
   },
 };

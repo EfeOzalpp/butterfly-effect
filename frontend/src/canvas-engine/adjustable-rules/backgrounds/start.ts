@@ -14,13 +14,13 @@ export const BACKGROUNDS_START: BackgroundsByMode = {
         { k: 0.20, rgba: "rgba(186, 232, 255, 0.99)", oscK: { amp: 0.03, hz: 0.015 } },   // airy drift
         { k: 0.40, rgba: "rgba(214, 242, 255, 0.97)" },                                    // pale candy sky
         { k: 0.52, rgba: "rgba(255, 236, 166, 0.95)" },                                    // warm horizon glow
-        { k: 0.56, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },          // teal break
-        { k: 0.75, rgba: "rgba(82, 184, 146, 0.97)", liveBlend: [0.02, 0.08] },           // adventure grass-teal
+        { k: 0.54, rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },          // teal break
+        { k: 0.70, rgba: "rgba(82, 184, 146, 0.97)", liveBlend: [0.02, 0.08] },           // adventure grass-teal
         { k: 0.96, rgba: "rgba(82, 184, 146, 0.97)" }, 
         { k: 0.96, rgba: "rgba(120, 156, 102, 1)" },
         { k: 0.98, rgba: "rgba(120, 156, 102, 1)" },
-        { k: 0.98,  rgba: "rgb(228, 219, 212)" },
-        { k: 1.0,  rgba: "rgb(237, 227, 219)" },
+        { k: 0.98,  rgba: "rgb(248, 240, 234)" },
+        { k: 1.0,  rgba: "rgb(248, 240, 234)" },
       ] as const,
     },
   },
@@ -69,9 +69,10 @@ const START_DARK: BackgroundSpec = {
       { k: 0.20, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
       { k: 0.35, rgba: "rgba(40, 65, 122, 0.95)" },                                   // mid blue
       { k: 0.47, rgba: "rgba(48, 107, 159, 0.93)" },                                   // horizon blue
-      { k: 0.53, rgba: "rgba(38, 133, 180, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
-      { k: 0.58, rgba: "rgba(77, 167, 143, 0.97)", liveBlend: [0.02, 0.08] },         // Adventure times teal ground
-      { k: 0.98, rgba: "rgba(117, 164, 143, 0.97)"},
+      { k: 0.52, rgba: "rgba(56, 147, 196, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
+      { k: 0.54, rgba: "rgb(144, 206, 161)", liveBlend: [0.02, 0.08] , oscK: { amp: 0.02, hz: 0.03 }},         // Adventure times teal ground
+      { k: 0.58, rgba: "rgb(153, 201, 144)", liveBlend: [0.04, 0.10] },  
+      { k: 0.98, rgba: "rgba(159, 179, 132, 0.97)"},
       { k: 0.98,  rgba: "rgba(53, 48, 42, 1)" },
       { k: 1.0,  rgba: "rgba(53, 48, 42, 1)" },
     ] as const,
@@ -94,15 +95,16 @@ export const BACKGROUNDS_START_DARK: BackgroundsByMode = {
       kind: "linear",
       from: { xK: 0.5, yK: 0.0 },
       to: { xK: 0.5, yK: 1.0 },
-      stops: [
-        { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },                                     // Adventure times navy sky
-        { k: 0.12, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
-        { k: 0.21, rgba: "rgba(45, 84, 146, 0.95)" },                                   // mid blue
-        { k: 0.3, rgba: "rgba(83, 139, 163, 0.93)" },                                   // horizon blue
-        { k: 0.35, rgba: "rgba(119, 161, 153, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
-        { k: 0.65, rgba: "rgba(102, 142, 125, 0.97)", liveBlend: [0.02, 0.08] },         // Adventure times teal ground
-        { k: 1, rgba: "rgba(99, 128, 99, 0.97)"},                                      
-      ] as const,
+    stops: [
+      { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },                                     // Adventure times navy sky
+      { k: 0.16, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },   // navy drift
+      { k: 0.24, rgba: "rgba(40, 65, 122, 0.95)" },                                   // mid blue
+      { k: 0.28, rgba: "rgba(48, 107, 159, 0.93)" },                                   // horizon blue
+      { k: 0.34, rgba: "rgba(56, 147, 196, 0.95)", liveBlend: [0.04, 0.12] },           // teal break
+      { k: 0.36, rgba: "rgb(144, 206, 161)", liveBlend: [0.02, 0.08] , oscK: { amp: 0.02, hz: 0.03 }},         // Adventure times teal ground
+      { k: 0.6, rgba: "rgb(153, 201, 144)", liveBlend: [0.04, 0.10] },  
+      { k: 1, rgba: "rgba(159, 179, 132, 0.97)"},
+    ] as const,
     },
     stars: {
       count: [32, 44],
@@ -120,9 +122,12 @@ export const BACKGROUNDS_START_DARK: BackgroundsByMode = {
       from: { xK: 0.5, yK: 0.0 },
       to: { xK: 0.5, yK: 1.0 },
       stops: [
-        { k: 0.0, rgba: "rgba(76, 103, 134, 0.22)" },
-        { k: 0.2, rgba: "rgba(43, 62, 84, 0.28)" },
-        { k: 1.0, rgba: "rgba(9, 15, 22, 0.96)" },
+        { k: 0.0,  rgba: "rgba(18, 26, 62, 1.0)" },                                    
+        { k: 0.12, rgba: "rgba(35, 50, 105, 0.98)", oscK: { amp: 0.03, hz: 0.015 } },  
+        { k: 0.26, rgba: "rgba(42, 91, 170, 0.95)" },                                  
+        { k: 0.32, rgba: "rgba(56, 176, 227, 0.93)", liveBlend: [0.06, 0.12]  },                                  
+        { k: 0.34, rgba: "rgba(77, 167, 155, 0.97)", liveBlend: [0.12, 0.08] },         
+        { k: 0.8, rgba: "rgba(117, 164, 143, 0.97)"},                                    
       ] as const,
     },
     stars: {
