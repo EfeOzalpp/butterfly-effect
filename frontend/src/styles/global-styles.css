@@ -16,7 +16,7 @@
 
   --type-h-line: 1.25;
   --type-h2-line: 1.42;
-  --type-h3-line: 1.65;
+  --type-h3-line: 1.5;
   --type-body-line: 1.4;
   --tyle-h4-line: 1.4;
   --type-tight-line: 1.25;
@@ -50,11 +50,14 @@
 
   /* Text and misc color */
   --ui-text-title: linear-gradient(180deg, #8eafd7 0%, #6c89b6 100%);
-  --ui-questionnaire-title: linear-gradient(180deg, #465c71 0%, rgb(50, 69, 83) 60%);
+  --ui-questionnaire-title: #475a6c;
   
-  --ui-text: #000000;
+  --ui-text: #1a1a1a;
   --ui-text-secondary: #35453c;
   --ui-text-muted: #4b5563;
+  --welcome-indie: #7fba7e;
+  --welcome-sustainability: #7b9ac5;
+  --ui-gamification: #4a7a9b;
         /* Border color */
   --ui-border: #cbd5e1;
   --ui-border-strong: #879cba;
@@ -128,23 +131,23 @@
 }
 
 :root[data-theme="dark"] {
-  --ui-bg-page: #2c2823;
+  --ui-bg-page: #312c28;
   --ui-bg-onboarding: #161616;
 
   /* Main UI surface colors */
-  --ui-bg-surface: #434241;
+  --ui-bg-surface: #544e48;
   --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
   --ui-bg-surface-hover: #827e7d84;
   --ui-bg-surface-selected: rgba(109, 151, 108, 0.85);
 
   /* input fields color */
-  --ui-bg-input: #5c5755;
+  --ui-bg-input: #665e5b;
   --ui-bg-input-hover: #847f7e;
 
   /* input active */
   --active-accent-color: #6d976c;
   --active-accent-color-hover: #6d976c;
-  --inactive-accent-color:#5c5755;
+  --inactive-accent-color:#665e5b;
   --inactive-accent-color-hover: #847f7e;
   --ui-bg-surface-active: #474747;
 
@@ -152,9 +155,12 @@
   --btn-drop-shadow: #0a0a0a;
   --panel-open-dropdown: 0 8px 32px rgba(23, 23, 23, 1);
 
-  --ui-text: #ffffff;
+  --ui-text: #ededed;
+  --ui-gamification: #8eabc9;
   --ui-text-secondary: rgba(255, 255, 255, 0.85);
   --ui-text-muted: rgba(255, 255, 255, 0.7);
+  --welcome-indie: #a4cba3;
+  --welcome-sustainability: #8fb6e7;
   /* Border color */
   --ui-border: rgba(255, 255, 255, 0.08);
   --ui-border-strong: rgba(255, 255, 255, 0.2);
@@ -170,7 +176,7 @@
   --ui-chooser-fill: rgb(40, 108, 56);
   --ui-trigger-chevron-fill: rgb(79, 85, 81);
   --ui-check-fill: rgb(40, 108, 56);
-  --scroll-bar: #595959;
+  --scroll-bar: #c3c3c3;
   --ui-error: #ff8f8f;
 
   /* General button */
@@ -257,8 +263,8 @@
   }
   :root[data-theme="dark"] {
     /* Text and misc color */
-  --ui-questionnaire-title: linear-gradient(180deg, #e2eff7e3 0%, #dcecf8 33%);
-  --ui-text-title: linear-gradient(180deg, rgba(235, 220, 200, 0.785) 45%, rgba(88, 141, 206, 0.92) 100%);
+  --ui-questionnaire-title: #a3b9d0;
+  --ui-text-title: linear-gradient(170deg, rgb(231, 213, 188) 0%, rgba(118, 180, 255, 0.92) 55%);
 }
 }
 
@@ -291,8 +297,8 @@
     }
     :root[data-theme="dark"] {
         /* Text and misc color */
-    --ui-questionnaire-title: linear-gradient(180deg, #e2eff7e3 0%, #dcecf8 33%);  
-    --ui-text-title: linear-gradient(180deg, rgb(212, 195, 173) 15%, rgba(132, 187, 255, 0.92) 85%);
+    --ui-questionnaire-title: #a3b9d0;
+    --ui-text-title: linear-gradient(170deg, rgb(231, 213, 188) 0%, rgba(126, 176, 234, 0.92) 65%);
   }
   }
 
