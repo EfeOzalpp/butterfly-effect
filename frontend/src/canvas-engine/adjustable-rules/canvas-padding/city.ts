@@ -1,6 +1,6 @@
 // src/canvas-engine/adjustable-rules/canvas-padding/city.ts
 
-import { makeRowForbidden, CENTER_100, LR_0, type CanvasPaddingSpec } from './helpers';
+import type { CanvasPaddingSpec } from './helpers';
 import type { DeviceType } from '../../shared/responsiveness';
 
 export const CITY_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
@@ -8,32 +8,17 @@ export const CITY_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
     rows: 26,
     useTopRatio: 1,
     horizonPos: 0.5,
-    forbidden: makeRowForbidden(
-      Array.from( { length: 20 } , () => ({ ...LR_0}))
-    ),
   },
 
   tablet: {
     rows: 17,
     useTopRatio: 1,
     horizonPos: 0.55,
-    forbidden: makeRowForbidden([
-      CENTER_100, CENTER_100,
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' }, { left: '4%', right: '4%' },
-      { left: '4%', right: '4%' },
-      CENTER_100, CENTER_100, CENTER_100, CENTER_100, CENTER_100,
-    ]),
   },
 
   laptop: {
     rows: 19,
     useTopRatio: 1,
     horizonPos: 0.55,
-    forbidden: makeRowForbidden(
-      Array.from( { length: 20 } , () => ({ ...LR_0}))
-    ),
   },
 };
