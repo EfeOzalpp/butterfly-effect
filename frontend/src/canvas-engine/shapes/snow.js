@@ -16,6 +16,7 @@ import {
   rowHeightAt,
   rowWidthAt,
   sampleDirectionalLightRect,
+  pickLightBandValue,
   mixRgb,
   paintPixelLightBands,
 } from "../modifiers/index";
@@ -40,6 +41,11 @@ export const SNOW_BASE_PALETTE = {
 
 export const SNOW_DARK_PALETTE = {
   cloud:  { r: 182, g: 189, b: 220 },
+  cloudByLight: {
+    far:  { r: 255, g: 122, b: 148 },
+    mid:  { r: 192, g: 179, b: 210 },
+    near: { r: 232, g: 238, b: 255 },
+  },
   flake:  { r: 160, g: 174, b: 208 },
   ground: { r: 148, g: 162, b: 194 },
 };
@@ -256,10 +262,16 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     { count: lobeCount, spreadX, arcLift, rBase, rJitter, seed: 0 }
   ) || [];
 
+  const cloudLight = sampleDirectionalLightRect(
+    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
+    opts.lightCtx ?? null
+  );
+
   const cloudBlend = val(SCLOUD.blend, u);
+  const cloudPalette = pickLightBandValue(pal.cloud, pal.cloudByLight, cloudLight.closenessK);
   const baseTint = opts?.gradientRGB
-    ? blendRGB(pal.cloud, opts.gradientRGB, cloudBlend)
-    : pal.cloud;
+    ? blendRGB(cloudPalette, opts.gradientRGB, cloudBlend)
+    : cloudPalette;
 
   const sMax = Math.max(0, Math.min(1, val(SCLOUD.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
@@ -273,10 +285,6 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
   const cloudLRange = opts?.darkMode ? [0.68, 0.82] : SCLOUD.lightnessRange;
   cloudRgb = clampBrightness(cloudRgb, cloudLRange[0], cloudLRange[1]);
   cloudRgb = applyExposureContrast(cloudRgb, exposure, contrast);
-  const cloudLight = sampleDirectionalLightRect(
-    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
-    opts.lightCtx ?? null
-  );
   cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
   const cloudHighlight = mixRgb(cloudRgb, cloudLight.lightColor, 0.34);
   const cloudShadow = mixRgb(cloudRgb, cloudLight.shadowColor, 0.22);

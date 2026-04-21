@@ -9,6 +9,8 @@ import {
   applyShapeMods,
   footprintToPx,
   sampleDirectionalLightRect,
+  lightClosenessBand,
+  pickLightBandValue,
   mixRgb,
   paintPixelLightBands,
   paintDirectionalTriangleBands,
@@ -57,9 +59,27 @@ export const TREES_DARK_PALETTE = {
     { r: 58, g: 108, b: 114 },
     { r: 48, g: 90,  b: 102 },
   ],
+  grassByLight: {
+    far: [
+      { r: 76, g: 90,  b: 92 },
+      { r: 80, g: 96,  b: 94 },
+      { r: 70, g: 86,  b: 92 },
+    ],
+    mid: [
+      { r: 68, g: 96,  b: 94 },
+      { r: 72, g: 102, b: 96 },
+      { r: 64, g: 90,  b: 92 },
+    ],
+    near: [
+      { r: 52, g: 96,  b: 104 },
+      { r: 58, g: 108, b: 114 },
+      { r: 48, g: 90,  b: 102 },
+    ],
+  },
   asphalt: { r: 68, g: 79,  b: 96  },
   trunk:   { r: 60, g: 54,  b: 46  },
   foliage: [
+    // fallback since there is by light color palette for darkmode now
     { r: 48, g: 86,  b: 82 },
     { r: 42, g: 78,  b: 74 },
     { r: 56, g: 94,  b: 84 },
@@ -68,7 +88,39 @@ export const TREES_DARK_PALETTE = {
     { r: 66, g: 108, b: 94 },
     { r: 72, g: 116, b: 100 },
     { r: 78, g: 124, b: 106 },
+    { r: 50, g: 92,  b: 112 }, // blue spruce
+    { r: 58, g: 82,  b: 112 }, // moonlit pine
+    { r: 72, g: 96,  b: 78  }, // cool olive
+    { r: 86, g: 104, b: 82  }, // muted moss
+    { r: 62, g: 74,  b: 102 }, // smoky indigo
+    { r: 44, g: 96,  b: 96  }, // deep cyan fir
+    { r: 70, g: 84,  b: 74  }, // ash cedar
+    { r: 82, g: 112, b: 92  }, // night sage
   ],
+  foliageByLight: {
+    far: [
+      { r: 110, g: 108,  b: 84 },
+      { r: 115, g: 102,  b: 88 },
+      { r: 102, g: 104,  b: 92 }, // smoky indigo
+      { r: 100, g: 104,  b: 94  }, // ash cedar
+    ],
+    mid: [
+      { r: 48, g: 126,  b: 82 },
+      { r: 56, g: 124,  b: 84 },
+      { r: 60, g: 120, b: 88 },
+      { r: 72, g: 126,  b: 78  }, // cool olive
+      { r: 86, g: 124, b: 82  }, // muted moss
+      { r: 82, g: 122, b: 92  }, // night sage
+    ],
+    near: [
+      { r: 40, g: 102,  b: 122 }, // blue spruce
+      { r: 48, g: 102,  b: 122 }, // moonlit pine
+      { r: 34, g: 106,  b: 106  }, // deep cyan fir
+      { r: 66, g: 108, b: 104 },
+      { r: 62, g: 106, b: 100 },
+      { r: 68, g: 104, b: 106 },
+    ],
+  },
 };
 
 export const TREES_WARM_PALETTE = {
@@ -215,9 +267,13 @@ function pickFromKey(arr, key, tag) {
 }
 
 /* foliage tint: base → mix with grass → optional gradient → clamp → E/C */
-function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, darkMode = false) {
-  const base = pick(pal.foliage, rSeed);
-  let mixed = blendRGB(base, grassTint, 0.20 + 0.15 * u);
+function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, darkMode = false, lightBand = 'mid') {
+  const foliageSet = darkMode && pal.foliageByLight?.[lightBand]
+    ? pal.foliageByLight[lightBand]
+    : pal.foliage;
+  const base = pick(foliageSet, rSeed);
+  const grassBlend = darkMode ? 0.10 + 0.10 * u : 0.20 + 0.15 * u;
+  let mixed = blendRGB(base, grassTint, grassBlend);
   if (gradientRGB) mixed = blendRGB(mixed, gradientRGB, val(TREES.foliage.colorBlend, u));
   mixed = clampSaturation(mixed, 0.0, darkMode ? 0.28 : 0.45, 1);
   mixed = clampBrightness(
@@ -282,9 +338,19 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   });
 
   /* ─── Ground: grass + asphalt (UNTRANSFORMED so it never shrinks) ─── */
+  const grassH = h * 0.55;
+  const grassY = y0 + h - grassH;
+  const grassLight = sampleDirectionalLightRect(
+    { x: x0, y: grassY, w, h: grassH },
+    opts.lightCtx ?? null
+  );
+
   // Pick grass tones via seedKey (sprite-variant friendly). Fallback mixing kept.
-  let g1 = pickFromKey(pal.grass, seedKey, 'grass1');
-  let g2 = pickFromKey(pal.grass, seedKey, 'grass2');
+  const grassPalette = opts?.darkMode
+    ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
+    : pal.grass;
+  let g1 = pickFromKey(grassPalette, seedKey, 'grass1');
+  let g2 = pickFromKey(grassPalette, seedKey, 'grass2');
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(TREES.grass.colorBlend, u));
   if (opts?.darkMode) {
@@ -293,8 +359,6 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   }
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
-  const grassH = h * 0.55;
-  const grassY = y0 + h - grassH;
   p.noStroke();
   fillRgb(p, grassTint, drawAlpha);
   p.rect(x0, grassY, w, grassH, Math.round(cell * 0.04));
@@ -343,6 +407,15 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   // time (for osc)
   const timeSec = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis?.()) / 1000;
 
+  const canopyTintForLight = (treeKey, rSeed, treeLight) => {
+    const band = lightClosenessBand(treeLight.closenessK);
+    let tint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rSeed, pal, !!opts?.darkMode, band);
+    const satAmp   = val(TREES.foliage.satOscAmp,   u);
+    const satSpeed = val(TREES.foliage.satOscSpeed, u);
+    const satPhase = rFromKey(treeKey, 'satPhase') * Math.PI * 2;
+    return oscillateSaturation(tint, timeSec, { amp: satAmp, speed: satSpeed, phase: satPhase });
+  };
+
   for (let i = 0; i < count; i++) {
     // sub-key per tree; stable within the sprite key
     const k = `${seedKey}|tree:${i}`;
@@ -357,15 +430,6 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
     const rotAmp    = val(TREES.wind.rotAmp, u);
     const shearAmp  = val(TREES.wind.xShearAmp, u);
     const phase     = rFromKey(k, 'windPhase') * TREES.wind.phaseSpread;
-
-    // base foliage tint (sprite-friendly pick)
-    let leavesTint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rx, pal, !!opts?.darkMode);
-
-    // saturation oscillation on leaves (gentle “breathing”)
-    const satAmp   = val(TREES.foliage.satOscAmp,   u); // 0.08..0.16 across u
-    const satSpeed = val(TREES.foliage.satOscSpeed, u); // 0.18..0.35 Hz
-    const satPhase = rFromKey(k, 'satPhase') * Math.PI * 2;
-    leavesTint = oscillateSaturation(leavesTint, timeSec, { amp: satAmp, speed: satSpeed, phase: satPhase });
 
     // allow tasteful top overhang
     const maxOverflow = h * TREES.layout.maxOverflowTopK;
@@ -382,6 +446,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
         { x: baseX - fw / 2, y: baseY + heightBoost - th - fh, w: fw, h: fh + th },
         opts.lightCtx ?? null
       );
+      let leavesTint = canopyTintForLight(k, rx, treeLight);
       leavesTint = mixRgb(leavesTint, treeLight.lightColor, 0.18 * treeLight.overallK);
       const poplarHighlight = mixRgb(leavesTint, treeLight.lightColor, 0.34);
       const poplarShadow = mixRgb(leavesTint, treeLight.shadowColor, 0.24);
@@ -450,6 +515,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
         { x: baseX - baseHalfW, y: baseY + heightBoost - levelH * levels - th, w: baseHalfW * 2, h: levelH * levels + th },
         opts.lightCtx ?? null
       );
+      let leavesTint = canopyTintForLight(k, rx, treeLight);
       leavesTint = mixRgb(leavesTint, treeLight.lightColor, 0.16 * treeLight.overallK);
       const coniferHighlight = mixRgb(leavesTint, treeLight.lightColor, 0.32);
       const coniferShadow = mixRgb(leavesTint, treeLight.shadowColor, 0.22);

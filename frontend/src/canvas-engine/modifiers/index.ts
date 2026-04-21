@@ -52,6 +52,8 @@ export { stepAndDrawPuffs } from "./particle-systems/particle-2";
 export { particleRowBucket, particleBucketRange } from "./particlePerspective";
 export {
   createSceneLightContext,
+  lightClosenessBand,
+  pickLightBandValue,
   sampleDirectionalLightRect,
   mixRgb,
   paintEdgeGradientRect,

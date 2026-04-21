@@ -13,6 +13,7 @@ import {
   particleBucketRange,
   particleRowBucket,
   sampleDirectionalLightRect,
+  pickLightBandValue,
   paintPixelLightBands,
   mixRgb,
 } from "../modifiers/index";
@@ -144,22 +145,32 @@ export const HOUSE_COOL_PALETTE = {
 
 export const HOUSE_DARK_PALETTE = {
   grass: { r: 56, g: 108, b: 116 },
+  grassByLight: {
+    far:  { r: 76, g: 94,  b: 94 },
+    mid:  { r: 56, g: 108, b: 116 },
+    near: { r: 52, g: 104, b: 132 },
+  },
   body: [
-    { r: 106, g: 132, b: 170 },
-    { r: 126, g: 132, b: 148 },
-    { r: 114, g: 142, b: 156 },
-    { r: 126, g: 138, b: 170 },
-    { r: 118, g: 145, b: 180 },
-    { r: 144, g: 122, b: 146 }, // orange-lean, purple undertone (mauve)
-    { r: 96,  g: 118, b: 144 },
-    { r: 116, g: 138, b: 154 }, // green-lean, purple undertone (slate-teal)
+    { r: 104, g: 130, b: 178 },
+    { r: 130, g: 132, b: 158 },
+    { r: 108, g: 146, b: 162 },
+    { r: 128, g: 136, b: 178 },
+    { r: 114, g: 148, b: 188 },
+    { r: 150, g: 118, b: 152 }, // orange-lean, purple undertone (mauve)
+    { r: 92,  g: 116, b: 152 },
+    { r: 110, g: 142, b: 160 }, // green-lean, purple undertone (slate-teal)
+    { r: 136, g: 124, b: 166 },
+    { r: 98,  g: 134, b: 170 },
+    { r: 124, g: 138, b: 158 },
+    { r: 144, g: 124, b: 150 },
+    { r: 104, g: 128, b: 146 },
   ],
   roof: [
-    { r: 136, g: 92,  b: 96  },
-    { r: 104, g: 108, b: 120 },
-    { r: 94,  g: 108, b: 134 },
-    { r: 112, g: 118, b: 140 },
-    { r: 96,  g: 106, b: 132 },
+    { r: 140, g: 86,  b: 104 },
+    { r: 104, g: 106, b: 128 },
+    { r: 88,  g: 108, b: 142 },
+    { r: 114, g: 116, b: 150 },
+    { r: 90,  g: 104, b: 142 },
   ],
   door: [
     { r: 93,  g: 76,  b: 74 },
@@ -175,7 +186,7 @@ export const HOUSE_DARK_PALETTE = {
       { r: 255, g: 214, b: 120 },
       { r: 250, g: 234, b: 166 },
     ],
-    dark: { r: 66,  g: 107, b: 169 },
+    dark: { r: 116, g: 128, b: 188 },
   },
   solarPanel: { r: 99, g: 129, b: 180 },
 };
@@ -189,8 +200,8 @@ const HOUSE = {
 };
 
 const SMOKE = {
-  spawnX: [0.04, 0.05],
-  spawnY: [0.80, 0.90],
+  spawnX: [0.5, 0.5],
+  spawnY: [0.8, 0.8],
   count: [36, 22],
   sizeMin: [3, 0],
   sizeMax: [6, 1],
@@ -221,10 +232,19 @@ const SMOKE = {
 const WINDOW_OSC = {
   amp: [0.035, 0.085],
   speed: [0.18, 0.42],
+  colorAmp: [0.05, 0.13],
+  colorSpeed: [0.045, 0.095],
   brightnessMin: [0.54, 0.72],
   brightnessMax: [0.82, 0.96],
   litCurve: 0.92,
 };
+
+const WINDOW_COLOR_TARGETS = [
+  { r: 255, g: 214, b: 122 },
+  { r: 255, g: 232, b: 176 },
+  { r: 255, g: 198, b: 104 },
+  { r: 236, g: 242, b: 255 },
+];
 
 function smokeRowContext(t) {
   return {
@@ -251,6 +271,16 @@ function rand01(seed) {
   t = Math.imul(t ^ (t >>> 15), 1 | t);
   t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
   return (((t ^ (t >>> 14)) >>> 0) / 4294967296);
+}
+
+function oscillateWindowColor(base, timeSec, oscSeed) {
+  const targetR = rand01(oscSeed ^ 0x165667b1);
+  const target = WINDOW_COLOR_TARGETS[Math.floor(targetR * WINDOW_COLOR_TARGETS.length) % WINDOW_COLOR_TARGETS.length];
+  const amp = val(WINDOW_OSC.colorAmp, rand01(oscSeed ^ 0xd3a2646c));
+  const speed = val(WINDOW_OSC.colorSpeed, rand01(oscSeed ^ 0xfd7046c5));
+  const phase = rand01(oscSeed ^ 0xb55a4f09) * Math.PI * 2;
+  const k = (0.5 + 0.5 * Math.sin(timeSec * Math.PI * 2 * speed + phase)) * amp;
+  return mixRgb(base, target, k);
 }
 function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
 function pickByOccurrence(arr, occurrence = 0, offset = 0) {
@@ -334,7 +364,14 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   const rGrassTop = Math.max(1, Math.round(localTile * 0.06));
 
   const grassSeed = rand01(hash32(`house-grass|${f.r0}|${f.c0}|${f.w}x${f.h}`));
-  let grassTint = pick(Array.isArray(pal.grass) ? pal.grass : [pal.grass], grassSeed);
+  const grassLight = sampleDirectionalLightRect(
+    { x: pxX, y: grassY, w: pxW, h: grassH },
+    opts.lightCtx ?? null
+  );
+  const grassBase = opts?.darkMode
+    ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
+    : pal.grass;
+  let grassTint = pick(Array.isArray(grassBase) ? grassBase : [grassBase], grassSeed);
   const grassDriveU = Math.pow(u, 1.2);
   if (opts.gradientRGB) {
     grassTint = blendRGB(grassTint, opts.gradientRGB, val(HOUSE.grass.colorBlend, grassDriveU));
@@ -664,7 +701,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
   p.rect(doorX, doorY, doorW, doorH, Math.round(cell * 0.03));
 }
 
-// ------- Windows (3 size profiles: short / mid / tall; 2 per row; max 6) -------
+// ------- Windows (short / mid / compact-tall / tall; 2 per row; max 6) -------
 {
   // lit/dark tints (safe)
   let winLitVariants = Array.isArray(pal.window.lit) ? pal.window.lit : [pal.window.lit];
@@ -692,11 +729,14 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     // ↓ tweaked to feel "shorter": smaller windows, higher band, more bottom keep
     short: { rows: 1, WIN_W_FRAC: 0.12, WIN_H_FRAC: 0.34, H_GAP_FRAC: 0.16, V_GAP_FRAC: 0.06, TOP_FRAC: 0.20, BOT_FRAC: 0.34 },
     mid:   { rows: 2, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.16, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.10, TOP_FRAC: 0.16, BOT_FRAC: 0.26 },
+    compactTall: { rows: 2, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.14, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.12, TOP_FRAC: 0.15, BOT_FRAC: 0.26 },
     tall:  { rows: 3, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.10, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.12, TOP_FRAC: 0.14, BOT_FRAC: 0.26 },
   };
 
   const profile =
-    (cellsH > mid) ? PROFILES.tall :
+    (cellsH > mid) ? (
+      bodyH >= Math.max(34, localTileH * 1.9) ? PROFILES.tall : PROFILES.compactTall
+    ) :
     (cellsH >= low) ? PROFILES.mid :
     PROFILES.short;
 
@@ -734,6 +774,15 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     totalWindows,
     Math.max(1, Math.round(Math.max(minLitRatio, dynamicLitRatio) * totalWindows))
   );
+  const litSlots = new Set(
+    Array.from({ length: totalWindows }, (_, idx) => ({
+      idx,
+      rank: rand01(hash32(`house-lit-slot|${seed}|${idx}`)),
+    }))
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, litCount)
+      .map((slot) => slot.idx)
+  );
 
   const actualBandH = (rows > 1) ? (rows - 1) * gapY + rows * winH : winH;
   const extra = usableH - actualBandH;
@@ -754,7 +803,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
       if (y >= roofY + 2 && y + winH <= bodyY + bodyH - 2) {
         const litRand = rand01(hash32(`house-lit|${seed}|${rr}|${cc}|${drawn}`));
         const litIdx = Math.floor(litRand * winLitVariants.length) % winLitVariants.length;
-        const isLit = drawn < litCount;
+        const isLit = litSlots.has(drawn);
         let tint = isLit ? winLitVariants[litIdx] : winDark;
         if (isLit) {
           const oscSeed = hash32(`house-window-osc|${seed}|${rr}|${cc}|${drawn}`);
@@ -769,6 +818,7 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
             speed: oscSpeed,
             phase: oscPhase,
           });
+          tint = oscillateWindowColor(tint, t, oscSeed);
 
           // Lightweight emissive feel: two soft pixel-glow shells behind the core window.
           const glowInner = mixRgb(tint, { r: 255, g: 244, b: 214 }, 0.28);

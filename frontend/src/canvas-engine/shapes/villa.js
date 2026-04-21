@@ -9,6 +9,7 @@ import {
   applyShapeMods,
   footprintToPx,
   sampleDirectionalLightRect,
+  pickLightBandValue,
   paintPixelLightBands,
   paintDirectionalTriangleBands,
   mixRgb,
@@ -64,11 +65,20 @@ export const VILLA_BASE_PALETTE = {
 
 export const VILLA_DARK_PALETTE = {
   grass: { r: 58, g: 108, b: 114 },
+  grassByLight: {
+    far:  { r: 82, g: 94,  b: 88 },
+    mid:  { r: 68, g: 102, b: 100 },
+    near: { r: 58, g: 108, b: 114 },
+  },
   body: [
-    { r: 129, g: 146, b: 172 }, { r: 123, g: 148, b: 182 }, { r: 127, g: 151, b: 178 },
-    { r: 130, g: 144, b: 179 }, { r: 125, g: 149, b: 188 }, { r: 120, g: 145, b: 165 },
-    { r: 148, g: 130, b: 152 }, // orange-lean, purple undertone (mauve)
-    { r: 118, g: 142, b: 158 }, // green-lean, purple undertone (slate-teal)
+    { r: 126, g: 146, b: 180 }, { r: 118, g: 150, b: 192 }, { r: 122, g: 154, b: 186 },
+    { r: 130, g: 142, b: 188 }, { r: 120, g: 150, b: 196 }, { r: 114, g: 148, b: 172 },
+    { r: 154, g: 124, b: 158 }, // orange-lean, purple undertone (mauve)
+    { r: 110, g: 146, b: 166 }, // green-lean, purple undertone (slate-teal)
+    { r: 136, g: 128, b: 176 },
+    { r: 106, g: 138, b: 178 },
+    { r: 142, g: 120, b: 166 },
+    { r: 112, g: 150, b: 154 },
   ],
   roof: [
     { r: 104, g: 60, b: 61 },
@@ -82,7 +92,7 @@ export const VILLA_DARK_PALETTE = {
   ],
   window: {
     lit:  { r: 255, g: 186, b: 62 },
-    dark: { r: 66,  g: 107, b: 169 },
+    dark: { r: 116, g: 128, b: 188 },
   },
   platform: { r: 82, g: 86, b: 88 },
 };
@@ -148,10 +158,19 @@ const VILLA = {
 const WINDOW_OSC = {
   amp: [0.035, 0.08],
   speed: [0.18, 0.4],
+  colorAmp: [0.05, 0.12],
+  colorSpeed: [0.045, 0.09],
   brightnessMin: [0.56, 0.74],
   brightnessMax: [0.84, 0.97],
   litCurve: 0.95,
 };
+
+const WINDOW_COLOR_TARGETS = [
+  { r: 255, g: 214, b: 122 },
+  { r: 255, g: 232, b: 176 },
+  { r: 255, g: 198, b: 104 },
+  { r: 236, g: 242, b: 255 },
+];
 
 // helpers
 function fillRgb(p, { r, g, b }, a = 255) { p.fill(r, g, b, a); }
@@ -180,6 +199,16 @@ function rand01(seed) {
 }
 function seeded01(key, salt=''){ return rand01(hash32(`${key}|${salt}`)); }
 function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
+
+function oscillateWindowColor(base, timeSec, oscSeed) {
+  const targetR = rand01(oscSeed ^ 0x165667b1);
+  const target = WINDOW_COLOR_TARGETS[Math.floor(targetR * WINDOW_COLOR_TARGETS.length) % WINDOW_COLOR_TARGETS.length];
+  const amp = val(WINDOW_OSC.colorAmp, rand01(oscSeed ^ 0xd3a2646c));
+  const speed = val(WINDOW_OSC.colorSpeed, rand01(oscSeed ^ 0xfd7046c5));
+  const phase = rand01(oscSeed ^ 0xb55a4f09) * Math.PI * 2;
+  const k = (0.5 + 0.5 * Math.sin(timeSec * Math.PI * 2 * speed + phase)) * amp;
+  return mixRgb(base, target, k);
+}
 
 // Trees tint
 function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1) {
@@ -230,11 +259,12 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     const brightnessMin = val(WINDOW_OSC.brightnessMin, rand01(oscSeed ^ 0x27d4eb2f));
     const brightnessMax = val(WINDOW_OSC.brightnessMax, rand01(oscSeed ^ 0xbb67ae85));
     const toned = clampBrightness(base, brightnessMin, brightnessMax);
-    return oscillateBrightness(toned, t, {
+    const pulsed = oscillateBrightness(toned, t, {
       amp: val(WINDOW_OSC.amp, rand01(oscSeed ^ 0x9e3779b9)),
       speed: val(WINDOW_OSC.speed, rand01(oscSeed ^ 0x85ebca6b)),
       phase: rand01(oscSeed ^ 0xc2b2ae35) * Math.PI * 2,
     });
+    return oscillateWindowColor(pulsed, t, oscSeed);
   }
 
   // ── bottom-center anchored APPEAR/SCALE envelope
@@ -292,7 +322,19 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
 
   const leftIsTaller = seeded01(seedKey, 'grassSide') < 0.5;
 
-  let grassTint = pal.grass;
+  const grassLight = sampleDirectionalLightRect(
+    {
+      x: pxX,
+      y: pxY + pxH - Math.max(1, Math.round(baseGrassH * tallK)),
+      w: pxW,
+      h: Math.max(1, Math.round(baseGrassH * tallK)),
+    },
+    opts.lightCtx ?? null
+  );
+
+  let grassTint = opts?.darkMode
+    ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
+    : pal.grass;
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(VILLA.grass.colorBlend, u));
   if (opts?.darkMode) {
     grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
@@ -552,8 +594,9 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const baseW = iColW * F.baseWk;
       const baseH = iColW * F.baseHk;
 
-      const outerInset = F.offsetEdgePx;
-      const jitter = (rBush * 2 - 1) * F.jitterPx;
+      const foliageScaleK = Math.min(1, Math.max(0.2, localTile / 16));
+      const outerInset = F.offsetEdgePx * foliageScaleK;
+      const jitter = (rBush * 2 - 1) * F.jitterPx * foliageScaleK;
 
       const edgeX = bushOnLeft ? (ix + outerInset) : (ix + iColW - outerInset);
       const cx    = Math.max(ix + baseW * 0.5, Math.min(ix + iColW - baseW * 0.5, (bushOnLeft ? (edgeX + baseW * 0.5) : (edgeX - baseW * 0.5)) + jitter));
@@ -589,7 +632,8 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       p.rotate(rotation);
       p.noStroke();
       fillRgb(p, bushTint, opaque);
-      p.rect(-w / 2, -h, w, h, Math.min(6, h * 0.4));
+      const bushCorner = Math.min(localTile * 0.18, h * 0.4);
+      p.rect(-w / 2, -h, w, h, bushCorner);
       paintPixelLightBands(
         p,
         { x: -w / 2, y: -h, w, h },
@@ -598,7 +642,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
           alpha: opaque,
           highlightColor: bushHighlight,
           shadowColor: bushShadow,
-          corner: Math.min(6, h * 0.4),
+          corner: bushCorner,
           sideK: 0.40,
           topK: 0.24,
           shadowK: 0.18,
@@ -655,8 +699,8 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const baseCX = isLeftCol ? (x + colW * 0.20) : (x + colW * 0.80);
       const baseCY = grassTopY[col];
 
-      const baseTriH  = Math.max(8, Math.round(localTileH * F.triHk));
-      const baseHalfW = Math.max(3, Math.round(localTileW * 0.20));
+      const baseTriH  = Math.max(1, localTileH * F.triHk);
+      const baseHalfW = Math.max(0.75, localTileW * 0.20);
 
       const s     = val(F.scaleRange, u);
       const speed = F.wind.speedRange[0] + (F.wind.speedRange[1]-F.wind.speedRange[0]) * r1;

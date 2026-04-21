@@ -36,8 +36,8 @@ export const POWER_BASE_PALETTE = {
 
 export const POWER_DARK_PALETTE = {
   grass: { r: 35, g: 77, b: 156 },
-  mast:     { r: 91, g: 132, b: 160 },
-  mastCore: { r: 97,  g: 121, b: 146 },
+  mast:     { r: 136, g: 148, b: 187 },
+  mastCore: { r: 118, g: 132, b: 168 },
   hub:      { r: 101, g: 119, b: 144 },
   blade:    { r: 136, g: 148, b: 187 },
   bladeLine:{ r: 115, g: 76,  b: 142 },

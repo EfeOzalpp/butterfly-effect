@@ -28,6 +28,8 @@ export type SceneLightContext = {
   sourceY: number;
   kind: "sun" | "moon";
   intensity: number;
+  sceneW: number;
+  sceneH: number;
   sceneDiag: number;
   lightColor: RGB;
   shadowColor: RGB;
@@ -35,6 +37,7 @@ export type SceneLightContext = {
 
 export type DirectionalLightSample = {
   overallK: number;
+  closenessK: number;
   leftK: number;
   rightK: number;
   topK: number;
@@ -45,8 +48,43 @@ export type DirectionalLightSample = {
   shadowColor: RGB;
 };
 
+export type LightClosenessBand = "far" | "mid" | "near";
+export type LightClosenessBandMap<T> = Partial<Record<LightClosenessBand, T>>;
+
+export const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS = {
+  mid: 0.52,
+  near: 0.68,
+} as const;
+
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
+}
+
+function closenessDistanceScale(light: SceneLightContext) {
+  const aspect = light.sceneW / Math.max(1, light.sceneH);
+  const tabletK = clamp01((1.75 - aspect) / 0.55);
+  const aspectBoost = 1.08 + tabletK * 0.34;
+  return light.sceneW * aspectBoost;
+}
+
+export function lightClosenessBand(
+  closenessK: number,
+  breakpoints: { mid: number; near: number } = DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS
+): LightClosenessBand {
+  const k = clamp01(closenessK);
+  if (k >= clamp01(breakpoints.near)) return "near";
+  if (k >= clamp01(breakpoints.mid)) return "mid";
+  return "far";
+}
+
+export function pickLightBandValue<T>(
+  base: T,
+  byLight: LightClosenessBandMap<T> | undefined,
+  closenessK: number,
+  breakpoints: { mid: number; near: number } = DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS
+): T {
+  const band = lightClosenessBand(closenessK, breakpoints);
+  return byLight?.[band] ?? base;
 }
 
 function addRoundedRectPath(
@@ -109,6 +147,8 @@ export function createSceneLightContext(opts: LightContextOpts): SceneLightConte
     sourceY,
     kind: darkMode ? "moon" : "sun",
     intensity: darkMode ? 0.88 : 1.22,
+    sceneW: Math.max(1, canvasW),
+    sceneH: Math.max(1, canvasH),
     sceneDiag: Math.max(1, Math.hypot(canvasW, canvasH)),
     lightColor: darkMode
       ? { r: 198, g: 220, b: 255 }
@@ -126,6 +166,7 @@ export function sampleDirectionalLightRect(
   if (!light) {
     return {
       overallK: 0,
+      closenessK: 0,
       leftK: 0,
       rightK: 0,
       topK: 0,
@@ -144,11 +185,13 @@ export function sampleDirectionalLightRect(
   const dist = Math.max(1e-6, Math.hypot(dx, dy));
   const nx = dx / dist;
   const ny = dy / dist;
-  const distK = clamp01(1 - dist / (light.sceneDiag * 1.75));
-  const overallK = Math.min(1.48, light.intensity * (0.96 + 0.22 * distK + 0.24 * distK * distK));
+  const falloffK = clamp01(1 - dist / (light.sceneDiag * 1.75));
+  const closenessK = clamp01(1 - dist / closenessDistanceScale(light));
+  const overallK = Math.min(1.48, light.intensity * (0.96 + 0.22 * falloffK + 0.24 * falloffK * falloffK));
 
   return {
     overallK,
+    closenessK,
     leftK: overallK * Math.max(0, -nx),
     rightK: overallK * Math.max(0, nx),
     topK: overallK * Math.max(0, -ny),

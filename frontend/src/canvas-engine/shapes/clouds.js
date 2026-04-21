@@ -17,6 +17,7 @@ import {
   rowHeightAt,
   rowWidthAt,
   sampleDirectionalLightRect,
+  pickLightBandValue,
   mixRgb,
 } from "../modifiers/index";
 
@@ -28,6 +29,11 @@ export const CLOUDS_BASE_PALETTE = {
 
 export const CLOUDS_DARK_PALETTE = {
   default: { r: 139, g: 140, b: 185 },
+  defaultByLight: {
+    far:  0.45,
+    mid:  0.63,
+    near: 0.85,
+  },
   rain:    { r: 11,  g: 104, b: 195 },
 };
 
@@ -199,6 +205,11 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   ) || [];
 
   /* ── Cloud color ── */
+  const cloudLight = sampleDirectionalLightRect(
+    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
+    opts.lightCtx ?? null
+  );
+
   const cloudBlendDefault = val(CLOUDS.blend, u);
   const cloudBlend = typeof opts?.cloudBlend === 'number' ? opts.cloudBlend : cloudBlendDefault;
 
@@ -209,7 +220,12 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
 
   const sMax = Math.max(0, Math.min(1, val(CLOUDS.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
-  const capped = hslToRgb({ h, s: Math.min(s, sMax), l });
+  const defaultLightness = pickLightBandValue(l, pal.defaultByLight, cloudLight.closenessK);
+  const capped = hslToRgb({
+    h,
+    s: Math.min(s, sMax),
+    l: defaultLightness,
+  });
 
   let cloudRgb = oscillateSaturation(capped, t, {
     amp:   (typeof opts?.oscAmp === 'number' ? opts.oscAmp : val(CLOUDS.oscAmp, u)),
@@ -217,10 +233,6 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     phase: opts?.oscPhase ?? 0,
   });
 
-  const cloudLight = sampleDirectionalLightRect(
-    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
-    opts.lightCtx ?? null
-  );
   cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
   const cloudHighlight = mixRgb(cloudRgb, cloudLight.lightColor, 0.36);
   const cloudShadow = mixRgb(cloudRgb, cloudLight.shadowColor, 0.24);

@@ -62,6 +62,12 @@ export const BUS_DARK_PALETTE = {
     { r: 116, g: 138, b: 96  }, // muted moss
     { r: 108, g: 118, b: 176 }, // softened indigo
     { r: 78,  g: 138, b: 150 }, // cool cyan-teal
+    { r: 150, g: 100, b: 124 }, // dusk coral, blue-shifted
+    { r: 92,  g: 112, b: 164 }, // storm blue
+    { r: 122, g: 104, b: 156 }, // muted violet
+    { r: 94,  g: 134, b: 136 }, // night seafoam
+    { r: 156, g: 124, b: 108 }, // cooled amber
+    { r: 112, g: 124, b: 148 }, // slate gray-blue
   ],
   window: { r: 125, g: 135, b: 200 },
   wheel:  { r: 45, g: 48,  b: 58   },
