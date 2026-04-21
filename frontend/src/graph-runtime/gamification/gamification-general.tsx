@@ -132,7 +132,7 @@ export default function GamificationGeneral({
         break;
       case 'nearTop':
         relativeLine = e > 0
-          ? <Lines><span>Near <Strong>top</Strong>.</span><span>Tied with {e}</span><span>Behind {a}</span></Lines>
+          ? <Lines><span>Near <Strong>top</Strong>.</span><span>Behind {a}</span><span>Tied with {e}</span></Lines>
           : <Lines><span>Near <Strong>top</Strong>.</span><span>Behind {a}</span></Lines>;
         break;
       case 'bottom':
@@ -142,23 +142,23 @@ export default function GamificationGeneral({
         break;
       case 'nearBottom':
         relativeLine = e > 0
-          ? <Lines><span>Near <Strong>bottom</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span></Lines>
+          ? <Lines><span>Near <Strong>bottom</Strong>.</span><span>Ahead of {b}</span><span>Tied with {e}</span></Lines>
           : <Lines><span>Near <Strong>bottom</Strong>.</span><span>Ahead of {b}</span></Lines>;
         break;
       case 'upperMid':
         relativeLine = e > 0
-          ? <Lines><span><Strong>upper half</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>
+          ? <Lines><span><Strong>upper half</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span><span>Tied with {e}</span></Lines>
           : <Lines><span><Strong>upper half</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
         break;
       case 'lowerMid':
         relativeLine = e > 0
-          ? <Lines><span><Strong>lower half</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>
+          ? <Lines><span><Strong>lower half</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span><span>Tied with {e}</span></Lines>
           : <Lines><span><Strong>lower half</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
         break;
       default: {
         // middle
         if (canonicalTie === 'tiedMiddle') {
-          relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Tied with {e}</span><span>Ahead of {b}</span><span>Behind {a}</span></Lines>;
+          relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Ahead of {b}</span><span>Behind {a}</span><span>Tied with {e}</span></Lines>;
         } else if (a < b) {
           relativeLine = <Lines><span><Strong>middle</Strong>.</span><span>Behind {a}</span></Lines>;
         } else if (b < a) {

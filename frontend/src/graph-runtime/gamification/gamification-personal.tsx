@@ -239,7 +239,7 @@ export default function GamificationPersonalized({
         break;
       case 'nearTop':
         relativeLine = ee > 0
-          ? <Lines><span>Close to the <Strong>top</Strong>.</span><span>Tied with {ee}.</span><span>Behind {aa}</span></Lines>
+          ? <Lines><span>Close to the <Strong>top</Strong>.</span><span>Behind {aa}</span><span>Tied with {ee}.</span></Lines>
           : <Lines><span>Close to the <Strong>top</Strong>.</span><span>Behind {aa}</span></Lines>;
         break;
       case 'bottom':
@@ -249,13 +249,13 @@ export default function GamificationPersonalized({
         break;
       case 'nearBottom':
         relativeLine = ee > 0
-          ? <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Tied with {ee}.</span><span>Ahead of {bb}</span></Lines>
+          ? <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Ahead of {bb}</span><span>Tied with {ee}.</span></Lines>
           : <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Ahead of {bb}</span></Lines>;
         break;
       default: {
         // middle
         if (tie === 'tiedMiddle') {
-          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Tied with {ee}.</span></Lines>;
+          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Ahead of {bb}</span><span>Behind {aa}</span><span>Tied with {ee}.</span></Lines>;
         } else if (aa < bb) {
           relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Behind {aa}</span></Lines>;
         } else if (bb < aa) {
