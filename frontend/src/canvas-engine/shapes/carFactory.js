@@ -189,6 +189,25 @@ function roundedRectPath(ctx, x, y, w, h, r) {
   ctx.arcTo(x,     y,     x + w, y,     rr);
   ctx.closePath();
 }
+function hash32(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+function rand01(seed) {
+  let t = seed + 0x6D2B79F5;
+  t = Math.imul(t ^ (t >>> 15), 1 | t);
+  t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+  return (((t ^ (t >>> 14)) >>> 0) / 4294967296);
+}
 
 export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const pal = opts?.palette ?? (opts?.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE);
@@ -196,6 +215,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const cellW = opts?.cellW ?? cell;
   const cellH = opts?.cellH ?? cell;
   if (!cell || !f) return;
+  const seedKey = (opts?.seedKey ?? opts?.seed) ?? `carFactory|${f.r0}:${f.c0}|${f.w}x${f.h}`;
 
   // Sprite mode: auto when fitToFootprint (texture path) or explicit override.
   const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
@@ -209,6 +229,9 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const motionScale = particleMotionPerspectiveScale(f, opts);
 
   const { x: x0, y: y0, w: W, h: H } = footprintToPx(f, opts);
+  const localTileW = W / Math.max(1, f.w);
+  const localTileH = H / Math.max(1, f.h);
+  const localTile = Math.max(1, Math.min(localTileW, localTileH));
 
   // appear (bottom-center)
   const anchorX = x0 + W / 2;
@@ -429,7 +452,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
         : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
     stepAndDrawPuffs(p, {
-      key: `factory-smoke:${f.r0}:${f.c0}:${f.w}x${f.h}${isSprite ? ':spr' : ''}`,
+      key: `factory-smoke:${seedKey}${isSprite ? ':spr' : ''}`,
       rect: { x: smokeX, y: smokeY, w: colW, h: colH },
       dir: 'up',
       spreadAngle: spread,
@@ -554,7 +577,9 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
 
       const cycleMs = Math.max(1, opts.carVariantCycleMs ?? CF.carVariantCycleMs);
       const fadeMs  = Math.max(1, opts.carVariantFadeMs  ?? CF.carVariantFadeMs);
-      const t       = (typeof tMs === 'number' ? tMs : (p.millis?.() || 0));
+      const cycleOffsetMs = Math.floor(rand01(hash32(`${seedKey}|car-cycle-offset`)) * cycleMs * list.length);
+      const carSeedBase = `${seedKey}|factory-car`;
+      const t       = (typeof tMs === 'number' ? tMs : (p.millis?.() || 0)) + cycleOffsetMs;
       const tick    = Math.floor(t / cycleMs);
       const phaseMs = t % cycleMs;
 
@@ -597,7 +622,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
       };
 
       if (phaseMs < cycleMs - fadeMs) {
-        drawVariant(curVar, 1.0, 1.0, `var:${curVar}:t${tick}`);
+        drawVariant(curVar, 1.0, 1.0, `${carSeedBase}|var:${curVar}:t${tick}`);
       } else {
         const kLin = (phaseMs - (cycleMs - fadeMs)) / fadeMs; // 0..1
         const k = smoothstep01(kLin);
@@ -606,8 +631,8 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
         const outAlpha = 1 - k;
         const inAlpha  = k;
 
-        drawVariant(curVar, Math.max(0, outScale), Math.max(0, outAlpha), `out:${curVar}:t${tick}`);
-        drawVariant(nxtVar, Math.max(0, inScale),  Math.max(0, inAlpha),  `in:${nxtVar}:t${tick}`);
+        drawVariant(curVar, Math.max(0, outScale), Math.max(0, outAlpha), `${carSeedBase}|out:${curVar}:t${tick}`);
+        drawVariant(nxtVar, Math.max(0, inScale),  Math.max(0, inAlpha),  `${carSeedBase}|in:${nxtVar}:t${tick}`);
       }
     }
 
@@ -645,17 +670,21 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
       const panelTint0 = applyExposureContrast(pal.solarPanel, ex, ct);
       const count = CF.panels.count;
 
-      const marginSide = Math.max(4, Math.round(roofRw * CF.panels.sideMarginFrac));
-      const usableW = Math.max(8, roofRw - 2 * marginSide);
-      const basePW = Math.max(10, Math.round(roofRw * CF.panels.widthFracBase));
+      const minPanelW = Math.max(1, Math.round(Math.min(8, localTile * 0.25)));
+      const minPanelH = Math.max(1, Math.round(Math.min(6, localTile * 0.18)));
+      const minPanelBaseW = Math.max(minPanelW, Math.round(Math.min(10, localTile * 0.31)));
+      const minMarginSide = Math.max(1, Math.round(Math.min(4, localTile * 0.13)));
+      const marginSide = Math.max(minMarginSide, Math.round(roofRw * CF.panels.sideMarginFrac));
+      const usableW = Math.max(minPanelW, roofRw - 2 * marginSide);
+      const basePW = Math.max(minPanelBaseW, Math.round(roofRw * CF.panels.widthFracBase));
       const pH = Math.min(
-        Math.max(6, Math.round(roofH * CF.panels.heightFracOfRoof)),
-        Math.max(6, Math.round(cell * 0.16))
+        Math.max(minPanelH, Math.round(roofH * CF.panels.heightFracOfRoof)),
+        Math.max(minPanelH, Math.round(localTile * 0.16))
       );
 
       const gapFrac = CF.panels.gapFracOfPW;
       const pWFit = usableW / (count + (count - 1) * gapFrac);
-      const pW = Math.min(basePW, Math.max(8, Math.round(pWFit)));
+      const pW = Math.max(1, Math.round(Math.min(basePW, pWFit)));
       const gap = Math.round(pW * gapFrac);
 
       // Contact line is the roof top (anchor line for scaling)
