@@ -39,7 +39,7 @@ export function quantizeAvgWithDownshift(avg: number) {
 }
 
 /* variants */
-export const DEFAULT_VARIANT_SLOTS = 3;
+export const DEFAULT_VARIANT_SLOTS = 8;
 
 function hash01(s: string) {
   let h = 2166136261 >>> 0;
