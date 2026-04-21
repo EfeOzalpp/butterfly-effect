@@ -6,7 +6,7 @@ import { isQuestionnaire } from "./sceneMode";
 
 import { CANVAS_PADDING }        from './canvas-padding/index';
 import { SHAPE_PLACEMENTS } from "./placement-rules/index";
-import { BACKGROUNDS } from "./backgrounds";
+import { BACKGROUNDS_LIGHT, CITY_BACKGROUND } from "./backgrounds";
 
 import { defineRuleSet } from "../validation/index";
 
@@ -15,14 +15,14 @@ function baseProfileFor(mode: BaseMode): SceneProfile {
     return {
       padding: CANVAS_PADDING.start,
       placements: SHAPE_PLACEMENTS.start,
-      background: BACKGROUNDS.start,
+      background: BACKGROUNDS_LIGHT.start,
     };
   }
 
   return {
     padding: CANVAS_PADDING.city,
     placements: SHAPE_PLACEMENTS.city,
-    background: BACKGROUNDS.city,
+    background: CITY_BACKGROUND,
   };
 }
 

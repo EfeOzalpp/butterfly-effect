@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/render/background.ts
 
 import type { PLike } from "../p/makeP";
-import { BACKGROUNDS, type BackgroundSpec, type RadialGradientSpec, type LinearGradientSpec } from "../../adjustable-rules/backgrounds";
+import { BACKGROUNDS, type BackgroundSpec, type RgbaStop, type RadialGradientSpec, type LinearGradientSpec } from "../../adjustable-rules/backgrounds";
 import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
 import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index";
 import { stepAndDrawParticles } from "../../modifiers/particle-systems/particle-1";
@@ -12,6 +12,12 @@ import { resolveHorizonRow } from "../../shared/horizon";
 
 type RGB = { r: number; g: number; b: number };
 type RGBA = RGB & { a: number };
+type ResolvedSurfaceStop = {
+  k: number;
+  left: RGBA;
+  right: RGBA;
+  order: number;
+};
 
 function mix(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -29,6 +35,21 @@ function mixRgb(base: RGB, tint: RGB, amount: number): RGB {
     g: Math.round(mix(base.g, tint.g, t)),
     b: Math.round(mix(base.b, tint.b, t)),
   };
+}
+
+function mixRgba(a: RGBA, b: RGBA, t: number): RGBA {
+  const k = clamp01(t);
+  return {
+    r: mix(a.r, b.r, k),
+    g: mix(a.g, b.g, k),
+    b: mix(a.b, b.b, k),
+    a: mix(a.a, b.a, k),
+  };
+}
+
+function cssRgba(color: RGBA) {
+  const channel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
+  return `rgba(${channel(color.r)}, ${channel(color.g)}, ${channel(color.b)}, ${clamp01(color.a)})`;
 }
 
 function parseCssColor(input: string): RGBA | null {
@@ -85,6 +106,97 @@ function resolveStopColor(
   const tint = gradientColor(BRAND_STOPS_VIVID, liveAvg).rgb;
   const mixed = mixRgb(parsed, tint, blendAmount);
   return `rgba(${mixed.r}, ${mixed.g}, ${mixed.b}, ${parsed.a})`;
+}
+
+function resolveStopK(stop: RgbaStop, t: number) {
+  return stop.oscK
+    ? clamp01(stop.k + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t))
+    : stop.k;
+}
+
+function resolveStopRgba(
+  rgba: string,
+  liveBlend: number | readonly [number, number] | undefined,
+  liveAvg: number
+) {
+  return parseCssColor(resolveStopColor(rgba, liveBlend, liveAvg));
+}
+
+function resolveSurfaceStops(
+  spec: LinearGradientSpec,
+  liveAvg: number,
+  t: number
+): ResolvedSurfaceStop[] | null {
+  const stops: ResolvedSurfaceStop[] = [];
+
+  for (let i = 0; i < spec.stops.length; i += 1) {
+    const stop = spec.stops[i];
+    const left = resolveStopRgba(stop.rgba, stop.liveBlend, liveAvg);
+    const right = resolveStopRgba(stop.rightRgba ?? stop.rgba, stop.liveBlend, liveAvg);
+    if (!left || !right) return null;
+
+    stops.push({
+      k: clamp01(resolveStopK(stop, t)),
+      left,
+      right,
+      order: i,
+    });
+  }
+
+  return stops.sort((a, b) => (a.k - b.k) || (a.order - b.order));
+}
+
+function sampleSurfaceStop(stops: readonly ResolvedSurfaceStop[], k: number) {
+  const y = clamp01(k);
+  if (stops.length === 0) return null;
+  if (y <= stops[0].k) return { left: stops[0].left, right: stops[0].right };
+
+  for (let i = 0; i < stops.length - 1; i += 1) {
+    const a = stops[i];
+    const b = stops[i + 1];
+    if (y > b.k) continue;
+
+    const span = b.k - a.k;
+    const localK = span <= 0 ? 1 : (y - a.k) / span;
+    return {
+      left: mixRgba(a.left, b.left, localK),
+      right: mixRgba(a.right, b.right, localK),
+    };
+  }
+
+  const last = stops[stops.length - 1];
+  return { left: last.left, right: last.right };
+}
+
+function drawLinearStopSurface(
+  p: PLike,
+  ctx: CanvasRenderingContext2D,
+  spec: LinearGradientSpec,
+  alpha: number,
+  liveAvg: number,
+  t: number
+) {
+  const stops = resolveSurfaceStops(spec, liveAvg, t);
+  if (!stops) return false;
+
+  const sliceCount = Math.max(1, Math.min(Math.ceil(p.height), 420));
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < sliceCount; i += 1) {
+    const y0 = (i / sliceCount) * p.height;
+    const y1 = ((i + 1) / sliceCount) * p.height;
+    const sampled = sampleSurfaceStop(stops, (y0 + y1) / (2 * p.height));
+    if (!sampled) continue;
+
+    const g = ctx.createLinearGradient(0, 0, p.width, 0);
+    g.addColorStop(0, cssRgba(sampled.left));
+    g.addColorStop(1, cssRgba(sampled.right));
+
+    ctx.fillStyle = g;
+    ctx.fillRect(0, Math.floor(y0), p.width, Math.max(1, Math.ceil(y1) - Math.floor(y0) + 1));
+  }
+  ctx.restore();
+  return true;
 }
 
 function resolveOuterRadius(p: PLike, outer: RadialGradientSpec["outer"]) {
@@ -292,20 +404,25 @@ export function drawBackground(
       ctx.fillRect(0, 0, p.width, p.height);
       ctx.restore();
     } else if (overlay.kind === "linear") {
-      const { x1, y1, x2, y2 } = resolveLinearPoints(p, overlay);
-      const g = ctx.createLinearGradient(x1, y1, x2, y2);
       const t = p.millis() / 1000;
-      for (const stop of overlay.stops) {
-        const k = stop.oscK
-          ? Math.max(0, Math.min(1, stop.k + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t)))
-          : stop.k;
-        g.addColorStop(k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
+      const hasHorizontalStops = overlay.stops.some((stop) => !!stop.rightRgba);
+      const drewSurface = hasHorizontalStops
+        ? drawLinearStopSurface(p, ctx, overlay, alpha, liveAvg, t)
+        : false;
+
+      if (!drewSurface) {
+        const { x1, y1, x2, y2 } = resolveLinearPoints(p, overlay);
+        const g = ctx.createLinearGradient(x1, y1, x2, y2);
+        for (const stop of overlay.stops) {
+          const k = resolveStopK(stop, t);
+          g.addColorStop(k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
+        }
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, p.width, p.height);
+        ctx.restore();
       }
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, p.width, p.height);
-      ctx.restore();
     } else {
       const cx = p.width * overlay.center.xK;
       const cy = p.height * overlay.center.yK;

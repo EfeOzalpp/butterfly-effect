@@ -1,4 +1,4 @@
-// src/canvas-engine/adjustable-rules/backgrounds/city.ts
+// src/canvas-engine/adjustable-rules/BACKGROUNDS_LIGHT/city.ts
 
 import type { BackgroundsByMode, BackgroundSpec } from "./helpers";
 

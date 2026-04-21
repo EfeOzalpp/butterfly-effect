@@ -138,7 +138,7 @@ export function computeFogState(args: {
 
   const rowCount = metrics.rowHeights.length;
   const fogOpacityScale = fogOpacityScaleForRowCount(rowCount);
-  const baseFogLayerAlpha = darkMode ? 36 / 255 : 26 / 255;
+  const baseFogLayerAlpha = darkMode ? 32 / 255 : 32 / 255;
   const FOG_LAYER_ALPHA = baseFogLayerAlpha * fogOpacityScale;
   const numBottomFogLayers = bottomFogLayerBoundaries.length;
   const targetHorizonOpacity = numBottomFogLayers > 0
@@ -153,14 +153,15 @@ export function computeFogState(args: {
         ...(isRealMobile
           ? [
               { k: 0.0, color: { r: 18, g: 11, b: 28 } },
-              { k: 0.18, color: { r: 33, g: 28, b: 40 } },
-              { k: 0.55, color: { r: 26, g: 19, b: 31 } },
+              { k: 0.15, color: { r: 63, g: 68, b: 60 } },
+              { k: 0.65, color: { r: 26, g: 19, b: 31 } },
               { k: 1, color: { r: 14, g: 8, b: 26 } },
             ] as const
           : [
-              { k: 0.0, color: { r: 53, g: 49, b: 49 } },
-              { k: 0.1, color: { r: 77, g: 72, b: 74 } },
-              { k: 0.75, color: { r: 30, g: 18, b: 30 } },
+              { k: 0.0, color: { r: 63, g: 59, b: 59 } },
+              { k: 0.16, color: { r: 64, g: 62, b: 62 } },
+              { k: 0.22, color: { r: 64, g: 62, b: 62 } },
+              { k: 0.74, color: { r: 30, g: 18, b: 30 } },
               { k: 1, color: { r: 15, g: 9, b: 30 } },
             ] as const),
       ] as const
@@ -176,10 +177,11 @@ export function computeFogState(args: {
               { k: 1.0,  color: { r: 14, g: 8, b: 26 } },
             ] as const
           : [
-              { k: 0.0, color: { r: 18, g: 12, b: 32 } },
-              { k: 0.08, color: { r: 68, g: 60, b: 65 } },
-              { k: 0.45, color: { r: 34, g: 25, b: 42 } },
-              { k: 1.0,  color: { r: 15, g: 9, b: 30 } },
+              { k: 0.0, color: { r: 48, g: 32, b: 42 } },
+              { k: 0.16, color: { r: 64, g: 64, b: 62 } },
+              { k: 0.22, color: { r: 64, g: 64, b: 62 } },
+              { k: 0.64, color: { r: 34, g: 15, b: 32 } },
+              { k: 1.0,  color: { r: 8, g: 28, b: 24 } },
             ] as const),
       ] as const
 
