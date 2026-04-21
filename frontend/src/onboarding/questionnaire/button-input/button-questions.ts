@@ -7,25 +7,25 @@ export type ButtonQuestion = {
 export const BUTTON_QUESTIONS: ButtonQuestion[] = [
   {
     id: 'q1',
+    prompt: 'What guides your food choices?',
+    options: [
+      { key: 'A', label: 'Local foods',     weight: 1.0  },
+      { key: 'B', label: 'Mostly vegetables', weight: 0.85 },
+      { key: 'C', label: 'Balanced meals',       weight: 0.67 },
+      { key: 'D', label: 'Beef and dairy',  weight: 0.45 },
+      { key: 'E', label: 'Imported food',     weight: 0.25 },
+    ],
+  },
+    {
+    id: 'q2',
     prompt: "What's your usual commute?",
     options: [
       { key: 'A', label: 'On foot',    weight: 1.0  },
       { key: 'B', label: 'Bike',    weight: 0.95 },
       { key: 'C', label: 'Transit', weight: 0.8 },
       { key: 'D', label: 'Carpool', weight: 0.6 },
-      { key: 'E', label: 'EV',      weight: 0.3  },
+      { key: 'E', label: 'Electric',      weight: 0.3 },
       { key: 'F', label: 'Drive',   weight: 0.05 },
-    ],
-  },
-  {
-    id: 'q2',
-    prompt: 'What guides your food choices?',
-    options: [
-      { key: 'A', label: 'Locally made',     weight: 1.0  },
-      { key: 'B', label: 'Mostly veggies', weight: 0.85 },
-      { key: 'C', label: 'Balanced',       weight: 0.67 },
-      { key: 'D', label: 'Dairy and beef',  weight: 0.45 },
-      { key: 'E', label: 'Imported food',     weight: 0.25 },
     ],
   },
   {
@@ -38,6 +38,7 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
       { key: 'D', label: 'Avoid standby',    weight: 0.6  },
       { key: 'E', label: 'Unplug devices',   weight: 0.5  },
       { key: 'F', label: 'Not really',       weight: 0.1 },
+      { key: 'G', label: 'Don\'t have home', weight: 0.95 },
     ],
   },
   {

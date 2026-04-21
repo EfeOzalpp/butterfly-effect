@@ -23,9 +23,9 @@ export const QUESTIONNAIRE_PADDING: Record<DeviceType, CanvasPaddingSpec | null>
   },
 
   laptop: {
-    rows: 20,
+    rows: 24,
     useTopRatio: 1,
-    horizonPos: 0.35,
+    horizonPos: 0.5,
     forbidden: makeRowForbidden(
       Array.from( { length: 20 } , () => ({ ...LR_0}))
     ),

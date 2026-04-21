@@ -76,7 +76,10 @@ export default function ButtonQuestionnaireFlow({
       role="information"
       aria-live="polite"
     >
-      <span>Select all that apply. Tap again to remove.</span>
+      <span className="questionnaire-read-banner-copy">
+        <span>Select all that apply.</span>
+        <span>Tap again to remove.</span>
+      </span>
       <button
         type="button"
         className="questionnaire-read-banner-close"

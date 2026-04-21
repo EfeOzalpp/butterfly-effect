@@ -34,7 +34,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       // mid sky
       { verticalK: [0.01, 0.04], horizontalK: [0.35, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.1, 0.15], horizontalK: [0.6, 0.67],
+      { verticalK: [0.1, 0.15], horizontalK: [0.6, 0.6],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
       { verticalK: [0.03, 0.06], horizontalK: [0.3, 0.35],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
@@ -45,6 +45,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       { verticalK: [0.01, 0.04], horizontalK: [0.5, 0.55],
         count: { mobile: 0, tablet: 1, laptop: 0 } },
       { verticalK: [0.04, 0.08], horizontalK: [0.65, 0.75],
+        count: { mobile: 0, tablet: 1, laptop: 0 } },
+      { verticalK: [0.2, 0.25], horizontalK: [0.05, 0.1],
         count: { mobile: 0, tablet: 1, laptop: 0 } },
 
       // mobile only
@@ -103,7 +105,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       // mid
       { verticalK: [0.05, 0.1], horizontalK: [0.7, 0.75],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.01, 0.04], horizontalK: [0.7, 0.75],
+      { verticalK: [0.01, 0.04], horizontalK: [0.67, 0.72],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
       { verticalK: [0.12, 0.2], horizontalK: [0.88, 0.92],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
@@ -144,6 +146,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 2, laptop: 0 } },
       { verticalK: [0.55, 0.6], horizontalK: [0.45, 0.55],
         count: { mobile: 0, tablet: 3, laptop: 0 } },
+      { verticalK: [0.65, 0.7], horizontalK: [0.45, 0.55],
+        count: { mobile: 0, tablet: 2, laptop: 0 } },
 
       // mobile addition
       { verticalK: [0.9, 0.95], horizontalK: [0.65, 0.74],
@@ -172,19 +176,20 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 1, tablet: 0, laptop: 1 } },
 
       // mid far
-      { verticalK: [0.5, 0.55], horizontalK: [0.5, 0.55],
+      { verticalK: [0.45, 0.5], horizontalK: [0.5, 0.55],
         count: { mobile: 0, tablet: 2, laptop: 3 } },
-      { verticalK: [0.5, 0.5], horizontalK: [0.65, 0.78],
+      { verticalK: [0.45, 0.5], horizontalK: [0.65, 0.78],
         count: { mobile: 0, tablet: 2, laptop: 2 } },
-      { verticalK: [0.55, 0.6], horizontalK: [0.5, 0.65],
+      { verticalK: [0.45, 0.5], horizontalK: [0.5, 0.65],
         count: { mobile: 1, tablet: 0, laptop: 3 } },
+      { verticalK: [0.5, 0.55], horizontalK: [0.55, 0.65],
+        count: { mobile: 0, tablet: 0, laptop: 2 } },
+
       { verticalK: [0.45, 0.50], horizontalK: [0.25, 0.35],
         count: { mobile: 0, tablet: 2, laptop: 2 } },
       { verticalK: [0.55, 0.6], horizontalK: [0.35, 0.45],
         count: { mobile: 1, tablet: 0, laptop: 2 } },
       { verticalK: [0.6, 0.6], horizontalK: [0.35, 0.45],
-        count: { mobile: 0, tablet: 0, laptop: 2 } },
-      { verticalK: [0.6, 0.6], horizontalK: [0.55, 0.65],
         count: { mobile: 0, tablet: 0, laptop: 2 } },
 
       // mid close
@@ -193,6 +198,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       { verticalK: [0.85, 0.85], horizontalK: [0.44, 0.5],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
       { verticalK: [0.8, 0.8], horizontalK: [0.34, 0.4],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
+      { verticalK: [0.75, 0.8], horizontalK: [0.5, 0.6],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // left mid
@@ -225,7 +232,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 0, laptop: 1 } },
             
       // mid 
-      { verticalK: [0.55, 0.55], horizontalK: [0.5, 0.6],
+      { verticalK: [0.4, 0.45], horizontalK: [0.5, 0.6],
         count: { mobile: 0, tablet: 0, laptop: 2 } }, 
       { verticalK: [0.45, 0.50], horizontalK: [0.35, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
@@ -243,7 +250,11 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 2, tablet: 0, laptop: 0 } },
 
       // tablet addition  
+      { verticalK: [0.55, 0.6], horizontalK: [0.45, 0.55],
+        count: { mobile: 0, tablet: 3, laptop: 0 } },
       { verticalK: [0.65, 0.75], horizontalK: [0.05, 0.1],
+        count: { mobile: 0, tablet: 1, laptop: 0 } },
+      { verticalK: [0.85, 0.9], horizontalK: [0.85, 0.95],
         count: { mobile: 0, tablet: 1, laptop: 0 } },
 
       // right far community
@@ -271,10 +282,12 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       { verticalK: [0.8, 0.9], horizontalK: [0.7, 0.8],
         count: { mobile: 1, tablet: 0, laptop: 0 } },
       { verticalK: [0.7, 0.75], horizontalK: [0.1, 0.14],
-        count: { mobile: 1, tablet: 0, laptop: 0 } },
+        count: { mobile: 1, tablet: 1, laptop: 0 } },
 
       // tablet only 
       { verticalK: [0.65, 0.75], horizontalK: [0.2, 0.25],
+        count: { mobile: 0, tablet: 1, laptop: 0 } },
+      { verticalK: [0.85, 0.9], horizontalK: [0.7, 0.75],
         count: { mobile: 0, tablet: 1, laptop: 0 } },
 
       // left
@@ -356,6 +369,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 3, laptop: 0 } },
       { verticalK: [0.7, 0.85], horizontalK: [0.4, 0.55],
         count: { mobile: 0, tablet: 5, laptop: 0 } },
+      { verticalK: [0.9, 0.95], horizontalK: [0.5, 0.65],
+        count: { mobile: 0, tablet: 3, laptop: 0 } },
 
       // right far
       { verticalK: [0.65, 0.7], horizontalK: [0.95, 1],
@@ -404,6 +419,13 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 2, laptop: 2 } },
 
       // mid close
+      { verticalK: [0.75, 0.8], horizontalK: [0.6, 0.65],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
+      { verticalK: [0.8, 0.85], horizontalK: [0.55, 0.6],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
+      { verticalK: [0.85, 0.9], horizontalK: [0.55, 0.6],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
+
       { verticalK: [0.75, 0.8], horizontalK: [0.4, 0.45],
         count: { mobile: 1, tablet: 0, laptop: 3 } },
       { verticalK: [0.74, 0.82], horizontalK: [0.3, 0.4],

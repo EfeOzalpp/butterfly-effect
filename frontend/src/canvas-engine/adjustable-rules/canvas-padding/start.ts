@@ -14,7 +14,7 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   },
 
   tablet: {
-    rows: 22,
+    rows: 24,
     useTopRatio: 1,
     horizonPos: 0.54,
     forbidden: makeRowForbidden(
