@@ -119,10 +119,6 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
 
   // Track InfoPanel open/close via context
   const interaction = useOptionalInteraction();
-  const menuOpenRef = useRef<boolean>(false);
-  useEffect(() => {
-    menuOpenRef.current = interaction?.menuOpen ?? false;
-  }, [interaction?.menuOpen]);
 
   // ----- initial zoom target from data count -----
   const count = useMemo(() => (typeof dataCount === 'number' ? dataCount : 0), [dataCount]);
@@ -156,7 +152,6 @@ export default function useOrbit(params: OrbitParams = {}): OrbitReturn {
     hasInteractedRef?: React.RefObject<boolean>;
     lastActivityRef?: React.RefObject<number>;
   }) => {
-    if (menuOpenRef.current) return false;
     if (useDesktopLayout) {
       const lastMouseMoveAt = lastMouseMoveTsRef.current || performance.now();
       return !userInteracting && performance.now() - lastMouseMoveAt >= DESKTOP_IDLE_MOUSE_DELAY_MS;
@@ -185,7 +180,6 @@ const rot = useRotation({
   radius,
   markActivity,
   gestureRef,
-  menuOpenRef,
 });
 
 // Always create fallbacks (unconditional Hook calls)

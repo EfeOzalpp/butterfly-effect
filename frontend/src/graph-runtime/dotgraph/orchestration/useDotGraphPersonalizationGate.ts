@@ -20,7 +20,7 @@ export default function useDotGraphPersonalizationGate({
   isSmallScreen,
 }: UseDotGraphPersonalizationGateParams) {
   const personalizedEntryId: string | null =
-    myEntryId || (typeof window !== 'undefined' ? sessionStorage.getItem('gp.myEntryId') : null);
+    myEntryId || (typeof window !== 'undefined' ? sessionStorage.getItem('be.myEntryId') : null);
 
   const [personalOpen, setPersonalOpen] = useState(true);
 

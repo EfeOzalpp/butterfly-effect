@@ -1,6 +1,7 @@
 // graph-runtime/sprites/textures/makeTextureFromDrawer.ts
 import * as THREE from 'three';
 import { makeCanvasFacade } from './canvasFacade';
+import { makeSpritePaletteLightContext } from './spriteLight';
 
 type Drawer = (p: any, x: number, y: number, r: number, opts?: any) => void;
 
@@ -81,6 +82,7 @@ export function makeTextureFromDrawer({
     w:  wTiles,
     h:  hTiles,
   };
+  const lightCtx = makeSpritePaletteLightContext(logicalW, logicalH, darkMode);
 
   const baseOpts = {
     alpha,
@@ -99,6 +101,7 @@ export function makeTextureFromDrawer({
     opacityOsc: { amp: 0 },
     sizeOsc: { mode: 'none' },
     darkMode,
+    lightCtx,
   };
 
   const r = Math.min(logicalW, logicalH) * 0.8;

@@ -28,6 +28,7 @@ export type SceneLightContext = {
   sourceY: number;
   kind: "sun" | "moon";
   intensity: number;
+  paletteClosenessK?: number;
   sceneW: number;
   sceneH: number;
   sceneDiag: number;
@@ -53,7 +54,7 @@ export type LightClosenessBandMap<T> = Partial<Record<LightClosenessBand, T>>;
 
 export const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS = {
   mid: 0.52,
-  near: 0.68,
+  near: 0.74,
 } as const;
 
 function clamp01(v: number) {
@@ -186,7 +187,9 @@ export function sampleDirectionalLightRect(
   const nx = dx / dist;
   const ny = dy / dist;
   const falloffK = clamp01(1 - dist / (light.sceneDiag * 1.75));
-  const closenessK = clamp01(1 - dist / closenessDistanceScale(light));
+  const closenessK = typeof light.paletteClosenessK === "number"
+    ? clamp01(light.paletteClosenessK)
+    : clamp01(1 - dist / closenessDistanceScale(light));
   const overallK = Math.min(1.48, light.intensity * (0.96 + 0.22 * falloffK + 0.24 * falloffK * falloffK));
 
   return {

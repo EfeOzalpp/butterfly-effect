@@ -17,7 +17,7 @@ export default function useViewerScope(args: UseViewerScopeArgs) {
   const effectiveMySection = useMemo(() => {
     if (mySection && mySection !== "") return mySection;
     if (typeof window !== "undefined") {
-      const s = sessionStorage.getItem("gp.mySection");
+      const s = sessionStorage.getItem("be.mySection");
       if (s && s !== "") return s;
     }
     return "";
@@ -32,7 +32,7 @@ export default function useViewerScope(args: UseViewerScopeArgs) {
     const viewing =
       section ||
       (typeof window !== "undefined"
-        ? sessionStorage.getItem("gp.viewingSection")
+        ? sessionStorage.getItem("be.viewingSection")
         : null) ||
       "all";
 

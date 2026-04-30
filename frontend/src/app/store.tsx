@@ -34,12 +34,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [section, setSection] = useState<string>("all");
   const [openPersonalized, setOpenPersonalized] = useState(false);
   const [animationVisible, setAnimationVisible] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [spotlightRequest, setSpotlightRequest] = useState<{ durationMs: number; fakeMouseXRatio: number; fakeMouseYRatio: number } | null>(null);
 
   const { mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole } = useIdentityState();
 
-  const { mode, setMode, darkMode, setDarkMode, navPanelOpen, setNavPanelOpen, radarMode, setRadarMode } = usePreferencesState();
+  const { darkMode, setDarkMode } = usePreferencesState();
 
   const {
     isSurveyActive, setSurveyActive,
@@ -51,6 +50,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     vizVisible, openGraph, closeGraph, setVizVisible,
     logsOpen, setLogsOpen,
     widgetsOpen, setWidgetsOpen,
+    mode, setMode,
+    radarMode, setRadarMode,
     questionnaireNav, setQuestionnaireNav,
     questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
   } = useUiState();
@@ -79,9 +80,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (!USE_MOCK_SANITY || didMockBootstrapRef.current) return;
     didMockBootstrapRef.current = true;
 
-    const mockSection = getSessionItem("gp.mySection");
-    const mockEntryId = getSessionItem("gp.myEntryId");
-    const mockRole = getSessionItem("gp.myRole");
+    const mockSection = getSessionItem("be.mySection");
+    const mockEntryId = getSessionItem("be.myEntryId");
+    const mockRole = getSessionItem("be.myRole");
 
     if (!mockSection || !mockEntryId) return;
 
@@ -109,7 +110,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       resetCanvasRuntimeState();
     });
 
-    removeSessionItems(["gp.myEntryId", "gp.mySection", "gp.myRole", "gp.myDoc"]);
+    removeSessionItems(["be.myEntryId", "be.mySection", "be.myRole", "be.myDoc"]);
     if (USE_MOCK_SANITY || shouldUseMockSanityReads()) clearMockSurveyState();
   }, [
     resetCanvasRuntimeState,
@@ -126,9 +127,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   // --- per-context memos (only state values in deps, setters are stable) ---
   const preferencesValue = useMemo<PreferencesState>(
-    () => ({ darkMode, setDarkMode, mode, setMode, navPanelOpen, setNavPanelOpen }),
+    () => ({ darkMode, setDarkMode }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [darkMode, mode, navPanelOpen]
+    [darkMode]
   );
 
   const uiValue = useMemo<UiState>(
@@ -143,14 +144,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       animationVisible, setAnimationVisible,
       openPersonalized, setOpenPersonalized,
       resetToStart,
-      radarMode, setRadarMode,
       logsOpen, setLogsOpen,
       widgetsOpen, setWidgetsOpen,
+      mode, setMode,
+      radarMode, setRadarMode,
       questionnaireNav, setQuestionnaireNav,
       questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vizVisible, isSurveyActive, hasCompletedSurvey, questionnaireOpen, sectionOpen, cityPanelOpen, observerMode, animationVisible, openPersonalized, radarMode, resetToStart, logsOpen, widgetsOpen, questionnaireNav, questionnaireAdvanceTick]
+    [vizVisible, isSurveyActive, hasCompletedSurvey, questionnaireOpen, sectionOpen, cityPanelOpen, observerMode, animationVisible, openPersonalized, resetToStart, logsOpen, widgetsOpen, mode, radarMode, questionnaireNav, questionnaireAdvanceTick]
   );
 
   const canvasRuntimeValue = useMemo<CanvasRuntimeState>(
@@ -181,9 +183,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const interactionValue = useMemo<InteractionState>(
-    () => ({ menuOpen, setMenuOpen, spotlightRequest, setSpotlightRequest }),
+    () => ({ spotlightRequest, setSpotlightRequest }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [menuOpen, spotlightRequest]
+    [spotlightRequest]
   );
 
   return (

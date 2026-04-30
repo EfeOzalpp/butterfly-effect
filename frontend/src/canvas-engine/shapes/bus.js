@@ -8,6 +8,7 @@ import {
   val,
   footprintToPx,
   sampleDirectionalLightRect,
+  pickLightBandValue,
   mixRgb,
   paintPixelLightBands,
 } from "../modifiers/index";
@@ -49,6 +50,23 @@ export const BUS_DARK_PALETTE = {
     { r: 58, g: 108, b: 114 },
     { r: 48, g: 90,  b: 102 },
   ],
+  grassByLight: {
+    far: [
+      { r: 76, g: 90,  b: 92 },
+      { r: 80, g: 96,  b: 94 },
+      { r: 70, g: 86,  b: 92 },
+    ],
+    mid: [
+      { r: 68, g: 96,  b: 94 },
+      { r: 72, g: 102, b: 96 },
+      { r: 64, g: 90,  b: 92 },
+    ],
+    near: [
+      { r: 52, g: 96,  b: 104 },
+      { r: 58, g: 108, b: 114 },
+      { r: 48, g: 90,  b: 102 },
+    ],
+  },
   asphalt: { r: 68, g: 79, b: 96 },
   body: [
     { r: 188, g: 98,  b: 68  }, // softened orange-red
@@ -171,15 +189,26 @@ export function drawBus(p, cx, cy, r, opts = {}) {
   const aspY   = grassY + (grassH - aspH) / 2;
 
   // Grass tint (with gradient) — seeded variety
-  const g1 = pick(pal.grass, r1);
-  const g2 = pick(pal.grass, r2);
+  const grassLight = sampleDirectionalLightRect(
+    { x: tileX, y: grassY, w: tileW, h: grassH },
+    opts.lightCtx ?? null
+  );
+  const grassPalette = opts?.darkMode
+    ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
+    : pal.grass;
+  const g1 = pick(grassPalette, r1);
+  const g2 = pick(grassPalette, r2);
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
   if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(BUS.grass.colorBlend, u));
   if (opts?.darkMode) {
     grassTint = clampSaturation(grassTint, 0.0, 0.22, 1);
-    grassTint = clampBrightness(grassTint, 0.30, 0.48);
+    grassTint = clampBrightness(grassTint, 0.28, 0.42);
   }
   grassTint = applyExposureContrast(grassTint, ex, ct);
+  if (opts?.darkMode) {
+    const grassLightK = grassLight.overallK * (0.03 + 0.08 * grassLight.closenessK);
+    grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
+  }
 
   p.noStroke();
   fillRgb(p, grassTint, alpha);

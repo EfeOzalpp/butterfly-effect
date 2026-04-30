@@ -50,7 +50,7 @@ export default function useDotGraphPersonalizationModel({
   const mySnapshot = useMemo(() => {
     if (myEntry || typeof window === 'undefined') return null;
     try {
-      const raw = sessionStorage.getItem('gp.myDoc');
+      const raw = sessionStorage.getItem('be.myDoc');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -109,10 +109,10 @@ export default function useDotGraphPersonalizationModel({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const wantOpen = sessionStorage.getItem('gp.openPersonalOnNext') === '1';
+    const wantOpen = sessionStorage.getItem('be.openPersonalOnNext') === '1';
     if (!wantOpen) return;
     if (!shouldRenderPersonalUI) return;
-    sessionStorage.removeItem('gp.openPersonalOnNext');
+    sessionStorage.removeItem('be.openPersonalOnNext');
     ui?.setOpenPersonalized(true);
   }, [shouldRenderPersonalUI, ui]);
 

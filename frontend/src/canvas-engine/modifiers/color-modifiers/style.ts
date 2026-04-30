@@ -3,7 +3,7 @@
 import { clamp01 } from "./math";
 import { gradientColor } from "./gradient";
 import { applyExposureContrast } from "./effects";
-import { BRAND_STOPS_VIVID } from "./stops";
+import { VIVID_COLOR_STOPS } from "./stops";
 
 export type VisualStyle = {
   rgb: { r: number; g: number; b: number };
@@ -14,7 +14,7 @@ export type VisualStyle = {
 };
 
 export function sampleBrandColor(avg: number) {
-  return gradientColor(BRAND_STOPS_VIVID, avg).rgb;
+  return gradientColor(VIVID_COLOR_STOPS, avg).rgb;
 }
 
 export function computeVisualStyle(avg: number): VisualStyle {

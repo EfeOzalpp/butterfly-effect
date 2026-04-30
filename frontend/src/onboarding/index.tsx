@@ -225,9 +225,9 @@ export default function Survey({
       setAnimationVisible(true);
 
       if (typeof window !== 'undefined') {
-        if (id) sessionStorage.setItem('gp.myEntryId', id);
-        sessionStorage.setItem('gp.mySection', surveySection);
-        if (audience) sessionStorage.setItem('gp.myRole', audience);
+        if (id) sessionStorage.setItem('be.myEntryId', id);
+        sessionStorage.setItem('be.mySection', surveySection);
+        if (audience) sessionStorage.setItem('be.myRole', audience);
       }
 
     } catch (err) {

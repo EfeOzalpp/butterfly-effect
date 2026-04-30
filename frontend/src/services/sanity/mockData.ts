@@ -18,7 +18,7 @@ export type MockRow = {
   submittedAt: string;
 };
 
-const MOCK_STORAGE_KEY = 'gp.mockRows';
+const MOCK_STORAGE_KEY = 'be.mockRows';
 const TARGET_BASE_ROW_COUNT = 800;
 
 const MOCK_SEEDS: Array<[string, number, number, number, number, number]> = [

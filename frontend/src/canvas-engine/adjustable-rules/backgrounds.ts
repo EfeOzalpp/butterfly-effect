@@ -3,6 +3,9 @@
 
 export type {
   RgbaStop,
+  BackgroundStopAnchor,
+  BackgroundStopK,
+  BackgroundAnchorContext,
   RadialGradientSpec,
   LinearGradientSpec,
   SolidBackgroundSpec,

@@ -78,15 +78,15 @@ export default function useSurveyDataState({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const justSubmitted = getSessionItem('gp.justSubmitted') === '1';
+    const justSubmitted = getSessionItem('be.justSubmitted') === '1';
     if (!justSubmitted) return;
     if (!counts) return;
 
-    const effectiveMySection = mySection || getSessionItem('gp.mySection') || '';
+    const effectiveMySection = mySection || getSessionItem('be.mySection') || '';
     if (!effectiveMySection) return;
 
     if (effectiveMySection === 'visitor') {
-      sessionStorage.removeItem('gp.justSubmitted');
+      sessionStorage.removeItem('be.justSubmitted');
       return;
     }
 
@@ -95,13 +95,13 @@ export default function useSurveyDataState({
     if (n < SMALL_SECTION_THRESHOLD) {
       setSection('all-massart');
       try {
-        setSessionItem('gp.openPersonalOnNext', '1');
+        setSessionItem('be.openPersonalOnNext', '1');
       } catch (err) {
         console.warn('[useSurveyDataState] Failed to set openPersonalOnNext in sessionStorage:', err);
       }
     }
 
-    sessionStorage.removeItem('gp.justSubmitted');
+    sessionStorage.removeItem('be.justSubmitted');
   }, [counts, mySection, setSection]);
 
   return {

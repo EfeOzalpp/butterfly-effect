@@ -381,6 +381,10 @@ export function drawHouse(p, _cx, _cy, _r, opts = {}) {
     ? clampBrightness(grassTint, 0.28, 0.42)
     : clampBrightness(grassTint, 0.50, 0.75);
   grassTint = applyExposureContrast(grassTint, ex, ct);
+  if (opts?.darkMode) {
+    const grassLightK = grassLight.overallK * (0.05 + 0.12 * grassLight.closenessK);
+    grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
+  }
 
   p.noStroke();
   fillRgb(p, grassTint, alpha);

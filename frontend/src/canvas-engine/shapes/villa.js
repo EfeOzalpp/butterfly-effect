@@ -9,6 +9,7 @@ import {
   applyShapeMods,
   footprintToPx,
   sampleDirectionalLightRect,
+  lightClosenessBand,
   pickLightBandValue,
   paintPixelLightBands,
   paintDirectionalTriangleBands,
@@ -30,6 +31,16 @@ function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
 // ───────────────── Palette
 export const VILLA_BASE_PALETTE = {
   grass: { r: 130, g: 172, b: 116 },
+  treeFoliage: [
+    { r: 108, g: 176, b: 110 },
+    { r: 92,  g: 161, b: 100 },
+    { r: 122, g: 192, b: 122 },
+    { r: 100, g: 148, b: 96  },
+    { r: 136, g: 202, b: 118 },
+    { r: 152, g: 214, b: 132 },
+    { r: 164, g: 224, b: 140 },
+    { r: 178, g: 234, b: 146 },
+  ],
 
   body: [
     { r: 244, g: 228, b: 206 },
@@ -70,6 +81,48 @@ export const VILLA_DARK_PALETTE = {
     mid:  { r: 68, g: 102, b: 100 },
     near: { r: 58, g: 108, b: 114 },
   },
+  treeFoliage: [
+    { r: 64, g: 102, b: 98  },
+    { r: 58, g: 94,  b: 90  },
+    { r: 72, g: 110, b: 100 },
+    { r: 61, g: 88,  b: 84  },
+    { r: 76, g: 116, b: 104 },
+    { r: 82, g: 124, b: 110 },
+    { r: 88, g: 132, b: 116 },
+    { r: 94, g: 140, b: 122 },
+    { r: 66, g: 108, b: 126 },
+    { r: 74, g: 98,  b: 126 },
+    { r: 88, g: 112, b: 94  },
+    { r: 102, g: 120, b: 98  },
+    { r: 78, g: 90,  b: 116 },
+    { r: 60, g: 110, b: 110 },
+    { r: 86, g: 100, b: 90  },
+    { r: 98, g: 128, b: 108 },
+  ],
+  treeFoliageByLight: {
+    far: [
+      { r: 128, g: 124, b: 100 },
+      { r: 132, g: 118, b: 104 },
+      { r: 118, g: 118, b: 106 },
+      { r: 116, g: 118, b: 108 },
+    ],
+    mid: [
+      { r: 64, g: 140, b: 96  },
+      { r: 72, g: 138, b: 98  },
+      { r: 76, g: 134, b: 102 },
+      { r: 88, g: 140, b: 92  },
+      { r: 100, g: 138, b: 96  },
+      { r: 96, g: 136, b: 106 },
+    ],
+    near: [
+      { r: 56, g: 116, b: 134 },
+      { r: 64, g: 116, b: 134 },
+      { r: 50, g: 120, b: 120 },
+      { r: 82, g: 122, b: 118 },
+      { r: 78, g: 120, b: 114 },
+      { r: 84, g: 118, b: 120 },
+    ],
+  },
   body: [
     { r: 126, g: 146, b: 180 }, { r: 118, g: 150, b: 192 }, { r: 122, g: 154, b: 186 },
     { r: 130, g: 142, b: 188 }, { r: 120, g: 150, b: 196 }, { r: 114, g: 148, b: 172 },
@@ -106,6 +159,9 @@ const VILLA = {
   grass: {
     colorBlend: [0.12, 0.18],
     satRange: [0.00, 0.14],
+  },
+  tree: {
+    colorBlend: [0.24, 0.38],
   },
   door: {
     widthRange: [1.2, 0.9],
@@ -211,7 +267,22 @@ function oscillateWindowColor(base, timeSec, oscSeed) {
 }
 
 // Trees tint
-function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1) {
+function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1, opts = {}) {
+  const { darkMode = false, lightSample = null, palette = null, seedKey = 'villa-tree', blend = 1 } = opts;
+  const band = lightSample ? lightClosenessBand(lightSample.closenessK) : 'base';
+  const foliageSet = darkMode
+    ? (palette?.treeFoliageByLight?.[band] ?? palette?.treeFoliage)
+    : palette?.treeFoliage;
+  if (foliageSet?.length) {
+    const base = pick(foliageSet, seeded01(seedKey, `foliage|${band}`));
+    let mixed = blendRGB(base, grass, darkMode ? 0.08 + 0.08 * u : 0.08 + 0.08 * u);
+    const gradientBlend = clamp01(val(VILLA.tree.colorBlend, u) * blend);
+    if (gradientRGB && gradientBlend > 0) mixed = blendRGB(mixed, gradientRGB, gradientBlend);
+    mixed = clampSaturation(mixed, 0.0, darkMode ? 0.28 : 0.32, 1);
+    mixed = clampBrightness(mixed, darkMode ? 0.44 : 0.60, darkMode ? 0.55 : 0.88);
+    return applyExposureContrast(mixed, ex, ct);
+  }
+
   const lightK = 0.26 + 0.18 * u;
   const base = {
     r: Math.min(255, Math.round(grass.r + (255 - grass.r) * lightK)),
@@ -225,7 +296,8 @@ function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1) {
     g: Math.round(base.g + (cool.g - base.g) * k),
     b: Math.round(base.b + (cool.b - base.b) * k),
   };
-  const blended = gradientRGB ? blendRGB(mixed, gradientRGB, 0.08 + 0.08 * u) : mixed;
+  const gradientBlend = clamp01(val(VILLA.tree.colorBlend, u) * blend);
+  const blended = gradientRGB && gradientBlend > 0 ? blendRGB(mixed, gradientRGB, gradientBlend) : mixed;
   const clamped = clampBrightness(blended, 0.55, 0.9);
   return applyExposureContrast(clamped, ex, ct);
 }
@@ -244,6 +316,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   const baseAlpha  = Number.isFinite(opts.alpha) ? opts.alpha : 235;
   const opaque = 255;
   const u = clamp01(opts?.liveAvg ?? 0.5);
+  const liveBlend = clamp01(typeof opts?.blend === 'number' ? opts.blend : 1);
 
   const { x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts);
   const localTileW = pxW / Math.max(1, f.w);
@@ -618,11 +691,17 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const w = baseW * scaleX;
       const h = baseH * scaleY;
 
-      const bushColor = treeTintFromGrass(grassTint, u, opts.gradientRGB, ex, ct);
       const bushLight = sampleDirectionalLightRect(
         { x: bx - w / 2, y: by - h, w, h },
         opts.lightCtx ?? null
       );
+      const bushColor = treeTintFromGrass(grassTint, u, opts.gradientRGB, ex, ct, {
+        darkMode: !!opts?.darkMode,
+        lightSample: bushLight,
+        palette: pal,
+        seedKey: `${seedKey}|front-bush|${col}`,
+        blend: liveBlend,
+      });
       const bushTint = mixRgb(bushColor, bushLight.lightColor, 0.18 * bushLight.overallK);
       const bushHighlight = mixRgb(bushTint, bushLight.lightColor, 0.34);
       const bushShadow = mixRgb(bushTint, bushLight.shadowColor, 0.24);
@@ -728,7 +807,13 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
         { x: baseCX - baseHalfW, y: baseCY - baseTriH * 1.8, w: baseHalfW * 2, h: baseTriH * 1.8 },
         opts.lightCtx ?? null
       );
-      let treeColor = treeTintFromGrass(grassTint, u, opts.gradientRGB, ex, ct);
+      let treeColor = treeTintFromGrass(grassTint, u, opts.gradientRGB, ex, ct, {
+        darkMode: !!opts?.darkMode,
+        lightSample: treeLight,
+        palette: pal,
+        seedKey: `${seedKey}|side-tree|${col}`,
+        blend: liveBlend,
+      });
       treeColor = mixRgb(treeColor, treeLight.lightColor, 0.16 * treeLight.overallK);
       const treeHighlight = mixRgb(treeColor, treeLight.lightColor, 0.32);
       const treeShadow = mixRgb(treeColor, treeLight.shadowColor, 0.22);

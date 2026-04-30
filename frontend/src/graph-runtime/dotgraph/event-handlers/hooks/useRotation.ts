@@ -85,8 +85,6 @@ export type UseRotationParams = {
   markActivity?: () => void;
   gestureRef?: RefObject<GestureState>;
 
-  // add: info panel gate
-  menuOpenRef?: RefObject<boolean>;
 };
 
 export type UseRotationReturn = {
@@ -106,7 +104,6 @@ export default function useRotation({
   radius,
   markActivity,
   gestureRef,
-  menuOpenRef,
 }: UseRotationParams): UseRotationReturn {
   const { gl } = useThree(); // canvas element lives here
 
@@ -232,7 +229,7 @@ export default function useRotation({
 
     const handlePointerDown = (event: PointerEvent) => {
       if (!isDesktopScenePointer(event)) return;
-      if (menuOpenRef?.current || isDraggingRef.current) return;
+      if (isDraggingRef.current) return;
 
       isDesktopRotatingRef.current = true;
       canvas?.classList.add('is-rotating');
@@ -252,7 +249,7 @@ export default function useRotation({
 
       lastMouseMoveTsRef.current = performance.now();
       if (!isDesktopRotatingRef.current) return;
-      if (menuOpenRef?.current || isDraggingRef.current) {
+      if (isDraggingRef.current) {
         isDesktopRotatingRef.current = false;
         canvas?.classList.remove('is-rotating');
         isMovingRef.current = false;
@@ -502,7 +499,7 @@ export default function useRotation({
       if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
       touchOwnsSceneRef.current = false;
     };
-  }, [groupRef, isTabletLike, markActivity, gl, gestureRef, menuOpenRef, useDesktopLayout]);
+  }, [groupRef, isTabletLike, markActivity, gl, gestureRef, useDesktopLayout]);
 
   // frame application
   function applyRotationFrame({ idleActive, delta }: { idleActive: boolean; delta: number }) {
@@ -515,9 +512,6 @@ export default function useRotation({
       !!isDesktopRotatingRef.current ||
       !!isTouchRotatingRef.current ||
       !!isPinchingRef.current;
-
-    // ✅ additional hard gate: menu open freezes rotation updates
-    if (menuOpenRef?.current) return;
 
     // Freeze rotation while dragging external UI
     if (isDraggingRef.current) return;

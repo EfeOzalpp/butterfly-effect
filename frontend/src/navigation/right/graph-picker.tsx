@@ -2,7 +2,6 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import "../../styles/graph-picker.css";
 
-import { useInteraction } from "../../app/state/interaction-context";
 import {
   useGraphPickerData,
   CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
@@ -19,7 +18,6 @@ export default function GraphPicker({
   onChange?: (id: string) => void;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const { setMenuOpen } = useInteraction();
   const { yourIdsSet, ALL_LABELS, STUDENT_OPTS, STAFF_OPTS, MAIN_OPTS, studentIdSet, staffIdSet, counts } =
     useGraphPickerData(value);
 
@@ -47,9 +45,8 @@ export default function GraphPicker({
   }, [open, mode, value, ALL_LABELS, yourIdsSet]);
 
   useEffect(() => {
-    setMenuOpen(open);
     onOpenChange?.(open);
-  }, [open, setMenuOpen, onOpenChange]);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     if (!open) setMode(null);

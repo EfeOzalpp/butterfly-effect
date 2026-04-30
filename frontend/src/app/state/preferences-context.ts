@@ -1,13 +1,9 @@
 import { createContext, useContext } from "react";
-import type { Mode } from "../types";
 
 export type PreferencesState = {
+  // Dark or light theme — persisted to sessionStorage, applied to document root via data-theme
   darkMode: boolean;
   setDarkMode: (v: boolean) => void;
-  mode: Mode;
-  setMode: (m: Mode) => void;
-  navPanelOpen: boolean;
-  setNavPanelOpen: (v: boolean) => void;
 };
 
 export const PreferencesCtx = createContext<PreferencesState | null>(null);

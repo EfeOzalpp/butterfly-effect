@@ -16,12 +16,12 @@ export function removeSessionItems(keys: string[]) {
 }
 
 export function readStoredMode(defaultMode: Mode): Mode {
-  const saved = getSessionItem("gp.mode") as Mode | null;
+  const saved = getSessionItem("be.mode") as Mode | null;
   return saved === "absolute" || saved === "relative" ? saved : defaultMode;
 }
 
 export function readStoredDarkMode(defaultValue = true): boolean {
-  const saved = getSessionItem("gp.darkMode");
+  const saved = getSessionItem("be.darkMode");
   if (saved == null) return defaultValue;
   return saved === "true";
 }
@@ -32,7 +32,7 @@ export function applyThemeToDocument(darkMode: boolean) {
   root.dataset.theme = darkMode ? "dark" : "light";
   root.classList.toggle("dark", darkMode);
 
-  const color = darkMode ? "#1a1e23" : "#f8f0ea";
+  const color = darkMode ? "#21201e" : "#f8f3ef";
   document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(m => {
     m.content = color;
   });

@@ -6,7 +6,7 @@
   --font-ui-weight: 450;
   --fw-bold: 500;
 
-  --type-h1-size: clamp(3.2rem, 3.6rem + 1.8vw, 7.2rem);
+  --type-h1-size: clamp(3.2rem, 2.4rem + 3.2vw, 7.2rem);
   --type-h2-size: clamp(1.6rem, 1.25rem + 1.2vw, 2.4rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.82rem, 0.90rem + 0.3vw, 1rem);
@@ -15,7 +15,7 @@
   --type-label-size: 0.9rem;
 
   --type-h-line: 1.25;
-  --type-h2-line: 1.42;
+  --type-h2-line: 1.46;
   --type-h3-line: 1.5;
   --type-body-line: 1.4;
   --tyle-h4-line: 1.4;
@@ -49,14 +49,14 @@
   --btn-drop-shadow: #ffffff;
 
   /* Text and misc color */
-  --ui-text-title: linear-gradient(180deg, #84a9d5 0%, #7fa4db 100%);
+  --ui-text-title: linear-gradient(120deg, #b1e5e8 0%, #8eb1d8 55%);
   --ui-questionnaire-title: #475a6c;
   
-  --ui-text: #292827;
+  --ui-text: #1f1f1e;
   --ui-text-secondary: #292827;
   --ui-text-muted: #4b5563;
-  --welcome-indie: #7fba7e;
-  --welcome-sustainability: #7b9ac5;
+  --welcome-indie: #6692c4;
+  --welcome-sustainability: #549a54;
   --ui-gamification: #292827;
         /* Border color */
   --ui-border: #cbd5e1;
@@ -159,8 +159,8 @@
   --ui-gamification: #f1efea;
   --ui-text-secondary: rgba(255, 255, 255, 0.85);
   --ui-text-muted: rgba(255, 255, 255, 0.7);
-  --welcome-indie: #c2dbb6;
-  --welcome-sustainability: rgb(171, 191, 239); 
+  --welcome-indie: #8fd2f1;
+  --welcome-sustainability: #a8e4a7;
   /* Border color */
   --ui-border: rgba(255, 255, 255, 0.08);
   --ui-border-strong: rgba(255, 255, 255, 0.2);
@@ -188,15 +188,15 @@
   --btn-hover-scale-lg: 1.01;
 
   /* Primary button */
-  --btn-primary-bg: rgb(78, 145, 93);
-  --btn-primary-hover-bg: rgb(92, 157, 106);
+  --btn-primary-bg: #4e915d;
+  --btn-primary-hover-bg: #5c9d6a;
   --btn-primary-text: #ecf5ef;
   --btn-primary-icon: #c4eacb;
 
   /* Secondary button */
   --btn-secondary-bg: #845f87;
   --btn-secondary-text: #ffffff;
-  --btn-secondary-hover-bg: rgb(131, 103, 142);
+  --btn-secondary-hover-bg: #83678e;
 
   /* Tertiary button */
   --btn-tertiary-bg: transparent;
@@ -264,7 +264,7 @@
   :root[data-theme="dark"] {
     /* Text and misc color */
   --ui-questionnaire-title: rgb(244, 237, 228);
-  --ui-text-title: linear-gradient(170deg, rgb(231, 213, 188) 0%, rgba(127, 118, 255, 0.92) 55%);
+  --ui-text-title: linear-gradient(150deg, rgb(248, 248, 248) 0%, rgb(168, 207, 235) 50%, rgb(84, 105, 129) 100%); 
 }
 }
 
@@ -297,8 +297,8 @@
     }
     :root[data-theme="dark"] {
         /* Text and misc color */
-    --ui-questionnaire-title: rgba(255, 241, 223, 0.9);
-    --ui-text-title: linear-gradient(150deg,  rgba(255, 255, 255, 0.85) 0%, rgb(171, 191, 239) 60%, rgba(138, 138, 241, 0.9) 100%);
+    --ui-questionnaire-title: linear-gradient(150deg, rgba(255, 255, 255, 0.85) 0%, rgb(171, 191, 239) 60%, rgba(171, 171, 255, 0.9) 100%);
+    --ui-text-title: linear-gradient(150deg, rgb(248, 248, 248) 0%, rgb(168, 207, 235) 50%, rgb(73, 89, 109) 100%); 
   }
   }
 

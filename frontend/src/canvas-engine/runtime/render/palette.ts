@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/render/palette.ts
 
 import { Stop } from "../../modifiers/color-modifiers/stops";
-import { gradientColor, BRAND_STOPS_VIVID } from "../../modifiers/index";
+import { gradientColor, VIVID_COLOR_STOPS } from "../../modifiers/index";
 
 export type RGB = { r: number; g: number; b: number };
 
@@ -10,7 +10,7 @@ export type PaletteCache = {
   cachedGradient: RGB | null;
 };
 
-export function createPaletteCache(BRAND_STOPS_VIVID: Stop[]): PaletteCache {
+export function createPaletteCache(VIVID_COLOR_STOPS: Stop[]): PaletteCache {
   return { lastU: NaN, cachedGradient: null };
 }
 
@@ -26,7 +26,7 @@ export function getGradientRGB(params: {
   const uq = Math.round(liveAvg * 1000) / 1000;
   if (uq !== cache.lastU) {
     cache.lastU = uq;
-    cache.cachedGradient = gradientColor(BRAND_STOPS_VIVID, uq).rgb;
+    cache.cachedGradient = gradientColor(VIVID_COLOR_STOPS, uq).rgb;
   }
 
   return cache.cachedGradient;

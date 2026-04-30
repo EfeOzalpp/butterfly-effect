@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getSessionItem } from '../session';
+import { getSessionItem, readStoredMode, setSessionItem } from '../session';
+
 import type { QuestionnaireNavState } from './ui-context';
+import type { Mode } from '../types';
 
 const DEFAULT_QUESTIONNAIRE_NAV: QuestionnaireNavState = {
   step: 0,
@@ -21,7 +23,7 @@ function sameQuestionnaireNav(a: QuestionnaireNavState, b: QuestionnaireNavState
 export default function useUiState() {
   const [isSurveyActive, setSurveyActive] = useState<boolean>(false);
   const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(
-    () => !!(getSessionItem('gp.mySection') && getSessionItem('gp.myEntryId'))
+    () => !!(getSessionItem('be.mySection') && getSessionItem('be.myEntryId'))
   );
 
   const [questionnaireOpen, setQuestionnaireOpen] = useState<boolean>(false);
@@ -61,6 +63,16 @@ export default function useUiState() {
   const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [widgetsOpen, setWidgetsOpen] = useState<boolean>(false);
 
+  const [mode, setMode] = useState<Mode>(() => readStoredMode('absolute'));
+  useEffect(() => {
+    setSessionItem('be.mode', mode);
+  }, [mode]);
+
+  const [radarMode, setRadarMode] = useState<boolean>(() => getSessionItem('be.radarMode') === '1');
+  useEffect(() => {
+    setSessionItem('be.radarMode', radarMode ? '1' : '0');
+  }, [radarMode]);
+
   return {
     isSurveyActive,
     setSurveyActive,
@@ -82,6 +94,10 @@ export default function useUiState() {
     setLogsOpen,
     widgetsOpen,
     setWidgetsOpen,
+    mode,
+    setMode,
+    radarMode,
+    setRadarMode,
     questionnaireNav,
     setQuestionnaireNav,
     questionnaireAdvanceTick,

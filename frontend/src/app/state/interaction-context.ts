@@ -3,8 +3,6 @@ import { createContext, useContext } from "react";
 type SpotlightRequest = { durationMs: number; fakeMouseXRatio: number; fakeMouseYRatio: number };
 
 export type InteractionState = {
-  menuOpen: boolean;
-  setMenuOpen: (v: boolean) => void;
   spotlightRequest: SpotlightRequest | null;
   setSpotlightRequest: (req: SpotlightRequest | null) => void;
 };

@@ -435,7 +435,7 @@ button.city-button,
   .welcome-title, .welcome-text { text-align: center; }
   .section-title { text-align: center; }
   .questionnaire-title { text-align: center; top: 16%; padding: 0 8%;}
-  .welcome-title { padding: 2.4rem 0 3.2rem 0; top: -48px; position: relative;}
+  .welcome-title { padding: 2.4rem 0 3.2rem 0; top: -52px; position: relative;}
   .button-questionnaire__button { font-size: 0.92rem; }
   /* canvas flow for pre-questionnaire */
   .onboarding-canvas { top: 0; right: 0; width: 100%; height: 640px; min-height: 640px; max-height: 640px; position: absolute; overflow: hidden; }
@@ -470,8 +470,8 @@ button.city-button,
 /* 1024px and above */
 @media (min-width: 1025px) {
   /* canvas flow for pre-questionnaire */
-  .onboarding-canvas { top: 0; right: 0; width: 100%; height: clamp(650px, 2.6vw, 860px); position: absolute; overflow: hidden; }
-  .welcome-title-layer { height: clamp(600px, 2.6vw, 860px); top: -8px; }
+  .onboarding-canvas { top: 0; right: 0; width: 100%; height: clamp(675px, 2.8vw, 860px); position: absolute; overflow: hidden; }
+  .welcome-title-layer { height: clamp(625px, 2.8vw, 860px); top: -16px; }
 }
 
 /* 768 and above */

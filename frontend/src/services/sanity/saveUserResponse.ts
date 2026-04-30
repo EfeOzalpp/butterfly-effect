@@ -23,9 +23,9 @@ export async function saveUserResponse(section: string, weights: Weights) {
     : await saveUserResponseViaEdge(section, clamped);
 
   if (typeof window !== 'undefined') {
-    sessionStorage.setItem('gp.myEntryId', created._id);
-    sessionStorage.setItem('gp.mySection', section);
-    sessionStorage.setItem('gp.justSubmitted', '1');
+    sessionStorage.setItem('be.myEntryId', created._id);
+    sessionStorage.setItem('be.mySection', section);
+    sessionStorage.setItem('be.justSubmitted', '1');
 
     try {
       const snapshot = {
@@ -39,7 +39,7 @@ export async function saveUserResponse(section: string, weights: Weights) {
         avgWeight: created.avgWeight,
         submittedAt: created.submittedAt,
       };
-      sessionStorage.setItem('gp.myDoc', JSON.stringify(snapshot));
+      sessionStorage.setItem('be.myDoc', JSON.stringify(snapshot));
     } catch (err) {
       console.warn('[saveUserResponse] Failed to persist snapshot to sessionStorage:', err);
     }

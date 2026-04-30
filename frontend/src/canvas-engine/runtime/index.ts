@@ -33,7 +33,7 @@ import { type LiveState, defaultShapeKeyOfItem } from "./render/items";
 import { Z_INDEX } from "./shapes/zIndex";
 import { createDefaultShapeRegistry, type ShapeRegistry } from "./shapes/registry";
 
-import { BRAND_STOPS_VIVID } from "../modifiers/color-modifiers/stops";
+import { VIVID_COLOR_STOPS } from "../modifiers/color-modifiers/stops";
 import { DEBUG_DEFAULT, type DebugFlags } from "./debug/flags";
 
 export type { EngineControls as CanvasEngineControls } from "./types";
@@ -107,7 +107,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // layout + caches
   // ───────────────────────────────────────────────────────────
   const gridCache = createGridCache();
-  const paletteCache = createPaletteCache(BRAND_STOPS_VIVID);
+  const paletteCache = createPaletteCache(VIVID_COLOR_STOPS);
   const cleanupResize = installResizeHandlers({
     parentEl,
     canvasEl: canvasEl!,

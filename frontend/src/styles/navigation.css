@@ -32,6 +32,8 @@
 .auto-adjust-hint { position: absolute; top: calc(-100% + 8px); left: 50%; white-space: nowrap; padding: 0.6rem 1rem; color: var(--hint-text); font-size: var(--type-label-size); line-height: var(--type-tight-line); border-radius: var(--radius-md); background: var(--hint-bg); border: 1px solid var(--hint-border); display: flex; align-items: center; pointer-events: none; opacity: 0; transform: translateX(-50%) translateY(-6px); transition: opacity 150ms ease, transform 150ms ease; z-index: 100; }
 .auto-adjust-hint.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+.navigation.is-landing-centered { justify-content: center; gap: clamp(1rem, 2vw, 1.8rem); }
+
 .left, .right, .graph-picker { display: flex; }
 
 .left { align-items: center; z-index: 15; }

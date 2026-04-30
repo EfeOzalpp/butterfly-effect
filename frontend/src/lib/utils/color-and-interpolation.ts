@@ -37,7 +37,7 @@ export const BRAND_STOPS_ORIGINAL: Stop[] = [
 ];
 
 // VIVID brand gradient (narrow yellow, deeper endpoints)
-export const BRAND_STOPS_VIVID: Stop[] = [
+export const VIVID_COLOR_STOPS: Stop[] = [
   { stop: 0.00, color: { r: 210, g:  0,  b:  25 } },  // deeper, pure red
   { stop: 0.20, color: { r: 235, g:  90, b:   0 } },  // hot orange
 
@@ -61,7 +61,7 @@ export const BRAND_STOPS_COOL: Stop[] = [
 
 // Set the default palette used by helpers.
 // Swap this alias to BRAND_STOPS_ORIGINAL if you want the old look globally.
-export const BRAND_STOPS: Stop[] = BRAND_STOPS_VIVID;
+export const BRAND_STOPS: Stop[] = VIVID_COLOR_STOPS;
 
 // Shared default gradient configuration for all components
 export const DEFAULT_COLOR_OPTS = {

@@ -1,7 +1,6 @@
 // src/components/bottom/ModeToggle.jsx
 import React, { useMemo } from "react";
 
-import { usePreferences } from "../../app/state/preferences-context";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useIdentity } from "../../app/state/identity-context";
@@ -11,8 +10,7 @@ import { useAbsoluteScore } from "../../lib/hooks/useAbsoluteScore";
 import CheckIcon from "../../assets/svg/check/CheckIcon";
 
 export default function ModeToggle() {
-  const { mode, setMode } = usePreferences();
-  const { observerMode, setOpenPersonalized } = useUiFlow();
+  const { mode, setMode, observerMode, setOpenPersonalized } = useUiFlow();
   const { data } = useSurveyData();
   const { myEntryId } = useIdentity();
   const { setSpotlightRequest } = useInteraction();

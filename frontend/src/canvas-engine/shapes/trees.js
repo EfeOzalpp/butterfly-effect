@@ -8,6 +8,7 @@ import {
   oscillateSaturation,
   applyShapeMods,
   footprintToPx,
+  particleRowBucket,
   sampleDirectionalLightRect,
   lightClosenessBand,
   pickLightBandValue,
@@ -167,7 +168,7 @@ export const TREES_COOL_PALETTE = {
    Tunables
    ─────────────────────────────────────────────────────────── */
 const TREES = {
-  grass:   { colorBlend: [0.12, 0.16], satRange: [0.06, 0.18] },
+  grass:   { colorBlend: [0.22, 0.30], satRange: [0.06, 0.18] },
 
   asphalt: {
     min: [0.25, 0.32],
@@ -225,8 +226,8 @@ const TREES = {
   },
 
   foliage: {
-    colorBlend: [0.04, 0.08],
-    brightnessRange: [0.48, 0.58],
+    colorBlend: [0.26, 0.40],
+    brightnessRange: [0.54, 0.66],
     // sat osc envelope (amp & speed lerp across u)
     satOscAmp:   [0.08, 0.16],
     satOscSpeed: [0.18, 0.35],
@@ -267,19 +268,26 @@ function pickFromKey(arr, key, tag) {
 }
 
 /* foliage tint: base → mix with grass → optional gradient → clamp → E/C */
-function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, darkMode = false, lightBand = 'mid') {
+function foliageTint(grassTint, u, gradientRGB, ex, ct, rSeed, pal, liveBlend = 1, darkMode = false, lightBand = 'mid', farSideK = 0) {
   const foliageSet = darkMode && pal.foliageByLight?.[lightBand]
     ? pal.foliageByLight[lightBand]
     : pal.foliage;
   const base = pick(foliageSet, rSeed);
-  const grassBlend = darkMode ? 0.10 + 0.10 * u : 0.20 + 0.15 * u;
+  const grassBlend = darkMode ? 0.08 + 0.08 * u : 0.14 + 0.10 * u;
   let mixed = blendRGB(base, grassTint, grassBlend);
-  if (gradientRGB) mixed = blendRGB(mixed, gradientRGB, val(TREES.foliage.colorBlend, u));
-  mixed = clampSaturation(mixed, 0.0, darkMode ? 0.28 : 0.45, 1);
+  const gradientBlend = clamp01(val(TREES.foliage.colorBlend, u) * liveBlend);
+  if (gradientRGB && gradientBlend > 0) mixed = blendRGB(mixed, gradientRGB, gradientBlend);
+  const satLiftK = clamp01(farSideK);
+  mixed = clampSaturation(
+    mixed,
+    darkMode ? 0.05 + 0.12 * satLiftK : 0.08 + 0.16 * satLiftK,
+    darkMode ? 0.34 + 0.06 * satLiftK : 0.56 + 0.08 * satLiftK,
+    1
+  );
   mixed = clampBrightness(
     mixed,
-    darkMode ? 0.42 : TREES.foliage.brightnessRange[0],
-    darkMode ? 0.52 : TREES.foliage.brightnessRange[1]
+    darkMode ? 0.44 : TREES.foliage.brightnessRange[0],
+    darkMode ? 0.56 : TREES.foliage.brightnessRange[1]
   );
   return applyExposureContrast(mixed, ex, ct);
 }
@@ -301,6 +309,9 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   const ex = Number.isFinite(opts.exposure) ? opts.exposure : 1;
   const ct = Number.isFinite(opts.contrast) ? opts.contrast : 1;
   const u  = clamp01(opts?.liveAvg ?? 0.5);
+  const liveBlend = clamp01(typeof opts?.blend === 'number' ? opts.blend : 1);
+  const rowBucket = particleRowBucket(f, opts);
+  const farSideSatK = clamp01(1 - rowBucket.t);
   // Keep trees fully opaque at rest; appear modifier still handles fade-in.
   const alpha = 255;
 
@@ -352,12 +363,19 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
   let g1 = pickFromKey(grassPalette, seedKey, 'grass1');
   let g2 = pickFromKey(grassPalette, seedKey, 'grass2');
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
-  if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(TREES.grass.colorBlend, u));
+  const grassGradientBlend = clamp01(val(TREES.grass.colorBlend, u) * liveBlend);
+  if (opts.gradientRGB && grassGradientBlend > 0) {
+    grassTint = blendRGB(grassTint, opts.gradientRGB, grassGradientBlend);
+  }
   if (opts?.darkMode) {
     grassTint = clampSaturation(grassTint, TREES.grass.satRange[0], TREES.grass.satRange[1], 1);
     grassTint = clampBrightness(grassTint, 0.38, 0.58);
   }
   grassTint = applyExposureContrast(grassTint, ex, ct);
+  if (opts?.darkMode) {
+    const grassLightK = grassLight.overallK * (0.04 + 0.10 * grassLight.closenessK);
+    grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
+  }
 
   p.noStroke();
   fillRgb(p, grassTint, drawAlpha);
@@ -409,7 +427,7 @@ export function drawTrees(p, cx, cy, r, opts = {}) {
 
   const canopyTintForLight = (treeKey, rSeed, treeLight) => {
     const band = lightClosenessBand(treeLight.closenessK);
-    let tint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rSeed, pal, !!opts?.darkMode, band);
+    let tint = foliageTint(grassTint, u, opts.gradientRGB, ex, ct, rSeed, pal, liveBlend, !!opts?.darkMode, band, farSideSatK);
     const satAmp   = val(TREES.foliage.satOscAmp,   u);
     const satSpeed = val(TREES.foliage.satOscSpeed, u);
     const satPhase = rFromKey(treeKey, 'satPhase') * Math.PI * 2;

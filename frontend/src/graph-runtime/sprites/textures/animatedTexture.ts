@@ -1,6 +1,7 @@
 // graph-runtime/sprites/textures/animatedTexture.ts
 import * as THREE from 'three';
 import { makeCanvasFacade } from './canvasFacade';
+import { makeSpritePaletteLightContext } from './spriteLight';
 
 type Drawer = (p: any, x: number, y: number, r: number, opts?: any) => void;
 
@@ -85,6 +86,7 @@ function makePainter(
   const r = Math.min(cnv.width / dpr, cnv.height / dpr) * 0.8;
 
   const pixelScale = Math.max(1, tileSize / 128) * Math.max(1, pixelScaleBoost ?? 1);
+  const lightCtx = makeSpritePaletteLightContext(cnv.width / dpr, cnv.height / dpr, darkMode ?? false);
 
   const baseOpts = {
     alpha,
@@ -103,6 +105,7 @@ function makePainter(
     opacityOsc: { amp: 0 },
     sizeOsc: { mode: 'none' },
     darkMode: darkMode ?? false,
+    lightCtx,
   };
 
   function clear() {

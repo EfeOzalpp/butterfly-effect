@@ -50,6 +50,17 @@ export const SNOW_DARK_PALETTE = {
   ground: { r: 148, g: 162, b: 194 },
 };
 
+const SNOW_FAR_DEPTH_TINT = {
+  cloud: {
+    light: { r: 255, g: 222, b: 230 },
+    dark:  { r: 255, g: 150, b: 174 },
+  },
+  flake: {
+    light: { r: 255, g: 228, b: 236 },
+    dark:  { r: 248, g: 184, b: 200 },
+  },
+};
+
 /* Cloud tuning */
 const SCLOUD = {
   widthEnv:   [0.76, 0.86],
@@ -137,6 +148,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
   const exposure = Number.isFinite(opts?.exposure) ? opts.exposure : 1;
   const contrast = Number.isFinite(opts?.contrast) ? opts.contrast : 1;
   const rowBucket = particleRowBucket(f, opts);
+  const farDepthK = Math.pow(clamp01(1 - rowBucket.t), 1.15);
 
   const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
   const u = clamp01(opts?.liveAvg ?? 0.5);
@@ -269,9 +281,13 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
 
   const cloudBlend = val(SCLOUD.blend, u);
   const cloudPalette = pickLightBandValue(pal.cloud, pal.cloudByLight, cloudLight.closenessK);
-  const baseTint = opts?.gradientRGB
+  let baseTint = opts?.gradientRGB
     ? blendRGB(cloudPalette, opts.gradientRGB, cloudBlend)
     : cloudPalette;
+  if (farDepthK > 0.001) {
+    const farCloudTint = opts?.darkMode ? SNOW_FAR_DEPTH_TINT.cloud.dark : SNOW_FAR_DEPTH_TINT.cloud.light;
+    baseTint = mixRgb(baseTint, farCloudTint, (opts?.darkMode ? 0.22 : 0.12) * farDepthK);
+  }
 
   const sMax = Math.max(0, Math.min(1, val(SCLOUD.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
@@ -334,6 +350,10 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
 
   let flakeBase  = oscillateSaturation(pal.flake, t, { amp: satAmp, speed: satSpd, phase: 0 });
   flakeBase      = opts?.gradientRGB ? blendRGB(flakeBase, opts.gradientRGB, blendK) : flakeBase;
+  if (farDepthK > 0.001) {
+    const farFlakeTint = opts?.darkMode ? SNOW_FAR_DEPTH_TINT.flake.dark : SNOW_FAR_DEPTH_TINT.flake.light;
+    flakeBase = mixRgb(flakeBase, farFlakeTint, (opts?.darkMode ? 0.12 : 0.06) * farDepthK);
+  }
   const flakeLRange = opts?.darkMode ? [0.7, 0.84] : SNOW.lightnessRange;
   flakeBase      = clampBrightness(flakeBase, flakeLRange[0], flakeLRange[1]);
   flakeBase      = applyExposureContrast(flakeBase, exposure, contrast);
@@ -400,6 +420,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
     if (cloudLight.overallK > 0.01) {
       const offX = cloudLight.xBias * l.r * 0.22;
       const offY = cloudLight.yBias * l.r * 0.18;
+      const shadowK = clamp01((cloudLight.closenessK - 0.22) / 0.46);
       p.fill(
         cloudHighlight.r,
         cloudHighlight.g,
@@ -411,7 +432,7 @@ export function drawSnow(p, _x, _y, _r, opts = {}) {
         cloudShadow.r,
         cloudShadow.g,
         cloudShadow.b,
-        Math.round(cloudAlpha * 0.10 * Math.max(cloudLight.leftK, cloudLight.rightK))
+        Math.round(cloudAlpha * 0.10 * shadowK * Math.max(cloudLight.leftK, cloudLight.rightK))
       );
       p.circle(lx - offX * 0.9, ly - offY * 0.5, radius * 2 * 0.54);
       p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);

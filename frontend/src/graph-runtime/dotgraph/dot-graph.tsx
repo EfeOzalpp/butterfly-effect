@@ -24,8 +24,8 @@ type DotGraphProps = {
 };
 
 export default function DotGraph({ data: _data = [] }: DotGraphProps) {
-  const { darkMode, mode } = usePreferences();
-  const { observerMode } = useUiFlow();
+  const { darkMode } = usePreferences();
+  const { observerMode, mode } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
   const { section, data: fullSurveyData } = useSurveyData();
 

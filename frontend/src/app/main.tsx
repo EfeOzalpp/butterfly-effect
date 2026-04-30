@@ -20,7 +20,7 @@ import "../styles/ui-system.css";
 
 const CanvasEntry = React.lazy(() => import("../canvas-instances/OnboardingEntry"));
 const CityOverlay = React.lazy(() => import("../canvas-instances/CityEntry"));
-const EdgeCue = React.lazy(() => import("../navigation/right/system-color"));
+const GraphBGDark = React.lazy(() => import("../navigation/right/system-color"));
 
 function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
@@ -125,7 +125,7 @@ const AppInner: React.FC = () => {
 
       {vizVisible && (
         <Suspense fallback={null}>
-          <EdgeCue />
+          <GraphBGDark />
         </Suspense>
       )}
 

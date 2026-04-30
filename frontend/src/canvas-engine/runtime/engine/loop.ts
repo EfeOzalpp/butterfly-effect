@@ -10,8 +10,17 @@ import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 import { getPaddingSpecForState } from "../layout/padding";
 import { computeGridCached, type GridCacheState } from "../layout/gridCache";
 
-import { drawBackground, drawBackgroundStarsOnly, drawFogOverlay, drawRowTopLightOverlay, createBgCache, createRowLightCache } from "../render/background";
-import { computeFogState, createBottomFogStepper, drawSkyFog, createSkyFogCache } from "../render/fog";
+import {
+  computeFogState,
+  createBackgroundAnchorContext,
+  createBgCache,
+  createBottomFogStepper,
+  createRowLightCache,
+  createSkyFogCache,
+  drawBackgroundStarsOnly,
+  drawFogOverlay,
+  drawSkyFogLightOverlay,
+} from "../render/atmosphere";
 import { drawGridOverlay } from "../render/gridOverlay";
 import { getGradientRGB, type PaletteCache } from "../render/palette";
 import { drawGhosts, type Ghost } from "../render/ghosts";
@@ -97,11 +106,7 @@ export function createEngineTicker(deps: LoopDeps) {
   const bgCache = createBgCache();
   const rowLightCache = createRowLightCache();
   const skyFogCache = createSkyFogCache();
-  // Background crossfade state
-  const BG_TRANSITION_MS = 50;
-  let prevBgSpec: BackgroundSpec | null = null;
-  let bgFrom: BackgroundSpec | null = null;
-  let bgTransitionStart = -1;
+
   function renderOneSandboxed(
     it: EngineFieldItem,
     rEff: number,
@@ -156,23 +161,7 @@ export function createEngineTicker(deps: LoopDeps) {
     normalizeDprTransform(p);
     const currentBgSpec = getBackgroundSpecOverride();
     const sceneLookup = getSceneLookup();
-    if (currentBgSpec !== prevBgSpec) {
-      if (prevBgSpec !== null) { bgFrom = prevBgSpec; bgTransitionStart = now; }
-      prevBgSpec = currentBgSpec;
-    }
     const liveAvgSignal = inputs.liveAvg;
-    if (bgFrom !== null) {
-      // Crossfade: skip cache, draw directly with alpha (rare, ~50ms transition)
-      const t = Math.min(1, (now - bgTransitionStart) / BG_TRANSITION_MS);
-      drawBackground(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, true);
-      drawBackground(p, sceneLookup, bgFrom, 1 - t, liveAvgSignal, true);
-      drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
-      if (t >= 1) bgFrom = null;
-    } else {
-      bgCache(p, sceneLookup, currentBgSpec, liveAvgSignal);
-      drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
-    }
-
     const spec = getPaddingSpecForState(
       p.width,
       getSceneLookup(),
@@ -180,6 +169,14 @@ export function createEngineTicker(deps: LoopDeps) {
     );
 
     const grid = computeGridCached(gridCache, p, spec);
+    const backgroundAnchors = createBackgroundAnchorContext({
+      p,
+      padding: spec,
+      metrics: grid.metrics,
+    });
+
+    bgCache(p, sceneLookup, currentBgSpec, liveAvgSignal, backgroundAnchors);
+    drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
 
     drawGridOverlay(
       p,
@@ -226,13 +223,6 @@ export function createEngineTicker(deps: LoopDeps) {
     });
 
 
-    rowLightCache({
-      p,
-      metrics: grid.metrics,
-      light: sceneLight,
-      alpha: style.darkMode ? 0.18 : 0.11,
-    });
-
     const regularItems = field.items.filter((it) => it.shape !== "sun");
     const fogForegroundItems = field.items.filter((it) => it.shape === "sun");
 
@@ -271,7 +261,17 @@ export function createEngineTicker(deps: LoopDeps) {
       metrics: grid.metrics,
       darkMode: style.darkMode,
       isRealMobile: style.isRealMobile,
+      horizonPos: spec.horizonPos,
     }) : null;
+
+    rowLightCache({
+      p,
+      metrics: grid.metrics,
+      light: sceneLight,
+      alpha: style.darkMode ? 0.18 : 0.11,
+      minRow: fog ? fog.fogPeakRow + 1 : 0,
+    });
+
     const bottomFogStepper = fog ? createBottomFogStepper(p, fog) : null;
 
     drawItems({
@@ -303,9 +303,15 @@ export function createEngineTicker(deps: LoopDeps) {
 
     if (fog) {
       skyFogCache(p, fog);
+      drawSkyFogLightOverlay({
+        p,
+        fog,
+        light: sceneLight,
+        alpha: style.darkMode ? 0.22 : 0.14,
+      });
     }
 
-    drawFogOverlay(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
+    drawFogOverlay(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, backgroundAnchors);
 
     if (fogForegroundItems.length > 0) {
       drawItems({

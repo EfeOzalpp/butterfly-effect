@@ -23,7 +23,7 @@ export {
 
 // Runtime uses these
 export { gradientColor } from "./color-modifiers/gradient";
-export { BRAND_STOPS_VIVID } from "./color-modifiers/stops";
+export { VIVID_COLOR_STOPS } from "./color-modifiers/stops";
 
 
 /* =========================
