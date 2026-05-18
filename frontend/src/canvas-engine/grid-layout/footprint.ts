@@ -1,6 +1,6 @@
 // src/canvas-engine/grid-layout/footprint.ts
 
-import type { Anchor } from "../modifiers/shape-modifiers/shapeMods.types";
+import type { Anchor } from "../modifiers/shape-modifiers";
 
 export interface CellSize { cellW: number; cellH: number; ox?: number; oy?: number }
 

@@ -1,28 +1,26 @@
-// canvas-engine/modifiers/color-modifiers/blend.ts
+// Color blending helpers. Linear blend is kept for old shape behavior; gamma blend looks better for light.
 
-import type { RGB } from "./types";
-import { clamp01 } from "./math";
+import type { RGB } from "./utils";
+import { clamp01 } from "./utils";
 import { mixRGB, mixRGBGamma } from "./colorspace";
 
-/** Existing API: keep linear for backward compatibility */
-export function blendRGB(base: RGB, gradientRGB?: RGB, blend: number = 0.5): RGB {
+export function blendRGB(base: RGB, gradientRGB?: RGB, blend = 0.5): RGB {
   if (!gradientRGB) return base;
   const k = clamp01(blend);
   return mixRGB(base, gradientRGB, k);
 }
 
-/** Gamma-correct mix for nicer gradients & lighting */
-export function blendRGBGamma(base: RGB, gradientRGB?: RGB, blend: number = 0.5): RGB {
+export function blendRGBGamma(base: RGB, gradientRGB?: RGB, blend = 0.5): RGB {
   if (!gradientRGB) return base;
   const k = clamp01(blend);
   return mixRGBGamma(base, gradientRGB, k);
 }
 
-/** Convenience: choose mode via flag (default gamma) */
+// Convenience helper when the caller wants to choose the blend mode at runtime.
 export function blendRGBSmart(
   base: RGB,
   gradientRGB?: RGB,
-  blend: number = 0.5,
+  blend = 0.5,
   opts?: { gamma?: boolean }
 ): RGB {
   return (opts?.gamma ?? true)

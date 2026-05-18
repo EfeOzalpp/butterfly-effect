@@ -1,11 +1,10 @@
-// canvas-engine/modifiers/color-modifiers/stops.ts
+// Shared color stops for the main vivid score gradient.
 
-export type RGB = { r: number; g: number; b: number };
-export type Stop = { stop: number; color: RGB };
+import type { Stop } from "./utils";
 
-/**
- * VIVID brand gradient (narrow yellow, deeper endpoints)
- */
+export type { Stop } from "./utils";
+
+// Main score gradient. Shapes decide how strongly to blend toward this color.
 export const VIVID_COLOR_STOPS: Stop[] = [
   { stop: 0.00, color: { r: 210, g:   10, b:  25 } },
   { stop: 0.20, color: { r: 225, g:  60, b:   30 } },

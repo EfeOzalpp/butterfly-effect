@@ -1,7 +1,7 @@
-// canvas-engine/modifiers/color-modifiers/effects.ts
+// Artistic color transforms used by shapes: saturation, brightness, and exposure/contrast.
 
-import type { RGB } from "./types";
-import { clamp01 } from "./math";
+import type { RGB } from "./utils";
+import { clamp01 } from "./utils";
 import { hslToRgb, linToSrgb, rgbToHsl, srgbToLin } from "./colorspace";
 
 export function oscillateSaturation(

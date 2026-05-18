@@ -1,12 +1,15 @@
-// canvas-engine/modifiers/color-modifiers/fog.ts
-//
-// Recursively lerps every {r,g,b} leaf in a palette structure toward a haze color.
-// Used to apply atmospheric fog to shape palettes based on row depth.
+// Palette fogging. Walks a palette object and pushes every RGB leaf toward the scene haze color.
 
-import type { RGB } from "./types";
+import type { RGB } from "./utils";
 
 function isRGB(v: unknown): v is RGB {
-  return !!v && typeof v === 'object' && 'r' in (v as object) && 'g' in (v as object) && 'b' in (v as object);
+  if (!v || typeof v !== "object") return false;
+  const maybe = v as Record<string, unknown>;
+  return (
+    typeof maybe.r === "number" &&
+    typeof maybe.g === "number" &&
+    typeof maybe.b === "number"
+  );
 }
 
 function fogifyValue(v: unknown, t: number, haze: RGB): unknown {
@@ -17,26 +20,23 @@ function fogifyValue(v: unknown, t: number, haze: RGB): unknown {
       b: Math.round(v.b + (haze.b - v.b) * t),
     };
   }
-  if (Array.isArray(v)) return v.map(item => fogifyValue(item, t, haze));
-  if (v && typeof v === 'object') {
+  if (Array.isArray(v)) return v.map((item) => fogifyValue(item, t, haze));
+  if (v && typeof v === "object") {
     const result: Record<string, unknown> = {};
-    for (const key of Object.keys(v as object)) {
-      result[key] = fogifyValue((v as Record<string, unknown>)[key], t, haze);
+    const paletteBranch = v as Record<string, unknown>;
+    for (const key of Object.keys(paletteBranch)) {
+      result[key] = fogifyValue(paletteBranch[key], t, haze);
     }
     return result;
   }
   return v;
 }
 
-/**
- * Returns a fog-adjusted copy of `palette` where every RGB color is lerped
- * toward the haze target by `fogK` (0 = no fog, 1 = full haze).
- * Returns the original palette reference unchanged when fogK <= 0.
- */
+// Returns the original palette untouched when there is no fog.
 export function fogifyPalette(palette: unknown, fogK: number, darkMode: boolean): unknown {
   if (!palette || fogK <= 0) return palette;
   const haze: RGB = darkMode
-    ? { r: 79,  g: 84,  b: 111 }  // ~horizon band of dark start background (#4f546f)
+    ? { r: 79, g: 84, b: 111 } // ~horizon band of dark start background (#4f546f)
     : { r: 229, g: 246, b: 255 }; // base background color of start scene
   return fogifyValue(palette, fogK, haze);
 }

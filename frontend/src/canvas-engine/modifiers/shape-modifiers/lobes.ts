@@ -1,21 +1,29 @@
-// modifiers/shape-modifiers/geom.ts
+// Arch lobe generator for cloud-like shapes.
+// Clouds and snow clouds use this to get deterministic, organic blobs from simple bounds.
 import { phaseFromIndex } from "../../shared/hash32";
 
-export type Lobe = { x: number; y: number; r: number; i: number };
+export interface Lobe {
+  x: number;
+  y: number;
+  r: number;
+  i: number;
+}
+
+export interface ArchLobeOptions {
+  count?: number;
+  spreadX?: number;
+  arcLift?: number;
+  rBase?: number | null;
+  rJitter?: number;
+  seed?: number;
+}
 
 export function makeArchLobes(
   cx: number,
   cy: number,
   width: number,
   height: number,
-  opts: {
-    count?: number;
-    spreadX?: number;
-    arcLift?: number;
-    rBase?: number | null;
-    rJitter?: number;
-    seed?: number;
-  } = {}
+  opts: ArchLobeOptions = {}
 ): Lobe[] {
   const {
     count = 7,

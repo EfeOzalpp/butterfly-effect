@@ -1,21 +1,18 @@
-// canvas-engine/modifiers/color-modifiers/gradient.ts
+// Gradient sampling for live average tinting and scene color ramps.
 
-import type { RGB, Stop } from "./types";
-import { clamp01 } from "./math";
+import type { RGB, Stop } from "./utils";
+import { clamp01 } from "./utils";
 import { mixRGB } from "./colorspace";
 
 export function rgbToCss(c: RGB): string {
-  return `rgb(${c.r}, ${c.g}, ${c.b})`;
+  return `rgb(${String(c.r)}, ${String(c.g)}, ${String(c.b)})`;
 }
 
-/**
- * Gradient sampler (linear sRGB).
- * This matches legacy getAvgColor() behavior used for tinting.
- */
+// Linear sRGB on purpose; this matches the older getAvgColor tint behavior.
 export function gradientColor(stops: Stop[], tRaw: number): { rgb: RGB; css: string; t: number } {
   const t = clamp01(tRaw);
 
-  if (!Array.isArray(stops) || stops.length === 0) {
+  if (stops.length === 0) {
     const rgb = { r: 127, g: 127, b: 127 };
     return { rgb, css: rgbToCss(rgb), t };
   }

@@ -1,6 +1,7 @@
-// modifiers/shape-modifiers/shapeMods.math.ts
-import { clamp01 } from "./useLerp";
-import type { Anchor } from "./shapeMods.types";
+// Shared transform math for shape modifiers.
+// Kept separate from apply.ts so anchor and easing behavior has one owner.
+import { clamp01 } from "./ranges";
+import type { Anchor } from "./types";
 
 export function applyAnchorShiftForScale(
   anchor: Anchor,

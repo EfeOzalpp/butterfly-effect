@@ -1,46 +1,59 @@
-// modifiers/particle-systems/particle-2.ts
+// modifiers/particles/particle-2.ts
 // Reusable puff emitter (snow / smoke / exhaust).
 // Deterministic stratified pool, persistent RNG, edge fades, lifetime fades.
 // Direction presets with angular spread. Dot-only (circles).
 
-export type RGBA = { r: number; g: number; b: number; a?: number };
+import type {
+  ParticleAccel,
+  ParticleCanvas,
+  ParticleEdgeFade,
+  ParticleJitter,
+  ParticleRange,
+  ParticleRect,
+  ParticleSpawnArea,
+  ParticleSpawnMode,
+  RandomSource,
+  RGBA,
+} from "./types";
+import { clamp01, hzLerp, makePRNG, mix, randRange, smoothstep01 } from "./utils";
+
 export type PuffDir = "none" | "up" | "down" | "left" | "right";
 
-export type PuffEmitterOpts = {
+export interface PuffEmitterOpts {
   key: string;
-  rect: { x: number; y: number; w: number; h: number };
+  rect: ParticleRect;
 
   dir?: PuffDir;
   spreadAngle?: number;
 
-  angle?: { min?: number; max?: number };
+  angle?: ParticleRange;
 
-  spawnMode?: "random" | "stratified";
+  spawnMode?: ParticleSpawnMode;
   respawnStratified?: boolean;
-  spawn?: { x0?: number; x1?: number; y0?: number; y1?: number };
+  spawn?: ParticleSpawnArea;
 
-  speed?: { min?: number; max?: number };
-  accel?: { x?: number; y?: number };
+  speed?: ParticleRange;
+  accel?: ParticleAccel;
   gravity?: number;
-  jitter?: { pos?: number; velAngle?: number };
+  jitter?: ParticleJitter;
   drag?: number;
 
   count?: number;
-  size?: { min?: number; max?: number };
+  size?: ParticleRange;
   sizeHz?: number;
 
-  lifetime?: { min?: number; max?: number };
+  lifetime?: ParticleRange;
   fadeInFrac?: number;
   fadeOutFrac?: number;
 
-  edgeFadePx?: { left?: number; right?: number; top?: number; bottom?: number };
+  edgeFadePx?: ParticleEdgeFade;
 
-  color?: RGBA | ((pr: Particle) => RGBA);
+  color?: RGBA | ((pr: Particle) => RGBA | undefined);
 
   respawn?: boolean;
-};
+}
 
-type Particle = {
+interface Particle {
   x: number;
   y: number;
   vx: number;
@@ -49,25 +62,14 @@ type Particle = {
   life: number;
   size: number;
   uSlot: number;
-};
+}
 
-type EmitterState = {
+interface EmitterState {
   particles: Particle[];
-  rnd: () => number;
-};
-
-function clamp01(x: number) {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
-}
-function smoothstep01(t: number) {
-  t = clamp01(t);
-  return t * t * (3 - 2 * t);
-}
-function mix(a: number, b: number, t: number) {
-  return a + (b - a) * t;
+  rnd: RandomSource;
 }
 
-function hashStr(s: string) {
+function hashPuffKey(s: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -81,28 +83,6 @@ function hashStr(s: string) {
   return h >>> 0;
 }
 
-function makePRNG(seed: number) {
-  let t = seed >>> 0;
-  return () => {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function randRange(rnd: () => number, a: number, b: number) {
-  const lo = Math.min(a, b),
-    hi = Math.max(a, b);
-  return mix(lo, hi, rnd());
-}
-
-function hzLerp(current: number, target: number, hz: number, dt: number) {
-  if (!(hz > 0) || !(dt > 0)) return target;
-  const k = 1 - Math.exp(-hz * dt);
-  return current + (target - current) * k;
-}
-
 function dirToAngleSpan(dir: PuffDir, spread: number): { min: number; max: number } {
   const BASES: Record<PuffDir, number> = {
     none: Number.NaN,
@@ -111,45 +91,9 @@ function dirToAngleSpan(dir: PuffDir, spread: number): { min: number; max: numbe
     right: 0,
     left: Math.PI,
   };
-  const base = BASES[dir] ?? Number.NaN;
+  const base = BASES[dir];
   if (Number.isNaN(base)) return { min: -Math.PI, max: Math.PI };
   return { min: base - spread, max: base + spread };
-}
-
-function spawnOne(
-  rnd: () => number,
-  rect: { x: number; y: number; w: number; h: number },
-  jPos: number,
-  sx0: number,
-  sx1: number,
-  sy0: number,
-  sy1: number,
-  spMin: number,
-  spMax: number,
-  angMin: number,
-  angMax: number,
-  jAng: number,
-  rMin: number,
-  rMax: number,
-  lifeMin: number,
-  lifeMax: number,
-  uSlot: number
-): Particle {
-  const ux = mix(sx0, sx1, uSlot);
-  const uy = randRange(rnd, sy0, sy1);
-  const x = rect.x + ux * rect.w + (rnd() * 2 - 1) * jPos;
-  const y = rect.y + uy * rect.h + (rnd() * 2 - 1) * jPos;
-
-  const sp = randRange(rnd, spMin, spMax);
-  const ang = randRange(rnd, angMin - jAng, angMax + jAng);
-  const vx = Math.cos(ang) * sp;
-  const vy = Math.sin(ang) * sp;
-
-  const life = randRange(rnd, lifeMin, lifeMax);
-  const size = randRange(rnd, rMin, rMax);
-
-  const age = rnd() * life;
-  return { x, y, vx, vy, age, life, size, uSlot };
 }
 
 const EMITTERS_2 = new Map<string, EmitterState>();
@@ -159,11 +103,11 @@ function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
   let st = EMITTERS_2.get(key);
 
   const wantCount = Math.max(1, Math.floor(opts.count ?? 32));
-  const seed = hashStr(key);
+  const seed = hashPuffKey(key);
 
   const mk = () => {
     const rnd = makePRNG(seed);
-    const particles = new Array(wantCount).fill(0).map((_, i) => ({
+    const particles = Array.from({ length: wantCount }, (_, i): Particle => ({
       x: 0,
       y: 0,
       vx: 0,
@@ -172,7 +116,7 @@ function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
       life: 1,
       size: 1,
       uSlot: (i + rnd()) / wantCount,
-    })) as Particle[];
+    }));
     return { particles, rnd };
   };
 
@@ -202,7 +146,7 @@ function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
   return st;
 }
 
-export function stepAndDrawPuffs(p: any, opts: PuffEmitterOpts, dtSec: number) {
+export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec: number) {
   const state = ensureEmitter(opts);
   const rect = opts.rect;
 
@@ -217,7 +161,7 @@ export function stepAndDrawPuffs(p: any, opts: PuffEmitterOpts, dtSec: number) {
   const fadeInFrac = clamp01(opts.fadeInFrac ?? 0.12);
   const fadeOutFrac = clamp01(opts.fadeOutFrac ?? 0.25);
 
-  const ef = opts.edgeFadePx || {};
+  const ef = opts.edgeFadePx ?? {};
   const fL = Math.max(0, ef.left ?? 0);
   const fR = Math.max(0, ef.right ?? 0);
   const fT = Math.max(0, ef.top ?? 0);
@@ -225,23 +169,31 @@ export function stepAndDrawPuffs(p: any, opts: PuffEmitterOpts, dtSec: number) {
 
   const rnd = state.rnd;
 
-  const spawn = opts.spawn || {};
+  const spawn = opts.spawn ?? {};
   const sx0 = spawn.x0 ?? 0,
     sx1 = spawn.x1 ?? 1;
   const sy0 = spawn.y0 ?? 0,
     sy1 = spawn.y1 ?? 0;
 
-  const speed = opts.speed || {};
+  const speed = opts.speed ?? {};
   const spMin = speed.min ?? 12;
   const spMax = speed.max ?? 48;
 
   let angMin: number, angMax: number;
-  if (Number.isFinite(opts.angle?.min as number) || Number.isFinite(opts.angle?.max as number)) {
-    angMin = opts.angle?.min ?? 0;
-    angMax = opts.angle?.max ?? 0;
+  const angleMin = opts.angle?.min;
+  const angleMax = opts.angle?.max;
+  if (
+    (typeof angleMin === "number" && Number.isFinite(angleMin)) ||
+    (typeof angleMax === "number" && Number.isFinite(angleMax))
+  ) {
+    angMin = typeof angleMin === "number" && Number.isFinite(angleMin) ? angleMin : 0;
+    angMax = typeof angleMax === "number" && Number.isFinite(angleMax) ? angleMax : 0;
   } else {
     const dir = opts.dir ?? "none";
-    const spread = Number.isFinite(opts.spreadAngle) ? (opts.spreadAngle as number) : 0.35;
+    const spread =
+      typeof opts.spreadAngle === "number" && Number.isFinite(opts.spreadAngle)
+        ? opts.spreadAngle
+        : 0.35;
     const span = dirToAngleSpan(dir, spread);
     angMin = span.min;
     angMax = span.max;
@@ -256,8 +208,8 @@ export function stepAndDrawPuffs(p: any, opts: PuffEmitterOpts, dtSec: number) {
   const lifeMin = Math.max(0.1, opts.lifetime?.min ?? 0.8);
   const lifeMax = Math.max(lifeMin, opts.lifetime?.max ?? 2.2);
 
-  const wantSizeFollow = Number.isFinite(opts.sizeHz as number) && rMax !== rMin;
-  const sizeHz = (opts.sizeHz as number) || 0;
+  const sizeHz = typeof opts.sizeHz === "number" && Number.isFinite(opts.sizeHz) ? opts.sizeHz : 0;
+  const wantSizeFollow = sizeHz > 0 && rMax !== rMin;
 
   function laneTargetSize(uSlot: number) {
     return rMin + (rMax - rMin) * uSlot;
@@ -285,13 +237,11 @@ export function stepAndDrawPuffs(p: any, opts: PuffEmitterOpts, dtSec: number) {
     pr.size = randRange(rnd, rMin, rMax);
   }
 
-  for (let i = 0; i < state.particles.length; i++) {
-    const pr = state.particles[i];
+  for (const [i, pr] of state.particles.entries()) {
     if (pr.life <= 0) respawnParticle(pr, i, state.particles.length);
   }
 
-  for (let i = 0; i < state.particles.length; i++) {
-    const pr = state.particles[i];
+  for (const [i, pr] of state.particles.entries()) {
 
     if (drag > 0 && dtSec > 0) {
       const k = Math.exp(-drag * dtSec);
@@ -324,14 +274,13 @@ export function stepAndDrawPuffs(p: any, opts: PuffEmitterOpts, dtSec: number) {
   p.push();
   p.noStroke();
 
-  for (let i = 0; i < state.particles.length; i++) {
-    const pr = state.particles[i];
+  for (const pr of state.particles) {
 
     let baseColor: RGBA;
     if (typeof opts.color === "function") {
-      baseColor = (opts.color as (pr: Particle) => RGBA)(pr) || { r: 255, g: 255, b: 255, a: 255 };
+      baseColor = opts.color(pr) ?? { r: 255, g: 255, b: 255, a: 255 };
     } else if (opts.color) {
-      baseColor = opts.color as RGBA;
+      baseColor = opts.color;
     } else {
       baseColor = { r: 235, g: 240, b: 245, a: 180 };
     }

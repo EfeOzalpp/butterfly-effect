@@ -1,4 +1,5 @@
 // src/canvas-engine/shapes/index.js
+
 // clouds
 import { drawClouds, CLOUDS_BASE_PALETTE, CLOUDS_DARK_PALETTE } from './clouds';
 // snow

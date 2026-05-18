@@ -1,49 +1,62 @@
-// modifiers/particle-systems/particle-1.ts
+// modifiers/particles/particle-1.ts
 // Deterministic stratified spawning (no per-frame reseed bursts).
 // Pool mode (fixed count + respawn).
 // Optional live-follow smoothing so size/length can track changing inputs smoothly.
 
-export type RGBA = { r: number; g: number; b: number; a?: number };
+import type {
+  ParticleAccel,
+  ParticleCanvas,
+  ParticleEdgeFade,
+  ParticleJitter,
+  ParticleRange,
+  ParticleRect,
+  ParticleSpawnArea,
+  ParticleSpawnMode,
+  RandomSource,
+  RGBA,
+} from "./types";
+import { clamp01, hzLerp, makePRNG, mix, randRange, smoothstep01 } from "./utils";
+
 export type ParticleMode = "dot" | "line";
 
-export type ParticleEmitterOpts = {
+export interface ParticleEmitterOpts {
   key: string; // stable key to persist particles (e.g. `${r0}:${c0}:${w}x${h}:rain`)
-  rect: { x: number; y: number; w: number; h: number }; // pixels
+  rect: ParticleRect; // pixels
   mode?: ParticleMode;
 
-  spawnMode?: "random" | "stratified";
+  spawnMode?: ParticleSpawnMode;
   respawnStratified?: boolean;
 
-  color?: RGBA | ((pr: Particle) => RGBA);
+  color?: RGBA | ((pr: Particle) => RGBA | undefined);
 
-  spawn?: { x0?: number; x1?: number; y0?: number; y1?: number };
+  spawn?: ParticleSpawnArea;
 
-  speed?: { min?: number; max?: number };
-  angle?: { min?: number; max?: number };
-  accel?: { x?: number; y?: number };
+  speed?: ParticleRange;
+  angle?: ParticleRange;
+  accel?: ParticleAccel;
   gravity?: number;
-  jitter?: { pos?: number; velAngle?: number };
+  jitter?: ParticleJitter;
 
   count?: number;
-  size?: { min?: number; max?: number };
-  length?: { min?: number; max?: number };
+  size?: ParticleRange;
+  length?: ParticleRange;
 
   sizeHz?: number;
   lenHz?: number;
 
-  lifetime?: { min?: number; max?: number };
+  lifetime?: ParticleRange;
   fadeInFrac?: number;
   fadeOutFrac?: number;
 
-  edgeFadePx?: { left?: number; right?: number; top?: number; bottom?: number };
+  edgeFadePx?: ParticleEdgeFade;
 
   respawn?: boolean;
 
   /** Multiplier for line stroke thickness in texture pixels (sprite path can boost). */
   thicknessScale?: number;
-};
+}
 
-type Particle = {
+interface Particle {
   x: number;
   y: number;
   vx: number;
@@ -53,26 +66,15 @@ type Particle = {
   size: number;
   len: number;
   uSlot: number;
-};
+}
 
-type EmitterState = {
+interface EmitterState {
   particles: Particle[];
   seed: number;
-  rnd: () => number;
-};
-
-function clamp01(x: number) {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
-}
-function smoothstep01(t: number) {
-  t = clamp01(t);
-  return t * t * (3 - 2 * t);
-}
-function mix(a: number, b: number, t: number) {
-  return a + (b - a) * t;
+  rnd: RandomSource;
 }
 
-function hashStr(s: string) {
+function hashParticleKey(s: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -81,31 +83,9 @@ function hashStr(s: string) {
   return h >>> 0;
 }
 
-function makePRNG(seed: number) {
-  let t = seed >>> 0;
-  return () => {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function randRange(rnd: () => number, a: number, b: number) {
-  const lo = Math.min(a, b),
-    hi = Math.max(a, b);
-  return mix(lo, hi, rnd());
-}
-
-function hzLerp(current: number, target: number, hz: number, dt: number) {
-  if (!(hz > 0) || !(dt > 0)) return target;
-  const k = 1 - Math.exp(-hz * dt);
-  return current + (target - current) * k;
-}
-
 function spawnOne(
-  rnd: () => number,
-  rect: { x: number; y: number; w: number; h: number },
+  rnd: RandomSource,
+  rect: ParticleRect,
   jPos: number,
   sx0: number,
   sx1: number,
@@ -148,45 +128,45 @@ function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
   let st = EMITTERS.get(key);
 
   const wantCount = Math.max(1, Math.floor(opts.count ?? 32));
-  const seed = hashStr(key);
+  const seed = hashParticleKey(key);
 
   if (!st) {
     const rnd = makePRNG(seed);
     const rect = opts.rect;
 
-    const spawn = opts.spawn || {};
+    const spawn = opts.spawn ?? {};
     const sx0 = spawn.x0 ?? 0,
       sx1 = spawn.x1 ?? 1;
     const sy0 = spawn.y0 ?? 0,
       sy1 = spawn.y1 ?? 0;
 
-    const speed = opts.speed || {};
+    const speed = opts.speed ?? {};
     const spMin = speed.min ?? 120;
     const spMax = speed.max ?? 220;
 
-    const angle = opts.angle || {};
+    const angle = opts.angle ?? {};
     const angMin = angle.min ?? Math.PI / 2;
     const angMax = angle.max ?? Math.PI / 2;
 
-    const jitter = opts.jitter || {};
+    const jitter = opts.jitter ?? {};
     const jPos = jitter.pos ?? 0;
     const jAng = jitter.velAngle ?? 0;
 
-    const size = opts.size || {};
+    const size = opts.size ?? {};
     const rMin = size.min ?? 1;
     const rMax = size.max ?? 2.5;
 
-    const len = opts.length || {};
+    const len = opts.length ?? {};
     const lMin = len.min ?? 6;
     const lMax = len.max ?? 12;
 
-    const life = opts.lifetime || {};
+    const life = opts.lifetime ?? {};
     const lifeMin = Math.max(0.05, life.min ?? 0.6);
     const lifeMax = Math.max(lifeMin, life.max ?? 1.8);
 
     const spawnMode = opts.spawnMode ?? "stratified";
 
-    const particles = new Array(wantCount).fill(0).map((_, i) => {
+    const particles = Array.from({ length: wantCount }, (_, i) => {
       const lane = spawnMode === "stratified" ? (i + rnd()) / wantCount : rnd();
       return spawnOne(
         rnd,
@@ -219,17 +199,17 @@ function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
   const rnd = st.rnd;
   const rect = opts.rect;
 
-  const spawn = opts.spawn || {};
+  const spawn = opts.spawn ?? {};
   const sx0 = spawn.x0 ?? 0,
     sx1 = spawn.x1 ?? 1;
   const sy0 = spawn.y0 ?? 0,
     sy1 = spawn.y1 ?? 0;
 
-  const speed = opts.speed || {};
+  const speed = opts.speed ?? {};
   const spMin = speed.min ?? 120;
   const spMax = speed.max ?? 220;
 
-  const angle = opts.angle || {};
+  const angle = opts.angle ?? {};
   const angMin = angle.min ?? Math.PI / 2;
   const angMax = angle.max ?? Math.PI / 2;
 
@@ -284,11 +264,11 @@ function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
 
 const EMITTERS = new Map<string, EmitterState>();
 
-export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: number) {
+export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpts, dtSec: number) {
   const state = ensureEmitter(opts);
   const rect = opts.rect;
 
-  const mode: ParticleMode = opts.mode || "dot";
+  const mode: ParticleMode = opts.mode ?? "dot";
   const spawnMode = opts.spawnMode ?? "stratified";
   const keepLane = opts.respawnStratified ?? true;
 
@@ -298,7 +278,7 @@ export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: n
   const fadeInFrac = clamp01(opts.fadeInFrac ?? 0.1);
   const fadeOutFrac = clamp01(opts.fadeOutFrac ?? 0.2);
 
-  const ef = opts.edgeFadePx || {};
+  const ef = opts.edgeFadePx ?? {};
   const fL = Math.max(0, ef.left ?? 0);
   const fR = Math.max(0, ef.right ?? 0);
   const fT = Math.max(0, ef.top ?? 0);
@@ -307,17 +287,17 @@ export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: n
   const respawn = opts.respawn !== false;
   const rnd = state.rnd;
 
-  const spawn = opts.spawn || {};
+  const spawn = opts.spawn ?? {};
   const sx0 = spawn.x0 ?? 0,
     sx1 = spawn.x1 ?? 1;
   const sy0 = spawn.y0 ?? 0,
     sy1 = spawn.y1 ?? 0;
 
-  const speed = opts.speed || {};
+  const speed = opts.speed ?? {};
   const spMin = speed.min ?? 120;
   const spMax = speed.max ?? 220;
 
-  const angle = opts.angle || {};
+  const angle = opts.angle ?? {};
   const angMin = angle.min ?? Math.PI / 2;
   const angMax = angle.max ?? Math.PI / 2;
 
@@ -333,10 +313,10 @@ export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: n
   const lifeMin = Math.max(0.05, opts.lifetime?.min ?? 0.6);
   const lifeMax = Math.max(lifeMin, opts.lifetime?.max ?? 1.8);
 
-  const wantSizeFollow = Number.isFinite(opts.sizeHz as number) && rMax !== rMin;
-  const wantLenFollow = Number.isFinite(opts.lenHz as number) && lMax !== lMin;
-  const sizeHz = (opts.sizeHz as number) || 0;
-  const lenHz = (opts.lenHz as number) || 0;
+  const sizeHz = typeof opts.sizeHz === "number" && Number.isFinite(opts.sizeHz) ? opts.sizeHz : 0;
+  const lenHz = typeof opts.lenHz === "number" && Number.isFinite(opts.lenHz) ? opts.lenHz : 0;
+  const wantSizeFollow = sizeHz > 0 && rMax !== rMin;
+  const wantLenFollow = lenHz > 0 && lMax !== lMin;
 
   function laneTargetSize(uSlot: number) {
     return rMin + (rMax - rMin) * uSlot;
@@ -368,8 +348,7 @@ export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: n
     pr.len = randRange(rnd, lMin, lMax);
   }
 
-  for (let i = 0; i < state.particles.length; i++) {
-    const pr = state.particles[i];
+  for (const [i, pr] of state.particles.entries()) {
 
     pr.vx += accX * dtSec;
     pr.vy += accY * dtSec;
@@ -398,14 +377,13 @@ export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: n
 
   p.push();
 
-  for (let i = 0; i < state.particles.length; i++) {
-    const pr = state.particles[i];
+  for (const pr of state.particles) {
 
     let baseColor: RGBA;
     if (typeof opts.color === "function") {
-      baseColor = (opts.color as (pr: Particle) => RGBA)(pr) || { r: 255, g: 255, b: 255, a: 255 };
+      baseColor = opts.color(pr) ?? { r: 255, g: 255, b: 255, a: 255 };
     } else if (opts.color) {
-      baseColor = opts.color as RGBA;
+      baseColor = opts.color;
     } else {
       baseColor = { r: 200, g: 220, b: 255, a: 160 };
     }
@@ -445,12 +423,14 @@ export function stepAndDrawParticles(p: any, opts: ParticleEmitterOpts, dtSec: n
       const n01 = norm < 0 ? 0 : norm > 1 ? 1 : norm;
       const baseThick = n01 * 2 + 1;
 
-      const dprGuess = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+      const dprGuess = typeof window !== "undefined" ? window.devicePixelRatio : 1;
       const dprK = 1 + Math.max(0, Math.min(1.5, dprGuess - 1)) * 0.9;
 
       const thick =
         baseThick *
-        (Number.isFinite(opts.thicknessScale as number) ? (opts.thicknessScale as number) : dprK);
+        (typeof opts.thicknessScale === "number" && Number.isFinite(opts.thicknessScale)
+          ? opts.thicknessScale
+          : dprK);
 
       p.strokeWeight(thick);
       p.stroke(baseColor.r, baseColor.g, baseColor.b, alpha);

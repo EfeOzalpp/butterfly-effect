@@ -1,55 +1,40 @@
-// modifiers/index.ts
+// Public modifier surface for the canvas engine.
 
-/* =========================
- * COLOR
- * ========================= */
-
-export { clamp01 } from "./color-modifiers/math";
-
-export { rgbToHsl, hslToRgb } from "./color-modifiers/colorspace";
-
-export { blendRGB, blendRGBGamma } from "./color-modifiers/blend";
-export { fogifyPalette } from "./color-modifiers/fog";
-
-export { cssToRgbViaCanvas } from "./color-modifiers/adapter";
-
+// Color helpers.
+export { clamp01 } from "./color-modifiers";
+export { rgbToHsl, hslToRgb } from "./color-modifiers";
+export { blendRGB, blendRGBGamma } from "./color-modifiers";
+export { fogifyPalette } from "./color-modifiers";
+export { cssToRgbViaCanvas } from "./color-modifiers";
 export {
   oscillateSaturation,
   oscillateBrightness,
   clampBrightness,
   clampSaturation,
   driveSaturation,
-} from "./color-modifiers/effects";
+} from "./color-modifiers";
+export { gradientColor } from "./color-modifiers";
+export { VIVID_COLOR_STOPS } from "./color-modifiers";
 
-// Runtime uses these
-export { gradientColor } from "./color-modifiers/gradient";
-export { VIVID_COLOR_STOPS } from "./color-modifiers/stops";
-
-
-/* =========================
- * SHAPE MODIFIERS
- * ========================= */
-
-export { displacementOsc } from "./shape-modifiers/osc";
-export { makeArchLobes } from "./shape-modifiers/geom";
-
-// legacy surface expects clamp01/val/mix to come from here.
+// Shape geometry and transform helpers.
+export { displacementOsc, makeArchLobes } from "./shape-modifiers";
+// The legacy surface expects clamp01/val/mix to come from modifiers.
 // clamp01 would collide with color clamp01, so keep the old names:
 // - clamp01 from color
-// - val/mix from useLerp
-export { val, mix } from "./shape-modifiers/useLerp";
+// - val/mix from shape range helpers
+export { val, mix } from "./shape-modifiers";
+export { applyShapeMods } from "./shape-modifiers";
+export type { Anchor, ShapeMods, ApplyShapeModsOpts } from "./shape-modifiers";
 
-export { applyShapeMods } from "./shape-modifiers/shapeMods.apply";
-export type { Anchor, ShapeMods, ApplyShapeModsOpts } from "./shape-modifiers/shapeMods.types";
+// Particle emitters and particle-specific perspective helpers.
+export {
+  particleBucketRange,
+  particleRowBucket,
+  stepAndDrawParticles,
+  stepAndDrawPuffs,
+} from "./particles";
 
-
-/* =========================
- * PARTICLES 
- * ========================= */
-
-export { stepAndDrawParticles } from "./particle-systems/particle-1";
-export { stepAndDrawPuffs } from "./particle-systems/particle-2";
-export { particleRowBucket, particleBucketRange } from "./particlePerspective";
+// Scene lighting and light painting helpers.
 export {
   createSceneLightContext,
   lightClosenessBand,
@@ -61,11 +46,7 @@ export {
   paintPixelLightBands,
 } from "./lighting";
 
-
-/* =========================
- * GRID / FOOTPRINT
- * ========================= */
-
+// Grid placement to pixel projection.
 export {
   footprintToPx,
   rowHeightAt,
@@ -73,4 +54,4 @@ export {
   particlePerspectiveScale,
   particleSizePerspectiveScale,
   particleMotionPerspectiveScale,
-} from "./footprintPx";
+} from "./projection";

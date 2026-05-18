@@ -1,7 +1,7 @@
-// canvas-engine/modifiers/color-modifiers/colorspace.ts
+// Low-level color-space conversions. Higher-level shape code should usually use blend/effects instead.
 
-import type { RGB } from "./types";
-import { clamp01, lerp } from "./math";
+import type { RGB } from "./utils";
+import { clamp01, lerp } from "./utils";
 
 /** sRGB [0..255] -> linear [0..1] */
 export function srgbToLin(u8: number): number {

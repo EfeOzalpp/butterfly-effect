@@ -1,16 +1,17 @@
-// modifiers/shape-modifiers/shapeMods.apply.ts
-import { clamp01 } from "./useLerp";
-import type { ApplyShapeModsOpts } from "./shapeMods.types";
-import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./shapeMods.math";
+// Applies shape-level transforms before a shape draws itself.
+// This is the central runtime for appear, scale, translation, rotation, and opacity modifiers.
 
-/**
- * Apply modular shape modifiers.
- * Returns { x, y, r, alpha, rotation, satFactor, scaleX, scaleY } where:
- * - r is the final uniform diameter (legacy)
- * - scaleX/scaleY are anisotropic multipliers (compose with p.scale)
- */
+import { clamp01 } from "./ranges";
+import type { ApplyShapeModsOpts } from "./types";
+import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./transformMath";
+
+function finiteOr(value: number | undefined, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+// Returns a resolved transform envelope. The shape still owns the actual drawing.
 export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeModsOpts) {
-  const t = (typeof opts?.timeMs === "number" ? opts.timeMs : p.millis()) / 1000;
+  const t = (typeof opts.timeMs === "number" ? opts.timeMs : p.millis()) / 1000;
 
   let mx = x;
   let my = y;
@@ -53,42 +54,9 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
   if (mods.scale && typeof mods.scale.value === "number") {
     const baseR = r * mods.scale.value;
     const delta = baseR - r;
-    switch (mods.scale.anchor ?? "center") {
-      case "bottom":
-        my -= delta / 2;
-        break;
-      case "top":
-        my += delta / 2;
-        break;
-      case "left":
-        mx += delta / 2;
-        break;
-      case "right":
-        mx -= delta / 2;
-        break;
-      case "top-left":
-        mx += delta / 2;
-        my += delta / 2;
-        break;
-      case "top-right":
-        mx -= delta / 2;
-        my += delta / 2;
-        break;
-      case "bottom-left":
-        mx += delta / 2;
-        my -= delta / 2;
-        break;
-      case "bottom-right":
-        mx -= delta / 2;
-        my -= delta / 2;
-        break;
-      case "bottom-center":
-        my -= delta / 2;
-        break;
-      case "top-center":
-        my += delta / 2;
-        break;
-    }
+    const { offX, offY } = applyAnchorShiftForScale(mods.scale.anchor ?? "center", delta, delta);
+    mx += offX;
+    my += offY;
     mr = baseR;
   }
 
@@ -127,42 +95,9 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
     const newR = r0 * (biasK + ampK * osc);
     const delta = newR - r0;
 
-    switch (anchor) {
-      case "bottom":
-        my -= delta / 2;
-        break;
-      case "top":
-        my += delta / 2;
-        break;
-      case "left":
-        mx += delta / 2;
-        break;
-      case "right":
-        mx -= delta / 2;
-        break;
-      case "top-left":
-        mx += delta / 2;
-        my += delta / 2;
-        break;
-      case "top-right":
-        mx -= delta / 2;
-        my += delta / 2;
-        break;
-      case "bottom-left":
-        mx += delta / 2;
-        my -= delta / 2;
-        break;
-      case "bottom-right":
-        mx -= delta / 2;
-        my -= delta / 2;
-        break;
-      case "bottom-center":
-        my -= delta / 2;
-        break;
-      case "top-center":
-        my += delta / 2;
-        break;
-    }
+    const { offX, offY } = applyAnchorShiftForScale(anchor, delta, delta);
+    mx += offX;
+    my += offY;
 
     mr = newR;
   }
@@ -211,37 +146,29 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
   }
 
   if (mods.translateOscX) {
-    const amp = Number.isFinite(mods.translateOscX.amp as number) ? (mods.translateOscX.amp as number) : 0;
-    const speed = Number.isFinite(mods.translateOscX.speed as number)
-      ? (mods.translateOscX.speed as number)
-      : 0.25;
-    const phase = Number.isFinite(mods.translateOscX.phase as number) ? (mods.translateOscX.phase as number) : 0;
+    const amp = finiteOr(mods.translateOscX.amp, 0);
+    const speed = finiteOr(mods.translateOscX.speed, 0.25);
+    const phase = finiteOr(mods.translateOscX.phase, 0);
     mx += amp * Math.sin(speed * 2 * Math.PI * t + phase);
   }
 
   if (mods.translateOscY) {
-    const amp = Number.isFinite(mods.translateOscY.amp as number) ? (mods.translateOscY.amp as number) : 0;
-    const speed = Number.isFinite(mods.translateOscY.speed as number)
-      ? (mods.translateOscY.speed as number)
-      : 0.25;
-    const phase = Number.isFinite(mods.translateOscY.phase as number)
-      ? (mods.translateOscY.phase as number)
-      : Math.PI / 2;
+    const amp = finiteOr(mods.translateOscY.amp, 0);
+    const speed = finiteOr(mods.translateOscY.speed, 0.25);
+    const phase = finiteOr(mods.translateOscY.phase, Math.PI / 2);
     my += amp * Math.sin(speed * 2 * Math.PI * t + phase);
   }
 
   if (mods.translateClampX) {
-    const hasMin = Number.isFinite(mods.translateClampX.min as number);
-    const hasMax = Number.isFinite(mods.translateClampX.max as number);
-    if (hasMin) mx = Math.max(mods.translateClampX.min as number, mx);
-    if (hasMax) mx = Math.min(mods.translateClampX.max as number, mx);
+    const { min, max } = mods.translateClampX;
+    if (typeof min === "number" && Number.isFinite(min)) mx = Math.max(min, mx);
+    if (typeof max === "number" && Number.isFinite(max)) mx = Math.min(max, mx);
   }
 
   if (mods.translateClampY) {
-    const hasMin = Number.isFinite(mods.translateClampY.min as number);
-    const hasMax = Number.isFinite(mods.translateClampY.max as number);
-    if (hasMin) my = Math.max(mods.translateClampY.min as number, my);
-    if (hasMax) my = Math.min(mods.translateClampY.max as number, my);
+    const { min, max } = mods.translateClampY;
+    if (typeof min === "number" && Number.isFinite(min)) my = Math.max(min, my);
+    if (typeof max === "number" && Number.isFinite(max)) my = Math.min(max, my);
   }
 
   if (mods.opacityOsc) {

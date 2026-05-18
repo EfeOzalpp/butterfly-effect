@@ -1,29 +1,24 @@
-import { footprintToPx } from "./footprintPx";
+import { clamp01 } from "../color-modifiers";
+import type { RGB } from "../color-modifiers";
+import { footprintToPx } from "../projection";
+import type { GridFootprint, PixelRect, ProjectionContext } from "../projection";
 
-export type RGB = { r: number; g: number; b: number };
+export type { RGB } from "../color-modifiers";
 
-type Footprint = { r0: number; c0: number; w: number; h: number };
-
-type LightItem = {
+interface LightItem {
   x: number;
   y: number;
-  footprint?: Footprint;
-};
+  footprint?: GridFootprint;
+}
 
-type LightContextOpts = {
+interface LightContextOpts extends ProjectionContext {
   lightItem: LightItem | null;
   darkMode: boolean;
   canvasW: number;
   canvasH: number;
-  cell?: number;
-  cellW?: number;
-  cellH?: number;
-  rowHeights?: number[];
-  rowOffsetY?: number[];
-  cellWPerRow?: number[];
-};
+}
 
-export type SceneLightContext = {
+export interface SceneLightContext {
   sourceX: number;
   sourceY: number;
   kind: "sun" | "moon";
@@ -34,9 +29,9 @@ export type SceneLightContext = {
   sceneDiag: number;
   lightColor: RGB;
   shadowColor: RGB;
-};
+}
 
-export type DirectionalLightSample = {
+export interface DirectionalLightSample {
   overallK: number;
   closenessK: number;
   leftK: number;
@@ -47,21 +42,73 @@ export type DirectionalLightSample = {
   yBias: number;
   lightColor: RGB;
   shadowColor: RGB;
-};
+}
 
 export type LightClosenessBand = "far" | "mid" | "near";
 export type LightClosenessBandMap<T> = Partial<Record<LightClosenessBand, T>>;
 
-export const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS = {
-  mid: 0.52,
-  near: 0.74,
-} as const;
-
-function clamp01(v: number) {
-  return Math.max(0, Math.min(1, v));
+export interface LightBreakpoints {
+  mid: number;
+  near: number;
 }
 
-function closenessDistanceScale(light: SceneLightContext) {
+interface LightCanvas2D {
+  beginPath(): void;
+  rect(x: number, y: number, w: number, h: number): void;
+  roundRect?: (x: number, y: number, w: number, h: number, radius: number) => void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient;
+  save(): void;
+  clip(): void;
+  fillStyle: string | CanvasGradient | CanvasPattern;
+  fillRect(x: number, y: number, w: number, h: number): void;
+  restore(): void;
+}
+
+interface ShapeLightCanvas {
+  CLOSE: unknown;
+  push(): void;
+  pop(): void;
+  noStroke(): void;
+  fill(r: number, g: number, b: number, a?: number): void;
+  rect(x: number, y: number, w: number, h: number, ...radius: number[]): void;
+  beginShape(): void;
+  vertex(x: number, y: number): void;
+  endShape(mode?: unknown): void;
+}
+
+interface PixelBandOptions {
+  alpha: number;
+  highlightColor: RGB;
+  shadowColor: RGB;
+  corner?: number;
+  sideK?: number;
+  topK?: number;
+  shadowK?: number;
+}
+
+interface TriangleBand {
+  leftX: number;
+  rightX: number;
+  baseY: number;
+  apexX: number;
+  apexY: number;
+}
+
+interface TriangleBandOptions {
+  alpha: number;
+  highlightColor: RGB;
+  shadowColor: RGB;
+}
+
+export const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS: LightBreakpoints = {
+  mid: 0.52,
+  near: 0.74,
+};
+
+function closenessDistanceScale(light: SceneLightContext): number {
   const aspect = light.sceneW / Math.max(1, light.sceneH);
   const tabletK = clamp01((1.75 - aspect) / 0.55);
   const aspectBoost = 1.08 + tabletK * 0.34;
@@ -70,7 +117,7 @@ function closenessDistanceScale(light: SceneLightContext) {
 
 export function lightClosenessBand(
   closenessK: number,
-  breakpoints: { mid: number; near: number } = DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS
+  breakpoints: LightBreakpoints = DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS
 ): LightClosenessBand {
   const k = clamp01(closenessK);
   if (k >= clamp01(breakpoints.near)) return "near";
@@ -82,20 +129,20 @@ export function pickLightBandValue<T>(
   base: T,
   byLight: LightClosenessBandMap<T> | undefined,
   closenessK: number,
-  breakpoints: { mid: number; near: number } = DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS
+  breakpoints: LightBreakpoints = DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS
 ): T {
   const band = lightClosenessBand(closenessK, breakpoints);
   return byLight?.[band] ?? base;
 }
 
 function addRoundedRectPath(
-  ctx: any,
+  ctx: LightCanvas2D,
   x: number,
   y: number,
   w: number,
   h: number,
   radius = 0
-) {
+): void {
   const rr = Math.max(0, Math.min(radius, Math.min(w, h) / 2));
   ctx.beginPath();
   if (rr <= 0) {
@@ -117,8 +164,8 @@ function addRoundedRectPath(
   ctx.quadraticCurveTo(x, y, x + rr, y);
 }
 
-function rgbaString(color: RGB, alpha: number) {
-  return `rgba(${color.r},${color.g},${color.b},${clamp01(alpha)})`;
+function rgbaString(color: RGB, alpha: number): string {
+  return `rgba(${String(color.r)},${String(color.g)},${String(color.b)},${String(clamp01(alpha))})`;
 }
 
 export function mixRgb(base: RGB, target: RGB, k: number): RGB {
@@ -131,14 +178,14 @@ export function mixRgb(base: RGB, target: RGB, k: number): RGB {
 }
 
 export function createSceneLightContext(opts: LightContextOpts): SceneLightContext | null {
-  const { lightItem, darkMode, canvasW, canvasH, ...fpOpts } = opts;
+  const { lightItem, darkMode, canvasW, canvasH, ...projection } = opts;
   if (!lightItem) return null;
 
   let sourceX = lightItem.x;
   let sourceY = lightItem.y;
 
   if (lightItem.footprint) {
-    const { x, y, w, h } = footprintToPx(lightItem.footprint, fpOpts);
+    const { x, y, w, h } = footprintToPx(lightItem.footprint, projection);
     sourceX = x + w / 2;
     sourceY = y + h / 2;
   }
@@ -161,7 +208,7 @@ export function createSceneLightContext(opts: LightContextOpts): SceneLightConte
 }
 
 export function sampleDirectionalLightRect(
-  rect: { x: number; y: number; w: number; h: number },
+  rect: PixelRect,
   light: SceneLightContext | null
 ): DirectionalLightSample {
   if (!light) {
@@ -206,29 +253,23 @@ export function sampleDirectionalLightRect(
   };
 }
 
+// Paint helpers stay small on purpose. Shapes choose the art direction and pass
+// us the already-sampled light strength.
 export function paintPixelLightBands(
-  p: any,
-  rect: { x: number; y: number; w: number; h: number },
+  p: ShapeLightCanvas | null | undefined,
+  rect: PixelRect,
   light: DirectionalLightSample,
-  opts: {
-    alpha: number;
-    highlightColor: RGB;
-    shadowColor: RGB;
-    corner?: number;
-    sideK?: number;
-    topK?: number;
-    shadowK?: number;
-  }
-) {
+  opts: PixelBandOptions
+): void {
   const { x, y, w, h } = rect;
   if (!p || w <= 0 || h <= 0) return;
 
   const sideLitK = Math.max(light.leftK, light.rightK);
   const sideW = Math.max(2, Math.round(w * 0.16));
-  const sideX = light.leftK >= light.rightK ? x : (x + w - sideW);
+  const sideX = light.leftK >= light.rightK ? x : x + w - sideW;
   const topH = Math.max(2, Math.round(h * 0.12));
   const shadowW = Math.max(2, Math.round(w * 0.12));
-  const shadowX = light.leftK >= light.rightK ? (x + w - shadowW) : x;
+  const shadowX = light.leftK >= light.rightK ? x + w - shadowW : x;
   const corner = opts.corner ?? 0;
   const sideAlpha = Math.round(opts.alpha * (opts.sideK ?? 0.48) * sideLitK);
   const topAlpha = Math.round(opts.alpha * (opts.topK ?? 0.34) * light.topK);
@@ -246,55 +287,51 @@ export function paintPixelLightBands(
 }
 
 export function paintEdgeGradientRect(
-  ctx: any,
-  rect: { x: number; y: number; w: number; h: number },
+  ctx: LightCanvas2D | null | undefined,
+  rect: PixelRect,
   edge: "left" | "right" | "top" | "bottom",
   color: RGB,
   edgeAlpha: number,
   radius = 0
-) {
+): void {
   const { x, y, w, h } = rect;
   if (!ctx || w <= 0 || h <= 0 || edgeAlpha <= 0) return;
 
-  let g;
+  let gradient: CanvasGradient;
   switch (edge) {
     case "left":
-      g = ctx.createLinearGradient(x, y, x + w, y);
+      gradient = ctx.createLinearGradient(x, y, x + w, y);
       break;
     case "right":
-      g = ctx.createLinearGradient(x + w, y, x, y);
+      gradient = ctx.createLinearGradient(x + w, y, x, y);
       break;
     case "top":
-      g = ctx.createLinearGradient(x, y, x, y + h);
+      gradient = ctx.createLinearGradient(x, y, x, y + h);
       break;
     default:
-      g = ctx.createLinearGradient(x, y + h, x, y);
+      gradient = ctx.createLinearGradient(x, y + h, x, y);
       break;
   }
 
-  g.addColorStop(0, rgbaString(color, edgeAlpha));
-  g.addColorStop(0.30, rgbaString(color, edgeAlpha * 0.55));
-  g.addColorStop(0.68, rgbaString(color, edgeAlpha * 0.12));
-  g.addColorStop(1, rgbaString(color, 0));
+  gradient.addColorStop(0, rgbaString(color, edgeAlpha));
+  gradient.addColorStop(0.30, rgbaString(color, edgeAlpha * 0.55));
+  gradient.addColorStop(0.68, rgbaString(color, edgeAlpha * 0.12));
+  gradient.addColorStop(1, rgbaString(color, 0));
 
   ctx.save();
   addRoundedRectPath(ctx, x, y, w, h, radius);
   ctx.clip();
-  ctx.fillStyle = g;
+  ctx.fillStyle = gradient;
   ctx.fillRect(x, y, w, h);
   ctx.restore();
 }
 
 export function paintDirectionalTriangleBands(
-  p: any,
-  tri: { leftX: number; rightX: number; baseY: number; apexX: number; apexY: number },
+  p: ShapeLightCanvas | null | undefined,
+  tri: TriangleBand,
   light: DirectionalLightSample,
-  opts: {
-    alpha: number;
-    highlightColor: RGB;
-    shadowColor: RGB;
-  }
-) {
+  opts: TriangleBandOptions
+): void {
   if (!p) return;
 
   const { leftX, rightX, baseY, apexX, apexY } = tri;
@@ -304,8 +341,8 @@ export function paintDirectionalTriangleBands(
   const roofVisibleK = clamp01(1 - light.bottomK * 1.25);
   const litK = Math.max(light.leftK, light.rightK) * roofVisibleK;
   const centerX = leftX + width * 0.5;
-  const litInnerX = litLeft ? (leftX + width * 0.58) : (rightX - width * 0.58);
-  const shadowInnerX = litLeft ? (rightX - width * 0.54) : (leftX + width * 0.54);
+  const litInnerX = litLeft ? leftX + width * 0.58 : rightX - width * 0.58;
+  const shadowInnerX = litLeft ? rightX - width * 0.54 : leftX + width * 0.54;
   const topBaseInset = width * 0.18;
   const topApexY = apexY + Math.max(1, (baseY - apexY) * 0.18);
   const seamInsetY = Math.max(2, (baseY - apexY) * 0.18);

@@ -1,17 +1,17 @@
-// canvas-engine/modifiers/color-modifiers/style.ts
+// Higher-level visual style composer. This is a consumer of color helpers, not the folder index.
 
-import { clamp01 } from "./math";
+import { clamp01 } from "./utils";
 import { gradientColor } from "./gradient";
 import { applyExposureContrast } from "./effects";
 import { VIVID_COLOR_STOPS } from "./stops";
 
-export type VisualStyle = {
+export interface VisualStyle {
   rgb: { r: number; g: number; b: number };
   alpha: number;
   blend: number;
   hueShift: number;
   brightness: number;
-};
+}
 
 export function sampleBrandColor(avg: number) {
   return gradientColor(VIVID_COLOR_STOPS, avg).rgb;

@@ -1,3 +1,5 @@
+// Shape modifier config contracts.
+// These are declarative knobs that shapes pass into applyShapeMods before drawing.
 export type Anchor =
   | "center"
   | "top"
@@ -62,8 +64,10 @@ export interface TranslateOscY {
 }
 
 export interface ShapeMods {
+  // Entry animation applied when the canvas/root signal is opening.
   appear?: AppearMod;
 
+  // Size and motion modifiers. Shapes decide which configs they support.
   scale?: Scale;
   scale2D?: Scale2D;
   sizeOsc?: SizeOsc;
@@ -119,8 +123,12 @@ export interface SaturationOsc {
   phase?: number;
 }
 
+export interface ShapeModifierClock {
+  millis(): number;
+}
+
 export interface ApplyShapeModsOpts {
-  p: any;
+  p: ShapeModifierClock;
   x: number;
   y: number;
   r: number;

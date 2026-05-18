@@ -6,7 +6,7 @@ import {
   type RadialGradientSpec,
 } from "../../../adjustable-rules/backgrounds";
 import type { SceneLookupKey } from "../../../adjustable-rules/sceneState";
-import { stepAndDrawParticles } from "../../../modifiers/particle-systems/particle-1";
+import { stepAndDrawParticles } from "../../../modifiers/particles";
 import { clamp01 } from "../../../shared/math";
 import type { PLike } from "../../p/makeP";
 import { backgroundAnchorCacheKey, resolveStopK, resolveStopKValue } from "./anchors";

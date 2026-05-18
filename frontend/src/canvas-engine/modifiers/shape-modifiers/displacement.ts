@@ -1,18 +1,22 @@
-// modifiers/shape-modifiers/osc.ts
+// Deterministic displacement wobble for repeated shape parts.
+// Same index + seed gives stable motion, so blobs can animate without reshuffling.
+
 import { phaseFromIndex } from "../../shared/hash32";
+
+export interface DisplacementOscOptions {
+  ampX?: number;
+  ampY?: number;
+  ampScale?: number;
+  freqX?: number;
+  freqY?: number;
+  freqScale?: number;
+  seed?: number;
+}
 
 export function displacementOsc(
   tSec: number,
   idx: number,
-  opts: {
-    ampX?: number;
-    ampY?: number;
-    ampScale?: number;
-    freqX?: number;
-    freqY?: number;
-    freqScale?: number;
-    seed?: number;
-  } = {}
+  opts: DisplacementOscOptions = {}
 ) {
   const {
     ampX = 8,
