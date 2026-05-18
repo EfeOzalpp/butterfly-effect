@@ -9,8 +9,8 @@
 
 /* Onboarding foundation */
 .survey.survey-step.role-select, .survey.survey-step.questionnaire { display: flex; justify-content: center; align-items: center; flex-direction: column; }
+.survey.survey-step.role-select { height: 100%; }
 .survey.survey-step.questionnaire { width: 100%; min-height: 100dvh; position: relative; overflow: hidden; overflow: clip; }
-.role-select-shell { display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; }
 .survey.survey-step.role-select > .onboarding { display: flex; flex-direction: column; align-items: center; }
 .user-flow { display: flex; inset: 0; align-items: center; pointer-events: none; z-index: 6; }
 .user-flow.questionnaire-active { width: 100%; max-width: 100vw; overflow: hidden; overflow: clip; }
@@ -406,7 +406,8 @@ button.city-button,
 }
 
 /* Theme wiring: survey */
-.welcome-text, .section-title, .q-count, .q-title, .section-label, .email-tag { color: var(--ui-text); }
+.welcome-text, .section-title { color: var(--ui-title); }
+.q-count, .q-title, .section-label, .email-tag { color: var(--ui-text); }
 .q-step-indicator { color: var(--ui-text-secondary); }
 
 /* Questionnaire slider track + thumb */
@@ -471,7 +472,7 @@ button.city-button,
 @media (min-width: 1025px) {
   /* canvas flow for pre-questionnaire */
   .onboarding-canvas { top: 0; right: 0; width: 100%; height: clamp(675px, 2.8vw, 860px); position: absolute; overflow: hidden; }
-  .welcome-title-layer { height: clamp(625px, 2.8vw, 860px); top: -16px; }
+  .welcome-title-layer { height: clamp(625px, 2.8vw, 860px); top: -104px; }
 }
 
 /* 768 and above */
@@ -479,7 +480,7 @@ button.city-button,
   .survey-section:has(.survey.survey-step.role-select), .survey-section:has(.survey.survey-step.section-select) { height: 100%; }
   .survey.survey-step.section-select { height: 100%; }
   .survey.survey-step.section-select .continue { padding: 5.4rem 20px 3.2rem 20px; min-width: 360px; max-width: 360px; }
-  .survey.survey-step.role-select .onboarding { padding: 5.4rem 20px 3.2rem 20px; min-width: 360px; max-width: 360px; }
+  .survey.survey-step.role-select .onboarding { padding: 5.4rem 20px 3.2rem 20px; min-width: 600px; max-width: 600px; }
   .survey-section:has(.survey.survey-step.section-select) { height: 460px; }
 
   .radio-button { width: 1.1rem; height: 1.1rem; min-width: 1.1rem; min-height: 1.1rem; }
@@ -489,7 +490,7 @@ button.city-button,
   .section-title { text-align: center; }
   .welcome-title { white-space: nowrap; padding: 2.4rem 0 3.2rem 0; }
 
-  .radio-group { width: 90%; }
+  .radio-group { min-width: 320px; max-width: 320px; }
 
   /* Section picker spacing */
   .section-picker { position: relative; justify-items: center; 

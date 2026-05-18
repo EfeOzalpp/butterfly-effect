@@ -1,5 +1,4 @@
 // src/components/survey/roleStep.jsx
-import React from "react";
 import RolePicker from ".";
 
 const DISPLAY = {
@@ -14,10 +13,9 @@ export default function RoleStep({ value, onChange, onNext, error }) {
   const errorId = !isSelected && error ? "role-picker-error" : undefined;
 
   return (
-    <div className="role-select-shell">
-      <section className="survey survey-step role-select">
+    <section className="survey survey-step role-select">
         <div className="onboarding">
-          <h2 className="welcome-text">Join an <span style={{ color: 'var(--welcome-indie)' }}>Indie</span><br /> <span style={{ color: 'var(--welcome-sustainability)' }}>Sustainability</span> Project.</h2>
+          <h2 className="welcome-text">Welcome!<br />Try it today.</h2>
 
           <RolePicker value={value} onChange={onChange} errorId={errorId} />
 
@@ -39,7 +37,6 @@ export default function RoleStep({ value, onChange, onNext, error }) {
             <span className="begin-button__inner">{buttonLabel}</span>
           </button></div>
         </div>
-      </section>
-    </div>
+    </section>
   );
 }

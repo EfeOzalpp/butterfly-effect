@@ -2,10 +2,10 @@
 
 h1, h2, h3, h4 { margin: 0; font-family: var(--font-title); font-optical-sizing: auto; font-variation-settings: "wdth" 112.5, "GRAD" 0; color: var(--ui-text); }
 
-h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 500; letter-spacing: 0.02em; }
-h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); font-weight: 300; letter-spacing: 0.01rem; }
-h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 300; }
-h4 { font-size: var(--type-h4-size); line-height: var(--tyle-h4-line); font-weight: 420; letter-spacing: 0.02rem; }
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 500; letter-spacing: 0.04em; }
+h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); font-weight: 300; letter-spacing: 0.03rem; color: var(--ui-title); }
+h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 300; letter-spacing: 0.03rem; }
+h4 { font-size: var(--type-h4-size); line-height: var(--type-h4-line); font-weight: 420; letter-spacing: 0.02rem; }
 
 p, li, label, input, select, textarea { font-family: var(--font-body); font-size: var(--type-p-size); line-height: var(--type-body-line); font-weight: var(--font-ui-weight); color: var(--ui-text); }
 p.gam-general-copy, p.gam-general-copy span, h4.gam-subline { color: var(--ui-gamification) !important; }
@@ -27,80 +27,130 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
 
 .mock-read-banner-close:hover { background: var(--hint-bg-hover); color: var(--hint-text); }
 
-/* shared button base primary */
-button.begin-button, button.next-button, button.questionnaire, button.section-continue-button { display: inline-flex; align-items: center; justify-content: center; flex-direction: row-reverse; gap: var(--space-sm); border-radius: var(--btn-radius); border: none; line-height: 1; text-decoration: none; transition: background-color 120ms ease, color 120ms ease, transform 50ms ease; }
-
-/* shared button base secondary */
-button.city-button, .observe-results, .logs-button, .widgets-button { display: inline-flex; align-items: center; flex-direction: row-reverse; justify-content: center; gap: var(--space-sm); border: none; padding: var(--btn-secondary-padding); border-radius: var(--btn-radius); font-weight: var(--btn-font-weight); line-height: 1; text-decoration: none; transition: background-color 120ms ease, color 120ms ease, transform 50ms ease; }
-
-/* secondary */
-button.city-button:hover, .logs-button:hover, .widgets-button:hover { transform: var(--btn-hover-scale); padding: var(--btn-secondary-padding-hover); position: relative; top: 0px; left: 0px; }
+/* ── Button base ──────────────────────────────────────────────────── */
 
 button { pointer-events: auto; cursor: pointer; }
 
+/* All expanding buttons use the grid/ghost trick to prevent layout shift on hover */
+button.begin-button,
+button.next-button,
+button.questionnaire,
+button.section-continue-button,
+button.city-button,
+.observe-results,
+.logs-button,
+.widgets-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--btn-radius);
+  padding: 0;
+  background: transparent;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease, transform 50ms ease;
+}
+
+button.begin-button:hover,
+button.next-button:hover,
+button.questionnaire:hover,
+button.section-continue-button:hover,
+button.city-button:hover,
+.observe-results:hover,
+.logs-button:hover,
+.widgets-button:hover { padding: 0; background: transparent; }
+
 .nav-toggle:hover { transform: none; }
 
-/* tertiary button */
-.system-color { border-radius: 50%; }
+/* Primary button colors */
+button.begin-button,
+button.next-button,
+button.questionnaire,
+button.section-continue-button { color: var(--btn-primary-text); }
 
-/* End of general button base */
+button.begin-button .ui-icon,
+button.next-button .ui-icon { color: var(--btn-primary-icon); }
 
-/* variants common styles, primary button + special button */
-button.begin-button, button.next-button, button.questionnaire, button.section-continue-button { color: var(--btn-primary-text); border: none; }
+/* Secondary button colors */
+button.city-button,
+.observe-results,
+.logs-button,
+.widgets-button { color: var(--btn-secondary-text); font-weight: var(--btn-font-weight); }
 
-/* Primary button styles */
-button.questionnaire { position: relative; display: grid; place-items: center; padding: 0; background: transparent; }
+/* ── Primary ghost (hidden spacer that reserves hover width) ──────── */
 
-button.section-continue-button { position: relative; display: inline-grid; place-items: center; padding: 0; background: transparent; }
+.begin-button__ghost,
+.next-button__ghost,
+.questionnaire__ghost,
+.section-continue-button__ghost {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  visibility: hidden;
+  white-space: nowrap;
+  line-height: 1;
+  padding-block: var(--btn-primary-padding-reserve-block);
+  padding-inline: var(--btn-primary-padding-reserve-inline);
+}
 
-button.questionnaire::before { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; visibility: hidden; white-space: nowrap; font: inherit; font-weight: inherit; line-height: 1; }
+/* questionnaire uses ::before as the spacer (label-driven width) */
+button.questionnaire::before {
+  content: attr(data-label);
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  white-space: nowrap;
+  font: inherit;
+  font-weight: inherit;
+  line-height: 1;
+  padding: var(--btn-primary-padding-hover);
+}
 
-button.questionnaire::before { content: attr(data-label); padding: var(--btn-primary-padding-hover); }
+button.section-continue-button::before {
+  content: "";
+  grid-area: 1 / 1;
+  display: inline-flex;
+  visibility: hidden;
+  white-space: nowrap;
+  font: inherit;
+  font-weight: inherit;
+  line-height: 1;
+  padding: var(--btn-primary-padding-hover);
+}
 
-button.section-continue-button::before { content: ""; grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; visibility: hidden; white-space: nowrap; font: inherit; font-weight: inherit; line-height: 1; padding: var(--btn-primary-padding-hover); }
+/* ── Primary inner (the visible pill) ────────────────────────────── */
 
-button.questionnaire:hover { padding: 0; }
-
-button.section-continue-button:hover { padding: 0; background: transparent; }
-
-button.begin-button .ui-icon, button.next-button .ui-icon { color: var(--btn-primary-icon); }
-
-button.begin-button { position: relative; display: inline-grid; place-items: center; padding: 0; background: transparent; }
-
-button.begin-button:hover { padding: 0; background: transparent; }
-
-button.next-button { position: relative; display: inline-grid; place-items: center; padding: 0; background: transparent; }
-
-button.questionnaire { background: transparent; }
-
-button.next-button:hover { padding: 0; background: transparent; }
-
-.questionnaire__ghost { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); visibility: hidden; white-space: nowrap; line-height: 1; }
-
-.questionnaire__ghost { padding-block: var(--btn-primary-padding-reserve-block); padding-inline: var(--btn-primary-padding-reserve-inline); }
-
-.section-continue-button__ghost { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); visibility: hidden; white-space: nowrap; line-height: 1; padding-block: var(--btn-primary-padding-reserve-block); padding-inline: var(--btn-primary-padding-reserve-inline); }
-
-.begin-button__ghost { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); visibility: hidden; white-space: nowrap; line-height: 1; padding-block: var(--btn-primary-padding-reserve-block); padding-inline: var(--btn-primary-padding-reserve-inline); }
-
-.begin-button__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); border-radius: inherit; padding: var(--btn-primary-padding); background: var(--btn-primary-bg); transition: padding 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
+.begin-button__inner,
+.next-button__inner,
+.questionnaire__inner,
+.section-continue-button__inner {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  border-radius: inherit;
+  padding: var(--btn-primary-padding);
+  background: var(--btn-primary-bg);
+  transition: padding 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
 
 button.begin-button:hover .begin-button__inner { padding: var(--btn-primary-padding-hover); background: var(--btn-primary-hover-bg); }
 
-.next-button__ghost { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); visibility: hidden; white-space: nowrap; line-height: 1; padding-block: var(--btn-primary-padding-reserve-block); padding-inline: var(--btn-primary-padding-reserve-inline); }
+button.next-button:hover .next-button__inner,
+button.questionnaire:hover .questionnaire__inner,
+button.section-continue-button:hover .section-continue-button__inner {
+  padding: var(--btn-primary-padding-hover);
+  background: var(--btn-primary-hover-bg);
+  box-shadow: 0 0 24px var(--btn-box-shadow);
+}
 
-.next-button__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); border-radius: inherit; padding: var(--btn-primary-padding); background: var(--btn-primary-bg); transition: padding 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
-
-button.next-button:hover .next-button__inner { padding: var(--btn-primary-padding-hover); background: var(--btn-primary-hover-bg); box-shadow: 0 0 24px var(--btn-box-shadow); }
-
-.questionnaire__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); border-radius: inherit; transition: padding 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
-
-.questionnaire__inner { padding: var(--btn-primary-padding); background: var(--btn-primary-bg); }
-
-.section-continue-button__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); border-radius: inherit; transition: padding 120ms ease, background-color 120ms ease, box-shadow 120ms ease; padding: var(--btn-primary-padding); background: var(--btn-primary-bg); }
-
-button.questionnaire:hover .questionnaire__inner { padding: var(--btn-primary-padding-hover); background: var(--btn-primary-hover-bg); box-shadow: 0 0 24px var(--btn-box-shadow); }
-
+/* questionnaire disabled state */
 button.questionnaire:disabled,
 button.questionnaire.is-disabled,
 button.questionnaire[aria-disabled="true"] { cursor: default; }
@@ -121,53 +171,93 @@ button.questionnaire[aria-disabled="true"]:hover .questionnaire__inner {
   box-shadow: none;
 }
 
-button.section-continue-button:hover .section-continue-button__inner { padding: var(--btn-primary-padding-hover); background: var(--btn-primary-hover-bg); box-shadow: 0 0 24px var(--btn-box-shadow); }
+/* ── Secondary before / ghost (reserves hover width) ─────────────── */
 
-/* secondary button styles */
-.observe-results, .city-button { color: var(--btn-secondary-text); }
-
-.observe-results:hover, button.city-button:hover { background: var(--btn-secondary-hover-bg); }
-
-.city-button { background: var(--btn-secondary-bg); }
-
-button.city-button { position: relative; display: inline-grid; place-items: center; padding: 0; }
-
-button.city-button::before { content: ""; grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); visibility: hidden; white-space: nowrap; padding: var(--btn-secondary-padding-hover); line-height: 1; }
-
-.city-button__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); padding: var(--btn-secondary-padding); border-radius: inherit; background: var(--btn-secondary-bg); transition: padding 120ms ease, background-color 120ms ease; }
-
-button.city-button:hover { padding: 0; background: transparent; }
-
-button.city-button:hover .city-button__inner { padding: var(--btn-secondary-padding-hover); background: var(--btn-secondary-hover-bg); }
-
-.observe-results { position: relative; display: inline-grid; place-items: center; padding: 0; background: transparent; }
-
-.observe-results__ghost { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; align-self: center; justify-self: center; gap: var(--space-sm); visibility: hidden; white-space: nowrap; padding: var(--btn-secondary-padding-hover); line-height: 1; }
-
-.observe-results:hover { padding: 0; }
-
-.observe-results:hover .observe-results__inner { padding: var(--btn-secondary-padding-hover); background: var(--btn-secondary-hover-bg); }
-
-.logs-button, .widgets-button { position: relative; display: inline-grid; place-items: center; padding: 0; background: transparent; color: var(--btn-secondary-text); }
-
-.logs-button::before, .widgets-button::before { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; visibility: hidden; white-space: nowrap; padding: var(--btn-secondary-padding-hover); font: inherit; font-weight: inherit; line-height: 1; }
+button.city-button::before {
+  content: "";
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  visibility: hidden;
+  white-space: nowrap;
+  padding: var(--btn-secondary-padding-hover);
+  line-height: 1;
+}
 
 .logs-button::before { content: attr(data-label); }
-
 .widgets-button::before { content: attr(data-label); }
 
-.logs-button:hover, .widgets-button:hover { padding: 0; background: transparent; }
+.logs-button::before,
+.widgets-button::before {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  white-space: nowrap;
+  padding: var(--btn-secondary-padding-hover);
+  font: inherit;
+  font-weight: inherit;
+  line-height: 1;
+}
 
-.logs-button__inner, .widgets-button__inner, .observe-results__inner { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; padding: var(--btn-secondary-padding); border-radius: inherit; background: var(--btn-secondary-bg); transition: padding 120ms ease, background-color 120ms ease; }
+.observe-results__ghost {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  justify-self: center;
+  gap: var(--space-sm);
+  visibility: hidden;
+  white-space: nowrap;
+  padding: var(--btn-secondary-padding-hover);
+  line-height: 1;
+}
 
-.logs-button:hover .logs-button__inner, .widgets-button:hover .widgets-button__inner { padding: var(--btn-secondary-padding-hover); background: var(--btn-secondary-hover-bg); }
+/* ── Secondary inner (the visible pill) ──────────────────────────── */
 
-.logs-button, .widgets-button { color: var(--btn-secondary-text); }
+.city-button__inner,
+.observe-results__inner,
+.logs-button__inner,
+.widgets-button__inner {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--btn-secondary-padding);
+  border-radius: inherit;
+  background: var(--btn-secondary-bg);
+  transition: padding 120ms ease, background-color 120ms ease;
+}
 
-/* tertiary button styles */
-.system-color { display: inline-flex; align-items: center; justify-content: center; border: none; background: var(--btn-tertiary-bg); color: var(--btn-tertiary-text); margin-right: calc(-1 * var(--space-md)); }
+button.city-button:hover .city-button__inner,
+.observe-results:hover .observe-results__inner,
+.logs-button:hover .logs-button__inner,
+.widgets-button:hover .widgets-button__inner {
+  padding: var(--btn-secondary-padding-hover);
+  background: var(--btn-secondary-hover-bg);
+}
+
+/* ── Tertiary button ──────────────────────────────────────────────── */
+
+.system-color {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--btn-tertiary-bg);
+  color: var(--btn-tertiary-text);
+  margin-right: calc(-1 * var(--space-md));
+}
 
 .system-color:hover { background: var(--btn-tertiary-hover-bg); }
+
+/* ── Responsive overrides ─────────────────────────────────────────── */
 
 @media (max-width: 767px) {
   button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
@@ -180,6 +270,7 @@ button.city-button:hover .city-button__inner { padding: var(--btn-secondary-padd
   .system-color { max-height: 52px; max-width: 52px; min-height: 52px; min-width: 52px; }
   .mock-read-banner-close { width: 20px !important; height: 20px !important; }
 }
+
 @media (min-width: 1024px) {
   button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
   .system-color { max-height: 48px; max-width: 48px; min-height: 48px; min-width: 48px; }

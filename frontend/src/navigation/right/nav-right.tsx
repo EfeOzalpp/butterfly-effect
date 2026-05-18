@@ -1,5 +1,5 @@
 import Darkmode from "./color-toggle";
-import GraphPicker from "./graph-picker";
+import GraphPicker from "../graph-picker";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
