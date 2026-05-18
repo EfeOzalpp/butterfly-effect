@@ -1,11 +1,10 @@
 // src/canvas-engine/adjustable-rules/placement-rules/start.ts
 
-import type { ScenePlacementRules } from "./helpers";
+import type { ScenePlacementRules } from "./types";
 
 export const START_PLACEMENTS: ScenePlacementRules = {
 
-  // ── Sky ────────────────────────────────────────────────────────────────────
-
+  // Sky
   sun: {
     zones: [
       { verticalK: [0.06, 0.1], horizontalK: [0.15, 0.17],
@@ -24,21 +23,23 @@ export const START_PLACEMENTS: ScenePlacementRules = {
   clouds: {
     quota: [{ t: 0, pct: 20 }, { t: 1, pct: 80 }],
     zones: [
-
       // left sky
       { verticalK: [0.06, 0.1], horizontalK: [0.03, 0.07],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.1, 0.15], horizontalK: [0.08, 0.15],
+      { verticalK: [0.1, 0.15], horizontalK: [0.07, 0.12],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // mid sky
       { verticalK: [0.01, 0.04], horizontalK: [0.35, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
+      { verticalK: [0.03, 0.06], horizontalK: [0.3, 0.35],
+        count: { mobile: 0, tablet: 0, laptop: 1 } },
+
       { verticalK: [0.1, 0.15], horizontalK: [0.55, 0.55],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
       { verticalK: [0.16, 0.2], horizontalK: [0.5, 0.52],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.03, 0.06], horizontalK: [0.3, 0.35],
+      { verticalK: [0.2, 0.25], horizontalK: [0.48, 0.52],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // tablet only
@@ -73,11 +74,11 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // right sky
-      { verticalK: [0.01, 0.03], horizontalK: [0.95, 1],
+      { verticalK: [0.06, 0.10], horizontalK: [0.93, 0.95],
         count: { mobile: 1, tablet: 0, laptop: 1 } },
-      { verticalK: [0.08, 0.11], horizontalK: [0.9, 0.92],
+      { verticalK: [0.12, 0.14], horizontalK: [0.88, 0.92],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.12, 0.16], horizontalK: [0.84, 0.85],
+      { verticalK: [0.16, 0.18], horizontalK: [0.84, 0.9],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
     ],
   },
@@ -107,22 +108,20 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         count: { mobile: 0, tablet: 0, laptop: 0 } },
 
       // mid
-      { verticalK: [0.05, 0.1], horizontalK: [0.7, 0.75],
+      { verticalK: [0.05, 0.1], horizontalK: [0.75, 0.77],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.01, 0.04], horizontalK: [0.67, 0.72],
-        count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.12, 0.2], horizontalK: [0.94, 0.96],
+      { verticalK: [0, 0], horizontalK: [0.72, 0.75],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
       // left top
-      { verticalK: [0.2, 0.22], horizontalK: [0.14, 0.2],
+      { verticalK: [0.2, 0.22], horizontalK: [0.08, 0.14],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
-      { verticalK: [0.2, 0.24], horizontalK: [0.13, 0.2],
+      { verticalK: [0.2, 0.24], horizontalK: [0.1, 0.14],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
     ],
   },
 
-  // ── Left residential community ─────────────────────────────────────────────
+  // left residential community
 
   villa: {
     quota: [{ t: 0, pct: 75 }, { t: 1, pct: 50 }],
@@ -239,7 +238,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       { verticalK: [0.4, 0.45], horizontalK: [0.5, 0.6],
         count: { mobile: 0, tablet: 0, laptop: 2 } }, 
       { verticalK: [0.45, 0.50], horizontalK: [0.35, 0.4],
-        count: { mobile: 0, tablet: 0, laptop: 1 } },
+        count: { mobile: 0, tablet: 0, laptop: 3 } },
       { verticalK: [0.5, 0.55], horizontalK: [0.4, 0.4],
         count: { mobile: 0, tablet: 0, laptop: 1 } },
 
@@ -271,7 +270,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
     ],
   },
 
-  // ── Right industrial pocket ────────────────────────────────────────────────
+  // right industrial pocket
 
   power: {
     quota: [{ t: 0, pct: 30 }, { t: 1, pct: 90 }],
@@ -325,7 +324,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       ],
   },
 
-  // ── Trees — border both communities and fill center gap ───────────────────
+  // trees border both communities and fill center gap
 
   trees: {
     quota: [{ t: 0, pct: 90 }, { t: 1, pct: 40 }],
@@ -366,7 +365,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       { verticalK: [0.95, 0.95], horizontalK: [0.1, 0.25],
         count: { mobile: 0, tablet: 2, laptop: 0 } },
       { verticalK: [0.5, 0.55], horizontalK: [0.7, 0.8],
-        count: { mobile: 0, tablet: 3, laptop: 0 } },,
+        count: { mobile: 0, tablet: 3, laptop: 0 } },
       { verticalK: [0.55, 0.6], horizontalK: [0.7, 0.8],
         count: { mobile: 0, tablet: 4, laptop: 0 } },
       { verticalK: [0.75, 0.85], horizontalK: [0.0, 0.1],
@@ -488,7 +487,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
     ],
   },
 
-  // ── Street level ──────────────────────────────────────────────────────────
+  // street level
 
   bus: {
     quota: [{ t: 0, pct: 40 }, { t: 1, pct: 20 }],
@@ -520,6 +519,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
     zones: [
       // right close
       { verticalK: [0.85, 0.85], horizontalK: [0.7, 0.75],
+        count: { mobile: 1, tablet: 1, laptop: 1 } },
+      { verticalK: [0.8, 0.8], horizontalK: [0.85, 0.9],
         count: { mobile: 1, tablet: 1, laptop: 1 } },
 
       // mobile only

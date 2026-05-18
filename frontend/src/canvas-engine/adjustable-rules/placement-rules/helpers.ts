@@ -1,37 +1,10 @@
 // src/canvas-engine/adjustable-rules/placement-rules/helpers.ts
 
-import type { DeviceType } from "../../shared/responsiveness";
 import type { ShapeName } from "../shapeCatalog";
 import { SHAPES } from "../shapeCatalog";
+import type { QuotaAnchor, ScenePlacementRules, ShapePlacementRule } from "./types";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type DeviceCount = Partial<Record<DeviceType, number>>;
-
-export type PlacementZone = {
-  verticalK: [top: number, bottom: number];    // [0..1] fraction of viewport height
-  horizontalK?: [left: number, right: number]; // [0..1] fraction of viewport width (default: [0, 1])
-  count: DeviceCount;                          // base count per device at allocAvg = 0.5 (quota pct = 50)
-};
-
-export type QuotaAnchor = { t: number; pct: number };
-
-export type ShapePlacementRule = {
-  // Percentage curve: 50% means exactly `count` items. Default = flat 50%.
-  // Formula: actual = round(zoneCount * pct(allocAvg) / 50)
-  quota?: QuotaAnchor[];
-  zones: PlacementZone[];
-};
-
-export type ScenePlacementRules = Partial<Record<ShapeName, ShapePlacementRule>>;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Apply the same rule to multiple shapes — spread the result into a rules object. */
+// apply the same rule to multiple shapes, then spread the result into a rules object.
 export function forShapes(
   shapes: ShapeName[],
   rule: ShapePlacementRule
@@ -41,25 +14,18 @@ export function forShapes(
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// Stable item ID — deterministic per (shape, zoneIndex, itemIndex).
-// Stable IDs allow the runtime lifecycle system to track appear/exit
-// animations correctly as counts grow or shrink with allocAvg.
-// ---------------------------------------------------------------------------
-
+// stable ids let runtime track appear/exit animations as counts grow or shrink.
 const SHAPE_IDX: Record<string, number> = Object.fromEntries(
   SHAPES.map((s, i) => [s, i])
 );
 
-export function stableItemId(shape: ShapeName, zoneIdx: number, itemIdx: number): number {
-  // shape (0–10) × 65536 + zoneIdx (0–255) × 256 + itemIdx (0–255)
-  return (SHAPE_IDX[shape] * 65536 + zoneIdx * 256 + itemIdx) | 0;
+export function stableItemId(shape: ShapeName, zoneIdx: number, itemIdx: number): string {
+  // keep the old numeric encoding, but runtime tracks items by string id.
+  const encodedId = (SHAPE_IDX[shape] * 65536 + zoneIdx * 256 + itemIdx) | 0;
+  return String(encodedId);
 }
 
-// ---------------------------------------------------------------------------
-// Quota interpolation
-// ---------------------------------------------------------------------------
-
+// interpolate the authored quota curve at allocAvg t.
 export function interpolatePct(quota: QuotaAnchor[] | undefined, t: number): number {
   if (!quota || quota.length === 0) return 50;
 

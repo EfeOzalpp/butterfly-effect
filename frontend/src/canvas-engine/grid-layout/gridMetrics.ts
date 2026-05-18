@@ -4,12 +4,12 @@
 // a horizonPos layout.  Passing this single object through the pipeline avoids
 // threading four separate arrays everywhere.
 
-export type GridMetrics = {
+export interface GridMetrics {
   rowHeights: number[];
   rowOffsetY: number[];
   colsPerRow: number[];
   cellWPerRow: number[];
-};
+}
 
 /**
  * Returns the pixel Y offset of the bottom row of a footprint.

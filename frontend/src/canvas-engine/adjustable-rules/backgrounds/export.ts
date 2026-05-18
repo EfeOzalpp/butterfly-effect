@@ -1,5 +1,5 @@
-// src/canvas-engine/adjustable-rules/BACKGROUNDS_LIGHT.ts
-// shim — re-exports from BACKGROUNDS_LIGHT/index.ts
+// src/canvas-engine/adjustable-rules/backgrounds/export.ts
+// shim - re-exports the public backgrounds API.
 
 export type {
   RgbaStop,
@@ -13,8 +13,7 @@ export type {
   BackgroundsByMode,
   StartBackgroundLookupKey,
   StartBackgroundsByMode,
-  BackgroundHost,
-} from "./backgrounds/index";
+} from "./index";
 
 export {
   BACKGROUNDS,
@@ -23,7 +22,4 @@ export {
   BACKGROUNDS_START_DARK,
   BACKGROUNDS_CITY,
   BACKGROUNDS_CITY_DARK,
-  CITY_BACKGROUND,
-  CITY_BACKGROUND_DARK,
-  backgroundForTheme,
-} from "./backgrounds/index";
+} from "./index";

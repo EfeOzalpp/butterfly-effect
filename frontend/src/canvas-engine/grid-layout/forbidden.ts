@@ -1,13 +1,13 @@
-// src/canvas/layout/grid-layout/forbidden.ts
+// src/canvas-engine/grid-layout/forbidden.ts
 
-export type GridRectFrac = { top: number; left: number; bottom: number; right: number };
+export interface GridRectFrac { top: number; left: number; bottom: number; right: number }
 
-export type ForbiddenSpec = {
+export interface ForbiddenSpec {
   forbiddenRects?: GridRectFrac[];
   forbidden?: (r: number, c: number, rows: number, cols: number) => boolean;
-};
+}
 
-export type CellRC = { r: number; c: number };
+export interface CellRC { r: number; c: number }
 
 export function rectFracToCellRange(
   rect: GridRectFrac,
@@ -44,16 +44,16 @@ export function makeCellForbidden(spec: ForbiddenSpec, rows: number, cols: numbe
     for (const rect of rects) {
       if (cellInRectFrac(r, c, rows, rowCols, rect)) return true;
     }
-    if (fn && fn(r, c, rows, rowCols)) return true;
+    if (fn?.(r, c, rows, rowCols)) return true;
     return false;
   };
 }
 
-export type RowRule = {
+export interface RowRule {
   left?: number | `${number}%`;
   right?: number | `${number}%`;
   center?: number | `${number}%`;
-};
+}
 
 function snapCols(target: number, cols: number): number {
   return Math.max(0, Math.min(cols, Math.round(target)));

@@ -18,7 +18,7 @@ import { makeP, type PLike } from "./p/makeP";
 import { clamp01 } from "./util/easing";
 
 // Scene lookup key (BaseMode | SceneModifier) is used by runtime ticker to pick rules.
-import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
+import type { SceneLookupKey } from "../adjustable-rules/sceneState";
 
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { BackgroundSpec } from "../adjustable-rules/backgrounds";

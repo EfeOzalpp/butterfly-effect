@@ -1,8 +1,8 @@
 // src/canvas-engine/multi-canvas-setup/hostDefs.ts
 
-import { SCENE_RULESETS } from "../adjustable-rules/ruleRegistry";
+import { SCENE_RULESETS } from "../adjustable-rules/registry";
 import type { SceneRuleSet } from "./types";
-import type { BaseMode } from "../adjustable-rules/sceneMode";
+import type { BaseMode } from "../adjustable-rules/sceneState";
 import type { DprMode } from "../runtime/platform/viewport";
 
 // give the canvas the size you want
@@ -11,12 +11,12 @@ export type CanvasBounds =
   | { kind: "parent" }
   | { kind: "fixed"; w: number; h: number };
 
-export type HostSignals = {
+export interface HostSignals {
   questionnaireOpen?: boolean;
-};
+}
 
 // Base shape
-type HostDefBase = {
+interface HostDefBase {
   mount: string;
   zIndex: number;
   dprMode: DprMode;
@@ -25,9 +25,9 @@ type HostDefBase = {
   stopOnOpen?: readonly string[];
   scene?: {
     baseMode?: BaseMode;   // "start" | "city"
-    ruleset: SceneRuleSet; // getProfile(SceneState)
+    ruleset: SceneRuleSet; // getProfile(SceneState, SceneProfileContext)
   };
-};
+}
 
 const defineHosts = <T extends Record<string, HostDefBase>>(t: T) => t;
 

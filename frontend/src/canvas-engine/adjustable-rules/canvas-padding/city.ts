@@ -1,6 +1,6 @@
 // src/canvas-engine/adjustable-rules/canvas-padding/city.ts
 
-import type { CanvasPaddingSpec } from './helpers';
+import type { CanvasPaddingSpec } from './types';
 import type { DeviceType } from '../../shared/responsiveness';
 
 export const CITY_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {

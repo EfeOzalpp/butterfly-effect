@@ -2,12 +2,13 @@ import type { SceneLightContext } from "../../../modifiers/lighting";
 import { resolveFogHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
 import type { GridMetrics } from "../../layout/gridCache";
+import { getCanvasMeta } from "../../p/canvasMeta";
 import type { PLike } from "../../p/makeP";
 
 type FogColor = { r: number; g: number; b: number };
 type FogGradientStop = { k: number; color: FogColor };
 
-const SKY_FOG_HORIZON_BLEND_BY_DISTANCE: readonly number[] = [0.8, 0.7, 0.6];
+const SKY_FOG_HORIZON_BLEND_BY_DISTANCE: readonly number[] = [0.8, 0.7, 0.6]; // 1 to 0 for how much to blend, and 3 properties for the three rows closest to the sky horizon.
 const SKY_FOG_HORIZON_BLEND_CACHE_KEY = SKY_FOG_HORIZON_BLEND_BY_DISTANCE.join(",");
 const SKY_LIGHT_INNER_RADIUS_K = 0.10;
 const SKY_LIGHT_OUTER_RADIUS_K = 0.26;
@@ -220,7 +221,7 @@ export function computeFogState(args: {
   const fogStartY = metrics.rowOffsetY[fogPeakRow];
   if (!Number.isFinite(fogStartY)) return null;
 
-  const fogCanvasH = (p as any).canvas?._cssH ?? p.height ?? 900;
+  const fogCanvasH = getCanvasMeta(p.canvas).cssH ?? p.height;
   const bottomFogLayerBoundaries = [
     ...metrics.rowOffsetY.slice(fogPeakRow + 1),
     fogCanvasH,

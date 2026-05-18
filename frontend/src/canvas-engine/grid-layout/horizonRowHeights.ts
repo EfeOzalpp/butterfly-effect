@@ -3,14 +3,14 @@
 const MIN_WEIGHT = 0.15; // row closest to horizon (smallest)
 const MAX_WEIGHT = 3.0;  // row farthest from horizon (largest)
 
-export type HorizonRowHeightsResult = {
+export interface HorizonRowHeightsResult {
   rowHeights: number[];
   rowOffsetY: number[];
   horizonRowH: number;  // reference tile height: avg of the two rows flanking the horizon
   horizonRowIdx: number; // index of the last top-half row (just above the horizon)
   colsPerRow: number[];
   cellWPerRow: number[];
-};
+}
 
 /**
  * Computes non-uniform row heights for a two-sided perspective grid.
@@ -75,7 +75,7 @@ export function computeHorizonRowHeights(
 
   const rowHeights = [...topHeights, ...botHeights];
 
-  const rowOffsetY: number[] = new Array(n);
+  const rowOffsetY = new Array<number>(n);
   let acc = 0;
   for (let i = 0; i < n; i++) {
     rowOffsetY[i] = acc;
@@ -96,7 +96,7 @@ export function computeHorizonRowHeights(
 
 function perspectiveHeights(n: number, totalH: number, reversed: boolean): number[] {
   if (n === 1) return [totalH];
-  const weights = new Array(n);
+  const weights = new Array<number>(n);
   for (let i = 0; i < n; i++) {
     const t = i / (n - 1);
     // reversed=true  (top half): MAX_WEIGHT at i=0 (top), MIN_WEIGHT at i=n-1 (horizon)

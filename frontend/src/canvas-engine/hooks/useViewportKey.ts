@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 const MOBILE_CHROME_HEIGHT_DELTA_PX = 300;
 
 function readViewportSize() {
-  const vv: VisualViewport | undefined = (window as any).visualViewport;
-  if (vv && vv.width && vv.height) {
+  const vv = window.visualViewport;
+  if (vv?.width && vv.height) {
     return { w: Math.round(vv.width), h: Math.round(vv.height) };
   }
   return {
@@ -22,11 +22,13 @@ export function useViewportKey(delay = 120) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const tick = () => setKey((k) => k + 1);
+    const tick = () => {
+      setKey((k) => k + 1);
+    };
 
     const scheduleTick = () => {
       if (tRef.current != null) window.clearTimeout(tRef.current);
-      tRef.current = window.setTimeout(tick, delay) as unknown as number;
+      tRef.current = window.setTimeout(tick, delay);
     };
 
     const onResize = () => {
@@ -54,20 +56,20 @@ export function useViewportKey(delay = 120) {
       scheduleTick();
     };
 
-    const vv: VisualViewport | undefined = (window as any).visualViewport;
+    const vv = window.visualViewport;
     lastSizeRef.current = readViewportSize();
 
     // capture=false for all; passive is fine but not required for resize events
     window.addEventListener('resize', onResize, { passive: true });
     window.addEventListener('orientationchange', onOrientationChange, { passive: true });
-    vv?.addEventListener?.('resize', onResize, { passive: true });
+    vv?.addEventListener('resize', onResize, { passive: true });
 
     tick();
 
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onOrientationChange);
-      vv?.removeEventListener?.('resize', onResize);
+      vv?.removeEventListener('resize', onResize);
       if (tRef.current != null) window.clearTimeout(tRef.current);
     };
   }, [delay]);

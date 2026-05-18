@@ -1,9 +1,9 @@
 // src/canvas-engine/adjustable-rules/placement-rules/index.ts
 
-import type { SceneLookupKey } from "../sceneMode";
-import type { ScenePlacementRules } from "./helpers";
+import type { SceneLookupKey } from "../sceneState";
+import type { ScenePlacementRules } from "./types";
 
-export type { ScenePlacementRules, ShapePlacementRule, PlacementZone, QuotaAnchor, DeviceCount } from "./helpers";
+export type { ScenePlacementRules, ShapePlacementRule, PlacementZone, QuotaAnchor, DeviceCount } from "./types";
 export { forShapes, stableItemId, interpolatePct } from "./helpers";
 
 import { START_PLACEMENTS } from "./start";

@@ -1,13 +1,13 @@
-// src/canvas/layout/grid-layout/occupancy.ts
+// src/canvas-engine/grid-layout/occupancy.ts
 
-export type Place = { r0: number; c0: number; w: number; h: number };
+export interface Place { r0: number; c0: number; w: number; h: number }
 
 export type CellForbidden = (r: number, c: number) => boolean;
-export type PlaceOpts = {
+export interface PlaceOpts {
   ignoreForbidden?: boolean;
   ignoreOccupied?: boolean;
   reserveSpace?: boolean;
-};
+}
 
 /**
  * Tracks occupied cells for a grid and supports incremental placement of rectangular footprints.
@@ -21,7 +21,7 @@ export function createOccupancy(rows: number, cols: number, isForbidden?: CellFo
   for (let r = 0; r < rows; r++) {
     const rowCols = colsPerRow ? (colsPerRow[r] ?? cols) : cols;
     for (let c = 0; c < cols; c++) {
-      if (c >= rowCols || (isForbidden && isForbidden(r, c))) forbidden[idx(r, c)] = true;
+      if (c >= rowCols || (isForbidden?.(r, c))) forbidden[idx(r, c)] = true;
     }
   }
 

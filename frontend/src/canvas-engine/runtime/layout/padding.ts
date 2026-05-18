@@ -2,8 +2,8 @@
 
 import { CANVAS_PADDING } from "../../adjustable-rules/canvas-padding/index";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
-import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
-import { resolveCanvasPaddingSpec } from "../../adjustable-rules/resolveCanvasPadding";
+import type { SceneLookupKey } from "../../adjustable-rules/sceneState";
+import { resolvePaddingSpec } from "../../adjustable-rules/resolvePadding";
 
 /**
  * Runtime padding policy.
@@ -11,7 +11,7 @@ import { resolveCanvasPaddingSpec } from "../../adjustable-rules/resolveCanvasPa
  * - Otherwise resolve from CANVAS_PADDING for current lookup key.
  *
  * NOTE: CANVAS_PADDING entries can contain `null` for a device, and
- * resolveCanvasPaddingSpec should implement fallback behavior.
+ * resolvePaddingSpec should implement fallback behavior.
  */
 export function getPaddingSpecForState(
   widthPx: number,
@@ -21,5 +21,5 @@ export function getPaddingSpecForState(
   if (override) return override;
 
   const byDevice = CANVAS_PADDING[sceneLookupKey] ?? CANVAS_PADDING.start;
-  return resolveCanvasPaddingSpec(widthPx, byDevice);
+  return resolvePaddingSpec(widthPx, byDevice);
 }

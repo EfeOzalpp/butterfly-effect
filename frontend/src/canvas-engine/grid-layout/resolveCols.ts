@@ -1,11 +1,11 @@
 // src/canvas-engine/grid-layout/resolveCols.ts
 
-export type ResolveColsOpts = {
+export interface ResolveColsOpts {
   rows: number;
   widthPx: number;
   heightPx: number;
   useTopRatio?: number;
-};
+}
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));

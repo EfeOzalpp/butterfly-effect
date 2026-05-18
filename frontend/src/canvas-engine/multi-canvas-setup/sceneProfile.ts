@@ -7,8 +7,12 @@ import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
 
 export type PaddingPolicyByDevice = Record<DeviceType, CanvasPaddingSpec | null>;
 
-export type SceneProfile = {
+export interface SceneProfileContext {
+  darkMode: boolean;
+}
+
+export interface SceneProfile {
   padding: PaddingPolicyByDevice;
   placements: ScenePlacementRules;
   background: BackgroundSpec;
-};
+}

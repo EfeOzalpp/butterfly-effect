@@ -3,14 +3,16 @@
 import type { DeviceType } from "../shared/responsiveness";
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { Place } from "../grid-layout/occupancy";
-import type { ConditionKind, ShapeName, Size } from "../condition/domain";
-import type { SceneLookupKey } from "../adjustable-rules/sceneMode";
+import type { ConditionKind, ShapeName } from "../adjustable-rules/shapeCatalog";
+import type { Size } from "../adjustable-rules/conditionFootprints";
+import type { SceneLookupKey } from "../adjustable-rules/sceneState";
 import type { ScenePlacementRules } from "../adjustable-rules/placement-rules/index";
+import type { EngineFieldItem } from "../runtime/types";
 
 export type FootRect = Place;
 
-export type PoolItem = {
-  id: number;
+export interface PoolItem {
+  id: EngineFieldItem["id"];
   shape: ShapeName;
   zoneIndex: number;    // index into the shape's zones array
   size: Size;           // footprint grid dimensions
@@ -18,17 +20,15 @@ export type PoolItem = {
   footprint?: FootRect;
   x?: number;
   y?: number;
-};
+}
 
-export type PlacedItem = {
-  id: number;
-  x: number;
-  y: number;
-  shape?: ShapeName;
+// scene output stays narrower, but it must satisfy the runtime field item API.
+export interface PlacedItem extends EngineFieldItem {
+  shape: ShapeName;
   footprint: FootRect;
-};
+}
 
-export type ComposeOpts = {
+export interface ComposeOpts {
   mode: SceneLookupKey;
   padding: Record<DeviceType, CanvasPaddingSpec | null>;
   placements: ScenePlacementRules;
@@ -38,9 +38,9 @@ export type ComposeOpts = {
   ruleWidthPx?: number;
   canvas: { w: number; h: number };
   salt?: number;
-};
+}
 
-export type ComposeMeta = {
+export interface ComposeMeta {
   device: DeviceType;
   spec: CanvasPaddingSpec;
   rows: number;
@@ -48,9 +48,9 @@ export type ComposeMeta = {
   cell: number;
   usedRows: number;
   mode: SceneLookupKey;
-};
+}
 
-export type ComposeResult = {
+export interface ComposeResult {
   placed: PlacedItem[];
   meta: ComposeMeta;
-};
+}

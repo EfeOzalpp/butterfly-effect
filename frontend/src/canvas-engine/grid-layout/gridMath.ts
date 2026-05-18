@@ -1,10 +1,12 @@
-export type ColsFromRowsOpts = {
+// src/canvas-engine/grid-layout/gridMath.ts
+
+export interface ColsFromRowsOpts {
   rows: number;
   usableW: number;
   usableH: number;
   minCols?: number;
   maxCols?: number;
-};
+}
 
 export function colsFromRowsSquareish(opts: ColsFromRowsOpts) {
   const rows = Math.max(1, Math.round(opts.rows));

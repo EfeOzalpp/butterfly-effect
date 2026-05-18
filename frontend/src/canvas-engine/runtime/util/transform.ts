@@ -1,13 +1,14 @@
 // src/canvas-engine/runtime/util/transform.ts
 
 import type { PLike } from "../p/makeP";
+import { getCanvasMeta } from "../p/canvasMeta";
 
 /**
  * At the start of a frame, normalize the canvas transform so drawing code
- * can assume logical pixels. (Your makeP stores dpr on canvas._dpr.)
+ * can assume logical pixels. DPR lives in canvas metadata, not on the DOM node.
  */
 export function normalizeDprTransform(p: PLike) {
-  const dpr = (p.canvas as any)?._dpr || 1;
+  const dpr = getCanvasMeta(p.canvas).dpr ?? 1;
   p.drawingContext.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
@@ -17,7 +18,7 @@ export function normalizeDprTransform(p: PLike) {
  */
 export function reassertDprTransformIfMutated(p: PLike) {
   const ctx = p.drawingContext;
-  const dpr = (p.canvas as any)?._dpr || 1;
+  const dpr = getCanvasMeta(p.canvas).dpr ?? 1;
   const T = ctx.getTransform();
 
   if (

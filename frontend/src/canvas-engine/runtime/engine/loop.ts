@@ -3,7 +3,7 @@
 import type { PLike } from "../p/makeP";
 import { normalizeDprTransform, reassertDprTransformIfMutated } from "../util/transform";
 
-import type { SceneLookupKey } from "../../adjustable-rules/sceneMode";
+import type { SceneLookupKey } from "../../adjustable-rules/sceneState";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
 import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
 

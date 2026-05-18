@@ -1,4 +1,4 @@
-// src/canvas/layout/grid-layout/coords.ts
+// src/canvas-engine/grid-layout/coords.ts
 
 import type { GridMetrics } from "./gridMetrics";
 
@@ -9,7 +9,7 @@ export type CellSize = {
   oy?: number;
 } & Partial<GridMetrics>;
 
-function o(v?: number) { return Number.isFinite(v) ? (v as number) : 0; }
+function o(v?: number) { return typeof v === "number" && Number.isFinite(v) ? v : 0; }
 
 /** rectangular grid center for a 1x1 cell */
 export function cellCenterToPx2(size: CellSize, r: number, c: number) {

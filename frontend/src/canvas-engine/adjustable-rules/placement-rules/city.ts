@@ -1,6 +1,6 @@
 // src/canvas-engine/adjustable-rules/placement-rules/city.ts
 
-import type { ScenePlacementRules, PlacementZone } from "./helpers";
+import type { PlacementZone, ScenePlacementRules } from "./types";
 
 type V = [number, number];
 

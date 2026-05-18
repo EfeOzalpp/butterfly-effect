@@ -1,17 +1,31 @@
-// src/canvas-engine/adjustable-rules/footprintConditions.ts
+// src/canvas-engine/adjustable-rules/conditionFootprints.ts
 
 import type { ConditionKind, ShapeKind } from "./shapeCatalog";
 import { CONDITION_KINDS, SHAPES } from "./shapeCatalog";
 
+// re-export the catalog pieces this file builds on.
 export { CONDITION_KINDS, SHAPES };
 export type { ConditionKind };
 
-export type Size = { w: number; h: number };
+// footprint size is how many grid cells a shape reserves.
+export interface Size {
+  w: number;
+  h: number;
+}
 
-export type Variant = { shape: ShapeKind; footprint: Size };
+// a variant connects one drawable shape to the footprint it needs.
+export interface Variant {
+  shape: ShapeKind;
+  footprint: Size;
+}
 
-export type ConditionSpec = { variants: readonly Variant[] };
+// each condition owns the shape variants that can represent it in the scene.
+export interface ConditionSpec {
+  variants: readonly Variant[];
+}
 
+// condition -> possible visual shapes.
+// this is the authored source of truth for which shapes belong to A/B/C/D.
 export const CONDITIONS: Record<ConditionKind, ConditionSpec> = {
   A: {
     variants: [
@@ -42,7 +56,7 @@ export const CONDITIONS: Record<ConditionKind, ConditionSpec> = {
   },
 } as const;
 
-/** Flat lookup: shape name → footprint size. */
+// flat lookup from shape name to footprint size.
 export function footprintForShape(shape: ShapeKind): Size {
   for (const kind of CONDITION_KINDS) {
     const hit = CONDITIONS[kind].variants.find((v) => v.shape === shape);

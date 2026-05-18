@@ -4,14 +4,14 @@ import { resolveCols } from "./resolveCols";
 import { computeHorizonRowHeights } from "./horizonRowHeights";
 import type { GridMetrics } from "./gridMetrics";
 
-export type Pt = { x: number; y: number };
-export type MakeCenteredGridOpts = {
+export interface Pt { x: number; y: number }
+export interface MakeCenteredGridOpts {
   w: number;
   h: number;
   rows: number;
   useTopRatio?: number;
   horizonPos?: number; // 0..1 fraction of height where the horizon sits
-};
+}
 // w: available horizontal space
 // h: total vertical space
 // rows: authoritative vertical density

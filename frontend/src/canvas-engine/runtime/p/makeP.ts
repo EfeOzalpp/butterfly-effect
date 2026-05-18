@@ -1,9 +1,15 @@
 // canvas-engine/engine/p/makeP.ts
 
-type CssRGB = { r: number; g: number; b: number };
+import { getCanvasMeta, setCanvasMeta } from "./canvasMeta";
 
-export type PLike = {
-  canvas: HTMLCanvasElement & { _dpr?: number; _cssW?: number; _cssH?: number };
+interface CssRGB {
+  r: number;
+  g: number;
+  b: number;
+}
+
+export interface PLike {
+  canvas: HTMLCanvasElement;
   readonly width: number;
   readonly height: number;
   readonly deltaTime: number;
@@ -53,7 +59,11 @@ export type PLike = {
   blue(c: CssRGB): number;
 
   __tick(now: number): void;
-};
+}
+
+function rgbaCss(r: number, g: number, b: number, a: number): string {
+  return `rgba(${String(r)},${String(g)},${String(b)},${String(a)})`;
+}
 
 export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): PLike {
   let _delta = 16,
@@ -62,33 +72,36 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
 
   // Engine-side state that must survive save/restore
   let _rectMode: "corner" | "center" = "corner";
-  const _pStateStack: Array<{ _rectMode: "corner" | "center" }> = [];
+  const _pStateStack: { _rectMode: "corner" | "center" }[] = [];
 
   // simple css→rgb parser using canvas
-  const _scratch = document.createElement("canvas").getContext("2d")!;
+  const scratchContext = document.createElement("canvas").getContext("2d");
+  if (!scratchContext) throw new Error("2D canvas context not available");
+  const _scratch = scratchContext;
+
   function parseCss(css: string): CssRGB {
     _scratch.fillStyle = "#000";
     _scratch.fillStyle = css;
-    const s = _scratch.fillStyle as string; // canonicalized css
+    const s = _scratch.fillStyle; // canonicalized css
     _scratch.fillStyle = s;
-    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(_scratch.fillStyle as string);
+    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(_scratch.fillStyle);
     if (!m) return { r: 0, g: 0, b: 0 };
-    return { r: +m[1], g: +m[2], b: +m[3] };
+    return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
   }
 
   // simple immediate-mode beginShape/vertex path
   let _shapeOpen = false;
   let _firstVertex = true;
 
-  const c = canvas as PLike["canvas"];
+  const c = canvas;
 
   const p: PLike = {
     canvas: c,
     get width() {
-      return c._cssW || c.width;
+      return getCanvasMeta(c).cssW ?? c.width;
     },
     get height() {
-      return c._cssH || c.height;
+      return getCanvasMeta(c).cssH ?? c.height;
     },
     get deltaTime() {
       return _delta;
@@ -106,18 +119,18 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
     },
 
     resizeCanvas(w, h) {
-      const ratio = c._dpr || 1;
-      c._cssW = w;
-      c._cssH = h;
+      const ratio = getCanvasMeta(c).dpr ?? 1;
+      setCanvasMeta(c, { cssW: w, cssH: h });
       c.width = Math.max(1, Math.floor(w * ratio));
       c.height = Math.max(1, Math.floor(h * ratio));
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     },
 
     pixelDensity(dpr) {
-      const w = c._cssW || c.clientWidth || window.innerWidth;
-      const h = c._cssH || c.clientHeight || window.innerHeight;
-      c._dpr = Math.max(1, dpr || 1);
+      const meta = getCanvasMeta(c);
+      const w = meta.cssW ?? (c.clientWidth > 0 ? c.clientWidth : window.innerWidth);
+      const h = meta.cssH ?? (c.clientHeight > 0 ? c.clientHeight : window.innerHeight);
+      setCanvasMeta(c, { dpr: Math.max(1, dpr) });
       p.resizeCanvas(w, h);
     },
 
@@ -136,14 +149,14 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
     pop() {
       ctx.restore();
       const s = _pStateStack.pop();
-      _rectMode = s ? s._rectMode : "corner";
+      _rectMode = s?._rectMode ?? "corner";
     },
 
     translate(x, y) {
       ctx.translate(x, y);
     },
     scale(x, y) {
-      ctx.scale(x, y == null ? x : y);
+      ctx.scale(x, y ?? x);
     },
     rotate(r) {
       ctx.rotate(r);
@@ -156,9 +169,9 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
       state.doFill = true;
       if (typeof r === "string") {
         const c2 = parseCss(r);
-        ctx.fillStyle = `rgba(${c2.r},${c2.g},${c2.b},${a / 255})`;
+        ctx.fillStyle = rgbaCss(c2.r, c2.g, c2.b, a / 255);
       } else {
-        ctx.fillStyle = `rgba(${r | 0},${(g as number) | 0},${(b as number) | 0},${(a | 0) / 255})`;
+        ctx.fillStyle = rgbaCss(r | 0, (g ?? 0) | 0, (b ?? 0) | 0, (a | 0) / 255);
       }
     },
     noStroke() {
@@ -166,7 +179,7 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
     },
     stroke(r, g, b, a = 255) {
       state.doStroke = true;
-      ctx.strokeStyle = `rgba(${r | 0},${g | 0},${b | 0},${(a | 0) / 255})`;
+      ctx.strokeStyle = rgbaCss(r | 0, g | 0, b | 0, (a | 0) / 255);
     },
     strokeWeight(w) {
       state.lineWidth = w;

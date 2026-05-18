@@ -1,6 +1,7 @@
 // src/canvas-engine/adjustable-rules/canvas-padding/start.ts
 
-import { makeRowForbidden, CENTER_100, LR_0, type CanvasPaddingSpec } from './helpers';
+import type { CanvasPaddingSpec } from './types';
+import { makeRowForbidden, LR_0 } from './helpers';
 import type { DeviceType } from '../../shared/responsiveness';
 
 export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {

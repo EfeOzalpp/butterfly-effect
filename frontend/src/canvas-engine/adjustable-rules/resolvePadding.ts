@@ -1,11 +1,12 @@
-// src/canvas-engine/adjustable-rules/resolveCanvasPadding.ts
+// src/canvas-engine/adjustable-rules/resolvePadding.ts
 
 import { deviceType, type DeviceType } from "../shared/responsiveness";
 import type { CanvasPaddingSpec } from './canvas-padding/index';
 
-export function resolveCanvasPaddingSpec(
+// pick the padding spec that matches the current rule width/device band.
+export function resolvePaddingSpec(
   w: number,
-  paddingByDevice: Record<DeviceType, CanvasPaddingSpec>
+  paddingByDevice: Record<DeviceType, CanvasPaddingSpec | null >
 ): CanvasPaddingSpec {
   const band = deviceType(w);
   const spec = paddingByDevice[band];

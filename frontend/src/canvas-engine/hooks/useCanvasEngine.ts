@@ -15,7 +15,7 @@ import {
   disposeAllSpriteTextures,
 } from "../../graph-runtime/sprites/entry";
 
-type EngineOpts = {
+interface EngineOpts {
   enabled?: boolean;
   visible?: boolean;
   dprMode?: DprMode;
@@ -23,11 +23,11 @@ type EngineOpts = {
   zIndex?: number;
   bounds?: CanvasBounds;
   fpsCap?: number;
-};
+}
 
-function safeCall(fn: unknown, label?: string) {
+function safeCall(fn: (() => void) | null | undefined, label?: string) {
   try {
-    if (typeof fn === "function") fn();
+    fn?.();
   } catch (err) {
     console.warn(`[useCanvasEngine] safeCall failed${label ? ` (${label})` : ''}:`, err);
   }
@@ -42,16 +42,24 @@ function disposeGlobalEngineResources() {
 function shutdownControls(controls: CanvasEngineControls | null, mount: string) {
   if (!controls) {
     // Still ensure the mount is torn down, in case a partial init happened.
-    safeCall(() => stopCanvasEngine(mount));
+    safeCall(() => {
+      stopCanvasEngine(mount);
+    });
     return;
   }
 
   // First hide, then stop. Hiding first reduces visible flash during teardown.
-  safeCall(() => controls.setVisible?.(false));
-  safeCall(() => controls.stop?.());
+  safeCall(() => {
+    controls.setVisible(false);
+  });
+  safeCall(() => {
+    controls.stop();
+  });
 
   // Ensure the mount node and any engine-owned listeners are detached.
-  safeCall(() => stopCanvasEngine(mount));
+  safeCall(() => {
+    stopCanvasEngine(mount);
+  });
 }
 
 export function useCanvasEngine(opts: EngineOpts = {}) {
@@ -108,7 +116,9 @@ export function useCanvasEngine(opts: EngineOpts = {}) {
   }, [enabled, dprMode, mount, zIndex, bounds, fpsCap]);
 
   useEffect(() => {
-    safeCall(() => controlsRef.current?.setVisible?.(Boolean(visible)));
+    safeCall(() => {
+      controlsRef.current?.setVisible(visible);
+    });
   }, [visible]);
 
   return {

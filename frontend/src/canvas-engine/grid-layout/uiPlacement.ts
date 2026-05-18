@@ -1,18 +1,20 @@
+// src/canvas-engine/grid-layout/uiPlacement.ts
+
 import { cellAnchorToPx2, cellRectToPx2 } from "./coords";
 import type { CellSize } from "./coords";
 
-export type UiGridRect = {
+export interface UiGridRect {
   r0: number;
   c0: number;
   w: number;
   h: number;
-};
+}
 
 export type UiGridPlacement = UiGridRect & {
   anchor?: "topleft" | "center";
 };
 
-export type UiGridBandPlacement = {
+export interface UiGridBandPlacement {
   verticalK: [top: number, bottom: number];
   horizontalK?: [left: number, right: number];
   w: number;
@@ -20,25 +22,25 @@ export type UiGridBandPlacement = {
   anchor?: "topleft" | "center";
   rowAlign?: "start" | "center" | "end";
   colAlign?: "start" | "center" | "end";
-};
+}
 
 export type UiGridPlacementInput = UiGridPlacement | UiGridBandPlacement;
 
-export type UiGridResolver = {
+export interface UiGridResolver {
   rows: number;
   cols: number;
   usedRows?: number;
   colsPerRow?: number[];
-};
+}
 
-export type UiGridPlacementPx = {
+export interface UiGridPlacementPx {
   left: number;
   top: number;
   width: number;
   height: number;
   anchorX: number;
   anchorY: number;
-};
+}
 
 function clampInt(value: number, min: number, max: number) {
   if (max < min) return min;

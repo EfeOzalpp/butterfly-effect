@@ -31,10 +31,8 @@ export function placePoolItems(opts: {
   const {
     pool,
     spec,
-    device,
     rows,
     cols,
-    cell,
     cellW,
     cellH,
     ox,
@@ -46,7 +44,7 @@ export function placePoolItems(opts: {
     reservedFootprints = [],
   } = opts;
 
-  const { rowHeights, rowOffsetY, colsPerRow, cellWPerRow } = metrics ?? {};
+  const { colsPerRow } = metrics ?? {};
 
   const isForbidden = cellForbiddenFromSpec(spec, rows, cols, colsPerRow);
   const occ = createOccupancy(rows, cols, (r, c) => isForbidden(r, c), colsPerRow);
@@ -57,8 +55,8 @@ export function placePoolItems(opts: {
     occ.tryPlaceAt(reserved.r0, reserved.c0, reserved.w, reserved.h);
   }
 
-  const placedAccum: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];
-  const placedClouds: Array<{ id: number; x: number; y: number; footprint: FootRect }> = [];
+  const placedAccum: { id: PoolItem["id"]; x: number; y: number; footprint: FootRect }[] = [];
+  const placedClouds: { id: PoolItem["id"]; x: number; y: number; footprint: FootRect }[] = [];
   const outPlaced: PlacedItem[] = [];
   let cursor = 0;
 
@@ -88,7 +86,7 @@ export function placePoolItems(opts: {
       h: p.footprint.h,
     }));
 
-    const candidates: Array<{ r0: number; c0: number; score: number }> = [];
+    const candidates: { r0: number; c0: number; score: number }[] = [];
 
     for (let r0 = rMin; r0 <= Math.min(rMax, rows - hCell); r0++) {
       const { refCols } = horizontalReferenceForFootprint(r0, hCell, cols, colsPerRow);

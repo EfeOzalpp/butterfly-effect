@@ -1,19 +1,19 @@
-// src/canvas/layout/grid-layout/footprintUtils.ts
+// src/canvas-engine/grid-layout/footprint.ts
 
 import type { Anchor } from "../modifiers/shape-modifiers/shapeMods.types";
 
-export type CellSize = { cellW: number; cellH: number; ox?: number; oy?: number };
+export interface CellSize { cellW: number; cellH: number; ox?: number; oy?: number }
 
-function o(v?: number) { return Number.isFinite(v) ? (v as number) : 0; }
+function o(v?: number) { return typeof v === "number" && Number.isFinite(v) ? v : 0; }
 
-export type Footprint = {
+export interface Footprint {
   r0: number; // row origin
   c0: number; // col origin
   w: number;  // width in cells
   h: number;  // height in cells
-};
+}
 
-export type PlaceOpts = {
+export interface PlaceOpts {
   // Pixel offset applied to the final point
   px?: [number, number];
 
@@ -34,9 +34,9 @@ export type PlaceOpts = {
 
   // Additional blend fraction (0..1) used in your anchor+frac mixing logic
   frac?: [number, number];
-};
+}
 
-export function rectFromFootprint2(size: CellSize, f: Footprint) {
+export function rectFromFootprint(size: CellSize, f: Footprint) {
   const ox = o(size.ox), oy = o(size.oy);
   const x = ox + f.c0 * size.cellW;
   const y = oy + f.r0 * size.cellH;
@@ -45,8 +45,8 @@ export function rectFromFootprint2(size: CellSize, f: Footprint) {
   return { x, y, w, h, cx: x + w * 0.5, cy: y + h * 0.5 };
 }
 
-export function pointInFootprint2(size: CellSize, f: Footprint, opts: PlaceOpts = {}) {
-  const { x, y, w, h, cx, cy } = rectFromFootprint2(size, f);
+export function pointInFootprint(size: CellSize, f: Footprint, opts: PlaceOpts = {}) {
+  const { x, y, w, h, cx, cy } = rectFromFootprint(size, f);
   const px = opts.px ?? [0, 0];
 
   if (opts.xyCanvas) {
@@ -107,6 +107,3 @@ export function pointInFootprint2(size: CellSize, f: Footprint, opts: PlaceOpts 
 
   return { x: bx + px[0], y: by + px[1], w, h, cx, cy };
 }
-
-export function rectFromFootprint(cell: number, f: Footprint) { /* unchanged */ }
-export function pointInFootprint(cell: number, f: Footprint, opts: PlaceOpts = {}) { /* unchanged */ }

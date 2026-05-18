@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { useUiFlow } from "../../../app/state/ui-context";
 
 import { CANVAS_PADDING } from "../../../canvas-engine/adjustable-rules/canvas-padding/index";
-import { resolveCanvasPaddingSpec } from "../../../canvas-engine/adjustable-rules/resolveCanvasPadding";
+import { resolvePaddingSpec } from "../../../canvas-engine/adjustable-rules/resolvePadding";
 import {
   deviceType,
   getViewportSize,
@@ -132,7 +132,7 @@ export function useQuestionnaireGridLayout() {
   const layout = useMemo(() => {
     if (!canvasBox) return null;
 
-    const spec = resolveCanvasPaddingSpec(canvasBox.width, CANVAS_PADDING.questionnaire as never);
+    const spec = resolvePaddingSpec(canvasBox.width, CANVAS_PADDING.questionnaire as never);
     const grid = makeCenteredSquareGrid({
       w: canvasBox.width,
       h: canvasBox.height,

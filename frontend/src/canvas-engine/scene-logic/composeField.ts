@@ -1,10 +1,10 @@
 // src/canvas-engine/scene-logic/composeField.ts
 
 import { deviceType } from "../shared/responsiveness";
-import { resolveCanvasPaddingSpec } from "../adjustable-rules/resolveCanvasPadding";
+import { resolvePaddingSpec } from "../adjustable-rules/resolvePadding";
 import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
 import { SHAPES, SHAPE_TO_COND } from "../adjustable-rules/shapeCatalog";
-import { footprintForShape } from "../adjustable-rules/footprintConditions";
+import { footprintForShape } from "../adjustable-rules/conditionFootprints";
 import { stableItemId, interpolatePct } from "../adjustable-rules/placement-rules/index";
 
 import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
@@ -49,7 +49,7 @@ export function composeField(opts: ComposeOpts): ComposeResult {
   const ruleW = Math.round(opts.ruleWidthPx ?? w);
 
   const device = deviceType(ruleW);
-  const spec = resolveCanvasPaddingSpec(ruleW, opts.padding);
+  const spec = resolvePaddingSpec(ruleW, opts.padding);
 
   const { cell, cellW, cellH, ox, oy, rows, cols, metrics } = makeCenteredSquareGrid({
     w,

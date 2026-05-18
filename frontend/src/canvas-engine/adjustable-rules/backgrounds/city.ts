@@ -1,8 +1,9 @@
-// src/canvas-engine/adjustable-rules/BACKGROUNDS_LIGHT/city.ts
+// src/canvas-engine/adjustable-rules/backgrounds/city.ts
 
-import type { BackgroundsByMode, BackgroundSpec } from "./helpers";
+import type { BackgroundsByMode, BackgroundSpec } from "./types";
 
-export const CITY_BACKGROUND: BackgroundSpec = {
+// light scene
+const CITY_BACKGROUND: BackgroundSpec = {
   base: "rgb(158, 222, 248)",
   overlay: {
     kind: "linear",
@@ -30,9 +31,8 @@ export const BACKGROUNDS_CITY: BackgroundsByMode = {
   city: CITY_BACKGROUND,
 } as const;
 
-// ── Dark ─────────────────────────────────────────────────────────────────────
-
-export const CITY_BACKGROUND_DARK: BackgroundSpec = {
+// dark scene
+const CITY_BACKGROUND_DARK: BackgroundSpec = {
   base: "rgb(18, 26, 62)",
   overlay: {
     kind: "linear",
