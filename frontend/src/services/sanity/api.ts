@@ -6,10 +6,7 @@ import {
   shouldUseMockSanityReads,
 } from './config';
 import { normalizeSurveyRow } from './normalizeSurveyRow';
-import {
-  subscribeMockSectionCounts,
-  subscribeMockSurveyData,
-} from './mockData';
+import { subscribeMockSurveyData } from './mockData';
 import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from './sections';
 
 const PROJECTION = `
@@ -131,25 +128,6 @@ const upsertSortedLimited = (rows, nextRow, limit) => {
 };
 
 const removeById = (rows, id) => rows.filter((row) => row?._id !== id);
-const isStudentSection = (section) => STUDENT_IDS.includes(section);
-const isStaffSection = (section) => STAFF_IDS.includes(section);
-const isMassArtSection = (section) => NON_VISITOR_MASSART.includes(section);
-
-const buildSectionCounts = (rows) => {
-  const counts = new Map();
-  for (const r of rows || []) counts.set(r?.section || '', (counts.get(r?.section || '') || 0) + 1);
-  const bySection = Object.fromEntries(counts);
-  const sum = (ids) => ids.reduce((acc, id) => acc + (bySection[id] || 0), 0);
-
-  return {
-    all: rows?.length || 0,
-    'all-massart': sum(NON_VISITOR_MASSART),
-    'all-students': sum(STUDENT_IDS),
-    'all-staff': sum(STAFF_IDS),
-    visitor: bySection['visitor'] || 0,
-    ...bySection,
-  };
-};
 
 const shouldFallbackToMock = (error) => {
   if (!isSanityQuotaError(error)) return false;
@@ -246,108 +224,6 @@ export const subscribeSurveyData = ({ section, limit = 300, onData }) => {
         return 'stop';
       }
       console.error('[sanityAPI] listen error', e?.message || e);
-      return undefined;
-    },
-    poller,
-  });
-
-  return () => {
-    try { unsub?.(); } catch {}
-    try { mockUnsub?.(); } catch {}
-    poller.disable();
-  };
-};
-
-export const subscribeSectionCounts = ({ onData }) => {
-  if (shouldUseMockSanityReads()) {
-    return subscribeMockSectionCounts({ onData });
-  }
-  const query = `*[!(_id in path('drafts.**')) && _type == "userResponseV4"]{ section }`;
-  let currentCounts = {};
-  let mockUnsub = null;
-  let unsub = () => {};
-
-  const emit = () => onData(currentCounts);
-  const bumpCount = (counts, key, delta) => {
-    if (!key) return;
-    counts[key] = Math.max(0, (counts[key] || 0) + delta);
-  };
-  const applySectionDelta = (counts, section, delta) => {
-    if (!section) return;
-    bumpCount(counts, section, delta);
-    bumpCount(counts, 'all', delta);
-    if (isMassArtSection(section)) bumpCount(counts, 'all-massart', delta);
-    if (isStudentSection(section)) bumpCount(counts, 'all-students', delta);
-    if (isStaffSection(section)) bumpCount(counts, 'all-staff', delta);
-    if (section === 'visitor') bumpCount(counts, 'visitor', delta);
-  };
-  const pump = (rows) => {
-    currentCounts = buildSectionCounts(rows || []);
-    emit();
-  };
-  const applyMutation = (event) => {
-    const nextCounts = { ...currentCounts };
-    const prevSection = event?.previous?.section || '';
-    const nextSection = event?.result?.section || '';
-
-    if (event?.transition === 'appear') {
-      applySectionDelta(nextCounts, nextSection, 1);
-      currentCounts = nextCounts;
-      emit();
-      return;
-    }
-
-    if (event?.transition === 'disappear') {
-      applySectionDelta(nextCounts, prevSection, -1);
-      currentCounts = nextCounts;
-      emit();
-      return;
-    }
-
-    if (event?.transition === 'update') {
-      if (prevSection === nextSection) return;
-      applySectionDelta(nextCounts, prevSection, -1);
-      applySectionDelta(nextCounts, nextSection, 1);
-      currentCounts = nextCounts;
-      emit();
-    }
-  };
-  const refetch = () => {
-    liveClient.fetch(query, {}).then(pump).catch((e) => {
-      if (shouldFallbackToMock(e)) {
-        poller.disable();
-        try { unsub?.(); } catch {}
-        mockUnsub = subscribeMockSectionCounts({ onData });
-        return;
-      }
-      console.error('[sanityAPI] counts refresh', e);
-    });
-  };
-
-  liveClient.fetch(query, {}).then(pump).catch((e) => {
-    if (shouldFallbackToMock(e)) {
-      mockUnsub = subscribeMockSectionCounts({ onData });
-      return;
-    }
-    console.error('[sanityAPI] counts initial', e);
-  });
-
-  const poller = makePoller(() => {
-    liveClient.fetch(query, {}).then(pump).catch((e) => console.error('[sanityAPI] counts poll', e));
-  }, 7000);
-
-  unsub = resilientListen({
-    query,
-    params: {},
-    onMutation: applyMutation,
-    onReconnect: refetch,
-    onError: (e) => {
-      if (shouldFallbackToMock(e)) {
-        poller.disable();
-        mockUnsub = subscribeMockSectionCounts({ onData });
-        return 'stop';
-      }
-      console.error('[sanityAPI] counts listen error', e?.message || e);
       return undefined;
     },
     poller,
