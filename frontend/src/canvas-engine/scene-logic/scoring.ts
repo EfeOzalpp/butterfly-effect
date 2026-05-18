@@ -2,12 +2,12 @@
 
 import { rand01Keyed } from "../shared/hash32";
 
-export type PlacedFoot = {
+interface PlacedFoot {
   r0: number;
   c0: number;
   w: number;
   h: number;
-};
+}
 
 function centerOf(f: { r0: number; c0: number; w: number; h: number }) {
   return { x: f.c0 + f.w / 2, y: f.r0 + f.h / 2 };
@@ -50,7 +50,9 @@ export function scoreCandidateGeneric(opts: {
 
   // deterministic jitter
   const jitter =
-    (rand01Keyed(`cand|${r0},${c0},${wCell},${hCell}|${salt}`) - 0.5) * 0.25;
+    (rand01Keyed(
+      `cand|${String(r0)},${String(c0)},${String(wCell)},${String(hCell)}|${String(salt)}`
+    ) - 0.5) * 0.25;
 
   return centerTerm + spreadTerm + jitter;
 }

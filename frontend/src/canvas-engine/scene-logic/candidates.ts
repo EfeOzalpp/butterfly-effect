@@ -1,4 +1,4 @@
-// src/canvas/scene-logic/candidates.ts
+// src/canvas-engine/scene-logic/candidates.ts
 
 import type { CanvasPaddingSpec } from '../adjustable-rules/canvas-padding';
 
@@ -9,7 +9,7 @@ import type { CanvasPaddingSpec } from '../adjustable-rules/canvas-padding';
 export function buildFallbackCells(
   rows: number,
   cols: number,
-  spec: CanvasPaddingSpec, 
+  spec: CanvasPaddingSpec,
   opts?: { overlay?: boolean }
 ) {
   const useTop = Math.max(0.01, Math.min(1, spec.useTopRatio ?? 1));
@@ -17,7 +17,7 @@ export function buildFallbackCells(
   const centerR = (usedRows - 1) / 2;
   const centerC = (cols - 1) / 2;
 
-  const out: Array<{ r: number; c: number; d2: number }> = [];
+  const out: { r: number; c: number; d2: number }[] = [];
 
   for (let r = 0; r < rows; r++) {
     const rInUsed =

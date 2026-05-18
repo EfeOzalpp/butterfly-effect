@@ -1,4 +1,4 @@
-// canvas-engine/CanvasEntry.tsx
+// canvas-instances/OnboardingEntry.tsx
 
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
 import { useUiFlow } from "../app/state/ui-context";

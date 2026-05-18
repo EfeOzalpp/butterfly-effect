@@ -1,4 +1,4 @@
-// src/canvas/scene-logic/constraints.ts
+// src/canvas-engine/scene-logic/constraints.ts
 
 import type { CanvasPaddingSpec } from '../adjustable-rules/canvas-padding';
 import { makeCellForbidden } from '../grid-layout/forbidden';
@@ -61,10 +61,10 @@ export function allowedSegmentsForRow(
   cols: number,
   isForbidden: (r: number, c: number) => boolean,
   colsPerRow?: number[]
-): Array<{ cStart: number; cEnd: number }> {
+): { cStart: number; cEnd: number }[] {
   const { refCols: effectiveCols } = horizontalReferenceForFootprint(r0, hCell, cols, colsPerRow);
 
-  const segs: Array<{ cStart: number; cEnd: number }> = [];
+  const segs: { cStart: number; cEnd: number }[] = [];
   let c = 0;
 
   while (c <= effectiveCols - wCell) {
