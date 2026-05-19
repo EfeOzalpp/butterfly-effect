@@ -27,5 +27,5 @@ export {
 export { fogifyPalette } from "./fog";
 export { gradientColor, rgbToCss } from "./gradient";
 export { VIVID_COLOR_STOPS } from "./stops";
-export { computeVisualStyle, sampleBrandColor } from "./style";
+export { computeVisualStyle } from "./style";
 export type { VisualStyle } from "./style";

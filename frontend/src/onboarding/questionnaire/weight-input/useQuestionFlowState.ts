@@ -15,7 +15,7 @@ export function useQuestionFlowState(
   onAnswersUpdate: ((answers: Record<string, number | null>) => void) | undefined,
   onSubmit: ((answers: Record<string, number | null>) => void) | undefined
 ) {
-  const { setLiveAvg, commitAllocAvg, setCondAvgs } = useCanvasRuntime();
+  const { setLiveAvg, commitAllocAvg } = useCanvasRuntime();
   const { radarMode } = useUiFlow();
 
   const scoreForQuestion = useCallback(
@@ -67,31 +67,12 @@ export function useQuestionFlowState(
     return Math.round(avg * 100) / 100;
   }, [answers]);
 
-  const computeCondAvgs = useCallback(() => {
-    const sums: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
-    const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
-    for (const qSliders of Object.values(slidersByQ)) {
-      for (const k of ["A", "B", "C", "D"] as const) {
-        if (typeof qSliders[k] === "number") {
-          sums[k] += qSliders[k];
-          counts[k]++;
-        }
-      }
-    }
-    const result: Partial<Record<"A" | "B" | "C" | "D", number>> = {};
-    for (const k of ["A", "B", "C", "D"] as const) {
-      if (counts[k] > 0) result[k] = Math.round((sums[k] / counts[k]) * 100) / 100;
-    }
-    return result;
-  }, [slidersByQ]);
-
   // Sync answers → live canvas + external callback
   useEffect(() => {
     onAnswersUpdateRef.current?.(answers);
     const avg = computeCurrentAvg();
     setLiveAvg(typeof avg === "number" ? avg : DEFAULT_AVG);
-    setCondAvgs(computeCondAvgs());
-  }, [answers, computeCurrentAvg, computeCondAvgs, setLiveAvg, setCondAvgs]);
+  }, [answers, computeCurrentAvg, setLiveAvg]);
 
   const handleCommit = useCallback(() => {
     const avg = computeCurrentAvg();

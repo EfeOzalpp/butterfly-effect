@@ -1,19 +1,20 @@
 import type { SceneLightContext } from "../../../modifiers/lighting";
 import { resolveFogHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
-import type { GridMetrics } from "../../layout/gridCache";
+import { addAlphaOnlyLightStops } from "./color";
+import type { GridMetrics } from "../../geometry/gridCache";
 import { getCanvasMeta } from "../../p/canvasMeta";
 import type { PLike } from "../../p/makeP";
 
-type FogColor = { r: number; g: number; b: number };
-type FogGradientStop = { k: number; color: FogColor };
+interface FogColor { r: number; g: number; b: number }
+interface FogGradientStop { k: number; color: FogColor }
 
 const SKY_FOG_HORIZON_BLEND_BY_DISTANCE: readonly number[] = [0.8, 0.7, 0.6]; // 1 to 0 for how much to blend, and 3 properties for the three rows closest to the sky horizon.
 const SKY_FOG_HORIZON_BLEND_CACHE_KEY = SKY_FOG_HORIZON_BLEND_BY_DISTANCE.join(",");
 const SKY_LIGHT_INNER_RADIUS_K = 0.10;
 const SKY_LIGHT_OUTER_RADIUS_K = 0.26;
 
-export type FogState = {
+export interface FogState {
   fogStartY: number;
   fogCanvasH: number;
   fogPeakRow: number;
@@ -42,13 +43,13 @@ function mixFogColor(a: FogColor, b: FogColor, k: number): FogColor {
 }
 
 function rgbaString(color: FogColor, alpha: number) {
-  return `rgba(${color.r},${color.g},${color.b},${clamp01(alpha)})`;
+  return `rgba(${String(color.r)},${String(color.g)},${String(color.b)},${String(clamp01(alpha))})`;
 }
 
 function gradientCacheKey(gradientStops: readonly FogGradientStop[] | null | undefined) {
   if (!gradientStops || gradientStops.length === 0) return "none";
   return gradientStops
-    .map((stop) => `${stop.k}:${stop.color.r},${stop.color.g},${stop.color.b}`)
+    .map((stop) => `${String(stop.k)}:${String(stop.color.r)},${String(stop.color.g)},${String(stop.color.b)}`)
     .join("|");
 }
 
@@ -100,7 +101,7 @@ function drawFogBand(args: {
   const { p, top, height, alpha255, overhangEdge, color, gradientStops = null, overhangPx } = args;
   if (height <= 0 || alpha255 <= 0) return;
 
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
   const alpha = Math.max(0, Math.min(1, alpha255 / 255));
   const outerFeather = overhangPx ?? (
     overhangEdge === "top"
@@ -136,11 +137,11 @@ function skyFogHorizonBlendForRow(fogPeakRow: number, row: number) {
   return SKY_FOG_HORIZON_BLEND_BY_DISTANCE[layersFromHorizon] ?? 0;
 }
 
-function skyFogRowHeight(fog: FogState, row: number, rectTop: number, rectBottom: number) {
+function skyFogRowHeight(fog: FogState, row: number, rectTop: number) {
   const nextRowTop = row + 1 < fog.fogPeakRow
     ? fog.rowOffsetY[row + 1]
     : fog.fogStartY;
-  return Math.max(0, (nextRowTop ?? rectBottom) - rectTop);
+  return Math.max(0, nextRowTop - rectTop);
 }
 
 function skyFogGradientStopsForRow(fog: FogState, row: number) {
@@ -152,49 +153,13 @@ function skyFogGradientStopsForRow(fog: FogState, row: number) {
     : fog.skyFogGradient;
 }
 
-function addAlphaOnlyLightStops(
-  gradient: CanvasGradient,
-  sourceKx: number,
-  peakAlpha: number,
-  innerRadiusK: number,
-  outerRadiusK: number
-) {
-  const rawStops: Array<readonly [number, number]> = [
-    [0, 0],
-    [sourceKx - outerRadiusK, 0],
-    [sourceKx - innerRadiusK, peakAlpha * 0.42],
-    [sourceKx, peakAlpha],
-    [sourceKx + innerRadiusK, peakAlpha * 0.42],
-    [sourceKx + outerRadiusK, 0],
-    [1, 0],
-  ];
-  const stops: Array<[number, number]> = [];
-
-  for (const [rawK, rawAlpha] of rawStops) {
-    const k = clamp01(rawK);
-    const alpha = clamp01(rawAlpha);
-    const existing = stops.find((stop) => Math.abs(stop[0] - k) < 0.0001);
-    if (existing) {
-      existing[1] = Math.max(existing[1], alpha);
-    } else {
-      stops.push([k, alpha]);
-    }
-  }
-
-  stops
-    .sort((a, b) => a[0] - b[0])
-    .forEach(([k, alpha]) => {
-      gradient.addColorStop(k, `rgba(255,255,255,${alpha})`);
-    });
-}
-
 function drawSkyFogLayer(p: PLike, fog: FogState, row: number) {
   const rectTop = fog.rowOffsetY[row] ?? 0;
   const rectBottom = fog.fogStartY;
   const rectH = rectBottom - rectTop;
   if (rectH <= 0) return;
 
-  const rowH = skyFogRowHeight(fog, row, rectTop, rectBottom);
+  const rowH = skyFogRowHeight(fog, row, rectTop);
   drawFogBand({
     p,
     top: rectTop,
@@ -349,36 +314,6 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
   return { drawNext, drawUntilDepth, drawRemaining };
 }
 
-export function createSkyFogStepper(p: PLike, fog: FogState) {
-  let skyRowIndex = 0; // starts at top row (r=0), advances toward fogPeakRow
-
-  const drawNext = () => {
-    const r = skyRowIndex;
-    if (r >= fog.fogPeakRow) return;
-    skyRowIndex += 1;
-
-    drawSkyFogLayer(p, fog, r);
-  };
-
-  // draw all sky fog layers up to (but not including) the row containing depthY
-  const drawUntilDepth = (depthY: number) => {
-    while (
-      skyRowIndex < fog.fogPeakRow &&
-      (fog.rowOffsetY[skyRowIndex] ?? 0) <= depthY
-    ) {
-      drawNext();
-    }
-  };
-
-  const drawRemaining = () => {
-    while (skyRowIndex < fog.fogPeakRow) {
-      drawNext();
-    }
-  };
-
-  return { drawNext, drawUntilDepth, drawRemaining };
-}
-
 // Offscreen cache for drawSkyFog — pure gradient geometry, no time dependency.
 export function createSkyFogCache() {
   let offscreen: HTMLCanvasElement | null = null;
@@ -389,24 +324,37 @@ export function createSkyFogCache() {
 
     const w = p.width;
     const h = p.height;
-    const key = `${w}|${h}|${fog.fogStartY.toFixed(1)}|${fog.fogPeakRow}|${fog.skyLayerAlpha.toFixed(4)}|${fog.fogColor.r}|${fog.fogColor.g}|${fog.fogColor.b}|${gradientCacheKey(fog.skyFogGradient)}|${SKY_FOG_HORIZON_BLEND_CACHE_KEY}|${fog.rowOffsetY.join(",")}`;
+    const key = [
+      String(w),
+      String(h),
+      fog.fogStartY.toFixed(1),
+      String(fog.fogPeakRow),
+      fog.skyLayerAlpha.toFixed(4),
+      String(fog.fogColor.r),
+      String(fog.fogColor.g),
+      String(fog.fogColor.b),
+      gradientCacheKey(fog.skyFogGradient),
+      SKY_FOG_HORIZON_BLEND_CACHE_KEY,
+      fog.rowOffsetY.join(","),
+    ].join("|");
 
-    if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
-      if (!offscreen) offscreen = document.createElement("canvas");
+    if (offscreen?.width !== w || offscreen.height !== h) {
+      offscreen ??= document.createElement("canvas");
       offscreen.width = w;
       offscreen.height = h;
       cacheKey = "";
     }
 
     if (key !== cacheKey) {
-      const offCtx = offscreen.getContext("2d")!;
+      const offCtx = offscreen.getContext("2d");
+      if (!offCtx) throw new Error("2D canvas context not available");
       offCtx.clearRect(0, 0, w, h);
       const fakeP = { drawingContext: offCtx, width: w, height: h } as unknown as PLike;
       drawSkyFog(fakeP, fog);
       cacheKey = key;
     }
 
-    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    const ctx = p.drawingContext;
     ctx.drawImage(offscreen, 0, 0);
   };
 }
@@ -430,7 +378,7 @@ export function drawSkyFogLightOverlay(args: {
   const { p, fog, light, alpha = 1 } = args;
   if (!fog || !light || alpha <= 0 || fog.skyLayerAlpha <= 0 || fog.fogPeakRow <= 0) return;
 
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
   const sourceKx = clamp01(light.sourceX / Math.max(1, p.width));
   const maxBandH = Math.max(4, Math.min(22, p.height * 0.026));
   const fogPresenceK = clamp01(fog.skyLayerAlpha / 0.18);
@@ -445,7 +393,7 @@ export function drawSkyFogLightOverlay(args: {
     const rectH = rectBottom - rectTop;
     if (rectH <= 0) continue;
 
-    const rowH = skyFogRowHeight(fog, r, rectTop, rectBottom);
+    const rowH = skyFogRowHeight(fog, r, rectTop);
     const edgeLift = skyFogTopOverhang(rowH);
     const bandH = Math.max(3, Math.min(maxBandH, rowH * 0.20));
     const bandTop = Math.max(0, rectTop - edgeLift);

@@ -92,7 +92,7 @@ export interface SizeOsc {
   speed?: number;
   phase?: number;
   anchor?: Anchor;
-  mode?: "relative" | "absolute";
+  mode?: "relative" | "absolute" | "none";
 
   bias?: number;
   amp?: number;
@@ -109,6 +109,7 @@ export interface OpacityOsc {
 
 export interface Rotation {
   speed?: number;
+  phase?: number;
 }
 
 export interface RotationOsc {

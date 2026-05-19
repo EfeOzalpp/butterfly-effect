@@ -51,7 +51,7 @@ export function drawStars(
     const twinkle = 0.5 + 0.5 * Math.sin(t * hz * Math.PI * 2 + phase);
     const alpha = alphaRange[0] + (alphaRange[1] - alphaRange[0]) * twinkle;
 
-    ctx.fillStyle = `rgba(245, 248, 255, ${alpha})`;
+    ctx.fillStyle = `rgba(245, 248, 255, ${String(alpha)})`;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();

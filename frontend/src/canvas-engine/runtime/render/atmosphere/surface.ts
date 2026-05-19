@@ -13,14 +13,14 @@ import {
   type RGBA,
 } from "./color";
 
-type ResolvedSurfaceStop = {
+interface ResolvedSurfaceStop {
   k: number;
   left: RGBA;
   right: RGBA;
   blendFromPrevious: boolean;
   blendToNext: boolean;
   order: number;
-};
+}
 
 function resolveStopRgba(
   rgba: string,

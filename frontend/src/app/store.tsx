@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { unstable_batchedUpdates as batched } from "react-dom";
 
 import { getSessionItem, removeSessionItems } from "./session";
@@ -22,7 +22,7 @@ import type { IdentityState } from "./state/identity-context";
 import { SurveyDataCtx } from "./state/survey-data-context";
 import type { SurveyDataState } from "./state/survey-data-context";
 import { InteractionCtx } from "./state/interaction-context";
-import type { InteractionState } from "./state/interaction-context";
+import type { InteractionState, SpotlightRequest } from "./state/interaction-context";
 
 export { DEFAULT_AVG } from "./state/useCanvasRuntimeState";
 export type { Mode } from "./types";
@@ -34,7 +34,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [section, setSection] = useState<string>("all");
   const [openPersonalized, setOpenPersonalized] = useState(false);
   const [animationVisible, setAnimationVisible] = useState(false);
-  const [spotlightRequest, setSpotlightRequest] = useState<{ durationMs: number; fakeMouseXRatio: number; fakeMouseYRatio: number } | null>(null);
+  const [spotlightRequest, setSpotlightRequest] = useState<SpotlightRequest | null>(null);
 
   const { mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole } = useIdentityState();
 
@@ -61,8 +61,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setLiveAvg,
     allocAvgState,
     commitAllocAvg,
-    condAvgsState,
-    setCondAvgs,
     reservedFootprintsState,
     setReservedFootprints,
     resetCanvasRuntimeState,
@@ -72,7 +70,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const unsub = subscribeToSurveyData();
-    return () => unsub();
+    return () => { unsub(); };
   }, [subscribeToSurveyData]);
 
   // Mock bootstrap: restore session on reload
@@ -89,6 +87,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setMySection(mockSection);
     setMyEntryId(mockEntryId);
     setMyRole(mockRole);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mock bootstrap, intentional
     setSection(mockSection);
     setSurveyActive(false);
     setHasCompletedSurvey(true);
@@ -161,13 +160,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setLiveAvg,
       allocAvg: allocAvgState,
       commitAllocAvg,
-      condAvgs: condAvgsState,
-      setCondAvgs,
       reservedFootprints: reservedFootprintsState,
       setReservedFootprints,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [liveAvgState, allocAvgState, condAvgsState, reservedFootprintsState]
+    [liveAvgState, allocAvgState, reservedFootprintsState]
   );
 
   const identityValue = useMemo<IdentityState>(
@@ -178,13 +175,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const surveyDataValue = useMemo<SurveyDataState>(
     () => ({ section, setSection, counts, allRows, data, allFilteredRows, loading }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [section, counts, allRows, data, allFilteredRows, loading]
   );
 
   const interactionValue = useMemo<InteractionState>(
     () => ({ spotlightRequest, setSpotlightRequest }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [spotlightRequest]
   );
 

@@ -490,7 +490,7 @@ button.city-button,
   .section-title { text-align: center; }
   .welcome-title { white-space: nowrap; padding: 2.4rem 0 3.2rem 0; }
 
-  .radio-group { min-width: 320px; max-width: 320px; }
+  .radio-group { min-width: 260px; max-width: 260px; }
 
   /* Section picker spacing */
   .section-picker { position: relative; justify-items: center; 

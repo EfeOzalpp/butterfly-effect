@@ -1,19 +1,17 @@
-// src/canvas-engine/runtime/engine/registry.ts
+// src/canvas-engine/runtime/engine/instanceRegistry.ts
 
-export type StopFn = () => void;
-
-type EngineRecord = { stop: StopFn };
+interface EngineRecord { stop: () => void }
 
 const REGISTRY_BY_EL = new WeakMap<HTMLElement, EngineRecord>();
 const REGISTRY_BY_KEY = new Map<string, HTMLElement>();
 
 function mountKey(mount: string) {
-  return String(mount ?? "").trim();
+  return mount.trim();
 }
 
 function tryResolveMountEl(mount: string): HTMLElement | null {
   try {
-    return document.querySelector(mount) as HTMLElement | null;
+    return document.querySelector(mount);
   } catch {
     return null;
   }
@@ -22,7 +20,7 @@ function tryResolveMountEl(mount: string): HTMLElement | null {
 function stopByEl(el: HTMLElement) {
   try {
     const rec = REGISTRY_BY_EL.get(el);
-    rec?.stop?.();
+    rec?.stop();
   } catch {}
   try {
     REGISTRY_BY_EL.delete(el);
@@ -36,7 +34,7 @@ function stopByEl(el: HTMLElement) {
 export function registerEngineInstance(args: {
   mount: string;
   parentEl: HTMLElement;
-  stop: StopFn;
+  stop: () => void;
 }) {
   const { mount, parentEl, stop } = args;
 
@@ -92,10 +90,10 @@ export function stopCanvasEngine(mount = "#canvas-root") {
     if (el2) stopByEl(el2);
   } catch {}
 
-  // optional: if your ensureMount creates the node and marks it, preserve old behavior:
+  // Remove engine-owned mount nodes created by ensureMount.
   try {
     const el = document.querySelector(mount);
-    if (el && (el as any).classList?.contains("be-canvas-layer")) (el as any).remove();
+    if (el instanceof HTMLElement && el.classList.contains("be-canvas-layer")) el.remove();
   } catch {}
 }
 

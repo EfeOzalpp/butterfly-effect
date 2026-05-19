@@ -51,9 +51,4 @@ export function phaseFromIndex(idx: number, seed = 0): number {
   return (Math.abs(t) % 628318530) / 1e8;
 }
 
-/**
- * Aliases kept for readability at call sites.
- * Use these when you are hashing arbitrary composite keys.
- */
-export const hash32String = hashString32;
 export const rand01Keyed = rand01FromString;

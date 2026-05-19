@@ -4,7 +4,7 @@ import type {
   RgbaStop,
 } from "../../../adjustable-rules/backgrounds";
 import type { CanvasPaddingSpec } from "../../../adjustable-rules/canvas-padding";
-import type { GridMetrics } from "../../layout/gridCache";
+import type { GridMetrics } from "../../geometry/gridCache";
 import type { PLike } from "../../p/makeP";
 import { resolveFogHorizonRow, resolveHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
@@ -14,8 +14,9 @@ function resolveAnchorK(anchor: Exclude<BackgroundStopK, number>, anchors?: Back
   const baseK = key === "fogHorizon"
     ? anchors?.fogHorizonK ?? anchors?.visualHorizonK
     : anchors?.visualHorizonK;
+  const resolvedBaseK = baseK ?? 0.5;
   const offset = typeof anchor === "string" ? 0 : anchor.offset ?? 0;
-  return clamp01((Number.isFinite(baseK) ? baseK : 0.5) + offset);
+  return clamp01((Number.isFinite(resolvedBaseK) ? resolvedBaseK : 0.5) + offset);
 }
 
 export function resolveStopKValue(k: BackgroundStopK, anchors?: BackgroundAnchorContext) {

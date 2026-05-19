@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 
-import type { CondAvgs } from '../types';
 import type { Place } from '../../canvas-engine/grid-layout/occupancy';
 
 export const DEFAULT_AVG = 0.5;
@@ -25,18 +24,10 @@ function sameFootprints(a: Place[], b: Place[]) {
 export default function useCanvasRuntimeState() {
   const [liveAvgState, _setLiveAvgState] = useState<number>(DEFAULT_AVG);
   const [allocAvgState, _setAllocAvgState] = useState<number>(DEFAULT_AVG);
-  const [condAvgsState, _setCondAvgsState] = useState<CondAvgs>({});
   const [reservedFootprintsState, _setReservedFootprintsState] = useState<Place[]>([]);
 
   const setLiveAvg = useCallback((avg?: number) => {
     _setLiveAvgState(normalizeAvg(avg));
-  }, []);
-
-  const setCondAvgs = useCallback((next: CondAvgs) => {
-    _setCondAvgsState((prev) => {
-      const changed = (['A', 'B', 'C', 'D'] as const).some((k) => prev[k] !== next[k]);
-      return changed ? next : prev;
-    });
   }, []);
 
   const commitAllocAvg = useCallback((avg?: number) => {
@@ -50,7 +41,6 @@ export default function useCanvasRuntimeState() {
   const resetCanvasRuntimeState = useCallback(() => {
     _setLiveAvgState(DEFAULT_AVG);
     _setAllocAvgState(DEFAULT_AVG);
-    _setCondAvgsState({});
     _setReservedFootprintsState([]);
   }, []);
 
@@ -59,8 +49,6 @@ export default function useCanvasRuntimeState() {
     setLiveAvg,
     allocAvgState,
     commitAllocAvg,
-    condAvgsState,
-    setCondAvgs,
     reservedFootprintsState,
     setReservedFootprints,
     resetCanvasRuntimeState,

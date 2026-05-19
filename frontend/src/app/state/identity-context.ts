@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type IdentityState = {
+export interface IdentityState {
   // The department/section the user selected during onboarding — e.g. 'fine-arts', 'facilities'
   mySection: string | null;
   setMySection: (s: string | null) => void;

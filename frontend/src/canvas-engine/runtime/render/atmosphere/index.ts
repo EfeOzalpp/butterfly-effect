@@ -4,7 +4,6 @@ export {
   computeFogState,
   createBottomFogStepper,
   createSkyFogCache,
-  createSkyFogStepper,
   drawSkyFog,
   drawSkyFogLightOverlay,
   type FogState,

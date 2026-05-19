@@ -1,46 +1,12 @@
 import type { SceneLightContext } from "../../../modifiers/lighting";
 import { resolveHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
-import type { GridMetrics } from "../../layout/gridCache";
+import { addAlphaOnlyLightStops } from "./color";
+import type { GridMetrics } from "../../geometry/gridCache";
 import type { PLike } from "../../p/makeP";
 
 const SKY_LIGHT_INNER_RADIUS_K = 0.10;
 const SKY_LIGHT_OUTER_RADIUS_K = 0.26;
-
-function addAlphaOnlyLightStops(
-  gradient: CanvasGradient,
-  sourceKx: number,
-  peakAlpha: number,
-  innerRadiusK: number,
-  outerRadiusK: number
-) {
-  const rawStops: Array<readonly [number, number]> = [
-    [0, 0],
-    [sourceKx - outerRadiusK, 0],
-    [sourceKx - innerRadiusK, peakAlpha * 0.45],
-    [sourceKx, peakAlpha],
-    [sourceKx + innerRadiusK, peakAlpha * 0.45],
-    [sourceKx + outerRadiusK, 0],
-    [1, 0],
-  ];
-  const stops: Array<[number, number]> = [];
-
-  for (const [rawK, rawAlpha] of rawStops) {
-    const k = clamp01(rawK);
-    const alpha = clamp01(rawAlpha);
-    const existing = stops.find((stop) => Math.abs(stop[0] - k) < 0.0001);
-    if (existing) {
-      existing[1] = Math.max(existing[1], alpha);
-    } else {
-      stops.push([k, alpha]);
-    }
-  }
-
-  stops.sort((a, b) => a[0] - b[0]);
-  for (const [k, alpha] of stops) {
-    gradient.addColorStop(k, `rgba(255,255,255,${alpha})`);
-  }
-}
 
 // Offscreen cache for drawRowTopLightOverlay: pure geometry, no time dependency.
 export function createRowLightCache() {
@@ -53,24 +19,36 @@ export function createRowLightCache() {
 
     const w = p.width;
     const h = p.height;
-    const key = `${w}|${h}|${alpha.toFixed(3)}|${minRow}|${maxRowExclusive ?? "end"}|${light.sourceX.toFixed(1)}|${light.sourceY.toFixed(1)}|${light.sceneDiag.toFixed(1)}|${metrics.rowHeights.join(",")}|${metrics.rowOffsetY.join(",")}`;
+    const key = [
+      String(w),
+      String(h),
+      alpha.toFixed(3),
+      String(minRow),
+      maxRowExclusive == null ? "end" : String(maxRowExclusive),
+      light.sourceX.toFixed(1),
+      light.sourceY.toFixed(1),
+      light.sceneDiag.toFixed(1),
+      metrics.rowHeights.join(","),
+      metrics.rowOffsetY.join(","),
+    ].join("|");
 
-    if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
-      if (!offscreen) offscreen = document.createElement("canvas");
+    if (offscreen?.width !== w || offscreen.height !== h) {
+      offscreen ??= document.createElement("canvas");
       offscreen.width = w;
       offscreen.height = h;
       cacheKey = "";
     }
 
     if (key !== cacheKey) {
-      const offCtx = offscreen.getContext("2d")!;
+      const offCtx = offscreen.getContext("2d");
+      if (!offCtx) throw new Error("2D canvas context not available");
       offCtx.clearRect(0, 0, w, h);
       const fakeP = { drawingContext: offCtx, width: w, height: h } as unknown as PLike;
       drawRowTopLightOverlay({ p: fakeP, metrics, light, alpha, minRow, maxRowExclusive });
       cacheKey = key;
     }
 
-    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    const ctx = p.drawingContext;
     ctx.drawImage(offscreen, 0, 0);
   };
 }
@@ -88,7 +66,7 @@ export function drawRowTopLightOverlay(args: {
   const { rowHeights, rowOffsetY } = metrics;
   if (rowHeights.length < 1 || rowOffsetY.length < 1) return;
 
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
   const horizonRow = resolveHorizonRow(rowHeights);
   const maxBandH = Math.max(4, Math.min(18, p.height * 0.022));
 
@@ -116,7 +94,7 @@ export function drawRowTopLightOverlay(args: {
     if (bandAlpha <= 0.003) continue;
 
     const g = ctx.createLinearGradient(0, 0, p.width, 0);
-    addAlphaOnlyLightStops(g, sourceKx, bandAlpha, SKY_LIGHT_INNER_RADIUS_K, SKY_LIGHT_OUTER_RADIUS_K);
+    addAlphaOnlyLightStops(g, sourceKx, bandAlpha, SKY_LIGHT_INNER_RADIUS_K, SKY_LIGHT_OUTER_RADIUS_K, 0.45);
 
     ctx.fillStyle = g;
     ctx.fillRect(0, rowTop, p.width, bandH);

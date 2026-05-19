@@ -1,4 +1,4 @@
-// src/canvas-engine/runtime/layout/bounds.ts
+// src/canvas-engine/runtime/geometry/bounds.ts
 
 import type { CanvasBounds } from "../../multi-canvas-setup/hostDefs";
 import { getViewportSize } from "../platform/viewport";

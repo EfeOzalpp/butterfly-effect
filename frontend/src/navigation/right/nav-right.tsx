@@ -20,7 +20,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
 
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
-  const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View now";
+  const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View";
 
   const toggleObserverMode = () => {
     if (hasCompletedSurvey && !observerMode) {
@@ -51,7 +51,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
             className={cx("observe-results", observerMode && "active")}
             onClick={toggleObserverMode}
             aria-pressed={observerMode || hasCompletedSurvey}
-            aria-label={observerMode || hasCompletedSurvey ? "Back" : "View now"}
+            aria-label={observerMode || hasCompletedSurvey ? "Back" : "View"}
             data-label={observerLabel}
           >
             <span className="observe-results__ghost" aria-hidden="true">{observerLabel}</span>

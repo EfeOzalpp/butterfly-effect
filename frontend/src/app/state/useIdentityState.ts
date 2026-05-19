@@ -20,7 +20,7 @@ export default function useIdentityState() {
 
     // Keep storage listener for cross-tab sync only
     window.addEventListener('storage', onStorageSync);
-    return () => window.removeEventListener('storage', onStorageSync);
+    return () => { window.removeEventListener('storage', onStorageSync); };
   }, []);
 
   return {

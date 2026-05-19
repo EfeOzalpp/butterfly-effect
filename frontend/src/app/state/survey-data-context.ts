@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import type { SurveyRow } from "../types";
 
-export type SurveyDataState = {
+export interface SurveyDataState {
   // Active section filter — e.g. 'all', 'all-students', 'fine-arts'
   section: string;
   setSection: (s: string) => void;

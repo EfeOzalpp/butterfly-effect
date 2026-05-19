@@ -73,7 +73,7 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
     scaleY *= ay;
   }
 
-  if (mods.sizeOsc) {
+  if (mods.sizeOsc && mods.sizeOsc.mode !== "none") {
     const { mode = "relative", speed = 0.3, phase = 0, anchor = "center", bias, amp, biasAbs, ampAbs } =
       mods.sizeOsc;
 
@@ -177,8 +177,8 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
   }
 
   if (mods.rotation) {
-    const { speed = 0.5 } = mods.rotation;
-    rotation += t * speed;
+    const { speed = 0.5, phase = 0 } = mods.rotation;
+    rotation += phase + t * speed;
   }
 
   if (mods.rotationOsc) {

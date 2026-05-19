@@ -6,11 +6,11 @@ import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from '../../services/sani
 import { getSessionItem, setSessionItem } from '../session';
 import type { SurveyRow } from '../types';
 
-type UseSurveyDataStateParams = {
+interface UseSurveyDataStateParams {
   section: string;
   mySection: string | null;
   setSection: (section: string) => void;
-};
+}
 
 const ALL_ROWS_LIMIT = 5000;
 const VISIBLE_ROWS_LIMIT = 300;
@@ -38,10 +38,10 @@ export default function useSurveyDataState({
     });
   }, [mockReadMode]);
 
-  const counts = useMemo(() => {
+  const counts = useMemo<Record<string, number>>(() => {
     const bySection: Record<string, number> = {};
     for (const row of allRows) {
-      const key = row?.section || '';
+      const key = row.section || '';
       bySection[key] = (bySection[key] || 0) + 1;
     }
 
@@ -80,9 +80,7 @@ export default function useSurveyDataState({
     if (typeof window === 'undefined') return;
     const justSubmitted = getSessionItem('be.justSubmitted') === '1';
     if (!justSubmitted) return;
-    if (!counts) return;
-
-    const effectiveMySection = mySection || getSessionItem('be.mySection') || '';
+    const effectiveMySection = mySection ?? getSessionItem('be.mySection') ?? '';
     if (!effectiveMySection) return;
 
     if (effectiveMySection === 'visitor') {
@@ -96,7 +94,7 @@ export default function useSurveyDataState({
       setSection('all-massart');
       try {
         setSessionItem('be.openPersonalOnNext', '1');
-      } catch (err) {
+      } catch (err: unknown) {
         console.warn('[useSurveyDataState] Failed to set openPersonalOnNext in sessionStorage:', err);
       }
     }

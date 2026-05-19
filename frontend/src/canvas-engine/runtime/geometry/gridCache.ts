@@ -1,4 +1,4 @@
-// src/canvas-engine/runtime/layout/gridCache.ts
+// src/canvas-engine/runtime/geometry/gridCache.ts
 
 import type { PLike } from "../p/makeP";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
@@ -7,7 +7,7 @@ import type { GridMetrics } from "../../grid-layout/gridMetrics";
 
 export type { GridMetrics };
 
-export type GridCacheState = {
+export interface GridCacheState {
   w: number;
   h: number;
   cell: number;
@@ -20,7 +20,7 @@ export type GridCacheState = {
   usedRows: number;
   metrics: GridMetrics;
   specKey: string | null;
-};
+}
 
 const EMPTY_METRICS: GridMetrics = {
   rowHeights: [],
@@ -54,7 +54,11 @@ export function invalidateGridCache(cache: GridCacheState) {
 }
 
 function specKeyOf(spec: CanvasPaddingSpec) {
-  return `${spec.rows}|${spec.useTopRatio ?? 1}|${spec.horizonPos ?? ''}`;
+  return [
+    String(spec.rows),
+    String(spec.useTopRatio ?? 1),
+    spec.horizonPos == null ? "" : String(spec.horizonPos),
+  ].join("|");
 }
 
 export function computeGridCached(

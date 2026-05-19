@@ -9,7 +9,7 @@ import type { ShapeKey } from '../selection/types';
 import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, resolveDpr, DEFAULT_VARIANT_SLOTS, type ShapeAssignment } from '../internal/spritePolicy';
 
 import { DRAWERS } from '../selection/drawers';
-import { houseHasChimney } from '../../../canvas-engine/shapes/house.js';
+import { houseHasChimney } from '../../../canvas-engine/shapes/house';
 import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES, resolveParticleScaleBoost } from '../selection/footprints';
 import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 

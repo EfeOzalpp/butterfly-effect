@@ -7,7 +7,7 @@ import type { ConditionKind, ShapeName } from "../adjustable-rules/shapeCatalog"
 import type { Size } from "../adjustable-rules/conditionFootprints";
 import type { SceneLookupKey } from "../adjustable-rules/sceneState";
 import type { ScenePlacementRules } from "../adjustable-rules/placement-rules/index";
-import type { EngineFieldItem } from "../runtime/types";
+import type { EngineFieldItem } from "../runtime/engine/field";
 
 export type FootRect = Place;
 

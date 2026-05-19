@@ -1,11 +1,11 @@
-import { createContext, useContext } from "react";
+﻿import { createContext, useContext } from "react";
 
-type SpotlightRequest = { durationMs: number; fakeMouseXRatio: number; fakeMouseYRatio: number };
+export interface SpotlightRequest { durationMs: number; fakeMouseXRatio: number; fakeMouseYRatio: number }
 
-export type InteractionState = {
+export interface InteractionState {
   spotlightRequest: SpotlightRequest | null;
   setSpotlightRequest: (req: SpotlightRequest | null) => void;
-};
+}
 
 export const InteractionCtx = createContext<InteractionState | null>(null);
 

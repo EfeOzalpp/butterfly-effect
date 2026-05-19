@@ -1,4 +1,4 @@
-// src/canvas-engine/shapes/clouds.js
+// src/canvas-engine/shapes/clouds.ts
 import {
   oscillateSaturation,
   rgbToHsl,
@@ -20,14 +20,44 @@ import {
   pickLightBandValue,
   mixRgb,
 } from "../modifiers/index";
+import type { LightClosenessBandMap, RGB } from "../modifiers/index";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
+import { finiteNumber } from "./shared/numbers";
+
+type NumberRange = [number, number];
+type CloudPaletteTheme = "warm" | "cool";
+
+interface CloudsPalette extends ShapePalette {
+  default: RGB;
+  defaultByLight?: LightClosenessBandMap<number>;
+  rain: RGB;
+}
+
+interface CloudsOptions extends ShapeDrawOptions<CloudsPalette> {
+  paletteTheme?: CloudPaletteTheme;
+  drawRain?: boolean;
+  drawCloudBody?: boolean;
+  cloudBlend?: number;
+  rainBlend?: number;
+  cloudCss?: string;
+  rainCss?: string;
+  oscAmp?: number;
+  oscSpeed?: number;
+  oscPhase?: number;
+  dispAmp?: number;
+  dispAmpY?: number;
+  dispScale?: number;
+  dispSpeed?: number;
+  cloudAlpha?: number;
+}
 
 /* ───────────────── Palettes ───────────────── */
-export const CLOUDS_BASE_PALETTE = {
+const CLOUDS_BASE_PALETTE: CloudsPalette = {
   default: { r: 236, g: 238, b: 242 },
   rain:    { r: 20,  g: 165, b: 255 },
 };
 
-export const CLOUDS_DARK_PALETTE = {
+const CLOUDS_DARK_PALETTE: CloudsPalette = {
   default: { r: 139, g: 140, b: 185 },
   defaultByLight: {
     far:  0.45,
@@ -37,21 +67,19 @@ export const CLOUDS_DARK_PALETTE = {
   rain:    { r: 11,  g: 104, b: 195 },
 };
 
-export const CLOUDS_WARM_PALETTE = {
+const CLOUDS_WARM_PALETTE: CloudsPalette = {
   default: { r: 248, g: 238, b: 226 },
   rain:    { r: 30,  g: 158, b: 228 },
 };
 
-export const CLOUDS_COOL_PALETTE = {
+const CLOUDS_COOL_PALETTE: CloudsPalette = {
   default: { r: 228, g: 236, b: 248 },
   rain:    { r: 15,  g: 148, b: 238 },
 };
 
-const CLOUD_BASE = CLOUDS_BASE_PALETTE.default;
-
 /* ───────────────── Defaults (tweakable) ───────────────── */
 const RAIN = {
-  enabled: true,
+  enabled: true as boolean,
   spawnX0: 0.12, spawnX1: 0.88,
   spawnY0: 0.22, spawnY1: 0.0,
 
@@ -84,6 +112,36 @@ const RAIN = {
 
   alpha: [100, 220],
   blend: [0.02, 0.1],
+} satisfies {
+  enabled: boolean;
+  spawnX0: number;
+  spawnX1: number;
+  spawnY0: number;
+  spawnY1: number;
+  angleMin: number;
+  angleMax: number;
+  speedMin: NumberRange;
+  speedMax: NumberRange;
+  gravity: number;
+  accelX: number;
+  accelY: number;
+  jitterPos: NumberRange;
+  jitterAngle: NumberRange;
+  count: NumberRange;
+  sizeMin: NumberRange;
+  sizeMax: NumberRange;
+  lengthMin: NumberRange;
+  lengthMax: NumberRange;
+  lifeMin: number;
+  lifeMax: number;
+  fadeInFrac: number;
+  fadeOutFrac: number;
+  fadeLeft: number;
+  fadeRight: number;
+  fadeTop: number;
+  fadeBottom: number;
+  alpha: NumberRange;
+  blend: NumberRange;
 };
 
 // lerp-able cloud tuning
@@ -102,11 +160,11 @@ const CLOUDS = {
 
   wobbleAmp:  [1.4, 1.0],
   blend:      [0.4, 0.08],
-};
+} satisfies Record<string, NumberRange>;
 
-const WOBBLE = { ampScale: [0.8, 0.95] };
+const WOBBLE = { ampScale: [0.8, 0.95] } satisfies { ampScale: NumberRange };
 
-function cloudRowContext(t) {
+function cloudRowContext(t: number) {
   return {
     width: particleBucketRange(t, 1.10, 1.0),
     height: particleBucketRange(t, 1.46, 1.0),
@@ -123,7 +181,7 @@ function cloudRowContext(t) {
   };
 }
 
-function rainRowContextScale(t) {
+function rainRowContextScale(t: number) {
   return {
     size: particleBucketRange(t, 0.26, 1.0),
     length: particleBucketRange(t, 0.34, 1.0),
@@ -134,38 +192,39 @@ function rainRowContextScale(t) {
 }
 
 /* ───────────────── Draw ───────────────── */
-export function drawClouds(p, _cx, _cy, _r, opts) {
-  const pal = opts?.palette ?? (opts?.darkMode ? CLOUDS_DARK_PALETTE
-    : opts?.paletteTheme === 'warm' ? CLOUDS_WARM_PALETTE
-    : opts?.paletteTheme === 'cool' ? CLOUDS_COOL_PALETTE
+export function drawClouds(
+  p: ShapeCanvas,
+  _cx: number,
+  _cy: number,
+  _r: number,
+  opts: CloudsOptions = {}
+): void {
+  const pal = opts.palette ?? (opts.darkMode ? CLOUDS_DARK_PALETTE
+    : opts.paletteTheme === 'warm' ? CLOUDS_WARM_PALETTE
+    : opts.paletteTheme === 'cool' ? CLOUDS_COOL_PALETTE
     : CLOUDS_BASE_PALETTE);
-  const cell = opts?.cell;
-  const cellW = opts?.cellW ?? cell;
-  const cellH = opts?.cellH ?? cell;
-  const f = opts?.footprint;
+  const cell = opts.cell;
+  const f = opts.footprint;
   if (!cell || !f) return;
 
-  const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
-  const seed = (opts?.seed ?? 0) | 0;
-  const u = clamp01(opts?.liveAvg ?? 0.5);
-
-  const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
-  const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
+  const t = ((typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
+  const seed = Number(opts.seed ?? 0) | 0;
+  const u = clamp01(opts.liveAvg ?? 0.5);
 
   // Prefer the explicit dt from painter; fall back to p.deltaTime.
   const dt = Math.max(
     0.001,
-    Number.isFinite(opts?.dtSec) ? opts.dtSec : ((p.deltaTime || 16) / 1000)
+    typeof opts.dtSec === "number" && Number.isFinite(opts.dtSec) ? opts.dtSec : ((p.deltaTime || 16) / 1000)
   );
-  const drawRain = opts?.drawRain !== false;
-  const drawCloudBody = opts?.drawCloudBody !== false;
+  const drawRain = opts.drawRain !== false;
+  const drawCloudBody = opts.drawCloudBody !== false;
 
   // ── Texture-pixel scaling for sprite textures ────────────────────────────
   const rowBucket = particleRowBucket(f, opts);
   const rainRowBucket = particleRowBucket({ ...f, h: 1 }, opts);
   const cloudRow = cloudRowContext(rowBucket.t);
   const rainScale = rainRowContextScale(rainRowBucket.t);
-  const pixelScale = Number.isFinite(opts?.particlePixelScale)
+  const pixelScale = typeof opts.particlePixelScale === "number" && Number.isFinite(opts.particlePixelScale)
     ? Math.max(0.25, opts.particlePixelScale)
     : Math.max(1, (opts.pixelScale ?? opts.coreScaleMult ?? 1));
   const sizeK = rainScale.size * Math.pow(pixelScale, 1.15);
@@ -202,7 +261,7 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   const lobes = makeArchLobes(
     anchorX, anchorY, wEnv, hEnv,
     { count: lobeCount, spreadX, arcLift, rBase, rJitter, seed }
-  ) || [];
+  );
 
   /* ── Cloud color ── */
   const cloudLight = sampleDirectionalLightRect(
@@ -211,12 +270,12 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   );
 
   const cloudBlendDefault = val(CLOUDS.blend, u);
-  const cloudBlend = typeof opts?.cloudBlend === 'number' ? opts.cloudBlend : cloudBlendDefault;
+  const cloudBlend = typeof opts.cloudBlend === 'number' ? opts.cloudBlend : cloudBlendDefault;
 
   const baseTint =
-    (typeof opts?.cloudCss === 'string' && opts.cloudCss.trim().length > 0)
+    (typeof opts.cloudCss === 'string' && opts.cloudCss.trim().length > 0)
       ? cssToRgbViaCanvas(p, opts.cloudCss)
-      : blendRGB(pal.default, opts?.gradientRGB, cloudBlend);
+      : blendRGB(pal.default, opts.gradientRGB ?? undefined, cloudBlend);
 
   const sMax = Math.max(0, Math.min(1, val(CLOUDS.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
@@ -228,9 +287,9 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
   });
 
   let cloudRgb = oscillateSaturation(capped, t, {
-    amp:   (typeof opts?.oscAmp === 'number' ? opts.oscAmp : val(CLOUDS.oscAmp, u)),
-    speed: (typeof opts?.oscSpeed === 'number' ? opts.oscSpeed : val(CLOUDS.oscSpeed, u)),
-    phase: opts?.oscPhase ?? 0,
+    amp:   (typeof opts.oscAmp === 'number' ? opts.oscAmp : val(CLOUDS.oscAmp, u)),
+    speed: (typeof opts.oscSpeed === 'number' ? opts.oscSpeed : val(CLOUDS.oscSpeed, u)),
+    phase: opts.oscPhase ?? 0,
   });
 
   cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
@@ -239,10 +298,10 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
 
   /* ── Wobble ── */
   const wobbleK = val(CLOUDS.wobbleAmp, u) * val(WOBBLE.ampScale, u) * cloudRow.wobbleAmp;
-  const ampX = (opts?.dispAmp ?? Math.min(12, Math.max(6, Math.round(hTop * 0.12)))) * wobbleK;
-  const ampY = ((typeof opts?.dispAmpY === 'number') ? opts.dispAmpY : Math.round(ampX * 0.85)) * wobbleK;
-  const ampS = (Math.max(0, Math.min(0.25, opts?.dispScale ?? 0.12))) * wobbleK;
-  const fX = Math.max(0.01, (opts?.dispSpeed ?? 0.22) * cloudRow.wobbleHz);
+  const ampX = (opts.dispAmp ?? Math.min(12, Math.max(6, Math.round(hTop * 0.12)))) * wobbleK;
+  const ampY = (typeof opts.dispAmpY === 'number' ? opts.dispAmpY : Math.round(ampX * 0.85)) * wobbleK;
+  const ampS = Math.max(0, Math.min(0.25, opts.dispScale ?? 0.12)) * wobbleK;
+  const fX = Math.max(0.01, (opts.dispSpeed ?? 0.22) * cloudRow.wobbleHz);
   const fY = fX * 0.85;
   const fS = fX * 0.60;
   const groupDrift = displacementOsc(t, -1, {
@@ -261,10 +320,10 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     p,
     x: anchorX, y: anchorY, r: Math.min(wTop, hTop),
     opts: {
-      alpha: Number.isFinite(opts?.cloudAlpha) ? opts.cloudAlpha : 235,
-      timeMs: opts?.timeMs,
-      liveAvg: opts?.liveAvg,
-      rootAppearK: opts?.rootAppearK,
+      alpha: finiteNumber(opts.cloudAlpha, 235),
+      timeMs: opts.timeMs,
+      liveAvg: opts.liveAvg,
+      rootAppearK: opts.rootAppearK,
     },
     mods: {
       appear: {
@@ -274,7 +333,7 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     }
   });
 
-  const cloudAlpha = (typeof appear.alpha === 'number') ? appear.alpha : (Number.isFinite(opts?.cloudAlpha) ? opts.cloudAlpha : 235);
+  const cloudAlpha = typeof appear.alpha === 'number' ? appear.alpha : finiteNumber(opts.cloudAlpha, 235);
 
   /* ── RAIN under clouds ── */
   if (drawRain && RAIN.enabled) {
@@ -295,19 +354,19 @@ export function drawClouds(p, _cx, _cy, _r, opts) {
     const syncedAlpha = Math.round(baseAlpha * (cloudAlpha / 255));
 
     const rainBlend =
-      typeof opts?.rainBlend === 'number'
+      typeof opts.rainBlend === 'number'
         ? opts.rainBlend
         : val(RAIN.blend, 1 - u);
 
-    let rainTint =
-      (typeof opts?.rainCss === 'string' && opts.rainCss.trim().length > 0)
+    const rainTint =
+      (typeof opts.rainCss === 'string' && opts.rainCss.trim().length > 0)
         ? cssToRgbViaCanvas(p, opts.rainCss)
-        : blendRGB(pal.rain, opts?.gradientRGB, rainBlend);
+        : blendRGB(pal.rain, opts.gradientRGB ?? undefined, rainBlend);
 
     const rainColor = { r: rainTint.r, g: rainTint.g, b: rainTint.b, a: syncedAlpha };
 
     stepAndDrawParticles(p, {
-      key: `${f.r0}:${f.c0}:${f.w}x${f.h}:${seed}:rain`,
+      key: `${String(f.r0)}:${String(f.c0)}:${String(f.w)}x${String(f.h)}:${String(seed)}:rain`,
       rect,
       mode: 'line',
       color: rainColor,

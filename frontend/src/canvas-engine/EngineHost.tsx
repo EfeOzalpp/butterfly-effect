@@ -9,7 +9,7 @@ import { stopCanvasEngine } from "./runtime/index";
 import { useRealMobileViewport } from "../lib/hooks/useRealMobileViewport";
 import type { Place } from "./grid-layout/occupancy";
 
-import { HOST_DEFS, type HostId, type HostDef } from "./multi-canvas-setup/hostDefs";
+import { HOST_DEFS, type CanvasBounds, type HostDef, type HostId } from "./multi-canvas-setup/hostDefs";
 
 export function EngineHost({
   id,
@@ -18,7 +18,6 @@ export function EngineHost({
   liveAvg = 0.5,
   allocAvg = 0.5,
   questionnaireOpen = false,
-  condAvgs,
   reservedFootprints,
 }: {
   id: HostId;
@@ -27,23 +26,17 @@ export function EngineHost({
   liveAvg?: number;
   allocAvg?: number;
   questionnaireOpen?: boolean;
-  condAvgs?: Partial<Record<'A' | 'B' | 'C' | 'D', number>>;
   reservedFootprints?: Place[];
 }) {
-  const hostDef = React.useMemo(() => {
-    const def = HOST_DEFS[id];
-    if (!def) throw new Error(`Unknown hostId "${id}"`);
-    return def as HostDef; 
-  }, [id]);
+  const hostDef = React.useMemo<HostDef>(() => HOST_DEFS[id], [id]);
 
   const stopOnOpenMounts = React.useMemo(() => {
     const ids = hostDef.stopOnOpen ?? [];
     return ids.map((otherId) => HOST_DEFS[otherId].mount);
   }, [hostDef]);
 
-  const resolvedBounds = React.useMemo(() => {
+  const resolvedBounds = React.useMemo<CanvasBounds | undefined>(() => {
     const dims = hostDef.canvasDimensions;
-    if (!dims) return undefined;
     if (typeof dims === "function") {
       return dims({ questionnaireOpen });
     }
@@ -64,7 +57,7 @@ export function EngineHost({
 
   const engine = useCanvasEngine({
     enabled: open,
-    visible: visible,
+    visible,
     dprMode: hostDef.dprMode,
     mount: hostDef.mount,
     zIndex: hostDef.zIndex,
@@ -86,8 +79,8 @@ export function EngineHost({
 
   React.useEffect(() => {
     if (!engine.ready.current) return;
-    engine.controls.current?.setInputs?.({ liveAvg, condAvgs });
-  }, [engine, liveAvg, condAvgs]);
+    engine.controls.current?.setInputs({ liveAvg });
+  }, [engine, liveAvg]);
 
   return null;
 }

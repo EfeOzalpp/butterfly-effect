@@ -13,7 +13,7 @@ export interface VisualStyle {
   brightness: number;
 }
 
-export function sampleBrandColor(avg: number) {
+function sampleBrandColor(avg: number) {
   return gradientColor(VIVID_COLOR_STOPS, avg).rgb;
 }
 

@@ -15,21 +15,64 @@ import {
   paintDirectionalTriangleBands,
   mixRgb,
 } from "../modifiers/index";
+import type { DirectionalLightSample, LightClosenessBandMap, RGB } from "../modifiers/index";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
+import { applyExposureContrast, fillRgb, strokeRgb } from "./shared/color";
+import { shapeHash32, seeded01 as sharedSeeded01, seededUnit, pick } from "./shared/random";
 
-/* Exposure/contrast helper */
-function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
-  const e = Math.max(0.1, Math.min(3, exposure));
-  const k = Math.max(0.5, Math.min(2, contrast));
-  const adj = (v) => {
-    let x = (v / 255) * e;
-    x = (x - 0.5) * k + 0.5;
-    return Math.max(0, Math.min(1, x)) * 255;
+type NumberRange = [number, number];
+type VillaProfileName = "short" | "mid" | "tall";
+
+interface VillaPalette extends ShapePalette {
+  grass: RGB;
+  grassByLight?: LightClosenessBandMap<RGB>;
+  treeFoliage: RGB[];
+  treeFoliageByLight?: LightClosenessBandMap<RGB[]>;
+  body: RGB[];
+  roof: RGB[];
+  door: RGB[];
+  window: { lit: RGB; dark: RGB };
+  platform: RGB;
+}
+
+interface WindowProfile {
+  W_FRAC: number;
+  H_FRAC: number;
+  TOP_FRAC?: number;
+  BOT_MARGIN?: number;
+  Y_OFF_FRAC?: number;
+}
+
+interface VillaTuning {
+  body: { colorBlend: NumberRange; brightnessRange: NumberRange };
+  grass: { colorBlend: NumberRange; satRange: NumberRange };
+  tree: { colorBlend: NumberRange };
+  door: { widthRange: NumberRange; fixedHeights: NumberRange; sideMarginPxK: number };
+  roof: { triFracFront: NumberRange; triFracSide: NumberRange; dropSideK: number; extendK: number };
+  sideVolume: { heightK: number };
+  bodyShape: { frontHMinK: number; frontHMaxK: number; sideHMinK: number; sideHMaxK: number };
+  variants: { sideRoofChance: number };
+  windows: { marginY: number; frontVert: NumberRange; sideSmall: NumberRange; sideYOffsetK: number };
+  platform: { baseK: number; scaleRange: NumberRange };
+  foliage: {
+    scaleRange: NumberRange;
+    baseWk: number;
+    baseHk: number;
+    triHk: number;
+    offsetEdgePx: number;
+    jitterPx: number;
+    wind: {
+      rotAmp: number;
+      rotAmpTopMul: number;
+      xShearAmp: number;
+      speedRange: NumberRange;
+      phaseJitter: number;
+    };
   };
-  return { r: Math.round(adj(rgb.r)), g: Math.round(adj(rgb.g)), b: Math.round(adj(rgb.b)) };
 }
 
 // ───────────────── Palette
-export const VILLA_BASE_PALETTE = {
+const VILLA_BASE_PALETTE: VillaPalette = {
   grass: { r: 130, g: 172, b: 116 },
   treeFoliage: [
     { r: 108, g: 176, b: 110 },
@@ -74,7 +117,7 @@ export const VILLA_BASE_PALETTE = {
   platform: { r: 130, g: 134, b: 138 },
 };
 
-export const VILLA_DARK_PALETTE = {
+const VILLA_DARK_PALETTE: VillaPalette = {
   grass: { r: 58, g: 108, b: 114 },
   grassByLight: {
     far:  { r: 82, g: 94,  b: 88 },
@@ -151,7 +194,7 @@ export const VILLA_DARK_PALETTE = {
 };
 
 // ───────────────── Tunables
-const VILLA = {
+const VILLA: VillaTuning = {
   body: {
     colorBlend: [0.04, 0.02],
     brightnessRange: [0.40, 0.70],
@@ -211,7 +254,15 @@ const VILLA = {
   }
 };
 
-const WINDOW_OSC = {
+const WINDOW_OSC: {
+  amp: NumberRange;
+  speed: NumberRange;
+  colorAmp: NumberRange;
+  colorSpeed: NumberRange;
+  brightnessMin: NumberRange;
+  brightnessMax: NumberRange;
+  litCurve: number;
+} = {
   amp: [0.035, 0.08],
   speed: [0.18, 0.4],
   colorAmp: [0.05, 0.12],
@@ -221,7 +272,7 @@ const WINDOW_OSC = {
   litCurve: 0.95,
 };
 
-const WINDOW_COLOR_TARGETS = [
+const WINDOW_COLOR_TARGETS: RGB[] = [
   { r: 255, g: 214, b: 122 },
   { r: 255, g: 232, b: 176 },
   { r: 255, g: 198, b: 104 },
@@ -229,34 +280,19 @@ const WINDOW_COLOR_TARGETS = [
 ];
 
 // helpers
-function fillRgb(p, { r, g, b }, a = 255) { p.fill(r, g, b, a); }
-function strokeRgb(p, { r, g, b }, a = 255) { p.stroke(r, g, b, a); }
-function darken(rgb, k = 0.72) {
+function darken(rgb: RGB, k = 0.72): RGB {
   return { r: Math.round(rgb.r * k), g: Math.round(rgb.g * k), b: Math.round(rgb.b * k) };
 }
-function iround(x){ return Math.round(x); }
-function clampMinMax(v, min, max) {
+function iround(x: number): number { return Math.round(x); }
+function clampMinMax(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
 
-function hash32(s) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b);
-  h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35);
-  h ^= h >>> 16;
-  return h >>> 0;
-}
-function rand01(seed) {
-  let t = seed + 0x6D2B79F5;
-  t = Math.imul(t ^ (t >>> 15), 1 | t);
-  t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-  return (((t ^ (t >>> 14)) >>> 0) / 4294967296);
-}
-function seeded01(key, salt=''){ return rand01(hash32(`${key}|${salt}`)); }
-function pick(arr, r) { return arr[Math.floor(r * arr.length) % arr.length]; }
+function hash32(s: string): number { return shapeHash32(s); }
+function rand01(seed: number): number { return seededUnit(seed); }
+function seeded01(key: ShapeSeed, salt = ""): number { return sharedSeeded01(key, salt); }
 
-function oscillateWindowColor(base, timeSec, oscSeed) {
+function oscillateWindowColor(base: RGB, timeSec: number, oscSeed: number): RGB {
   const targetR = rand01(oscSeed ^ 0x165667b1);
   const target = WINDOW_COLOR_TARGETS[Math.floor(targetR * WINDOW_COLOR_TARGETS.length) % WINDOW_COLOR_TARGETS.length];
   const amp = val(WINDOW_OSC.colorAmp, rand01(oscSeed ^ 0xd3a2646c));
@@ -267,10 +303,25 @@ function oscillateWindowColor(base, timeSec, oscSeed) {
 }
 
 // Trees tint
-function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1, opts = {}) {
+interface VillaTreeTintOptions {
+  darkMode?: boolean;
+  lightSample?: DirectionalLightSample | null;
+  palette?: VillaPalette | null;
+  seedKey?: ShapeSeed;
+  blend?: number;
+}
+
+function treeTintFromGrass(
+  grass: RGB,
+  u: number,
+  gradientRGB: RGB | undefined,
+  ex = 1,
+  ct = 1,
+  opts: VillaTreeTintOptions = {}
+): RGB {
   const { darkMode = false, lightSample = null, palette = null, seedKey = 'villa-tree', blend = 1 } = opts;
-  const band = lightSample ? lightClosenessBand(lightSample.closenessK) : 'base';
-  const foliageSet = darkMode
+  const band = lightSample ? lightClosenessBand(lightSample.closenessK) : 'mid';
+  const foliageSet: RGB[] | undefined = darkMode
     ? (palette?.treeFoliageByLight?.[band] ?? palette?.treeFoliage)
     : palette?.treeFoliage;
   if (foliageSet?.length) {
@@ -302,21 +353,27 @@ function treeTintFromGrass(grass, u, gradientRGB, ex = 1, ct = 1, opts = {}) {
   return applyExposureContrast(clamped, ex, ct);
 }
 
-export function drawVilla(p, _cx, _cy, _r, opts = {}) {
-  const pal = opts?.palette ?? (opts?.darkMode ? VILLA_DARK_PALETTE : VILLA_BASE_PALETTE);
-  const cell = opts?.cell;
-  const cellW = opts?.cellW ?? cell;
-  const f = opts?.footprint;
+export function drawVilla(
+  p: ShapeCanvas,
+  _cx: number,
+  _cy: number,
+  _r: number,
+  opts: ShapeDrawOptions<VillaPalette> = {}
+): void {
+  const pal = opts.palette ?? (opts.darkMode ? VILLA_DARK_PALETTE : VILLA_BASE_PALETTE);
+  const cell = opts.cell;
+  const f = opts.footprint;
   if (!cell || !f) return;
+  const gradientRGB = opts.gradientRGB ?? undefined;
 
-  const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
-  const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
-  const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
+  const ex = typeof opts.exposure === 'number' ? opts.exposure : 1;
+  const ct = typeof opts.contrast === 'number' ? opts.contrast : 1;
+  const t = ((typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
-  const baseAlpha  = Number.isFinite(opts.alpha) ? opts.alpha : 235;
+  const baseAlpha = typeof opts.alpha === "number" && Number.isFinite(opts.alpha) ? opts.alpha : 235;
   const opaque = 255;
-  const u = clamp01(opts?.liveAvg ?? 0.5);
-  const liveBlend = clamp01(typeof opts?.blend === 'number' ? opts.blend : 1);
+  const u = clamp01(opts.liveAvg ?? 0.5);
+  const liveBlend = clamp01(typeof opts.blend === 'number' ? opts.blend : 1);
 
   const { x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts);
   const localTileW = pxW / Math.max(1, f.w);
@@ -325,10 +382,10 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   const smallScale = localTile <= 8;
 
   // Stable per-instance seed (independent of offscreen center)
-  const seedKey = (opts.seedKey ?? opts.seed) ?? `villa|${f.r0}:${f.c0}|${f.w}x${f.h}`;
+  const seedKey = (opts.seedKey ?? opts.seed) ?? `villa|${String(f.r0)}:${String(f.c0)}|${String(f.w)}x${String(f.h)}`;
 
-  function pulseLitWindow(base, slotKey) {
-    const oscSeed = hash32(`${seedKey}|window-osc|${slotKey}`);
+  function pulseLitWindow(base: RGB, slotKey: ShapeSeed): RGB {
+    const oscSeed = hash32(`${String(seedKey)}|window-osc|${String(slotKey)}`);
     const brightnessMin = val(WINDOW_OSC.brightnessMin, rand01(oscSeed ^ 0x27d4eb2f));
     const brightnessMax = val(WINDOW_OSC.brightnessMax, rand01(oscSeed ^ 0xbb67ae85));
     const toned = clampBrightness(base, brightnessMin, brightnessMax);
@@ -405,11 +462,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     opts.lightCtx ?? null
   );
 
-  let grassTint = opts?.darkMode
+  let grassTint = opts.darkMode
     ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
     : pal.grass;
-  if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(VILLA.grass.colorBlend, u));
-  if (opts?.darkMode) {
+  if (gradientRGB) grassTint = blendRGB(grassTint, gradientRGB, val(VILLA.grass.colorBlend, u));
+  if (opts.darkMode) {
     grassTint = clampSaturation(grassTint, VILLA.grass.satRange[0], VILLA.grass.satRange[1], 1);
     grassTint = clampBrightness(grassTint, 0.36, 0.54);
   }
@@ -418,7 +475,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   const rGrass = Math.round(localTile * 0.06);
   p.push(); p.noStroke(); fillRgb(p, grassTint, drawAlpha);
 
-  const grassTopY = [];
+  const grassTopY: number[] = [];
   for (let col = 0; col < blockCount; col++) {
     const isLeft = (col === 0);
     const gH = Math.max(1, Math.round(baseGrassH * ((isLeft === leftIsTaller) ? tallK : 1)));
@@ -447,7 +504,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
   const colMetrics = Array.from({ length: blockCount }, (_, col) => {
     const isSideCol = col === sideIndex;
     const gTop = grassTopY[col];
-    const r1 = seeded01(`${seedKey}|col${col}`, 'r1');
+    const r1 = seeded01(`${String(seedKey)}|col${String(col)}`, 'r1');
 
     const [hMin, hMax] = isSideCol
       ? [VILLA.bodyShape.sideHMinK, VILLA.bodyShape.sideHMaxK]
@@ -477,15 +534,13 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     const frontMetric = colMetrics[frontIndex];
     const sideMetric = colMetrics[sideIndex];
 
-    if (frontMetric && sideMetric) {
-      const frontTotalH = frontMetric.bodyH + frontMetric.roofH;
-      const sideBodyTarget = frontTotalH - sideMetric.roofH;
-      sideMetric.bodyH = clampMinMax(
-        Math.round(sideBodyTarget * VILLA.sideVolume.heightK),
-        sideMetric.minBodyH,
-        sideMetric.maxBodyH
-      );
-    }
+    const frontTotalH = frontMetric.bodyH + frontMetric.roofH;
+    const sideBodyTarget = frontTotalH - sideMetric.roofH;
+    sideMetric.bodyH = clampMinMax(
+      Math.round(sideBodyTarget * VILLA.sideVolume.heightK),
+      sideMetric.minBodyH,
+      sideMetric.maxBodyH
+    );
   }
 
   for (const col of order) {
@@ -497,11 +552,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     const isSide = (col === sideIndex);
 
     // seeded knobs per column
-    const r1 = seeded01(`${seedKey}|col${col}`, 'r1');
-    const r2 = seeded01(`${seedKey}|col${col}`, 'r2');
-    const rDoorSide = seeded01(`${seedKey}|col${col}`, 'doorSide');
-    const rDoor = seeded01(`${seedKey}|col${col}`, 'doorPick');
-    const rBush = seeded01(`${seedKey}|col${col}`, 'bush');
+    const r1 = seeded01(`${String(seedKey)}|col${String(col)}`, 'r1');
+    const r2 = seeded01(`${String(seedKey)}|col${String(col)}`, 'r2');
+    const rDoorSide = seeded01(`${String(seedKey)}|col${String(col)}`, 'doorSide');
+    const rDoor = seeded01(`${String(seedKey)}|col${String(col)}`, 'doorPick');
+    const rBush = seeded01(`${String(seedKey)}|col${String(col)}`, 'bush');
 
     const { roofH, bodyH } = colMetrics[col];
     const bodyY = Math.max(pxY, gTop - bodyH);
@@ -511,7 +566,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       { r: 255, g: 255, b: 255 },
       0 // keep palette as-is, later blend with gradient
     );
-    if (opts.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(VILLA.body.colorBlend, u));
+    if (gradientRGB) bodyTint = blendRGB(bodyTint, gradientRGB, val(VILLA.body.colorBlend, u));
     bodyTint = clampBrightness(bodyTint, VILLA.body.brightnessRange[0], VILLA.body.brightnessRange[1]);
     bodyTint = applyExposureContrast(bodyTint, ex, ct);
 
@@ -549,7 +604,6 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
     );
 
     // doors/windows + foliage
-    const marginY = VILLA.windows.marginY;
     let bushOnLeft = Math.floor(rBush * 2) === 0;
 
     if (!isSide) {
@@ -558,11 +612,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const low = 1.5;
       const mid = 1.8;
 
-      let dProfile = 'short';
+      let dProfile: VillaProfileName = 'short';
       if (cellsH >= low) dProfile = 'mid';
       if (cellsH >  mid) dProfile = 'tall';
 
-      const DOOR_PROFILES = {
+      const DOOR_PROFILES: Record<VillaProfileName, { W_FRAC: number; H_FRAC: number; Y_OFFSET_FRAC: number }> = {
         short: { W_FRAC: 0.18, H_FRAC: 0.20, Y_OFFSET_FRAC: 0.00 },
         mid:   { W_FRAC: 0.18, H_FRAC: 0.18, Y_OFFSET_FRAC: 0.00 },
         tall:  { W_FRAC: 0.18, H_FRAC: 0.14, Y_OFFSET_FRAC: -0.02 },
@@ -577,16 +631,16 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const doorY       = Math.min(iBodyY + bodyH - doorH, iBodyY + bodyH - doorH + Math.round(bodyH * dCfg.Y_OFFSET_FRAC));
 
       let doorTint = pal.door[Math.floor(rDoor * pal.door.length) % pal.door.length];
-      if (opts.gradientRGB) doorTint = blendRGB(doorTint, opts.gradientRGB, val(VILLA.body.colorBlend, u));
+      if (gradientRGB) doorTint = blendRGB(doorTint, gradientRGB, val(VILLA.body.colorBlend, u));
       doorTint = applyExposureContrast(doorTint, ex, ct);
       fillRgb(p, doorTint, drawAlpha);
       p.rect(doorX, doorY, doorW, doorH, Math.round(localTile * 0.03));
 
-      let wProfile = 'short';
+      let wProfile: VillaProfileName = 'short';
       if (cellsH >= low) wProfile = 'mid';
       if (cellsH >  mid) wProfile = 'tall';
 
-      const FRONT_WIN = {
+      const FRONT_WIN: Record<VillaProfileName, WindowProfile> = {
         short: { W_FRAC: 0.15, H_FRAC: 0.22, TOP_FRAC: 0.18, BOT_MARGIN: 6 },
         mid:   { W_FRAC: 0.17, H_FRAC: 0.18, TOP_FRAC: 0.15, BOT_MARGIN: 6 },
         tall:  { W_FRAC: 0.15, H_FRAC: 0.14, TOP_FRAC: 0.13, BOT_MARGIN: 6 },
@@ -594,17 +648,17 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const fCfg = FRONT_WIN[wProfile];
 
       const frontLitChance = clamp01(Math.pow(1 - u, WINDOW_OSC.litCurve) * 1.08);
-      const frontLit = seeded01(`${seedKey}|col${col}|front-lit`) < frontLitChance;
+      const frontLit = seeded01(`${String(seedKey)}|col${String(col)}|front-lit`) < frontLitChance;
       const frontBaseColor = frontLit
-        ? pulseLitWindow(pal.window.lit, `front|${col}`)
+        ? pulseLitWindow(pal.window.lit, `front|${String(col)}`)
         : pal.window.dark;
       const winColor = applyExposureContrast(frontBaseColor, ex, ct);
 
       const wW = Math.max(smallScale ? 2 : 3, Math.round(iColW * fCfg.W_FRAC));
       const wH = Math.max(smallScale ? 2 : 4, Math.round(bodyH * fCfg.H_FRAC));
 
-      const bandTop = iBodyY + Math.round(bodyH * fCfg.TOP_FRAC);
-      const bandBot = Math.max(bandTop + 1, doorY - fCfg.BOT_MARGIN);
+      const bandTop = iBodyY + Math.round(bodyH * (fCfg.TOP_FRAC ?? 0));
+      const bandBot = Math.max(bandTop + 1, doorY - (fCfg.BOT_MARGIN ?? 0));
       const yCenter = bandTop + (bandBot - bandTop) * 0.40;
       const y = Math.round(yCenter - wH / 2);
 
@@ -623,11 +677,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const low = 1.5;
       const mid = 1.8;
 
-      let sProfile = 'short';
+      let sProfile: VillaProfileName = 'short';
       if (cellsH >= low) sProfile = 'mid';
       if (cellsH >  mid) sProfile = 'tall';
 
-      const SIDE_WIN = {
+      const SIDE_WIN: Record<VillaProfileName, WindowProfile> = {
         short: { W_FRAC: 0.12, H_FRAC: 0.14, Y_OFF_FRAC: VILLA.windows.sideYOffsetK },
         mid:   { W_FRAC: 0.13, H_FRAC: 0.13, Y_OFF_FRAC: VILLA.windows.sideYOffsetK },
         tall:  { W_FRAC: 0.15, H_FRAC: 0.11, Y_OFF_FRAC: VILLA.windows.sideYOffsetK },
@@ -635,13 +689,13 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const sCfg = SIDE_WIN[sProfile];
 
       const sideLitChance = clamp01(Math.pow(1 - u, WINDOW_OSC.litCurve) * 1.18);
-      const sideLit0 = seeded01(`${seedKey}|col${col}|side-lit|0`) < sideLitChance;
-      const sideLit1 = seeded01(`${seedKey}|col${col}|side-lit|1`) < clamp01(sideLitChance - 0.16);
+      const sideLit0 = seeded01(`${String(seedKey)}|col${String(col)}|side-lit|0`) < sideLitChance;
+      const sideLit1 = seeded01(`${String(seedKey)}|col${String(col)}|side-lit|1`) < clamp01(sideLitChance - 0.16);
       const sideBase0 = sideLit0
-        ? pulseLitWindow(pal.window.lit, `side|${col}|0`)
+        ? pulseLitWindow(pal.window.lit, `side|${String(col)}|0`)
         : pal.window.dark;
       const sideBase1 = sideLit1
-        ? pulseLitWindow(pal.window.lit, `side|${col}|1`)
+        ? pulseLitWindow(pal.window.lit, `side|${String(col)}|1`)
         : pal.window.dark;
       const c0 = applyExposureContrast(sideBase0, ex, ct);
       const c1 = applyExposureContrast(sideBase1, ex, ct);
@@ -649,7 +703,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       const wW = Math.max(smallScale ? 2 : 3, Math.round(iColW * sCfg.W_FRAC));
       const wH = Math.max(smallScale ? 2 : 3, Math.round(bodyH * sCfg.H_FRAC));
 
-      const yCenter = iBodyY + Math.round(bodyH * sCfg.Y_OFF_FRAC);
+      const yCenter = iBodyY + Math.round(bodyH * (sCfg.Y_OFF_FRAC ?? 0));
       const y = Math.round(yCenter - wH / 2);
       const leftCx  = ix + Math.round(iColW * 0.35);
       const rightCx = ix + Math.round(iColW * 0.65);
@@ -695,11 +749,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
         { x: bx - w / 2, y: by - h, w, h },
         opts.lightCtx ?? null
       );
-      const bushColor = treeTintFromGrass(grassTint, u, opts.gradientRGB, ex, ct, {
-        darkMode: !!opts?.darkMode,
+      const bushColor = treeTintFromGrass(grassTint, u, gradientRGB, ex, ct, {
+        darkMode: !!opts.darkMode,
         lightSample: bushLight,
         palette: pal,
-        seedKey: `${seedKey}|front-bush|${col}`,
+        seedKey: `${String(seedKey)}|front-bush|${String(col)}`,
         blend: liveBlend,
       });
       const bushTint = mixRgb(bushColor, bushLight.lightColor, 0.18 * bushLight.overallK);
@@ -753,7 +807,7 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
       p.line(apexX, safeRidgeY, ix,         baseY);
       p.line(apexX, safeRidgeY, ix + iColW, baseY);
     } else {
-      let roofTint = mixRgb(applyExposureContrast(darken(bodyTint, 0.72), ex, ct), colLight.lightColor, 0.18 * colLight.overallK);
+      const roofTint = mixRgb(applyExposureContrast(darken(bodyTint, 0.72), ex, ct), colLight.lightColor, 0.18 * colLight.overallK);
       const roofRectH = Math.max(1, roofH - Math.max(1, Math.round(localTileH * 0.08)));
       const topY = Math.max(pxY, iBodyY - roofRectH);
 
@@ -807,11 +861,11 @@ export function drawVilla(p, _cx, _cy, _r, opts = {}) {
         { x: baseCX - baseHalfW, y: baseCY - baseTriH * 1.8, w: baseHalfW * 2, h: baseTriH * 1.8 },
         opts.lightCtx ?? null
       );
-      let treeColor = treeTintFromGrass(grassTint, u, opts.gradientRGB, ex, ct, {
-        darkMode: !!opts?.darkMode,
+      let treeColor = treeTintFromGrass(grassTint, u, gradientRGB, ex, ct, {
+        darkMode: !!opts.darkMode,
         lightSample: treeLight,
         palette: pal,
-        seedKey: `${seedKey}|side-tree|${col}`,
+        seedKey: `${String(seedKey)}|side-tree|${String(col)}`,
         blend: liveBlend,
       });
       treeColor = mixRgb(treeColor, treeLight.lightColor, 0.16 * treeLight.overallK);

@@ -1,12 +1,12 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
-type Props = {
+interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   name?: string;
-};
+}
 
-type State = { crashed: boolean };
+interface State { crashed: boolean }
 
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { crashed: false };

@@ -15,6 +15,7 @@ export {
 } from "./color-modifiers";
 export { gradientColor } from "./color-modifiers";
 export { VIVID_COLOR_STOPS } from "./color-modifiers";
+export type { RGB, Stop } from "./color-modifiers";
 
 // Shape geometry and transform helpers.
 export { displacementOsc, makeArchLobes } from "./shape-modifiers";
@@ -45,6 +46,12 @@ export {
   paintDirectionalTriangleBands,
   paintPixelLightBands,
 } from "./lighting";
+export type {
+  DirectionalLightSample,
+  LightClosenessBand,
+  LightClosenessBandMap,
+  SceneLightContext,
+} from "./lighting";
 
 // Grid placement to pixel projection.
 export {
@@ -55,3 +62,4 @@ export {
   particleSizePerspectiveScale,
   particleMotionPerspectiveScale,
 } from "./projection";
+export type { GridFootprint, PixelRect, ProjectionContext } from "./projection";

@@ -1,19 +1,34 @@
 // src/canvas-engine/runtime/index.ts
 
-import type { EngineControls, EngineFieldItem, StartCanvasEngineOpts } from "./types";
+import type {
+  EngineControls,
+  EngineFieldStyle,
+  EngineInputsPayload,
+  StartCanvasEngineOpts,
+} from "./engine/types";
+import type { EngineFieldItem } from "./engine/field";
+import type { Ghost } from "./render/ghosts";
 
 import {
   registerEngineInstance,
   stopCanvasEngine,
   isCanvasRunning,
   stopAllCanvasEngines,
-} from "./engine/registry";
+} from "./engine/instanceRegistry";
 import { createEngineTicker } from "./engine/loop";
 import { registerEngineFrame, unregisterEngineFrame } from "./engine/scheduler";
-import { reconcileLiveStatesOnFieldUpdate } from "./engine/itemLifecycle";
+import {
+  reconcileLiveStatesOnFieldUpdate,
+  type LiveState,
+} from "./engine/itemLifecycle";
+import {
+  createEngineField,
+  createEngineInputs,
+  createEngineStyle,
+} from "./engine/state";
 
 import { ensureMount, applyCanvasStyle } from "./platform/mount";
-import { makeP, type PLike } from "./p/makeP";
+import { makeP } from "./p/makeP";
 
 import { clamp01 } from "./util/easing";
 
@@ -23,63 +38,27 @@ import type { SceneLookupKey } from "../adjustable-rules/sceneState";
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
 
-import { resolveBounds } from "./layout/bounds";
-import { createGridCache, invalidateGridCache } from "./layout/gridCache";
+import { resolveBounds } from "./geometry/bounds";
+import { createGridCache, invalidateGridCache } from "./geometry/gridCache";
 import { installResizeHandlers } from "./platform/resize";
 
 import { createPaletteCache } from "./render/palette";
-import { type LiveState, defaultShapeKeyOfItem } from "./render/items";
-
 import { Z_INDEX } from "./shapes/zIndex";
 import { createDefaultShapeRegistry, type ShapeRegistry } from "./shapes/registry";
 
-import { VIVID_COLOR_STOPS } from "../modifiers/color-modifiers/stops";
-import { DEBUG_DEFAULT, type DebugFlags } from "./debug/flags";
 
-export type { EngineControls as CanvasEngineControls } from "./types";
-
-/**
- * STYLE = knobs/config that change rendering but are not "signals".
- * Signals like liveAvg go into inputs instead.
- *
- * Debug flags are nested under style.debug.
- */
-const REG_STYLE_DEFAULT = {
-  r: 11,
-  perShapeScale: {} as Record<string, number>,
-  gradientRGBOverride: null as null | { r: number; g: number; b: number },
-  blend: 0.5,
-  // Most shape palettes are clamped into fairly soft midtones before exposure is applied.
-  // A slight default lift keeps the world from reading muddy under fog and scene overlays.
-  exposure: 1.08,
-  contrast: 1.03,
-  appearMs: 300,
-  exitMs: 300,
-  darkMode: false,
-  isRealMobile: false,
-  fog: true,
-  debug: { ...DEBUG_DEFAULT } as DebugFlags,
-};
+export type { EngineControls as CanvasEngineControls } from "./engine/types";
 
 export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineControls {
   const { mount = "#canvas-root", onReady, dprMode = "fixed1", zIndex = 2, layout = "fixed", fpsCap, initialDarkMode } = opts;
 
   const parentEl = ensureMount(mount, zIndex, layout);
 
-  // style knobs/config (NOT signals)
-  const style = { ...REG_STYLE_DEFAULT, debug: { ...REG_STYLE_DEFAULT.debug } };
-  if (typeof initialDarkMode === "boolean") style.darkMode = initialDarkMode;
-
-  // inputs/signals
-  const inputs = { liveAvg: 0.5, condAvgs: {} as import('./engine/state').CondAvgs };
-
-  const field = { items: [] as EngineFieldItem[], visible: false, epoch: 0 };
-  const hero = { x: null as number | null, y: null as number | null, visible: false };
+  const style = createEngineStyle(initialDarkMode);
+  const inputs = createEngineInputs();
+  const field = createEngineField();
 
   let ENGINE_SEQ = 0;
-
-  let canvasEl: HTMLCanvasElement | null = null;
-  let p: PLike | null = null;
 
   // runtime policy inputs
   let sceneLookupKey: SceneLookupKey = "start";
@@ -89,54 +68,39 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // live/ghost state storage (owned by runtime)
   const liveStates = new Map<string, LiveState>();
 
-  // ───────────────────────────────────────────────────────────
-  // init canvas + p facade
-  // ───────────────────────────────────────────────────────────
-  {
-    const canvas = document.createElement("canvas");
-    canvasEl = canvas;
-    applyCanvasStyle(canvasEl);
-    parentEl.appendChild(canvasEl);
+  const canvasEl = document.createElement("canvas");
+  applyCanvasStyle(canvasEl);
+  parentEl.appendChild(canvasEl);
 
-    const ctx = canvasEl.getContext("2d", { alpha: true });
-    if (!ctx) throw new Error("2D canvas context not available");
-    p = makeP(canvasEl, ctx);
-  }
+  const ctx = canvasEl.getContext("2d", { alpha: true });
+  if (!ctx) throw new Error("2D canvas context not available");
+  const p = makeP(canvasEl, ctx);
 
-  // ───────────────────────────────────────────────────────────
   // layout + caches
-  // ───────────────────────────────────────────────────────────
   const gridCache = createGridCache();
-  const paletteCache = createPaletteCache(VIVID_COLOR_STOPS);
+  const paletteCache = createPaletteCache();
   const cleanupResize = installResizeHandlers({
     parentEl,
-    canvasEl: canvasEl!,
-    p: p!,
+    canvasEl,
+    p,
     dprMode,
     resizeTo: () => resolveBounds(parentEl, opts.bounds),
     onAfterResize: () => {
       invalidateGridCache(gridCache);
-      if (p && hero.x == null) hero.x = Math.round(p.width * 0.5);
-      if (p && hero.y == null) hero.y = Math.round(p.height * 0.3);
     },
   });
 
-  // ───────────────────────────────────────────────────────────
   // shapes: registry (overrideable)
-  // ───────────────────────────────────────────────────────────
   const shapeRegistry: ShapeRegistry = opts.shapeRegistry ?? createDefaultShapeRegistry();
 
-  // ───────────────────────────────────────────────────────────
   // start loop
-  // ───────────────────────────────────────────────────────────
-  const ghostsRef = { current: [] as any[] }; // loop.ts will type this as Ghost[]; keep it strict there.
+  const ghostsRef = { current: [] as Ghost[] };
 
-  const frameId = `${mount}::${++ENGINE_SEQ}`;
+  const frameId = `${mount}::${String(++ENGINE_SEQ)}`;
 
   const ticker = createEngineTicker({
-    p: p!,
+    p,
     field,
-    hero,
     style,
     inputs,
     getSceneLookup: () => sceneLookupKey,
@@ -148,12 +112,9 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     ghostsRef,
     shapeRegistry,
     Z: Z_INDEX,
-    shapeKeyOfItem: defaultShapeKeyOfItem,
   });
 
-  // ───────────────────────────────────────────────────────────
   // stop + global instance registry
-  // ───────────────────────────────────────────────────────────
 
   let unregister: null | (() => void) = null;
   let didStop = false;
@@ -163,7 +124,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     didStop = true;
 
     try {
-      cleanupResize?.();
+      cleanupResize();
     } catch {}
 
     try {
@@ -175,7 +136,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     } catch {}
 
     try {
-      canvasEl?.remove?.();
+      canvasEl.remove();
     } catch {}
 
     try {
@@ -183,21 +144,10 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     } catch {}
   }
 
-  // ───────────────────────────────────────────────────────────
   // controls
-  // ───────────────────────────────────────────────────────────
 
-  function setInputs(args: any = {}) {
+  function setInputs(args: EngineInputsPayload = {}) {
     if (typeof args.liveAvg === "number") inputs.liveAvg = clamp01(args.liveAvg);
-    if ("condAvgs" in args) {
-      // Replace instead of merge to avoid stale per-condition values carrying over.
-      inputs.condAvgs = {} as import('./engine/state').CondAvgs;
-      if (args.condAvgs && typeof args.condAvgs === "object") {
-        for (const k of ["A", "B", "C", "D"] as const) {
-          if (typeof args.condAvgs[k] === "number") inputs.condAvgs[k] = clamp01(args.condAvgs[k]);
-        }
-      }
-    }
   }
 
   function setFieldItems(nextItems: EngineFieldItem[] = []) {
@@ -206,18 +156,16 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
       prevItems: field.items,
       nextItems: safeNextItems,
       liveStates,
-      nowMs: p ? p.millis() : performance.now(),
-      shapeKeyOfItem: defaultShapeKeyOfItem,
+      nowMs: p.millis(),
     });
 
-    field.epoch++;
     field.items = safeNextItems;
   }
 
-  function setFieldStyle(args: any = {}) {
+  function setFieldStyle(args: EngineFieldStyle = {}) {
     const { r, gradientRGBOverride, blend, perShapeScale, exposure, contrast, appearMs, exitMs } = args;
 
-    if (Number.isFinite(r) && r > 0) style.r = r;
+    if (typeof r === "number" && Number.isFinite(r) && r > 0) style.r = r;
 
     if ("gradientRGBOverride" in args) {
       style.gradientRGBOverride = gradientRGBOverride ?? { r: 255, g: 255, b: 255 };
@@ -231,33 +179,24 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
       style.perShapeScale = { ...style.perShapeScale, ...perShapeScale };
     }
 
-    if (Number.isFinite(appearMs) && appearMs >= 0) style.appearMs = appearMs | 0;
-    if (Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
+    if (typeof appearMs === "number" && Number.isFinite(appearMs) && appearMs >= 0) style.appearMs = appearMs | 0;
+    if (typeof exitMs === "number" && Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
     if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
     if (typeof args.isRealMobile === "boolean") style.isRealMobile = args.isRealMobile;
     if (typeof args.fog === "boolean") style.fog = args.fog;
 
     if (args.debug && typeof args.debug === "object") {
-      const d = args.debug as Partial<DebugFlags>;
+      const d = args.debug;
       if (typeof d.grid === "boolean") style.debug.grid = d.grid;
       if (typeof d.gridAlpha === "number") style.debug.gridAlpha = Math.max(0, Math.min(1, d.gridAlpha));
     }
   }
 
-  function setDebug(next: Partial<DebugFlags>) {
-    if (!next || typeof next !== "object") return;
-    if (typeof next.grid === "boolean") style.debug.grid = next.grid;
-    if (typeof next.gridAlpha === "number") style.debug.gridAlpha = Math.max(0, Math.min(1, next.gridAlpha));
-  }
-
   function setFieldVisible(v: boolean) {
-    field.visible = !!v;
-  }
-  function setHeroVisible(v: boolean) {
-    hero.visible = !!v;
+    field.visible = v;
   }
   function setVisibleCanvas(v: boolean) {
-    if (canvasEl?.style) canvasEl.style.opacity = v ? "1" : "0";
+    canvasEl.style.opacity = v ? "1" : "0";
   }
 
   /**
@@ -284,13 +223,11 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     setFieldItems,
     setFieldStyle,
     setFieldVisible,
-    setHeroVisible,
     setVisible: setVisibleCanvas,
     setSceneMode,
     setPaddingSpec,
     setBackgroundSpec,
     stop,
-    setDebug,
     get canvas() {
       return canvasEl;
     },

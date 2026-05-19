@@ -6,13 +6,14 @@ export function useMockBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets banner on mode transition
     if (!mockReadMode.runtimeFallback) setDismissed(false);
   }, [mockReadMode.runtimeFallback]);
 
   useEffect(() => {
     if (!mockReadMode.runtimeFallback || mockReadMode.forced || dismissed) return;
-    const timer = window.setTimeout(() => setDismissed(true), 10000);
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => { setDismissed(true); }, 10000);
+    return () => { window.clearTimeout(timer); };
   }, [dismissed, mockReadMode.forced, mockReadMode.runtimeFallback]);
 
   const quotaResetMonth = useMemo(() => {

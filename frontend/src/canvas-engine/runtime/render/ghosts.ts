@@ -1,29 +1,27 @@
 // src/canvas-engine/runtime/render/ghosts.ts
 
-import type { EngineFieldItem } from "../types";
+import type { EngineFieldItem } from "../engine/field";
+import type { RuntimeShapeOptions } from "../shapes/types";
 import { clamp01, easeOutCubic } from "../util/easing";
-import type { PLike } from "../p/makeP";
 
-export type Ghost = {
+export interface Ghost {
   dieAtMs: number;
   x: number;
   y: number;
   shape: string;
-  footprint?: any;
-};
+  footprint?: EngineFieldItem["footprint"];
+}
 
 export function drawGhosts(params: {
-  p: PLike;
-  nowMs: number;              // uses p.millis() result from caller
+  nowMs: number;
   ghosts: Ghost[];
   exitMs: number;
-  baseShared: any;
+  baseShared: RuntimeShapeOptions;
   perShapeScale: Record<string, number> | undefined;
   baseR: number;
-  renderOne: (it: EngineFieldItem, rEff: number, shared: any, rootAppearK: number) => void;
+  renderOne: (it: EngineFieldItem, rEff: number, shared: RuntimeShapeOptions, rootAppearK: number) => void;
 }): Ghost[] {
   const {
-    p,
     nowMs,
     ghosts,
     exitMs,
@@ -53,7 +51,7 @@ export function drawGhosts(params: {
 
     const scale = perShapeScale?.[it.shape] ?? 1;
     const rEff = baseR * scale;
-    const shared = { ...baseShared, footprint: g.footprint, alpha: Math.round(235 * k) };
+    const shared: RuntimeShapeOptions = { ...baseShared, footprint: g.footprint, alpha: Math.round(235 * k) };
 
     renderOne(it, rEff, shared, k);
     next.push(g);

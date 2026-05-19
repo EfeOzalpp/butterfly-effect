@@ -1,4 +1,4 @@
-// src/canvas-engine/runtime/layout/padding.ts
+// src/canvas-engine/runtime/geometry/padding.ts
 
 import { CANVAS_PADDING } from "../../adjustable-rules/canvas-padding/index";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
@@ -20,6 +20,6 @@ export function getPaddingSpecForState(
 ): CanvasPaddingSpec {
   if (override) return override;
 
-  const byDevice = CANVAS_PADDING[sceneLookupKey] ?? CANVAS_PADDING.start;
+  const byDevice = CANVAS_PADDING[sceneLookupKey];
   return resolvePaddingSpec(widthPx, byDevice);
 }

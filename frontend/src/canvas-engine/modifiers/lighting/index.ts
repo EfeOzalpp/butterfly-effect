@@ -168,14 +168,7 @@ function rgbaString(color: RGB, alpha: number): string {
   return `rgba(${String(color.r)},${String(color.g)},${String(color.b)},${String(clamp01(alpha))})`;
 }
 
-export function mixRgb(base: RGB, target: RGB, k: number): RGB {
-  const kk = clamp01(k);
-  return {
-    r: Math.round(base.r + (target.r - base.r) * kk),
-    g: Math.round(base.g + (target.g - base.g) * kk),
-    b: Math.round(base.b + (target.b - base.b) * kk),
-  };
-}
+export { mixRgb } from "../../shared/math";
 
 export function createSceneLightContext(opts: LightContextOpts): SceneLightContext | null {
   const { lightItem, darkMode, canvasW, canvasH, ...projection } = opts;

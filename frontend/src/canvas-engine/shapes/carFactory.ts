@@ -1,4 +1,4 @@
-// src/canvas-engine/shape/carFactory.js
+// src/canvas-engine/shapes/carFactory.ts
 import {
   clamp01,
   val,
@@ -11,17 +11,126 @@ import {
   particleSizePerspectiveScale,
   particleMotionPerspectiveScale,
 } from "../modifiers/index";
+import type { RGB } from "../modifiers/index";
 
-import {
-  drawCarAsset,
-  fitScaleToRectWidth,
-  beginFitScale,
-  endFitScale,
-} from './car';
+import { drawCarAsset } from "./car";
+import type { CarVariant } from "./car";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
+import { applyExposureContrast } from "./shared/color";
+import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
+import { finiteNumber } from "./shared/numbers";
+import { seeded01 } from "./shared/random";
 
-/* palette */
-export const CAR_FACTORY_BASE_PALETTE = {
-  grass:    { r: 120, g: 180, b: 110 },
+type NumberRange = [number, number];
+
+interface CarFactoryPalette extends ShapePalette {
+  grass: RGB;
+  building: RGB;
+  frame: RGB;
+  window: RGB;
+  chimney: RGB;
+  roof: RGB;
+  solarPanel: RGB;
+}
+
+interface SmokeOverrides {
+  count?: number;
+  sizeMin?: number;
+  sizeMax?: number;
+  lifeMin?: number;
+  lifeMax?: number;
+  speedMin?: number;
+  speedMax?: number;
+  gravity?: number;
+  drag?: number;
+  spreadAngle?: number;
+  alpha?: number;
+}
+
+interface CarFactoryOptions extends ShapeDrawOptions<CarFactoryPalette> {
+  smokeOverrides?: SmokeOverrides;
+  carVariantList?: readonly CarVariant[];
+  carVariantCycleMs?: number;
+  carVariantFadeMs?: number;
+}
+
+interface CarFactoryTuning {
+  blendK: NumberRange;
+  grass: {
+    colorBlend: NumberRange;
+    satRange: NumberRange;
+  };
+  grassHk: number;
+  grassTopRadiusK: number;
+  slabHeightK: number;
+  factoryWFrac: number;
+  gapPx: number;
+  framePadK: number;
+  windowPadK: number;
+  frameRadiusPx: number;
+  windowRadiusPx: number;
+  windowStrokePx: NumberRange;
+  carSidePadK: number;
+  carScaleBoost: number;
+  chimWFrac: number;
+  chimTopNarrowK: number;
+  chimRadiusPx: number;
+  chimHeightFrac: number;
+  bodyScaleXRange: NumberRange;
+  chimScaleYRange: NumberRange;
+  roofHk: number;
+  roofOverhangK: number;
+  roofRadiusPx: number;
+  smoke: {
+    count: NumberRange;
+    sizeMin: NumberRange;
+    sizeMax: NumberRange;
+    lifeMin: NumberRange;
+    lifeMax: NumberRange;
+    alpha: NumberRange;
+    dir: "up";
+    spreadAngle: NumberRange;
+    speedMin: NumberRange;
+    speedMax: NumberRange;
+    gravity: NumberRange;
+    drag: NumberRange;
+    jitterPos: NumberRange;
+    jitterAngle: NumberRange;
+    fadeInFrac: number;
+    fadeOutFrac: number;
+    edgeFadePx: { left: number; right: number; top: number; bottom: number };
+    sizeHz: number;
+    base: RGB;
+    blendK: NumberRange;
+    brightnessRange: NumberRange;
+    colWk: number;
+    colHk: number;
+  };
+  panels: {
+    count: number;
+    widthFracBase: number;
+    heightFracOfRoof: number;
+    sideMarginFrac: number;
+    gapFracOfPW: number;
+    cornerFrac: number;
+    tiltDeg: number;
+  };
+  chimCap: {
+    overhangPx: number;
+    thicknessPx: number;
+    radiusPx: number;
+    shadeK: number;
+    lipPx: number;
+    lipAlpha: number;
+  };
+  carVariantList: readonly CarVariant[];
+  carVariantCycleMs: number;
+  carVariantFadeMs: number;
+}
+
+// light mode
+const CAR_FACTORY_BASE_PALETTE: CarFactoryPalette = {
+  grass: { r: 120, g: 180, b: 110 },
   building: { r: 208, g: 210, b: 214 },
   frame:    { r: 180, g: 182, b: 188 },
   window:   { r: 220, g: 226, b: 236 },
@@ -30,7 +139,8 @@ export const CAR_FACTORY_BASE_PALETTE = {
   solarPanel:{ r: 180, g: 205, b: 235 },
 };
 
-export const CAR_FACTORY_DARK_PALETTE = {
+// dark mode
+const CAR_FACTORY_DARK_PALETTE: CarFactoryPalette = {
   grass: { r: 80, g: 100, b: 126 },
   building:  { r: 114, g: 133, b: 164 },
   frame:     { r: 99,  g: 115, b: 144 },
@@ -40,19 +150,8 @@ export const CAR_FACTORY_DARK_PALETTE = {
   solarPanel:{ r: 99,  g: 129, b: 180 },
 };
 
-function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
-  const e = Math.max(0.1, Math.min(3, exposure));
-  const k = Math.max(0.5, Math.min(2, contrast));
-  const adj = (v) => {
-    let x = (v / 255) * e;
-    x = (x - 0.5) * k + 0.5;
-    return Math.max(0, Math.min(1, x)) * 255;
-  };
-  return { r: Math.round(adj(rgb.r)), g: Math.round(adj(rgb.g)), b: Math.round(adj(rgb.b)) };
-}
-
 /** Clamp a val() result even if the range is decreasing (hi < lo). */
-function clampLerped(range, u) {
+function clampLerped(range: NumberRange, u: number): number {
   const lo = Math.min(range[0], range[1]);
   const hi = Math.max(range[0], range[1]);
   const v  = val(range, u);
@@ -60,12 +159,12 @@ function clampLerped(range, u) {
 }
 
 // small easing for crossfade/scale
-function smoothstep01(t) {
+function smoothstep01(t: number): number {
   const x = Math.max(0, Math.min(1, t));
   return x * x * (3 - 2 * x);
 }
 
-const CF = {
+const CF: CarFactoryTuning = {
   // General (non-grass) gradient blend strength (used with opts.gradientRGB)
   blendK: [0.3, 0.02],
 
@@ -174,13 +273,23 @@ const CF = {
   },
 
   // Car variant cycle + crossfade using shapeMods.scale (bottom-center)
-  carVariantList: ['suv', 'sedan', 'jeep'],
+  carVariantList: ["suv", "sedan", "jeep"],
   carVariantCycleMs: 3000,  // total time per variant
   carVariantFadeMs: 300,    // 0.3s fade-out and 0.3s fade-in
 };
 
-function rgba({r,g,b}, a=255){ return `rgba(${r},${g},${b},${a/255})`; }
-function roundedRectPath(ctx, x, y, w, h, r) {
+function rgba({ r, g, b }: RGB, a = 255): string {
+  return `rgba(${String(r)},${String(g)},${String(b)},${String(a / 255)})`;
+}
+
+function roundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+): void {
   const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
   ctx.moveTo(x + rr, y);
   ctx.arcTo(x + w, y,     x + w, y + h, rr);
@@ -189,42 +298,27 @@ function roundedRectPath(ctx, x, y, w, h, r) {
   ctx.arcTo(x,     y,     x + w, y,     rr);
   ctx.closePath();
 }
-function hash32(s) {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  h ^= h >>> 16;
-  h = Math.imul(h, 0x85ebca6b);
-  h ^= h >>> 13;
-  h = Math.imul(h, 0xc2b2ae35);
-  h ^= h >>> 16;
-  return h >>> 0;
-}
-function rand01(seed) {
-  let t = seed + 0x6D2B79F5;
-  t = Math.imul(t ^ (t >>> 15), 1 | t);
-  t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-  return (((t ^ (t >>> 14)) >>> 0) / 4294967296);
-}
 
-export function drawCarFactory(p, _x, _y, _r, opts = {}) {
-  const pal = opts?.palette ?? (opts?.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE);
-  const cell = opts?.cell, f = opts?.footprint;
-  const cellW = opts?.cellW ?? cell;
-  const cellH = opts?.cellH ?? cell;
+export function drawCarFactory(
+  p: ShapeCanvas,
+  _x: number,
+  _y: number,
+  _r: number,
+  opts: CarFactoryOptions = {}
+): void {
+  const pal = opts.palette ?? (opts.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE);
+  const cell = opts.cell, f = opts.footprint;
   if (!cell || !f) return;
-  const seedKey = (opts?.seedKey ?? opts?.seed) ?? `carFactory|${f.r0}:${f.c0}|${f.w}x${f.h}`;
+  const seedKey: ShapeSeed = (opts.seedKey ?? opts.seed) ?? `carFactory|${String(f.r0)}:${String(f.c0)}|${String(f.w)}x${String(f.h)}`;
 
   // Sprite mode: auto when fitToFootprint (texture path) or explicit override.
   const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
 
-  const u   = clamp01(opts?.liveAvg ?? 0.5);
-  const a   = Number.isFinite(opts.alpha) ? opts.alpha : 235;
-  const ex  = Number.isFinite(opts.exposure) ? opts.exposure : 1;
-  const ct  = Number.isFinite(opts.contrast) ? opts.contrast : 1;
-  const tMs = typeof opts.timeMs === 'number' ? opts.timeMs : p.millis?.();
+  const u   = clamp01(opts.liveAvg ?? 0.5);
+  const a   = finiteNumber(opts.alpha, 235);
+  const ex  = finiteNumber(opts.exposure, 1);
+  const ct  = finiteNumber(opts.contrast, 1);
+  const tMs = typeof opts.timeMs === 'number' ? opts.timeMs : p.millis();
   const particleScale = particleSizePerspectiveScale(f, opts);
   const motionScale = particleMotionPerspectiveScale(f, opts);
 
@@ -250,7 +344,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
   const kBlendGeneral = val(CF.blendK, u);
 
   // General tint (applies global gradient to non-grass shapes)
-  const tintGeneral = (base) => {
+  const tintGeneral = (base: RGB): RGB => {
     const mixed = opts.gradientRGB ? blendRGB(base, opts.gradientRGB, kBlendGeneral) : base;
     return applyExposureContrast(mixed, ex, ct);
   };
@@ -261,19 +355,19 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
     grass = blendRGB(grass, opts.gradientRGB, val(CF.grass.colorBlend, u));
   }
   grass = clampSaturation(grass, CF.grass.satRange[0], CF.grass.satRange[1], 1);
-  if (opts?.darkMode) grass = clampBrightness(grass, 0.36, 0.54);
+  if (opts.darkMode) grass = clampBrightness(grass, 0.36, 0.54);
   grass = applyExposureContrast(grass, ex, ct);
 
   // Non-grass colors still use general gradient
-  let wall       = tintGeneral(pal.building);
-  let frameRGB   = tintGeneral(pal.frame);
-  let glassBase  = tintGeneral(pal.window);
-  let chimneyRGB = tintGeneral(pal.chimney);
-  let roofRGB    = tintGeneral(pal.roof);
+  const wall       = tintGeneral(pal.building);
+  const frameRGB   = tintGeneral(pal.frame);
+  const glassBase  = tintGeneral(pal.window);
+  const chimneyRGB = tintGeneral(pal.chimney);
+  const roofRGB    = tintGeneral(pal.roof);
 
   // subtle blue tint for glass
   const blue = { r: 120, g: 170, b: 220 };
-  let glass = clampBrightness(blendRGB(glassBase, blue, 0.42), 0.80, 1.10);
+  const glass = clampBrightness(blendRGB(glassBase, blue, 0.42), 0.80, 1.10);
 
   const backdrop = applyExposureContrast(
     {
@@ -329,8 +423,6 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
     CF.windowStrokePx[0],
     Math.min(CF.windowStrokePx[1], cell * 0.025)
   );
-
-  const ctx = p.drawingContext;
 
   // liveAvg-lerped clamps — robust for decreasing ranges
   const bodyScaleX = clampLerped(CF.bodyScaleXRange, u);
@@ -401,7 +493,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
     let gravity  = val(CF.smoke.gravity, u) * motionScale;
     let drag     = val(CF.smoke.drag, u);
     let jPos     = val(CF.smoke.jitterPos, u) * particleScale;
-    let jAng     = val(CF.smoke.jitterAngle, u);
+    const jAng   = val(CF.smoke.jitterAngle, u);
     let spread   = val(CF.smoke.spreadAngle, u);
     const blendK = val(CF.smoke.blendK, u);
 
@@ -452,7 +544,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
         : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
     stepAndDrawPuffs(p, {
-      key: `factory-smoke:${seedKey}${isSprite ? ':spr' : ''}`,
+      key: `factory-smoke:${String(seedKey)}${isSprite ? ':spr' : ''}`,
       rect: { x: smokeX, y: smokeY, w: colW, h: colH },
       dir: 'up',
       spreadAngle: spread,
@@ -571,15 +663,16 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
       const cancelSX = 1 / bodyScaleX;
 
       // Variant cycle + crossfade using shapeMods.scale (anchor bottom-center)
-      const list = Array.isArray(opts.carVariantList) && opts.carVariantList.length > 0
-        ? opts.carVariantList
+      const configuredList = opts.carVariantList;
+      const list: readonly CarVariant[] = configuredList && configuredList.length > 0
+        ? configuredList
         : CF.carVariantList;
 
       const cycleMs = Math.max(1, opts.carVariantCycleMs ?? CF.carVariantCycleMs);
       const fadeMs  = Math.max(1, opts.carVariantFadeMs  ?? CF.carVariantFadeMs);
-      const cycleOffsetMs = Math.floor(rand01(hash32(`${seedKey}|car-cycle-offset`)) * cycleMs * list.length);
-      const carSeedBase = `${seedKey}|factory-car`;
-      const t       = (typeof tMs === 'number' ? tMs : (p.millis?.() || 0)) + cycleOffsetMs;
+      const cycleOffsetMs = Math.floor(seeded01(seedKey, "car-cycle-offset") * cycleMs * list.length);
+      const carSeedBase = `${String(seedKey)}|factory-car`;
+      const t       = tMs + cycleOffsetMs;
       const tick    = Math.floor(t / cycleMs);
       const phaseMs = t % cycleMs;
 
@@ -588,7 +681,7 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
       const curVar  = list[curIdx];
       const nxtVar  = list[nxtIdx];
 
-      const drawVariant = (variant, scaleK, alphaK, seedKey) => {
+      const drawVariant = (variant: CarVariant, scaleK: number, alphaK: number, variantSeedKey: ShapeSeed): void => {
         const env2 = applyShapeMods({
           p,
           x: cx,
@@ -615,14 +708,14 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
           liveAvg: u,
           useAppear: false,
           variant,
-          seedKey,
+          seedKey: variantSeedKey,
         });
         endFitScale(p);
         p.pop();
       };
 
       if (phaseMs < cycleMs - fadeMs) {
-        drawVariant(curVar, 1.0, 1.0, `${carSeedBase}|var:${curVar}:t${tick}`);
+        drawVariant(curVar, 1.0, 1.0, `${carSeedBase}|var:${curVar}:t${String(tick)}`);
       } else {
         const kLin = (phaseMs - (cycleMs - fadeMs)) / fadeMs; // 0..1
         const k = smoothstep01(kLin);
@@ -631,8 +724,8 @@ export function drawCarFactory(p, _x, _y, _r, opts = {}) {
         const outAlpha = 1 - k;
         const inAlpha  = k;
 
-        drawVariant(curVar, Math.max(0, outScale), Math.max(0, outAlpha), `${carSeedBase}|out:${curVar}:t${tick}`);
-        drawVariant(nxtVar, Math.max(0, inScale),  Math.max(0, inAlpha),  `${carSeedBase}|in:${nxtVar}:t${tick}`);
+        drawVariant(curVar, Math.max(0, outScale), Math.max(0, outAlpha), `${carSeedBase}|out:${curVar}:t${String(tick)}`);
+        drawVariant(nxtVar, Math.max(0, inScale),  Math.max(0, inAlpha),  `${carSeedBase}|in:${nxtVar}:t${String(tick)}`);
       }
     }
 

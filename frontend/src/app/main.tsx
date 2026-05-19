@@ -26,7 +26,7 @@ function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
 
   useEffect(() => {
-    const cb = () => setStart(true);
+    const cb = () => { setStart(true); };
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       window.requestIdleCallback(cb, { timeout: 1500 });
     } else {
@@ -62,12 +62,12 @@ const AppInner: React.FC = () => {
   // Idle prefetch of CanvasEntry while user is in the heavy viz
   useEffect(() => {
     if (typeof window === "undefined" || !vizVisible) return;
-    const prefetch = () => { import("../canvas-instances/OnboardingEntry"); };
+    const prefetch = () => { void import("../canvas-instances/OnboardingEntry"); };
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(prefetch, { timeout: 1500 });
     } else {
       const t = setTimeout(prefetch, 0);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(t); };
     }
   }, [vizVisible]);
 
@@ -100,7 +100,7 @@ const AppInner: React.FC = () => {
             type="button"
             className="mock-read-banner-close"
             aria-label="Dismiss demo data notice"
-            onClick={() => setDismissed(true)}
+            onClick={() => { setDismissed(true); }}
           >
             <svg
               width="100%"
@@ -155,7 +155,7 @@ const AppInner: React.FC = () => {
       )}
 
       {vizVisible && (
-        <div className={`graph-wrapper ${vizVisible ? "visible" : ""}`}>
+        <div className="graph-wrapper visible">
           <ErrorBoundary name="DataVisualization">
             <DataVisualization />
           </ErrorBoundary>

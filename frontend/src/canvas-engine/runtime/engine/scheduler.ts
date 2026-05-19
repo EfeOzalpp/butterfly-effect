@@ -1,25 +1,29 @@
 // src/canvas-engine/runtime/engine/scheduler.ts
 
-import type { Entry } from "../types";
-
 export type EngineTick = (now: number) => void;
 
-export type RegisterFrameOpts = {
+interface FrameEntry {
+  id: string;
+  tick: EngineTick;
+  priority: number;
+  fpsCap?: number;
+  lastTickMs: number;
+}
+
+export interface RegisterFrameOpts {
   priority?: number; // higher draws earlier (you can invert if you want)
   fpsCap?: number;   // optional, e.g. 30
-};
+}
 
-const entries = new Map<string, Entry>();
+const entries = new Map<string, FrameEntry>();
 
 let rafId: number | null = null;
-let sortedCache: Entry[] | null = null;
+let sortedCache: FrameEntry[] | null = null;
 
 function sortEntries() {
-  if (!sortedCache) {
-    sortedCache = Array.from(entries.values()).sort(
-      (a, b) => (b.priority - a.priority) || a.id.localeCompare(b.id)
-    );
-  }
+  sortedCache ??= Array.from(entries.values()).sort(
+    (a, b) => (b.priority - a.priority) || a.id.localeCompare(b.id)
+  );
   return sortedCache;
 }
 
@@ -68,7 +72,7 @@ function frame(now: number) {
       e.tick(now);
     } catch (err) {
       // Don't kill the scheduler because one engine threw.
-      // eslint-disable-next-line no-console
+       
       console.error(`[engine scheduler] tick failed for "${e.id}"`, err);
     }
   }
@@ -82,8 +86,8 @@ export function registerEngineFrame(
   tick: EngineTick,
   opts: RegisterFrameOpts = {}
 ) {
-  const priority = Number.isFinite(opts.priority) ? (opts.priority as number) : 0;
-  const fpsCap = Number.isFinite(opts.fpsCap) ? (opts.fpsCap as number) : undefined;
+  const priority = typeof opts.priority === "number" && Number.isFinite(opts.priority) ? opts.priority : 0;
+  const fpsCap = typeof opts.fpsCap === "number" && Number.isFinite(opts.fpsCap) ? opts.fpsCap : undefined;
 
   entries.set(id, {
     id,

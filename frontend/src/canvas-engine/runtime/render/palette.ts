@@ -1,16 +1,15 @@
 // src/canvas-engine/runtime/render/palette.ts
 
-import { Stop } from "../../modifiers/color-modifiers/stops";
 import { gradientColor, VIVID_COLOR_STOPS } from "../../modifiers/index";
 
-export type RGB = { r: number; g: number; b: number };
+export interface RGB { r: number; g: number; b: number }
 
-export type PaletteCache = {
+export interface PaletteCache {
   lastU: number;
   cachedGradient: RGB | null;
-};
+}
 
-export function createPaletteCache(VIVID_COLOR_STOPS: Stop[]): PaletteCache {
+export function createPaletteCache(): PaletteCache {
   return { lastU: NaN, cachedGradient: null };
 }
 

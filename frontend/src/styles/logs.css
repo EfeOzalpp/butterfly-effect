@@ -112,6 +112,6 @@
 }
 
 @media (min-width: 1024px) {
- .logs-table-wrap { max-height: calc(100svh - 14.4rem); }
+ .logs-table-wrap { max-height: calc(100svh - 12.8rem); }
  .logs-popover-shell { width: min(540px, calc(100vw - 3.2rem)); }
 }

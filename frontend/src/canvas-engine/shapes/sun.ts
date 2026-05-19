@@ -1,4 +1,4 @@
-// src/canvas-engine/shapes/sun.js
+// src/canvas-engine/shapes/sun.ts
 import {
   clamp01,
   val,
@@ -7,45 +7,68 @@ import {
   applyShapeMods,
   footprintToPx,
 } from "../modifiers/index";
+import type { RGB } from "../modifiers/index";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
+import { applyExposureContrast } from "./shared/color";
+import { finiteNumber } from "./shared/numbers";
 
-/* Exposure/contrast helper */
-function applyExposureContrast(rgb, exposure = 1, contrast = 1) {
-  const e = Math.max(0.1, Math.min(3, exposure));
-  const k = Math.max(0.5, Math.min(2, contrast));
-  const adj = (v) => {
-    let x = (v / 255) * e;
-    x = (x - 0.5) * k + 0.5;
-    return Math.max(0, Math.min(1, x)) * 255;
-  };
-  return { r: Math.round(adj(rgb.r)), g: Math.round(adj(rgb.g)), b: Math.round(adj(rgb.b)) };
+type NumberRange = [number, number];
+type SunPaletteTheme = "warm" | "cool";
+
+interface SunPalette extends ShapePalette {
+  default: RGB;
+  ray: RGB;
 }
 
-export const SUN_BASE_PALETTE = {
+interface MoonPalette {
+  default: RGB;
+}
+
+interface SunOptions extends ShapeDrawOptions<SunPalette> {
+  paletteTheme?: SunPaletteTheme;
+  sunBlend?: number;
+  sunGradientRGB?: RGB | null;
+  sunCss?: string;
+  oscAmp?: number;
+  oscSpeed?: number;
+  oscPhase?: number;
+  rayGapPx?: number;
+  rayLen?: number;
+  rayLenMult?: number;
+  rayThickness?: number;
+  rayThicknessMult?: number;
+  rayCount?: number;
+}
+
+function rgba({ r, g, b }: RGB, alpha01: number): string {
+  return `rgba(${String(r)},${String(g)},${String(b)},${String(alpha01)})`;
+}
+
+// light mode
+const SUN_BASE_PALETTE: SunPalette = {
   default: { r: 255, g: 196, b: 60 },
   ray:     { r: 255, g: 140, b: 40 },
 };
 
-export const SUN_DARK_PALETTE = {
+// dark mode
+const SUN_DARK_PALETTE: SunPalette = {
   default: { r: 140, g: 124, b: 46 },
   ray:     { r: 140, g: 88,  b: 31 },
 };
 
-export const SUN_WARM_PALETTE = {
+const SUN_WARM_PALETTE: SunPalette = {
   default: { r: 255, g: 188, b: 44  },
   ray:     { r: 248, g: 118, b: 26  },
 };
 
-export const SUN_COOL_PALETTE = {
+const SUN_COOL_PALETTE: SunPalette = {
   default: { r: 255, g: 222, b: 128 },
   ray:     { r: 248, g: 180, b: 80  },
 };
 
-export const MOON_DARK_PALETTE = {
+const MOON_DARK_PALETTE: MoonPalette = {
   default: { r: 195, g: 208, b: 228 }, // cool silver-blue
 };
-
-const SUN_BASE = SUN_BASE_PALETTE.default;
-const SUN_RAY  = SUN_BASE_PALETTE.ray;
 
 const SUN = {
   colorBlend: [0.30, 0.00],
@@ -60,7 +83,7 @@ const SUN = {
   // “base” core diameter and the older anchor (kept so visuals stay familiar)
   coreDiamK:       [0.6, 0.45],
   rayAnchorDiamK:  [0.46, 0.28],
-};
+} satisfies Record<string, NumberRange>;
 
 /**
  * drawSun(p, x, y, r, opts)
@@ -83,8 +106,17 @@ const SUN = {
  * - rayCount         (integer)
  * - coreScaleMult    (number)         — multiplies core base diameter (before osc)
  */
-function drawCrescentMoon(p, x, y, r, opts, t, ex, ct) {
-  const u = clamp01(opts?.liveAvg ?? 0.5);
+function drawCrescentMoon(
+  p: ShapeCanvas,
+  x: number,
+  y: number,
+  r: number,
+  opts: SunOptions,
+  t: number,
+  ex: number,
+  ct: number
+): void {
+  const u = clamp01(opts.liveAvg ?? 0.5);
 
   let moonTint = MOON_DARK_PALETTE.default;
   if (opts.gradientRGB) moonTint = blendRGB(moonTint, opts.gradientRGB, 0.08);
@@ -101,7 +133,7 @@ function drawCrescentMoon(p, x, y, r, opts, t, ex, ct) {
   const m = applyShapeMods({
     p, x, y, r: coreBase,
     opts: {
-      alpha: Number.isFinite(opts.alpha) ? opts.alpha : 235,
+      alpha: finiteNumber(opts.alpha, 235),
       timeMs: opts.timeMs,
       liveAvg: opts.liveAvg,
       rootAppearK: opts.rootAppearK,
@@ -149,30 +181,35 @@ function drawCrescentMoon(p, x, y, r, opts, t, ex, ct) {
   ctx.arc(0, 0, R, moonTop, moonBot, true);   // outer limb: sweep left (lit) side
   ctx.arc(d, 0, R, shadBot, shadTop, false);  // inner limb: shadow boundary
   ctx.closePath();
-  ctx.fillStyle = `rgba(${pulsed.r},${pulsed.g},${pulsed.b},${alpha / 255})`;
+  ctx.fillStyle = rgba(pulsed, alpha / 255);
   ctx.fill();
 
   ctx.restore();
   p.pop();
 }
 
-export function drawSun(p, xIn, yIn, rIn, opts = {}) {
-  const pal = opts?.palette ?? (opts?.darkMode ? SUN_DARK_PALETTE
-    : opts?.paletteTheme === 'warm' ? SUN_WARM_PALETTE
-    : opts?.paletteTheme === 'cool' ? SUN_COOL_PALETTE
+export function drawSun(
+  p: ShapeCanvas,
+  xIn: number,
+  yIn: number,
+  rIn: number,
+  opts: SunOptions = {}
+): void {
+  const pal = opts.palette ?? (opts.darkMode ? SUN_DARK_PALETTE
+    : opts.paletteTheme === 'warm' ? SUN_WARM_PALETTE
+    : opts.paletteTheme === 'cool' ? SUN_COOL_PALETTE
     : SUN_BASE_PALETTE);
-  const u = clamp01(opts?.liveAvg ?? 0.5);
-  const t = ((typeof opts?.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
+  const u = clamp01(opts.liveAvg ?? 0.5);
+  const t = ((typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
 
-  const ex = typeof opts?.exposure === 'number' ? opts.exposure : 1;
-  const ct = typeof opts?.contrast === 'number' ? opts.contrast : 1;
+  const ex = finiteNumber(opts.exposure, 1);
+  const ct = finiteNumber(opts.contrast, 1);
 
   // allow footprint fit (convenience for grid users)
   let x = xIn, y = yIn, r = rIn;
   if (opts.fitToFootprint && opts.cell && opts.footprint) {
-    const { r0, c0, w, h } = opts.footprint;
+    const { c0, w } = opts.footprint;
     const cellW = opts.cellW ?? opts.cell;
-    const cellH = opts.cellH ?? opts.cell;
     const { y: fpY, h: fpH } = footprintToPx(opts.footprint, opts);
     const cx = c0 * cellW + (w * cellW) / 2;
     const cy = fpY + fpH / 2;
@@ -181,7 +218,7 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
   }
 
   // Dark mode → crescent moon instead of sun
-  if (opts?.darkMode) {
+  if (opts.darkMode) {
     drawCrescentMoon(p, x, y, r, opts, t, ex, ct);
     return;
   }
@@ -195,7 +232,7 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
 
   // core tint
   let baseTint = pal.default;
-  if (typeof opts?.sunCss === 'string' && opts.sunCss.trim().length > 0) {
+  if (typeof opts.sunCss === 'string' && opts.sunCss.trim().length > 0) {
     const c = p.color(opts.sunCss);
     baseTint = { r: p.red(c), g: p.green(c), b: p.blue(c) };
   } else if (opts.sunGradientRGB) {
@@ -216,8 +253,6 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
 
   // base sizes (core + anchor), with explicit override multiplier for the core
   const coreBase = r * val(SUN.coreDiamK, u) * (opts.coreScaleMult ?? 5);
-  const anchorBase = r * val(SUN.rayAnchorDiamK, u); // older anchor measure (kept for feel)
-
   // default derived sizes for rays
   const rayLenBaseRaw = r * val(SUN.rayLenK, u);
   const rayLenBase = Math.max(0,
@@ -236,7 +271,7 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
   const m = applyShapeMods({
     p, x, y, r: coreBase,
     opts: {
-      alpha: Number.isFinite(opts.alpha) ? opts.alpha : 235,
+      alpha: finiteNumber(opts.alpha, 235),
       timeMs: opts.timeMs,
       liveAvg: opts.liveAvg,
       rootAppearK: opts.rootAppearK,
@@ -269,7 +304,7 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
 
   // rays: start at (live core radius) + fixed pixel gap (no breathing of the gap)
   const coreRadiusNow = m.r * 0.5;
-  const rayGapPx = Number.isFinite(opts.rayGapPx)
+  const rayGapPx = typeof opts.rayGapPx === "number" && Number.isFinite(opts.rayGapPx)
     ? opts.rayGapPx
     : Math.max(8, Math.round(rayThickness * 1.6)); // default gap ties gently to stroke
 
@@ -290,8 +325,8 @@ export function drawSun(p, xIn, yIn, rIn, opts = {}) {
     const y2 = Math.sin(theta) * endR;
 
     const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-    grad.addColorStop(0, `rgba(${pulsedCore.r},${pulsedCore.g},${pulsedCore.b},${a})`);
-    grad.addColorStop(1, `rgba(${pulsedRay.r},${pulsedRay.g},${pulsedRay.b},${a})`);
+    grad.addColorStop(0, rgba(pulsedCore, a));
+    grad.addColorStop(1, rgba(pulsedRay, a));
 
     ctx.strokeStyle = grad;
     ctx.beginPath();

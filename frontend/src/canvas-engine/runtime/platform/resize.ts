@@ -38,8 +38,8 @@ export function installResizeHandlers(opts: {
     p.pixelDensity(nextDpr);
     p.resizeCanvas(w, h);
 
-    canvasEl.style.width = w + "px";
-    canvasEl.style.height = h + "px";
+    canvasEl.style.width = `${String(w)}px`;
+    canvasEl.style.height = `${String(h)}px`;
 
     applyCanvasStyle(canvasEl);
 
@@ -54,7 +54,7 @@ export function installResizeHandlers(opts: {
   // Observe parent size changes
   let ro: ResizeObserver | null = null;
   if (typeof ResizeObserver !== "undefined") {
-    ro = new ResizeObserver(() => resizeThrottled());
+    ro = new ResizeObserver(() => { resizeThrottled(); });
     ro.observe(parentEl);
   }
 

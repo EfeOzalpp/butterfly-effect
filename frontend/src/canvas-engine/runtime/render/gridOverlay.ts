@@ -4,7 +4,7 @@ import type { PLike } from "../p/makeP";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
 import type { GridMetrics } from "../../grid-layout/gridMetrics";
 
-export type GridOverlayParams = {
+export interface GridOverlayParams {
   cellW: number;
   cellH: number;
   ox: number;
@@ -13,13 +13,13 @@ export type GridOverlayParams = {
   cols: number;
   usedRows: number;
   metrics: GridMetrics;
-};
+}
 
-export type GridOverlayDebug = {
+export interface GridOverlayDebug {
   enabled: boolean;
   gridAlpha?: number;
   forbiddenAlpha?: number;
-};
+}
 
 export function drawGridOverlay(
   p: PLike,

@@ -1,14 +1,14 @@
 import { createContext, useContext } from "react";
 import type { Mode } from "../types";
 
-export type QuestionnaireNavState = {
+export interface QuestionnaireNavState {
   step: number;
   total: number;
   nextLabel: string;
   nextDisabled: boolean;
 };
 
-export type UiState = {
+export interface UiState {
   // Whether the 3D dot graph (DataVisualization) is mounted and visible
   vizVisible: boolean;
   // Show the 3D dot graph — called after survey submit or entering observer mode

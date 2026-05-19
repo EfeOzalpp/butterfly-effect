@@ -16,7 +16,7 @@ export function removeSessionItems(keys: string[]) {
 }
 
 export function readStoredMode(defaultMode: Mode): Mode {
-  const saved = getSessionItem("be.mode") as Mode | null;
+  const saved = getSessionItem("be.mode");
   return saved === "absolute" || saved === "relative" ? saved : defaultMode;
 }
 

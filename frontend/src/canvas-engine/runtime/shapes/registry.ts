@@ -1,7 +1,8 @@
 // src/canvas-engine/runtime/shapes/registry.ts
 
 import type { PLike } from "../p/makeP";
-import type { EngineFieldItem } from "../types";
+import type { EngineFieldItem } from "../engine/field";
+import type { RuntimeShapeOptions } from "./types";
 import { deviceType } from "../../shared/responsiveness";
 
 // JS in repo today
@@ -19,9 +20,9 @@ import {
   drawTrees,
 } from "../../shapes/index";
 
-export type DrawFn = (p: PLike, it: EngineFieldItem, rEff: number, opts: any) => void;
+export type DrawFn = (p: PLike, it: EngineFieldItem, rEff: number, opts: RuntimeShapeOptions) => void;
 
-export function createRegistry<T extends Record<string, DrawFn>>(entries: T) {
+export function createRegistry(entries: Record<string, DrawFn>) {
   return new Map<string, DrawFn>(Object.entries(entries));
 }
 
@@ -35,25 +36,25 @@ export function createDefaultShapeRegistry(): ShapeRegistry {
       const hideFrac = dt === "mobile" ? 0.56 : dt === "tablet" ? 0.52 : 0.5;
       const hideBucketT = dt === "mobile" ? 0.72 : dt === "tablet" ? 0.66 : 0.60;
 
-      drawSnow(p2 as any, it.x, it.y, rEff, {
+      drawSnow(p2, it.x, it.y, rEff, {
         ...opts,
         footprint: it.footprint,
-        usedRows: (opts as any)?.usedRows,
+        usedRows: opts.usedRows,
         hideGroundAboveFrac: hideFrac,
         hideGroundBelowBucketT: hideBucketT,
         showGround: true,
       });
     },
 
-    house: (p2, it, rEff, opts) => drawHouse(p2 as any, it.x, it.y, rEff, opts),
-    power: (p2, it, rEff, opts) => drawPower(p2 as any, it.x, it.y, rEff, opts),
-    villa: (p2, it, rEff, opts) => drawVilla(p2 as any, it.x, it.y, rEff, opts),
-    carFactory: (p2, it, rEff, opts) => drawCarFactory(p2 as any, it.x, it.y, rEff, opts),
-    bus: (p2, it, rEff, opts) => drawBus(p2 as any, it.x, it.y, rEff, opts),
-    trees: (p2, it, rEff, opts) => drawTrees(p2 as any, it.x, it.y, rEff, opts),
-    car: (p2, it, rEff, opts) => drawCar(p2 as any, it.x, it.y, rEff, opts),
-    sea: (p2, it, rEff, opts) => drawSea(p2 as any, it.x, it.y, rEff, opts),
-    sun: (p2, it, rEff, opts) => drawSun(p2 as any, it.x, it.y, rEff, opts),
-    clouds: (p2, it, rEff, opts) => drawClouds(p2 as any, it.x, it.y, rEff, opts),
+    house: (p2, it, rEff, opts) => { drawHouse(p2, it.x, it.y, rEff, opts); },
+    power: (p2, it, rEff, opts) => { drawPower(p2, it.x, it.y, rEff, opts); },
+    villa: (p2, it, rEff, opts) => { drawVilla(p2, it.x, it.y, rEff, opts); },
+    carFactory: (p2, it, rEff, opts) => { drawCarFactory(p2, it.x, it.y, rEff, opts); },
+    bus: (p2, it, rEff, opts) => { drawBus(p2, it.x, it.y, rEff, opts); },
+    trees: (p2, it, rEff, opts) => { drawTrees(p2, it.x, it.y, rEff, opts); },
+    car: (p2, it, rEff, opts) => { drawCar(p2, it.x, it.y, rEff, opts); },
+    sea: (p2, it, rEff, opts) => { drawSea(p2, it.x, it.y, rEff, opts); },
+    sun: (p2, it, rEff, opts) => { drawSun(p2, it.x, it.y, rEff, opts); },
+    clouds: (p2, it, rEff, opts) => { drawClouds(p2, it.x, it.y, rEff, opts); },
   });
 }

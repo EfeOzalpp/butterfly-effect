@@ -32,26 +32,26 @@ function resolveBackgroundSpec(
   sceneLookup: SceneLookupKey,
   override: BackgroundSpec | null
 ): BackgroundSpec {
-  return override ?? BACKGROUNDS[sceneLookup] ?? BACKGROUNDS.start;
+  return override ?? BACKGROUNDS[sceneLookup];
 }
 
 export function drawFogOverlay(
   p: PLike,
   sceneLookup: SceneLookupKey,
   override: BackgroundSpec | null = null,
-  alpha: number = 1,
-  liveAvg: number = 0.5,
+  alpha = 1,
+  liveAvg = 0.5,
   anchors?: BackgroundAnchorContext
 ) {
   const spec = resolveBackgroundSpec(sceneLookup, override);
   const overlay = spec.overlay;
   if (!overlay || overlay.kind === "solid") return;
 
-  const gradOverlay = overlay as RadialGradientSpec | LinearGradientSpec;
+  const gradOverlay = overlay;
   const hasFog = gradOverlay.stops.some((s) => s.fog);
   if (!hasFog) return;
 
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
   const t = p.millis() / 1000;
 
   type GradStop = (typeof gradOverlay.stops)[number];
@@ -60,7 +60,7 @@ export function drawFogOverlay(
     const resolved = resolveStopColor(stop.rgba, stop.liveBlend, liveAvg);
     const parsed = parseCssColor(resolved);
     if (!parsed) return "rgba(0,0,0,0)";
-    return `rgba(${parsed.r}, ${parsed.g}, ${parsed.b}, ${clamp01(stop.fog.opacity)})`;
+    return `rgba(${String(parsed.r)}, ${String(parsed.g)}, ${String(parsed.b)}, ${String(clamp01(stop.fog.opacity))})`;
   }
 
   let g: CanvasGradient;
@@ -112,7 +112,7 @@ export function drawFogOverlay(
     const centerY = fogK * p.height;
 
     stepAndDrawParticles(p, {
-      key: `fog-foliage:${sceneLookup}:${i}`,
+      key: `fog-foliage:${sceneLookup}:${String(i)}`,
       rect: { x: 0, y: centerY - bandH * 0.5, w: p.width, h: bandH },
       mode: "dot",
       spawnMode: "stratified",
@@ -142,13 +142,13 @@ export function drawBackground(
   p: PLike,
   sceneLookup: SceneLookupKey,
   override: BackgroundSpec | null = null,
-  alpha: number = 1,
-  liveAvg: number = 0.5,
+  alpha = 1,
+  liveAvg = 0.5,
   skipStars = false,
   anchors?: BackgroundAnchorContext
 ) {
   const spec = resolveBackgroundSpec(sceneLookup, override);
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
 
   if (alpha >= 1) {
     p.background(spec.base);
@@ -220,12 +220,12 @@ export function drawBackgroundStarsOnly(
   p: PLike,
   sceneLookup: SceneLookupKey,
   override: BackgroundSpec | null = null,
-  alpha: number = 1,
-  liveAvg: number = 0.5
+  alpha = 1,
+  liveAvg = 0.5
 ) {
   const spec = resolveBackgroundSpec(sceneLookup, override);
   if (!spec.stars) return;
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
   ctx.save();
   ctx.globalAlpha = alpha;
   drawStars(p, ctx, spec.stars, liveAvg);
@@ -248,17 +248,24 @@ export function createBgCache() {
     const w = p.width;
     const h = p.height;
     const liveAvgQ = Math.round(liveAvg * 100);
-    const key = `${w}|${h}|${sceneLookup}|${liveAvgQ}|${backgroundAnchorCacheKey(anchors)}`;
+    const key = [
+      String(w),
+      String(h),
+      sceneLookup,
+      String(liveAvgQ),
+      backgroundAnchorCacheKey(anchors),
+    ].join("|");
 
-    if (!offscreen || offscreen.width !== w || offscreen.height !== h) {
-      if (!offscreen) offscreen = document.createElement("canvas");
+    if (offscreen?.width !== w || offscreen.height !== h) {
+      offscreen ??= document.createElement("canvas");
       offscreen.width = w;
       offscreen.height = h;
       cacheKey = "";
     }
 
     if (key !== cacheKey || override !== lastOverride) {
-      const offCtx = offscreen.getContext("2d")!;
+      const offCtx = offscreen.getContext("2d");
+      if (!offCtx) throw new Error("2D canvas context not available");
       offCtx.clearRect(0, 0, w, h);
       const fakeP = {
         drawingContext: offCtx,
@@ -275,7 +282,7 @@ export function createBgCache() {
       lastOverride = override;
     }
 
-    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    const ctx = p.drawingContext;
     ctx.drawImage(offscreen, 0, 0);
   };
 }

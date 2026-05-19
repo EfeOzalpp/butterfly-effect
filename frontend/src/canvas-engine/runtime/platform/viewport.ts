@@ -21,8 +21,8 @@ export function resolvePixelDensity(mode: DprMode) {
 }
 
 export function getViewportSize() {
-  const vv = typeof window !== "undefined" ? (window as any).visualViewport : null;
-  if (vv && vv.width && vv.height) return { w: Math.round(vv.width), h: Math.round(vv.height) };
+  const vv = typeof window !== "undefined" ? window.visualViewport : null;
+  if (vv?.width && vv.height) return { w: Math.round(vv.width), h: Math.round(vv.height) };
 
   const w = Math.round(window.innerWidth || document.documentElement.clientWidth || 0);
   const h = Math.round(window.innerHeight || document.documentElement.clientHeight || 0);

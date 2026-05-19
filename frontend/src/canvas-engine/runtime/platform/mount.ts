@@ -3,7 +3,7 @@
 export type EngineLayoutMode = "fixed" | "inherit" | "auto";
 
 export function ensureMount(mount: string, zIndex?: number, layout: EngineLayoutMode = "fixed") {
-  let el = document.querySelector(mount) as HTMLElement | null;
+  let el = document.querySelector<HTMLElement>(mount);
   const existed = !!el;
 
   if (!el) {
@@ -19,25 +19,24 @@ export function ensureMount(mount: string, zIndex?: number, layout: EngineLayout
   const mode: EngineLayoutMode = layout === "auto" ? (existed ? "inherit" : "fixed") : layout;
 
   if (mode === "fixed") {
-    el.style.zIndex = String(Number.isFinite(zIndex as number) ? zIndex : 2);
+    el.style.zIndex = String(typeof zIndex === "number" && Number.isFinite(zIndex) ? zIndex : 2);
   } else {
     // inherit: don't stomp geometry; just ensure we can absolutely position the canvas
     const pos = getComputedStyle(el).position;
-    if (pos === "static" || !pos) el.style.position = "relative";
+    if (pos === "static" || pos === "") el.style.position = "relative";
     // zIndex only matters if the container participates in stacking; set only if asked
-    if (Number.isFinite(zIndex as number)) el.style.zIndex = String(zIndex);
+    if (typeof zIndex === "number" && Number.isFinite(zIndex)) el.style.zIndex = String(zIndex);
   }
 
   el.style.pointerEvents = "none";
   el.style.userSelect = "none";
-  (el.style as any).webkitTapHighlightColor = "transparent";
+  el.style.setProperty("-webkit-tap-highlight-color", "transparent");
   el.classList.add("be-canvas-layer");
 
   return el;
 }
 
 export function applyCanvasStyle(el: HTMLCanvasElement) {
-  if (!el?.style) return;
   el.style.position = "absolute";
   el.style.inset = "0";
   el.style.zIndex = "0";

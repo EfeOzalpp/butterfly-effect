@@ -5,7 +5,7 @@ import { useUiFlow } from "../app/state/ui-context";
 import { EngineHost } from "../canvas-engine/EngineHost";
 
 export default function CanvasEntry({ visible = true }: { visible?: boolean }) {
-  const { liveAvg, allocAvg, condAvgs, reservedFootprints } = useCanvasRuntime();
+  const { liveAvg, allocAvg, reservedFootprints } = useCanvasRuntime();
   const { questionnaireOpen } = useUiFlow();
 
   return (
@@ -18,7 +18,6 @@ export default function CanvasEntry({ visible = true }: { visible?: boolean }) {
         liveAvg={liveAvg}
         allocAvg={allocAvg}
         questionnaireOpen={questionnaireOpen}
-        condAvgs={condAvgs}
         reservedFootprints={reservedFootprints}
       />
     </div>

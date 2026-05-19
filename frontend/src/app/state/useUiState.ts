@@ -26,7 +26,7 @@ export default function useUiState() {
     () => !!(getSessionItem('be.mySection') && getSessionItem('be.myEntryId'))
   );
 
-  const [questionnaireOpen, setQuestionnaireOpen] = useState<boolean>(false);
+  const [questionnaireOpen, _setQuestionnaireOpen] = useState<boolean>(false);
   const [sectionOpen, setSectionOpen] = useState<boolean>(false);
   const [cityPanelOpen, setCityPanelOpen] = useState<boolean>(false);
   const [questionnaireNav, _setQuestionnaireNav] = useState<QuestionnaireNavState>(
@@ -50,15 +50,18 @@ export default function useUiState() {
     setQuestionnaireAdvanceTick(0);
   }, []);
 
-  useEffect(() => {
-    if (!questionnaireOpen && cityPanelOpen) setCityPanelOpen(false);
-    if (!questionnaireOpen) resetQuestionnaireNav();
-  }, [questionnaireOpen, cityPanelOpen, resetQuestionnaireNav]);
+  const setQuestionnaireOpen = useCallback((v: boolean) => {
+    _setQuestionnaireOpen(v);
+    if (!v) {
+      setCityPanelOpen(false);
+      resetQuestionnaireNav();
+    }
+  }, [resetQuestionnaireNav]);
 
   const [observerMode, setObserverMode] = useState<boolean>(false);
   const [vizVisible, setVizVisible] = useState<boolean>(false);
-  const openGraph = () => setVizVisible(true);
-  const closeGraph = () => setVizVisible(false);
+  const openGraph = () => { setVizVisible(true); };
+  const closeGraph = () => { setVizVisible(false); };
 
   const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [widgetsOpen, setWidgetsOpen] = useState<boolean>(false);

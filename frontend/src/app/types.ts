@@ -1,6 +1,6 @@
 export type Mode = "relative" | "absolute";
 
-export type SurveyRow = {
+export interface SurveyRow {
   _id: string;
   section: string;
   q1?: number;
@@ -19,5 +19,3 @@ export type SurveyRow = {
     question5: number;
   };
 };
-
-export type CondAvgs = Partial<Record<"A" | "B" | "C" | "D", number>>;
