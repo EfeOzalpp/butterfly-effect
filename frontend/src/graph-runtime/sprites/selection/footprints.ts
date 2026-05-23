@@ -2,6 +2,8 @@
 import type { ShapeKey } from './types';
 import { deviceType, getViewportSize, type DeviceType } from '../../../canvas-engine/shared/responsiveness';
 
+// Footprint is the art's intended tile size before transparent padding is added.
+// It controls aspect ratio and keeps sprite scale consistent across texture swaps.
 export const FOOTPRINTS: Record<ShapeKey, { w: number; h: number }> = {
   clouds: { w: 2, h: 3 },
   bus: { w: 2, h: 1 },
@@ -16,6 +18,8 @@ export const FOOTPRINTS: Record<ShapeKey, { w: number; h: number }> = {
   trees: { w: 1, h: 1 },
 };
 
+// Bleed is extra transparent room around the drawing. Particle trails, shadows,
+// and oversized shapes need this so the canvas texture does not clip them.
 export const BLEED: Partial<Record<ShapeKey, { top?: number; right?: number; bottom?: number; left?: number }>> = {
   trees: { top: 0.75, left: 0.08, right: 0.08, bottom: 0.10 },
   clouds:{ top: 0.35, left: 0.18, right: 0.35, bottom: 0.35 },
@@ -30,12 +34,14 @@ export const BLEED: Partial<Record<ShapeKey, { top?: number; right?: number; bot
   sun:   { top: 2, bottom: 2, left: 2, right: 2 },
 };
 
+// Final art-direction nudges for shapes whose visual center differs from their texture center.
 export const VISUAL_SCALE: Partial<Record<ShapeKey, number>> = { car: 0.86, snow: 0.9 };
 export const ANCHOR_BIAS_Y: Partial<Record<ShapeKey, number>> = { car: -0.14 };
 
+// These shapes have particle/detail systems, so we build frozen textures for them.
 export const PARTICLE_SHAPES = new Set<ShapeKey>(['snow', 'clouds', 'house', 'sea', 'carFactory', 'power']);
 
-/** Extra pixelScale multiplier passed to frozen texture builder for particle-heavy shapes, per device breakpoint. */
+// Extra pixelScale multiplier for particle-heavy shapes per device breakpoint.
 export const PARTICLE_SCALE_BOOST: Partial<Record<ShapeKey, Record<DeviceType, number>>> = {
   snow:   { laptop: 1.2, tablet: 1.1, mobile: 0.7 },
   clouds: { laptop: 2.5, tablet: 1.5, mobile: 1.2 },
@@ -49,13 +55,3 @@ export function resolveParticleScaleBoost(shape: ShapeKey, dev?: DeviceType): nu
   const d = dev ?? deviceType(getViewportSize().w);
   return entry[d];
 }
-
-/** Warmup simulation ms applied to static textures so particles are mid-flight on first view. */
-export const PARTICLE_PREWARM_MS: Partial<Record<ShapeKey, number>> = {
-  snow: 1200,
-  clouds: 1000,
-  sea: 800,
-  house: 900,
-  carFactory: 900,
-  power: 800,
-};

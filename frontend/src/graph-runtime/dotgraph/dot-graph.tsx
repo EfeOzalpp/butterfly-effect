@@ -1,3 +1,7 @@
+// src/graph-runtime/dotgraph/dot-graph.tsx
+
+// Composition root for DotGraph data, hover state, tie state, and rendered layers.
+
 import { useCallback } from 'react';
 
 import { usePreferences } from '../../app/state/preferences-context';
@@ -7,23 +11,19 @@ import { useSurveyData } from '../../app/state/survey-data-context';
 import { useSharedGraphData } from '../GraphDataContext';
 import { useTextureQueueProgress } from '../sprites/entry';
 
-import useHoverBubble from './hooks/useHoverBubble';
-import useObserverDelay from './hooks/useObserverDelay';
-import useObserverSpotlight from './hooks/useObserverSpotlight';
+import useHoverBubble from './interaction/useHoverBubble';
+import useObserverDelay from './interaction/useObserverDelay';
+import useObserverSpotlight from './interaction/useObserverSpotlight';
 import GraphOverlays from './components/GraphLoading';
 import ShapesLayer from './components/ShapesLayer';
 import PersonalizedLayer from './components/PersonalizedLayer';
 import HoveredLayer from './components/GeneralizedLayer';
-import useDotGraphPersonalizationGate from './orchestration/useDotGraphPersonalizationGate';
-import useDotGraphSceneModel from './orchestration/useDotGraphSceneModel';
-import useDotGraphPersonalizationModel from './orchestration/useDotGraphPersonalizationModel';
-import useDotGraphTieState from './orchestration/useDotGraphTieState';
+import usePersonalizationGate from './scene/usePersonalizationGate';
+import useDotGraphSceneState from './scene/useDotGraphSceneState';
+import usePersonalizationState from './scene/usePersonalizationState';
+import useTieState from './scene/useTieState';
 
-type DotGraphProps = {
-  data?: any[];
-};
-
-export default function DotGraph({ data: _data = [] }: DotGraphProps) {
+export default function DotGraph() {
   const { darkMode } = usePreferences();
   const { observerMode, mode } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
@@ -41,7 +41,7 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
 
   const showCompleteUI = useObserverDelay(observerMode, 2000);
 
-  const personalizationGate = useDotGraphPersonalizationGate({
+  const personalizationGate = usePersonalizationGate({
     myEntryId,
     mySection,
     section,
@@ -50,7 +50,7 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
     isSmallScreen: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
   });
 
-  const scene = useDotGraphSceneModel({
+  const scene = useDotGraphSceneState({
     safeData,
     personalizedEntryId: personalizationGate.personalizedEntryId,
     showPersonalized:
@@ -60,10 +60,26 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
     darkMode,
     wantsSkew: personalizationGate.wantsSkew,
   });
+  // Pull the scene contract out of the hook result so layer props stay explicit.
+  const {
+    groupRef,
+    shapes,
+    posById,
+    useDesktopLayout,
+    isPinchingRef,
+    isTouchRotatingRef,
+    spriteScale,
+    bagSeed,
+    offsetPx,
+    isRealMobile,
+    isTabletLike,
+    particleFrames,
+    tileSize,
+  } = scene;
 
-  const personalization = useDotGraphPersonalizationModel({
+  const personalization = usePersonalizationState({
     personalizedEntryId: personalizationGate.personalizedEntryId,
-    shapes: scene.shapes,
+    shapes,
     dataById,
     showCompleteUI,
     mode,
@@ -71,8 +87,7 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
     getRelForValue,
     getAbsForId,
     getAbsForValue,
-    fullData: Array.isArray(fullSurveyData) ? fullSurveyData : safeData,
-    section,
+    fullData: fullSurveyData,
     shouldShowPersonalized: personalizationGate.shouldShowPersonalized,
     hasPersonalizedInDataset: personalizationGate.hasPersonalizedInDataset,
   });
@@ -89,26 +104,27 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
   );
 
   const { hoveredDot, viewportClass, onHoverStart, onHoverEnd } = useHoverBubble({
-    useDesktopLayout: scene.useDesktopLayout,
-    isPinchingRef: scene.isPinchingRef,
-    isTouchRotatingRef: scene.isTouchRotatingRef,
+    useDesktopLayout,
+    isPinchingRef,
+    isTouchRotatingRef,
     calcPercentForAvg: calcValueForAvg,
-  } as any);
-
-  const { spotlightActiveRef } = useObserverSpotlight({
-    points: scene.shapes,
-    onHoverStart: onHoverStart as any,
-    onHoverEnd: onHoverEnd as any,
   });
 
-  const ties = useDotGraphTieState({
+  // Observer mode can briefly synthesize a hover so the graph explains itself without real pointer input.
+  const { spotlightActiveRef } = useObserverSpotlight({
+    points: shapes,
+    onHoverStart,
+    onHoverEnd,
+  });
+
+  const ties = useTieState({
     safeData,
-    posById: scene.posById,
+    posById,
     spotlightActiveRef,
     onHoverEnd,
     mode,
     section,
-    useDesktopLayout: scene.useDesktopLayout,
+    useDesktopLayout,
   });
 
   const { isBusy } = useTextureQueueProgress();
@@ -117,9 +133,9 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
     <>
       <GraphOverlays isBusy={isBusy} />
 
-      <group ref={scene.groupRef as any}>
+      <group ref={groupRef}>
         <ShapesLayer
-          shapes={scene.shapes}
+          shapes={shapes}
           myEntry={personalization.myEntry}
           personalizedEntryId={personalizationGate.personalizedEntryId}
           showCompleteUI={showCompleteUI}
@@ -128,14 +144,13 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
           tieKeyForId={ties.tieKeyForId}
           setSelectedTieKey={ties.setSelectedTieKey}
           selectedTieKey={ties.selectedTieKey}
-          spriteScale={scene.spriteScale}
-          bagSeed={scene.bagSeed}
-          bleedOf={scene.bleedOf}
+          spriteScale={spriteScale}
+          bagSeed={bagSeed}
           darkMode={darkMode}
-          occasionalRefreshMs={scene.isRealMobile ? 3000 : scene.isTabletLike ? 800 : 2000}
-          particleFrames={scene.particleFrames}
-          tileSize={scene.tileSize}
-          section={section ?? ''}
+          occasionalRefreshMs={isRealMobile ? 3000 : isTabletLike ? 800 : 2000}
+          particleFrames={particleFrames}
+          tileSize={tileSize}
+          section={section}
         />
 
         <PersonalizedLayer
@@ -143,9 +158,9 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
           shouldRenderExtraPersonalSprite={personalization.shouldRenderExtraPersonalSprite}
           effectiveMyShape={personalization.effectiveMyShape}
           effectiveMyEntry={personalization.effectiveMyEntry}
-          spriteScale={scene.spriteScale}
-          bagSeed={scene.bagSeed}
-          offsetPx={scene.offsetPx}
+          spriteScale={spriteScale}
+          bagSeed={bagSeed}
+          offsetPx={offsetPx}
           myDisplayValue={personalization.myDisplayValue}
           mode={mode}
           section={section}
@@ -157,10 +172,10 @@ export default function DotGraph({ data: _data = [] }: DotGraphProps) {
 
         <HoveredLayer
           hoveredDot={hoveredDot}
-          shapes={scene.shapes}
+          shapes={shapes}
           safeData={safeData}
           mode={mode}
-          offsetPx={scene.offsetPx}
+          offsetPx={offsetPx}
           viewportClass={viewportClass}
           calcValueForAvg={calcValueForAvg}
           getRelForId={getRelForId}

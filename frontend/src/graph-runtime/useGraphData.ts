@@ -3,11 +3,11 @@ import { useMemo } from "react";
 import { useAbsoluteScore } from "../lib/hooks/useAbsoluteScore";
 import { useRelativeScores } from "../lib/hooks/useRelativeScore";
 
-export type GraphDatum = {
+export interface GraphDatum {
   _id?: string;
   avgWeight?: number;
   weights?: Record<string, number>;
-};
+}
 
 const EMPTY_DATA: GraphDatum[] = [];
 
@@ -20,7 +20,7 @@ export default function useGraphData(data: unknown) {
   const dataById = useMemo(() => {
     const map = new Map<string, GraphDatum>();
     for (const item of safeData) {
-      if (item?._id) map.set(item._id, item);
+      if (item._id) map.set(item._id, item);
     }
     return map;
   }, [safeData]);
@@ -33,7 +33,7 @@ export default function useGraphData(data: unknown) {
   const absScoreById = useMemo(() => {
     const map = new Map<string, number>();
     for (const item of safeData) {
-      if (item?._id) map.set(item._id, getAbsForId(item._id));
+      if (item._id) map.set(item._id, getAbsForId(item._id));
     }
     return map;
   }, [safeData, getAbsForId]);

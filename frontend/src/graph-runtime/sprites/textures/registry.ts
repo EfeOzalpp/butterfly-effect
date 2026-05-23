@@ -1,6 +1,7 @@
 // graph-runtime/sprites/textures/registry.ts
 import * as THREE from 'three';
 import { makeTextureFromDrawer } from './makeTextureFromDrawer';
+import type { DrawerFn } from '../selection/drawers';
 
 const isMobileDevice =
   typeof window !== 'undefined' &&
@@ -9,9 +10,7 @@ const isMobileDevice =
 import { enqueueTexture } from './queue';
 import { spriteCachingDisabled } from '../internal/debug-flags';
 
-export type DrawerFn = (p: any, x: number, y: number, r: number, opts?: any) => void;
-
-export type MakeArgs = {
+export interface MakeArgs {
   key: string;
   drawer: DrawerFn;
   tileSize: number;
@@ -25,12 +24,13 @@ export type MakeArgs = {
   seedKey?: string;
   prio?: number;
   darkMode?: boolean;
-  prewarmMs?: number;
   pixelScaleBoost?: number;
-};
+}
 
 type Listener = (key: string, tex: THREE.CanvasTexture) => void;
 
+// Static texture cache with in-flight protection. Multiple sprites can ask for
+// the same key without building the same canvas twice.
 class TextureRegistry {
   private cache = new Map<string, THREE.CanvasTexture>();
   private inFlight = new Set<string>();
@@ -38,7 +38,7 @@ class TextureRegistry {
 
   get(key: string) {
     if (spriteCachingDisabled()) return null;
-    return this.cache.get(key) || null;
+    return this.cache.get(key) ?? null;
   }
 
   onReady(cb: Listener) {
@@ -53,6 +53,7 @@ class TextureRegistry {
     if (!disableCache && this.cache.has(key)) return;
 
     this.inFlight.add(key);
+    // Actual canvas work is queued so creating textures does not block render.
     enqueueTexture(() => {
       let tex: THREE.CanvasTexture | null = null;
       try {
@@ -68,11 +69,10 @@ class TextureRegistry {
           bleed: args.bleed,
           seedKey: args.seedKey ?? key,
           darkMode: args.darkMode,
-          prewarmMs: args.prewarmMs,
           pixelScaleBoost: args.pixelScaleBoost,
         });
         tex.generateMipmaps = true;
-        (tex as any).anisotropy = isMobileDevice ? 4 : 8;
+        tex.anisotropy = isMobileDevice ? 4 : 8;
         tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
@@ -80,7 +80,7 @@ class TextureRegistry {
         if (!disableCache) this.cache.set(key, tex);
         for (const l of this.listeners) l(key, tex);
       } catch (err) {
-        if ((window as any).__GP_LOG_LOAD_ERRORS) {
+        if (window.__GP_LOG_LOAD_ERRORS) {
           console.warn('[SPRITE:STATIC] build failed', key, err);
         }
       } finally {
@@ -90,6 +90,7 @@ class TextureRegistry {
   }
 
   prewarm(list: MakeArgs[], { prioBase = 0 }: { prioBase?: number } = {}) {
+    // Use a small priority ladder so prewarm jobs do not all have identical ordering.
     let p = prioBase;
     for (const args of list) this.ensure({ ...args, prio: p++ });
   }

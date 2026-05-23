@@ -2,13 +2,16 @@
 import { sampleShapeForAvg, type ShapeKey } from '../selection/shapeForAvg';
 import { spriteQuantizationDisabled } from './debug-flags';
 
+// Sprite policy turns score data into stable cacheable sprite identity:
+// shape, color bucket, and visual variant.
 export const SPRITE_TINT_BUCKETS = 10;
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
 
-/* avg bucketing */
+// Scores are biased downward before bucketing so high-emission visuals do not
+// overuse the brightest/highest tint buckets.
 const BIAS_GAMMA = 1.8;
 function biasDown(t: number, gamma = BIAS_GAMMA) {
   return Math.pow(clamp01(t), Math.max(1, gamma));
@@ -20,7 +23,7 @@ function rawBucketIdFromAvg(avg: number) {
 }
 const REMAP: number[] = [0, 0, 1, 1, 2, 3, 4, 6, 6, 6];
 function adjustedBucketId(id: number) {
-  return REMAP[Math.max(0, Math.min(9, id))];
+  return REMAP[Math.max(0, Math.min(9, id))] ?? 0;
 }
 function bucketMidpoint(id: number) {
   return (id + 0.5) / SPRITE_TINT_BUCKETS;
@@ -38,7 +41,7 @@ export function quantizeAvgWithDownshift(avg: number) {
   return { bucketId: adj, bucketAvg: bucketMidpoint(adj) };
 }
 
-/* variants */
+// Variant slots let repeated shapes share the same drawer while still looking varied.
 export const DEFAULT_VARIANT_SLOTS = 8;
 
 function hash01(s: string) {
@@ -60,7 +63,8 @@ export function pickVariantSlot(seedStr: string, slots = DEFAULT_VARIANT_SLOTS) 
   return Math.floor(hash01(seedStr) * s) % s;
 }
 
-/* key builders */
+// Texture keys include every input that changes pixels. If a value affects art,
+// it belongs in the key.
 export function makeStaticKey(args: {
   shape: ShapeKey;
   tileSize: number;
@@ -72,8 +76,19 @@ export function makeStaticKey(args: {
   pixelScaleBoost?: number;
 }) {
   const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode, pixelScaleBoost } = args;
-  const boostSuffix = pixelScaleBoost && pixelScaleBoost !== 1 ? `|PX${pixelScaleBoost}` : '';
-  return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|STATIC_NATIVE${darkMode ? '|DK' : ''}${boostSuffix}`;
+  const boostSuffix = pixelScaleBoost !== undefined && pixelScaleBoost !== 1
+    ? `|PX${String(pixelScaleBoost)}`
+    : '';
+  return [
+    'SPRITE',
+    shape,
+    `B${String(bucketId)}`,
+    `V${String(variant)}`,
+    String(tileSize),
+    String(dpr),
+    String(alpha),
+    `STATIC_NATIVE${darkMode ? '|DK' : ''}${boostSuffix}`,
+  ].join('|');
 }
 
 export function makeFrozenKey(args: {
@@ -88,9 +103,16 @@ export function makeFrozenKey(args: {
   darkMode?: boolean;
 }) {
   const { shape, tileSize, dpr, alpha, simulateMs, stepMs, bucketId, variant, darkMode } = args;
-  return `SPRITE|${shape}|B${bucketId}|V${variant}|${tileSize}|${dpr}|${alpha}|FROZEN_NATIVE_${Math.round(
-    simulateMs
-  )}_${Math.round(stepMs)}${darkMode ? '|DK' : ''}`;
+  return [
+    'SPRITE',
+    shape,
+    `B${String(bucketId)}`,
+    `V${String(variant)}`,
+    String(tileSize),
+    String(dpr),
+    String(alpha),
+    `FROZEN_NATIVE_${String(Math.round(simulateMs))}_${String(Math.round(stepMs))}${darkMode ? '|DK' : ''}`,
+  ].join('|');
 }
 
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {
@@ -98,15 +120,16 @@ export function chooseShape(args: { avg: number; seed?: string | number; orderIn
   return sampleShapeForAvg(t, args.seed ?? t, args.orderIndex);
 }
 
-export type ShapeAssignment = {
+export interface ShapeAssignment {
   shape: ShapeKey;
   variant: number;
   bucketId: number;
   bucketAvg: number;
-};
+}
 
 const _assignmentCache = new Map<string, ShapeAssignment>();
 
+// Cache by respondent + section so the same entry does not shapeshift during rerenders.
 export function getOrAssignShapeEntry(
   entryId: string,
   sectionKey: string,
@@ -121,7 +144,7 @@ export function getOrAssignShapeEntry(
 
   const shape = chooseShape({ avg, seed, orderIndex });
   const { bucketId, bucketAvg } = quantizeAvgWithDownshift(avg);
-  const vSeed = `${shape}|B${bucketId}|${seed}|${orderIndex}`;
+  const vSeed = `${shape}|B${String(bucketId)}|${String(seed)}|${String(orderIndex)}`;
   const variant = pickVariantSlot(vSeed, Math.max(1, variantSlots));
 
   const assignment: ShapeAssignment = { shape, variant, bucketId, bucketAvg };
@@ -131,6 +154,6 @@ export function getOrAssignShapeEntry(
 
 export function resolveDpr(fallback = 1) {
   return typeof window !== 'undefined'
-    ? Math.min(1.5, window.devicePixelRatio || 1.5)
+    ? Math.min(1.5, window.devicePixelRatio)
     : fallback;
 }

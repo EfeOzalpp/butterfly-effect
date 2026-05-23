@@ -16,8 +16,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     cityPanelOpen,
     setCityPanelOpen,
     questionnaireOpen,
-    radarMode,
-    setRadarMode,
     vizVisible,
     logsOpen,
     setLogsOpen,
@@ -32,12 +30,13 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const isTabletGraphNav = windowWidth >= 768 && windowWidth <= 1024;
   const useCompactGraphNav = windowWidth <= 1024;
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 1024 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
-  const [showHint, setShowHint] = useState(false);
+  const visibleWidgetsOpen = vizVisible && widgetsOpen;
+  const pickerOffset = windowWidth > 1024 ? ((logsOpen ? 130 : 0) + (visibleWidgetsOpen ? 50 : 0)) * aspectRatio : 0;
   const [expandedWidget, setExpandedWidget] = useState<"bar" | "radar" | null>("radar");
-  const barGraphExpanded = expandedWidget === "bar";
-  const radarChartExpanded = expandedWidget === "radar";
-  const toggleWidget = (w: "bar" | "radar") => setExpandedWidget((cur) => (cur === w ? null : w));
+  const effectiveExpandedWidget = vizVisible ? expandedWidget : null;
+  const barGraphExpanded = effectiveExpandedWidget === "bar";
+  const radarChartExpanded = effectiveExpandedWidget === "radar";
+  const toggleWidget = (w: "bar" | "radar") => { setExpandedWidget((cur) => (cur === w ? null : w)); };
   const widgetsRef = useRef<HTMLDivElement | null>(null);
   const logsWrapRef = useRef<HTMLDivElement | null>(null);
   const modeToggleRef = useRef<HTMLDivElement | null>(null);
@@ -45,6 +44,8 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const [logsSlide, setLogsSlide] = useState(0);
   const [showQuestionnaireDisabledHint, setShowQuestionnaireDisabledHint] = useState(false);
   const [modeToggleShiftPx, setModeToggleShiftPx] = useState(0);
+  const questionnaireDisabledHintVisible =
+    showQuestionnaireDisabledHint && questionnaireNav.nextDisabled;
 
   const flashQuestionnaireDisabledHint = useCallback(() => {
     if (questionnaireHintTimerRef.current != null) {
@@ -58,13 +59,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   }, []);
 
   useEffect(() => {
-    if (!vizVisible) {
-      setWidgetsOpen(false);
-      setExpandedWidget(null);
-    }
-  }, [vizVisible]);
-
-  useEffect(() => {
     if (logsOpen && !isMobileGraphNav && logsWrapRef.current) {
       const panelWidth = isTabletGraphNav
         ? window.innerWidth * 0.6
@@ -75,16 +69,6 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       setLogsSlide(0);
     }
   }, [logsOpen, isMobileGraphNav, isTabletGraphNav]);
-
-  useEffect(() => {
-    if (!questionnaireNav.nextDisabled) {
-      setShowQuestionnaireDisabledHint(false);
-      if (questionnaireHintTimerRef.current != null) {
-        window.clearTimeout(questionnaireHintTimerRef.current);
-        questionnaireHintTimerRef.current = null;
-      }
-    }
-  }, [questionnaireNav.nextDisabled]);
 
   useEffect(() => {
     return () => {
@@ -116,7 +100,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       const logsOccupiedRight = logsOpen
         ? logsShell?.getBoundingClientRect().right ?? logsButton?.getBoundingClientRect().right ?? 0
         : 0;
-      const widgetsOccupiedRight = widgetsOpen
+      const widgetsOccupiedRight = visibleWidgetsOpen
         ? widgetsShell?.getBoundingClientRect().right ?? widgetsButton?.getBoundingClientRect().right ?? 0
         : 0;
       const occupiedRight = Math.max(logsOccupiedRight, widgetsOccupiedRight);
@@ -132,13 +116,13 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       setModeToggleShiftPx((prev) => (Math.abs(prev - shiftPx) < 0.5 ? prev : shiftPx));
     });
 
-    return () => window.cancelAnimationFrame(frame);
+    return () => { window.cancelAnimationFrame(frame); };
   }, [
     vizVisible,
     isMobileGraphNav,
     isTabletGraphNav,
     logsOpen,
-    widgetsOpen,
+    visibleWidgetsOpen,
     logsSlide,
     pickerOffset,
     windowWidth,
@@ -153,7 +137,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
           <button
             type="button"
             className="city-button city-close-btn"
-            onClick={() => setCityPanelOpen(!cityPanelOpen)}
+            onClick={() => { setCityPanelOpen(!cityPanelOpen); }}
             aria-label={cityPanelOpen ? "Back to questionnaire" : "Open city view"}
           >
             <span className="city-button__inner">
@@ -161,40 +145,16 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             </span>
           </button>
         )}
-        {false && questionnaireOpen && !cityPanelOpen && (
-          <div
-            className="auto-adjust-wrap"
-            onMouseEnter={() => setShowHint(true)}
-            onMouseLeave={() => setShowHint(false)}
-          >
-            <button
-              type="button"
-              role="switch"
-              aria-checked={radarMode}
-              className={`auto-adjust${radarMode ? " is-on" : ""}`}
-              onClick={() => {
-                setRadarMode(!radarMode);
-                setShowHint(true);
-              }}
-            >
-              <span className="auto-adjust-thumb" />
-              <span className="auto-adjust-text">Weighted Sliders</span>
-            </button>
-            <div className={`auto-adjust-hint${showHint ? " visible" : ""}`} role="status" aria-live="polite">
-              Answers balance each other as you adjust.
-            </div>
-          </div>
-        )}
         {vizVisible && (
           <div ref={logsWrapRef}>
             <LogsButton open={logsOpen} onOpenChange={setLogsOpen} />
           </div>
         )}
         {vizVisible && (
-          <div className="widgets-wrap" ref={widgetsRef} style={{ marginLeft: logsSlide > 0 ? `calc(${logsSlide}px + 0.3rem)` : widgetsOpen ? '0.3rem' : undefined }}>
+          <div className="widgets-wrap" ref={widgetsRef} style={{ marginLeft: logsSlide > 0 ? `calc(${String(logsSlide)}px + 0.3rem)` : visibleWidgetsOpen ? '0.3rem' : undefined }}>
             <div
-              className={`widgets-popover-shell${widgetsOpen ? " is-open" : ""}`}
-              aria-hidden={!widgetsOpen}
+              className={`widgets-popover-shell${visibleWidgetsOpen ? " is-open" : ""}`}
+              aria-hidden={!visibleWidgetsOpen}
               style={isMobileGraphNav ? { left: "-64px" } : undefined}
             >
               <div className="widgets-popover-clip">
@@ -205,7 +165,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
                       type="button"
                       className="widgets-item"
                       aria-expanded={barGraphExpanded}
-                      onClick={() => toggleWidget("bar")}
+                      onClick={() => { toggleWidget("bar"); }}
                     >
                       <span>Bar graph</span>
                     </button>
@@ -224,7 +184,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
                       type="button"
                       className="widgets-item"
                       aria-expanded={radarChartExpanded}
-                      onClick={() => toggleWidget("radar")}
+                      onClick={() => { toggleWidget("radar"); }}
                     >
                       <span>Radar chart</span>
                     </button>
@@ -254,11 +214,11 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
               type="button"
               className="widgets-button"
               data-label="Widgets"
-              aria-expanded={widgetsOpen}
+              aria-expanded={visibleWidgetsOpen}
               aria-haspopup="dialog"
               aria-label="Widgets"
               onClick={() => {
-                setWidgetsOpen(!widgetsOpen);
+                setWidgetsOpen(!visibleWidgetsOpen);
               }}
             >
               <span className="widgets-button__inner">Widgets</span>
@@ -274,7 +234,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             </p>
             <div className="questionnaire-nav-action">
               <div
-                className={`questionnaire-nav-hint${showQuestionnaireDisabledHint ? " is-visible" : ""}`}
+                className={`questionnaire-nav-hint${questionnaireDisabledHintVisible ? " is-visible" : ""}`}
                 role="status"
                 aria-live="polite"
               >
@@ -317,12 +277,12 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             useCompactGraphNav
               ? {
                   transform:
-                    isTabletGraphNav && logsOpen && widgetsOpen
+                    isTabletGraphNav && logsOpen && visibleWidgetsOpen
                       ? "translateX(calc(100% + 1.7rem))"
                       : "translateX(0px)",
                   transition: "transform 0.2s ease",
                 }
-              : { transform: `translateX(calc(-50% + ${modeToggleShiftPx}px))`, transition: "transform 0.2s ease" }
+              : { transform: `translateX(calc(-50% + ${String(modeToggleShiftPx)}px))`, transition: "transform 0.2s ease" }
           }
         >
           <ModeToggle />

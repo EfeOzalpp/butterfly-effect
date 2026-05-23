@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import PlayPauseIcon from "../../assets/svg/play/PlayPauseIcon";
-import { GO_BACK, NON_PERSONAL_IDS, useGraphPickerData } from "../right/useGraphPickerData";
+import { GO_BACK, NON_PERSONAL_IDS, useGraphPickerData } from "../graph-picker-data";
+
+interface LocalSectionState {
+  sourceSection: string;
+  value: string;
+}
 
 const Q_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
 const Q_LABELS = ["Q1", "Q2", "Q3", "Q4", "Q5"];
@@ -20,7 +25,9 @@ const AUTOPLAY_MS = 2600;
 const angles = Array.from({ length: N }, (_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / N);
 
 function pt(i: number, v: number): string {
-  return `${CX + v * R * Math.cos(angles[i])},${CY + v * R * Math.sin(angles[i])}`;
+  const x = CX + v * R * Math.cos(angles[i]);
+  const y = CY + v * R * Math.sin(angles[i]);
+  return `${String(x)},${String(y)}`;
 }
 
 function ringPoly(v: number): string {
@@ -28,25 +35,30 @@ function ringPoly(v: number): string {
 }
 
 function fmtPercent(v: number): string {
-  return `${Math.round(v * 100)}`;
+  return String(Math.round(v * 100));
 }
 
 export default function RadarChart() {
   const { allRows, section } = useSurveyData();
   const { ALL_LABELS, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS, counts } = useGraphPickerData(section);
   const [paused, setPaused] = useState(false);
-  const [localSection, setLocalSection] = useState(section);
+  const [localSectionState, setLocalSectionState] = useState<LocalSectionState>({
+    sourceSection: section,
+    value: section,
+  });
+  const localSection =
+    localSectionState.sourceSection === section ? localSectionState.value : section;
 
-  useEffect(() => {
-    setLocalSection(section);
-  }, [section]);
+  const setLocalSection = (value: string) => {
+    setLocalSectionState({ sourceSection: section, value });
+  };
 
   const cycleSections = useMemo(() => {
     const ordered = [...MAIN_OPTS, ...STUDENT_OPTS, ...STAFF_OPTS]
       .filter((opt) => opt.id !== GO_BACK)
       .filter((opt) => !NON_PERSONAL_IDS.has(opt.id) || opt.id === "all" || opt.id === "all-massart" || opt.id === "all-students" || opt.id === "all-staff" || opt.id === "visitor")
       .filter((opt, index, arr) => arr.findIndex((item) => item.id === opt.id) === index)
-      .filter((opt) => (counts?.[opt.id] ?? 0) > 0 || opt.id === localSection);
+      .filter((opt) => (counts[opt.id] ?? 0) > 0 || opt.id === localSection);
 
     if (!ordered.length && localSection) {
       return [{ id: localSection, label: ALL_LABELS.get(localSection) ?? localSection }];
@@ -61,7 +73,7 @@ export default function RadarChart() {
       const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % cycleSections.length : 0;
       setLocalSection(cycleSections[nextIndex].id);
     }, AUTOPLAY_MS);
-    return () => window.clearInterval(timer);
+    return () => { window.clearInterval(timer); };
   }, [cycleSections, paused, localSection]);
 
   const rowsForLocalSection = useMemo(() => {
@@ -85,7 +97,7 @@ export default function RadarChart() {
     () =>
       Q_KEYS.map((key) => {
         const vals = rowsForLocalSection
-          .map((row) => row[key] as number | undefined)
+          .map((row) => row[key])
           .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
         return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
       }),
@@ -94,8 +106,9 @@ export default function RadarChart() {
 
   const dataPoints = avgs.map((v, i) => pt(i, v)).join(" ");
   const currentIndex = cycleSections.findIndex((item) => item.id === localSection);
+  const matchedSection = cycleSections.find((item) => item.id === localSection);
   const currentSectionLabel =
-    cycleSections[currentIndex]?.label ??
+    matchedSection?.label ??
     ALL_LABELS.get(localSection) ??
     (localSection ? localSection.replace(/-/g, " ") : "Everyone");
 
@@ -111,7 +124,7 @@ export default function RadarChart() {
     <div className="radar-chart-panel">
       <svg
         className="radar-chart-svg"
-        viewBox={`0 0 ${W} ${H}`}
+        viewBox={`0 0 ${String(W)} ${String(H)}`}
         width="100%"
         aria-label="Average values per question (radar)"
       >
@@ -172,7 +185,7 @@ export default function RadarChart() {
           type="button"
           className="radar-footer-btn"
           aria-label="Previous section"
-          onClick={() => stepSection(-1)}
+          onClick={() => { stepSection(-1); }}
         >
           <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="15 6 9 12 15 18" />
@@ -183,7 +196,7 @@ export default function RadarChart() {
           type="button"
           className="radar-footer-btn"
           aria-label="Next section"
-          onClick={() => stepSection(1)}
+          onClick={() => { stepSection(1); }}
         >
           <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="9 6 15 12 9 18" />
@@ -194,7 +207,7 @@ export default function RadarChart() {
           className="radar-footer-btn radar-footer-btn--pause"
           aria-pressed={paused}
           aria-label={paused ? "Resume section autoplay" : "Pause section autoplay"}
-          onClick={() => setPaused((cur) => !cur)}
+          onClick={() => { setPaused((cur) => !cur); }}
         >
           <PlayPauseIcon mode={paused ? "play" : "pause"} className="ui-icon" />
         </button>

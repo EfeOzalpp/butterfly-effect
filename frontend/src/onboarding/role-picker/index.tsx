@@ -1,15 +1,11 @@
 import { useMemo, useRef } from "react";
 import CheckIcon from "../../assets/svg/check/CheckIcon";
 
-const OPTIONS = [
-  { val: "visitor", label: "Visitor" },
-  {
-    group: "MassArt",
-    options: [
-      { val: "student", label: "MassArt Student" },
-      { val: "staff", label: "Staff & Faculty" },
-    ],
-  },
+export type RoleValue = "visitor" | "student" | "staff";
+
+const MASSART_ROLE_OPTIONS: { val: Exclude<RoleValue, "visitor">; label: string }[] = [
+  { val: "student", label: "MassArt Student" },
+  { val: "staff", label: "Staff & Faculty" },
 ];
 
 function SelectionIndicator({ selected }: { selected: boolean }) {
@@ -21,27 +17,22 @@ function SelectionIndicator({ selected }: { selected: boolean }) {
   return <span className="role-indicator-spacer" />;
 }
 
-export default function RolePicker({ value, onChange, errorId }: { value: string; onChange: (value: any) => void; errorId?: string }) {
+export default function RolePicker({
+  value,
+  onChange,
+  errorId,
+}: {
+  value: RoleValue | "";
+  onChange: (value: RoleValue) => void;
+  errorId?: string;
+}) {
   const roleIds = useMemo(
-    () => ["visitor", ...OPTIONS[1].options.map((opt) => opt.val)],
+    () => ["visitor", ...MASSART_ROLE_OPTIONS.map((opt) => opt.val)] as RoleValue[],
     []
   );
   const optionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const focusRole = (nextValue: string) => {
-    optionRefs.current[nextValue]?.focus();
-  };
-
-  const handleArrowNav = (currentValue: string, delta: number) => {
-    const currentIndex = roleIds.indexOf(currentValue);
-    if (currentIndex === -1) return;
-    const nextIndex = (currentIndex + delta + roleIds.length) % roleIds.length;
-    const nextValue = roleIds[nextIndex];
-    onChange(nextValue);
-    focusRole(nextValue);
-  };
-
-  const handleKeyDown = (currentValue: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (currentValue: RoleValue) => (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onChange(currentValue);
@@ -49,25 +40,34 @@ export default function RolePicker({ value, onChange, errorId }: { value: string
     }
     if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault();
-      handleArrowNav(currentValue, 1);
+      const currentIndex = roleIds.indexOf(currentValue);
+      if (currentIndex === -1) return;
+      const nextValue = roleIds[(currentIndex + 1) % roleIds.length];
+      onChange(nextValue);
+      optionRefs.current[nextValue]?.focus();
       return;
     }
     if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault();
-      handleArrowNav(currentValue, -1);
+      const currentIndex = roleIds.indexOf(currentValue);
+      if (currentIndex === -1) return;
+      const nextValue = roleIds[(currentIndex - 1 + roleIds.length) % roleIds.length];
+      onChange(nextValue);
+      optionRefs.current[nextValue]?.focus();
       return;
     }
     if (e.key === "Home") {
       e.preventDefault();
-      onChange(roleIds[0]);
-      focusRole(roleIds[0]);
+      const first = roleIds[0];
+      onChange(first);
+      optionRefs.current[first]?.focus();
       return;
     }
     if (e.key === "End") {
       e.preventDefault();
       const last = roleIds[roleIds.length - 1];
       onChange(last);
-      focusRole(last);
+      optionRefs.current[last]?.focus();
     }
   };
 
@@ -88,7 +88,7 @@ export default function RolePicker({ value, onChange, errorId }: { value: string
           aria-checked={value === "visitor"}
           tabIndex={value === "visitor" ? 0 : -1}
           className={`input-part-inside radio-option${value === "visitor" ? " selected" : ""}`}
-          onClick={() => onChange("visitor")}
+          onClick={() => { onChange("visitor"); }}
           onKeyDown={handleKeyDown("visitor")}
         >
           <span className="role-indicator-spacer" />
@@ -96,10 +96,10 @@ export default function RolePicker({ value, onChange, errorId }: { value: string
           <SelectionIndicator selected={value === "visitor"} />
         </div>
 
-        {/* MassArt — shared island with center divider */}
+        {/* MassArt roles share one visual island with a center divider. */}
         <div className="role-separator"></div>
         <div className="role-group-options">
-          {OPTIONS[1].options.map((opt) => {
+          {MASSART_ROLE_OPTIONS.map((opt) => {
             const checked = value === opt.val;
             return (
               <div
@@ -109,7 +109,7 @@ export default function RolePicker({ value, onChange, errorId }: { value: string
                 aria-checked={checked}
                 tabIndex={checked ? 0 : -1}
                 className={`input-part-inside radio-option radio-option--inset${checked ? " selected" : ""}`}
-                onClick={() => onChange(opt.val)}
+                onClick={() => { onChange(opt.val); }}
                 onKeyDown={handleKeyDown(opt.val)}
               >
                 <span className="role-indicator-spacer" />

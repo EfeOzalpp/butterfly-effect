@@ -1,3 +1,5 @@
+// src/graph-runtime/gamification/gamification-personal.tsx
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import CloseIcon from '../../assets/svg/close/CloseIcon';
 
@@ -16,6 +18,22 @@ const FADE_MS = 200;
 const PROX_THRESHOLD = 0.02;
 const CLOSE_GRACE_MS = 1000;
 const NEUTRAL = 'rgba(255,255,255,0.95)';
+
+interface InlineLinesProps {
+  children: React.ReactNode;
+}
+
+interface HighlightWordProps extends InlineLinesProps {
+  color: string;
+}
+
+function InlineLines({ children }: InlineLinesProps) {
+  return <span className="gam-inline-lines">{children}</span>;
+}
+
+function HighlightWord({ children, color }: HighlightWordProps) {
+  return <strong style={{ textShadow: `0 0 7px ${color}` }}>{children}</strong>;
+}
 
 function classifyBand({ below: b, equal: e, above: a }: { below: number; equal: number; above: number }) {
   const totalOthers = Math.max(0, b | 0) + Math.max(0, e | 0) + Math.max(0, a | 0);
@@ -47,8 +65,8 @@ function classifyBand({ below: b, equal: e, above: a }: { below: number; equal: 
   return { band, tie: canonicalTie, N, b, e, a, q, rankFromLow };
 }
 
-type GamificationPersonalizedProps = {
-  userData: Record<string, any> | null | undefined;
+interface GamificationPersonalizedProps {
+  userData: { _id?: string } | null | undefined;
   percentage: number | undefined;
   color: string;
   mode?: 'relative' | 'absolute';
@@ -59,7 +77,7 @@ type GamificationPersonalizedProps = {
   positionClass?: string;
   tieContext?: string;
   selectedSectionId?: string;
-};
+}
 
 export default function GamificationPersonalized({
   userData,
@@ -78,9 +96,10 @@ export default function GamificationPersonalized({
 }: GamificationPersonalizedProps) {
   const darkMode = !!useOptionalPreferences()?.darkMode;
   const ui = useOptionalUiFlow();
+  const openPersonalized = ui?.openPersonalized;
+  const setOpenPersonalized = ui?.setOpenPersonalized;
 
-  // Title removed — keep CMS contract stable but do not render it
-  const [secondaryText, setSecondaryText] = useState('');
+  // Title stays in the CMS contract, but this panel only renders the secondary line.
   const [open, setOpen] = useState(true);
 
   const [closingGrace, setClosingGrace] = useState(false);
@@ -98,28 +117,33 @@ export default function GamificationPersonalized({
   const { pick } = usePersonalizedPools();
   const knobColor = mode === 'absolute' ? knobSample.css : NEUTRAL;
 
-  const Strong = useMemo(
-    () =>
-      function Strong({ children }: { children: React.ReactNode }) {
-        return <strong style={{ textShadow: `0 0 7px ${color}` }}>{children}</strong>;
-      },
-    [color]
-  );
-  const Lines = useMemo(
-    () =>
-      function Lines({ children }: { children: React.ReactNode }) {
-        return <span className="gam-inline-lines">{children}</span>;
-      },
-    []
-  );
+  const secondaryText = useMemo(() => {
+    if (percentage === undefined || !userData) return '';
+
+    const fallbackBuckets = {
+      '0-20':   { titles: ['Light Footprint', 'Just Starting', 'Small Steps'],      secondary: ['It\'s not about being perfect; it\'s about direction.'] },
+      '21-40':  { titles: ['Stepping Lighter', 'Building Momentum', 'On the Way'], secondary: ['What we buy travels farther than most people ever do.'] },
+      '41-60':  { titles: ['Finding Balance', 'In the Mix', 'Middle Path'],         secondary: ['Put yogurt and tomato paste, and butter on poached eggs.'] },
+      '61-80':  { titles: ['Leaving a Mark', 'Making Moves', 'Full Life'],          secondary: ['Tree branches that hold the cloud...'] },
+      '81-100': { titles: ['Deep Footprint', 'Full Throttle', 'Heavy Load'],        secondary: ['Learning from past to prepare for future, today.'] },
+    };
+
+    const chosen = pick(safePct, 'gp', userData._id ?? 'me', fallbackBuckets);
+    return mode === 'absolute' ? (chosen?.secondary ?? '') : '';
+  }, [percentage, userData, safePct, pick, mode]);
 
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
 
   useEffect(() => {
-    if (!ui?.openPersonalized) return;
-    setOpen(true);
-    ui.setOpenPersonalized(false);
-  }, [ui?.openPersonalized]);
+    if (!openPersonalized) return;
+    const timerId = window.setTimeout(() => {
+      setOpen(true);
+    }, 0);
+    setOpenPersonalized?.(false);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [openPersonalized, setOpenPersonalized]);
 
   useEffect(() => {
     const scheduleCheck = () => {
@@ -146,12 +170,14 @@ export default function GamificationPersonalized({
 
     const onMouseMove = (e: MouseEvent) => { lastPointerRef.current = { x: e.clientX, y: e.clientY, has: true }; scheduleCheck(); };
     const onTouchMove = (e: TouchEvent) => {
-      if (!e.touches?.length) return;
+      if (!e.touches.length) return;
       const t = e.touches[0];
       lastPointerRef.current = { x: t.clientX, y: t.clientY, has: true };
       scheduleCheck();
     };
-    const onResizeOrScroll = () => scheduleCheck();
+    const onResizeOrScroll = () => {
+      scheduleCheck();
+    };
 
     window.addEventListener('mousemove', onMouseMove, { passive: true });
     window.addEventListener('touchmove', onTouchMove, { passive: true });
@@ -169,8 +195,11 @@ export default function GamificationPersonalized({
   }, []);
 
   useEffect(() => {
+    const stateTimer = window.setTimeout(() => {
+      setClosingGrace(!open);
+    }, 0);
+
     if (!open) {
-      setClosingGrace(true);
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
       closeTimerRef.current = setTimeout(() => {
         setClosingGrace(false);
@@ -181,9 +210,9 @@ export default function GamificationPersonalized({
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
-      setClosingGrace(false);
     }
     return () => {
+      window.clearTimeout(stateTimer);
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
@@ -191,29 +220,9 @@ export default function GamificationPersonalized({
     };
   }, [open]);
 
-  // CMS + fallback copy (secondary only for ABSOLUTE)
-  useEffect(() => {
-    if (percentage === undefined || !userData) return;
-
-    const fallbackBuckets = {
-      '0-20':   { titles: ['Light Footprint', 'Just Starting', 'Small Steps'],      secondary: ['It\'s not about being perfect; it\'s about direction.'] },
-      '21-40':  { titles: ['Stepping Lighter', 'Building Momentum', 'On the Way'], secondary: ['What we buy travels farther than most people ever do.'] },
-      '41-60':  { titles: ['Finding Balance', 'In the Mix', 'Middle Path'],         secondary: ['Put yogurt and tomato paste, and butter on poached eggs.'] },
-      '61-80':  { titles: ['Leaving a Mark', 'Making Moves', 'Full Life'],          secondary: ['Tree branches that hold the cloud...'] },
-      '81-100': { titles: ['Deep Footprint', 'Full Throttle', 'Heavy Load'],        secondary: ['Learning from past to prepare for future, today.'] },
-    };
-
-    const chosen = pick(safePct, 'gp', String(userData._id || 'me'), fallbackBuckets);
-    if (chosen) {
-      setSecondaryText(mode === 'absolute' ? (chosen.secondary || '') : '');
-    } else {
-      setSecondaryText('');
-    }
-  }, [percentage, userData, safePct, pick, mode]);
-
   if (!userData) return null;
 
-  const panelId = `panel-${userData?._id || 'me'}`;
+  const panelId = `panel-${userData._id ?? 'me'}`;
   const wrapperVisible = open || closingGrace || nearButton;
 
   // bands (rank + ties)
@@ -234,39 +243,37 @@ export default function GamificationPersonalized({
         break;
       case 'top':
         relativeLine = tie === 'tiedTop'
-          ? <Lines><span>Sharing the very <Strong>top</Strong>.</span><span>Tied with {ee}.</span></Lines>
-          : <Lines><span>You're on <Strong>top</Strong>,</span><span>ahead of everyone else.</span></Lines>;
+          ? <InlineLines><span>Sharing the very <HighlightWord color={color}>top</HighlightWord>.</span><span>Tied with {ee}.</span></InlineLines>
+          : <InlineLines><span>You're on <HighlightWord color={color}>top</HighlightWord>,</span><span>ahead of everyone else.</span></InlineLines>;
         break;
       case 'nearTop':
         relativeLine = ee > 0
-          ? <Lines><span>Close to the <Strong>top</Strong>.</span><span>Behind {aa}</span><span>Tied with {ee}.</span></Lines>
-          : <Lines><span>Close to the <Strong>top</Strong>.</span><span>Behind {aa}</span></Lines>;
+          ? <InlineLines><span>Close to the <HighlightWord color={color}>top</HighlightWord>.</span><span>Behind {aa}</span><span>Tied with {ee}.</span></InlineLines>
+          : <InlineLines><span>Close to the <HighlightWord color={color}>top</HighlightWord>.</span><span>Behind {aa}</span></InlineLines>;
         break;
       case 'bottom':
         relativeLine = tie === 'tiedBottom'
-          ? <Lines><span>At the <Strong>bottom</Strong>.</span><span>Tied with {ee}.</span></Lines>
-          : <Lines><span>At the <Strong>bottom</Strong>.</span><span>Everyone else is ahead.</span></Lines>;
+          ? <InlineLines><span>At the <HighlightWord color={color}>bottom</HighlightWord>.</span><span>Tied with {ee}.</span></InlineLines>
+          : <InlineLines><span>At the <HighlightWord color={color}>bottom</HighlightWord>.</span><span>Everyone else is ahead.</span></InlineLines>;
         break;
       case 'nearBottom':
         relativeLine = ee > 0
-          ? <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Ahead of {bb}</span><span>Tied with {ee}.</span></Lines>
-          : <Lines><span>Near the <Strong>bottom</Strong>.</span><span>Ahead of {bb}</span></Lines>;
+          ? <InlineLines><span>Near the <HighlightWord color={color}>bottom</HighlightWord>.</span><span>Ahead of {bb}</span><span>Tied with {ee}.</span></InlineLines>
+          : <InlineLines><span>Near the <HighlightWord color={color}>bottom</HighlightWord>.</span><span>Ahead of {bb}</span></InlineLines>;
         break;
       default: {
         // middle
         if (tie === 'tiedMiddle') {
-          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Ahead of {bb}</span><span>Behind {aa}</span><span>Tied with {ee}.</span></Lines>;
+          relativeLine = <InlineLines><span>In the <HighlightWord color={color}>middle</HighlightWord>.</span><span>Ahead of {bb}</span><span>Behind {aa}</span><span>Tied with {ee}.</span></InlineLines>;
         } else if (aa < bb) {
-          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Behind {aa}</span></Lines>;
+          relativeLine = <InlineLines><span>In the <HighlightWord color={color}>middle</HighlightWord>.</span><span>Behind {aa}</span></InlineLines>;
         } else if (bb < aa) {
-          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Ahead of {bb}</span></Lines>;
+          relativeLine = <InlineLines><span>In the <HighlightWord color={color}>middle</HighlightWord>.</span><span>Ahead of {bb}</span></InlineLines>;
         } else {
-          relativeLine = <Lines><span>In the <Strong>middle</Strong>.</span><span>Ahead of {bb}</span><span>Behind {aa}</span></Lines>;
+          relativeLine = <InlineLines><span>In the <HighlightWord color={color}>middle</HighlightWord>.</span><span>Ahead of {bb}</span><span>Behind {aa}</span></InlineLines>;
         }
       }
     }
-
-    if (!relativeLine) relativeLine = <>You're in the mix.</>;
   }
 
   const line =
@@ -310,7 +317,7 @@ export default function GamificationPersonalized({
         <div
           id={panelId}
           className="personalized-result"
-          style={{ pointerEvents: 'auto', transition: `opacity ${FADE_MS}ms ease` }}
+          style={{ pointerEvents: 'auto', transition: `opacity ${String(FADE_MS)}ms ease` }}
         >
           <button
             type="button"

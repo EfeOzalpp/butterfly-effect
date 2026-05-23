@@ -10,11 +10,11 @@ function shapesPerTick() {
   return w >= 768 && w <= 1024 ? 5 : 3;
 }
 
-type EntryInput = {
+interface EntryInput {
   isVisible: () => boolean;
   tick: () => void;
   intervalMs: number;
-};
+}
 
 type Entry = EntryInput & {
   intervalMs: number;
@@ -62,6 +62,7 @@ export function registerEpochShape(entry: EntryInput): () => void {
   const id = String(idCounter++);
   const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const intervalMs = Math.max(TICK_MS, entry.intervalMs || TICK_MS);
+  // New entries are spread across ticks so many sprites do not refresh together.
   const spreadSteps = Math.max(1, Math.round(Math.min(intervalMs, Math.max(TICK_MS, keys.length * TICK_MS)) / TICK_MS));
   const nextAtMs = now + (idCounter % spreadSteps) * TICK_MS;
   entries.set(id, { ...entry, intervalMs, nextAtMs });

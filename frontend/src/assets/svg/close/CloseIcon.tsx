@@ -3,9 +3,9 @@ import { useId, useMemo } from "react";
 import closeSvg from "./close.svg?raw";
 import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
-type CloseIconProps = {
+interface CloseIconProps {
   className?: string;
-};
+}
 
 export default function CloseIcon({ className = "ui-close" }: CloseIconProps) {
   const iconId = useId().replace(/:/g, "");

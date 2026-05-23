@@ -1,3 +1,6 @@
+// src/app/state/usePreferencesState.ts
+// Theme preference is app state; sprite invalidation is hidden behind the sprite API.
+
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -5,10 +8,7 @@ import {
   readStoredDarkMode,
   setSessionItem,
 } from '../session';
-import {
-  bumpGeneration,
-  resetQueue,
-} from '../../graph-runtime/sprites/entry';
+import { invalidateSpriteTexturesForThemeChange } from '../../graph-runtime/sprites/entry';
 
 export default function usePreferencesState() {
   const [darkMode, setDarkMode] = useState<boolean>(() => readStoredDarkMode(true));
@@ -22,8 +22,12 @@ export default function usePreferencesState() {
       return;
     }
 
-    try { bumpGeneration(); } catch (err) { console.warn('[usePreferencesState] bumpGeneration failed:', err); }
-    try { resetQueue(); } catch (err) { console.warn('[usePreferencesState] resetQueue failed:', err); }
+    try {
+      // Theme swaps change sprite colors, so old textures should not be reused.
+      invalidateSpriteTexturesForThemeChange();
+    } catch (err) {
+      console.warn('[usePreferencesState] sprite texture invalidation failed:', err);
+    }
   }, [darkMode]);
 
   return {

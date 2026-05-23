@@ -1,4 +1,4 @@
-// src/components/dotgraph/utils/positions.ts
+// src/graph-runtime/dotgraph/utils/positions.ts
 // Product-ready 3D point layout (1 .. 5000+):
 // - Even angular coverage via Spherical Fibonacci
 // - Uniform-in-ball radial ramp, with extra inward bias for small N
@@ -7,13 +7,13 @@
 
 export type Vec3 = [number, number, number];
 
-export type Rotation = {
+export interface Rotation {
   yaw?: number;
   pitch?: number;
   roll?: number;
-};
+}
 
-export type GeneratePositionsOptions = Rotation & {
+export interface GeneratePositionsOptions extends Rotation {
   baseRadius?: number;
   densityK?: number;
   maxRadiusCap?: number;
@@ -27,11 +27,11 @@ export type GeneratePositionsOptions = Rotation & {
   baseRadiusTight?: number;
   tightMaxAlpha?: number;
   tightCurve?: number;
-};
+}
 
 const TAU = Math.PI * 2;
 
-// ----------------- helpers -----------------
+// Helpers
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
@@ -73,7 +73,7 @@ const makePermutation = (n: number, rand: () => number): number[] => {
 
 const sphericalFibonacci = (n: number, rot?: Rotation): Vec3[] => {
   if (n <= 0) return [];
-  const dirs: Vec3[] = new Array(n);
+  const dirs = new Array<Vec3>(n);
   const golden = (1 + Math.sqrt(5)) / 2;
   const ga = TAU / (golden * golden);
 
@@ -109,7 +109,7 @@ const tangentBasis = (n: Vec3): [Vec3, Vec3] => {
   let ux = up[1] * nz - up[2] * ny;
   let uy = up[2] * nx - up[0] * nz;
   let uz = up[0] * ny - up[1] * nx;
-  let len = Math.hypot(ux, uy, uz) || 1;
+  const len = Math.hypot(ux, uy, uz) || 1;
   ux /= len; uy /= len; uz /= len;
   // v = n × u
   const vx = ny * uz - nz * uy;
@@ -118,7 +118,8 @@ const tangentBasis = (n: Vec3): [Vec3, Vec3] => {
   return [[ux, uy, uz], [vx, vy, vz]];
 };
 
-const gridKey = (i: number, j: number, k: number): string => `${i},${j},${k}`;
+const gridKey = (i: number, j: number, k: number): string =>
+  `${String(i)},${String(j)},${String(k)}`;
 
 const cellIndex = (p: Vec3, cs: number): [number, number, number] => [
   Math.floor(p[0] / cs),
@@ -126,13 +127,13 @@ const cellIndex = (p: Vec3, cs: number): [number, number, number] => [
   Math.floor(p[2] / cs),
 ];
 
-// ----------------- main API -----------------
+// Main API
 /**
  * Generate near-uniform 3D positions centered at the origin.
  */
 export const generatePositions = (
   numPoints: number,
-  minDistance: number = 2.5,
+  minDistance = 2.5,
   spreadOverride?: number,
   opts: GeneratePositionsOptions = {}
 ): Vec3[] => {
@@ -176,7 +177,7 @@ export const generatePositions = (
   const rand = mulberry32(seed);
   const perm = makePermutation(n, rand);
 
-  const pts: Vec3[] = new Array(n);
+  const pts = new Array<Vec3>(n);
   for (let i = 0; i < n; i++) {
     const u = (perm[i] + 0.5) / n; // stratified & shuffled
     const r = maxR * Math.pow(u, alpha);

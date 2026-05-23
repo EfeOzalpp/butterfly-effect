@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
+import { DEFAULT_AVG, useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
 import { useUiFlow } from "../../../app/state/ui-context";
-import { DEFAULT_AVG } from "../../../app/store";
 import CheckIcon from "../../../assets/svg/check/CheckIcon";
 import { BUTTON_QUESTIONS } from "./button-questions";
 import { getQuestionButtonPlacement } from "./button-layouts";
@@ -11,6 +11,14 @@ import type { Place } from "../../../canvas-engine/grid-layout/occupancy";
 
 const QUESTIONNAIRE_HINT_DELAY_MS = 1500;
 const QUESTIONNAIRE_HINT_VISIBLE_MS = 6000;
+
+type ButtonQuestionnaireGridStyle = CSSProperties & {
+  "--button-questionnaire-columns": string;
+};
+
+const FALLBACK_GRID_STYLE: ButtonQuestionnaireGridStyle = {
+  "--button-questionnaire-columns": "1",
+};
 
 function reserveSingleTile(footprint: Place): Place {
   const bottomRow = footprint.r0 + footprint.h - 1;
@@ -84,7 +92,7 @@ export default function ButtonQuestionnaireFlow({
         type="button"
         className="questionnaire-read-banner-close"
         aria-label="Dismiss questionnaire hint"
-        onClick={() => setShowQuestionHint(false)}
+        onClick={() => { setShowQuestionHint(false); }}
       >
         <svg
           width="100%"
@@ -134,8 +142,6 @@ export default function ButtonQuestionnaireFlow({
   ]);
 
   useEffect(() => {
-    setShowQuestionHint(false);
-
     const showTimer = window.setTimeout(() => {
       setShowQuestionHint(true);
     }, QUESTIONNAIRE_HINT_DELAY_MS);
@@ -236,7 +242,7 @@ export default function ButtonQuestionnaireFlow({
                   type="button"
                   className={`button-questionnaire__button button-questionnaire__button--placed${active ? " is-active" : ""}`}
                   aria-pressed={active}
-                  onClick={() => toggleOption(option.key)}
+                  onClick={() => { toggleOption(option.key); }}
                 >
                   <span className="button-questionnaire__button-content">
                     <span className="button-questionnaire__button-icon" aria-hidden="true">
@@ -264,7 +270,7 @@ export default function ButtonQuestionnaireFlow({
       ) : (
         <div
           className="button-questionnaire__grid button-questionnaire__grid--single"
-          style={{ ["--button-questionnaire-columns" as string]: "1" }}
+          style={FALLBACK_GRID_STYLE}
         >
           {question.options.map((option) => {
             const active = selectedKeys.includes(option.key);
@@ -274,7 +280,7 @@ export default function ButtonQuestionnaireFlow({
                 type="button"
                 className={`button-questionnaire__button${active ? " is-active" : ""}`}
                 aria-pressed={active}
-                onClick={() => toggleOption(option.key)}
+                onClick={() => { toggleOption(option.key); }}
               >
                 <span className="button-questionnaire__button-content">
                   <span className="button-questionnaire__button-icon" aria-hidden="true">

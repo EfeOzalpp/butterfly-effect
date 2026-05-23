@@ -1,22 +1,24 @@
+// src/graph-runtime/dotgraph/utils/dotPoints.ts
+
 import type { Vec3, GeneratePositionsOptions } from "./positions";
 import { generatePositions } from "./positions";
 import { sampleStops, rgbString } from "../../../lib/utils/color-and-interpolation";
 
-export type SurveyResponseLike = {
+export interface SurveyResponseLike {
   _id?: string;
   avgWeight?: number;
-  weights?: Record<string, unknown>;
-};
+  weights?: Record<string, number>;
+}
 
-export type DotPoint = {
+export interface DotPoint {
   position: Vec3;
   originalPosition: Vec3;
   color: string;
   averageWeight: number;
   _id?: string;
-};
+}
 
-export type DotPointsOptions = GeneratePositionsOptions & {
+export interface DotPointsOptions extends GeneratePositionsOptions {
   colorForAverage?: (avg: number) => string;
   personalizedEntryId?: string | null;
   showPersonalized?: boolean;
@@ -24,7 +26,7 @@ export type DotPointsOptions = GeneratePositionsOptions & {
   minDistance?: number;
   spreadOverride?: number;
   attractorStrength?: number;
-};
+}
 
 const defaultColorForAverage = (avg: number) => rgbString(sampleStops(avg));
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -189,8 +191,8 @@ const galaxyPositionForAverage = (
 };
 
 const computeLocalAvg = (response: SurveyResponseLike): number | undefined => {
-  const w = response?.weights;
-  if (!w || typeof w !== 'object') return undefined;
+  const w = response.weights;
+  if (!w) return undefined;
   const vals = Object.values(w).filter((x): x is number => Number.isFinite(x));
   if (!vals.length) return undefined;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
@@ -260,7 +262,7 @@ export function computeDotPoints(
 
   const pts: DotPoint[] = safe.map((response, i) => {
     const rawAvg =
-      typeof response?.avgWeight === 'number' && Number.isFinite(response.avgWeight)
+      typeof response.avgWeight === 'number' && Number.isFinite(response.avgWeight)
         ? response.avgWeight
         : computeLocalAvg(response);
 
@@ -270,7 +272,7 @@ export function computeDotPoints(
 
     // Guarantee a Vec3 (TS can't prove base[i] exists)
     const pos: Vec3 = base[i] ?? [0, 0, 0];
-    const stableSeed = hashFromString(response?._id ?? `dot-${i}`);
+    const stableSeed = hashFromString(response._id ?? `dot-${String(i)}`);
     const attractedPos = galaxyPositionForAverage(
       pos,
       avg,
@@ -284,7 +286,7 @@ export function computeDotPoints(
       originalPosition: attractedPos,
       color: colorForAverage(avg),
       averageWeight: avg,
-      _id: response?._id,
+      _id: response._id,
     };
   });
 

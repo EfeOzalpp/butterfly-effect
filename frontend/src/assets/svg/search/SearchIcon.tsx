@@ -3,9 +3,9 @@ import { useId, useMemo } from "react";
 import searchSvg from "./search.svg?raw";
 import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
-type SearchIconProps = {
+interface SearchIconProps {
   className?: string;
-};
+}
 
 export default function SearchIcon({ className = "ui-icon" }: SearchIconProps) {
   const iconId = useId().replace(/:/g, "");

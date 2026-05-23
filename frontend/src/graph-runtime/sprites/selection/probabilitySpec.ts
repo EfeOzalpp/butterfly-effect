@@ -1,11 +1,13 @@
 import type { ShapeKey } from './types';
 
-export type ProbAnchor = { t: number; prob: number };
+export interface ProbAnchor { t: number; prob: number }
 export type ShapeProbSpec = Record<ShapeKey, readonly ProbAnchor[]>;
 
+// Linear interpolation across the score curve for one shape.
 export function getProbAt(curve: readonly ProbAnchor[], avg: number): number {
-  if (!curve || curve.length === 0) return 1;
-  if (avg <= curve[0].t) return curve[0].prob;
+  if (curve.length === 0) return 1;
+  const first = curve[0];
+  if (avg <= first.t) return first.prob;
   const last = curve[curve.length - 1];
   if (avg >= last.t) return last.prob;
 
@@ -21,6 +23,8 @@ export function getProbAt(curve: readonly ProbAnchor[], avg: number): number {
   return 1;
 }
 
+// Art-direction table: each shape gets more or less likely as the score changes.
+// The sampler turns these curves into a stable shape pick per respondent.
 export const SHAPE_PROBABILITY_SPEC: ShapeProbSpec = {
   clouds: [
     { t: 0, prob: 0.6 },

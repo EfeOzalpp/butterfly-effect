@@ -2,11 +2,11 @@ import { useSyncExternalStore } from 'react';
 
 const FORCE_MOCK_SANITY = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
-type MockReadModeSnapshot = {
+interface MockReadModeSnapshot {
   forced: boolean;
   runtimeFallback: boolean;
   active: boolean;
-};
+}
 
 let snapshot: MockReadModeSnapshot = {
   forced: FORCE_MOCK_SANITY,
@@ -17,7 +17,9 @@ let snapshot: MockReadModeSnapshot = {
 const listeners = new Set<() => void>();
 
 function emit() {
-  listeners.forEach((listener) => listener());
+  listeners.forEach((listener) => {
+    listener();
+  });
 }
 
 export const USE_MOCK_SANITY = FORCE_MOCK_SANITY;
@@ -39,7 +41,9 @@ export function enableMockSanityReadFallback(reason?: unknown) {
 
 export function subscribeMockSanityReadMode(listener: () => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function useMockSanityReadMode() {
@@ -50,14 +54,28 @@ export function useMockSanityReadMode() {
   );
 }
 
-export function isSanityQuotaError(error: any) {
-  const status = error?.statusCode ?? error?.status ?? error?.response?.status;
-  const message = String(
-    error?.message ??
-    error?.error ??
-    error?.details ??
-    ''
-  ).toLowerCase();
+function readErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const record = error as Record<string, unknown>;
+  const response = record.response;
+  const responseStatus =
+    response && typeof response === 'object'
+      ? (response as Record<string, unknown>).status
+      : undefined;
+  const status = record.statusCode ?? record.status ?? responseStatus;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function readErrorMessage(error: unknown): string {
+  if (!error || typeof error !== 'object') return '';
+  const record = error as Record<string, unknown>;
+  const message = record.message ?? record.error ?? record.details;
+  return typeof message === 'string' ? message.toLowerCase() : '';
+}
+
+export function isSanityQuotaError(error: unknown) {
+  const status = readErrorStatus(error);
+  const message = readErrorMessage(error);
 
   // Also treat CORS / network failures as a fallback trigger so the app
   // shows mock data when Sanity is unreachable (e.g. non-localhost origins

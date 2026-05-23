@@ -24,7 +24,3 @@ export function useSurveyData(): SurveyDataState {
   if (!ctx) throw new Error("useSurveyData must be used within AppProvider");
   return ctx;
 }
-
-export function useOptionalSurveyData(): SurveyDataState | null {
-  return useContext(SurveyDataCtx);
-}

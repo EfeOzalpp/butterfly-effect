@@ -1,29 +1,9 @@
-import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePreferences } from '../../app/state/preferences-context';
 
-const ROOT_ID = 'darkmode-root';
-
 export default function DarkMode() {
   const { darkMode } = usePreferences();
-  const [mount, setMount] = useState(null);
-
-  // Ensure portal root
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    let root = document.getElementById(ROOT_ID);
-    if (!root) {
-      root = document.createElement('div');
-      root.id = ROOT_ID;
-      document.body.appendChild(root);
-    }
-    setMount(root);
-  }, []);
-
-  // In this refactor, we simply mirror context:
-  // darkMode === true  -> show overlay
-  // darkMode === false -> hide overlay
-  if (!mount || !darkMode) return null;
+  if (typeof document === 'undefined' || !darkMode) return null;
 
   return createPortal(
     <div
@@ -50,6 +30,6 @@ export default function DarkMode() {
         }}
       />
     </div>,
-    mount
+    document.body
   );
 }

@@ -1,12 +1,15 @@
-import Darkmode from "./color-toggle";
+import type { CSSProperties } from "react";
+import { useState } from "react";
+
+import ColorToggle from "./color-toggle";
 import GraphPicker from "../graph-picker";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
-import { useState } from "react";
 
 const DEFAULT_SECTION = "fine-arts";
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
+type PickerOffsetStyle = CSSProperties & { "--picker-offset": string };
 
 export default function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
   const { isSurveyActive, setSurveyActive, hasCompletedSurvey, observerMode, setObserverMode, openGraph, closeGraph, resetToStart, logsOpen, widgetsOpen } = useUiFlow();
@@ -21,6 +24,10 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
   const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View";
+  const pickerStyle: PickerOffsetStyle = {
+    "--picker-offset": `${String(pickerOffset)}px`,
+    transition: "transform 0.2s ease",
+  };
 
   const toggleObserverMode = () => {
     if (hasCompletedSurvey && !observerMode) {
@@ -44,7 +51,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   return (
     <>
       <div className={cx("right", isDark && "is-dark", introActive && "nav-first-enter")}>
-        <Darkmode />
+        <ColorToggle />
 
         {showObserverButton && (
           <button
@@ -60,7 +67,10 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
         )}
 
         {showPicker && (
-          <div className="graph-picker" style={{ ["--picker-offset" as any]: `${pickerOffset}px`, transition: "transform 0.2s ease" }}>
+          <div
+            className="graph-picker"
+            style={pickerStyle}
+          >
             <GraphPicker value={section} onChange={setSection} onOpenChange={setPickerOpen} />
           </div>
         )}

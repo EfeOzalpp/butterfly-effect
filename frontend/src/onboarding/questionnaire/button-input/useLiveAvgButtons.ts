@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
-import { DEFAULT_AVG } from "../../../app/store";
+import { DEFAULT_AVG, useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
 import type { LiveAvgButtonChange, LiveAvgButtonItem } from "./types";
 
 function clamp01(n: number) {

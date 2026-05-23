@@ -1,33 +1,34 @@
+// src/graph-runtime/dotgraph/components/ShapesLayer.tsx
+
 import React, { useMemo } from "react";
 import { Line, Billboard } from "@react-three/drei";
-import { SpriteShape } from "../../sprites/entry";
-import { chooseShape, getOrAssignShapeEntry } from "../../sprites/internal/spritePolicy";
-import { FOOTPRINTS as SHAPE_FOOTPRINT } from "../../sprites/selection/footprints";
+import { SpriteShape, resolveSpriteVisual } from "../../sprites/entry";
+import { hasDotId } from "../types";
+import type { DotGraphHoverEvent, DotGraphHoverStart, DotPoint } from "../types";
 
 const CIRCLE_PTS: [number, number, number][] = Array.from({ length: 49 }, (_, i) => {
   const a = (i / 48) * Math.PI * 2;
   return [Math.cos(a), Math.sin(a), 0];
 });
 
-type ShapesLayerProps = {
-  shapes: any[];
-  myEntry: any;
+interface ShapesLayerProps {
+  shapes: DotPoint[];
+  myEntry: unknown;
   personalizedEntryId: string | null;
   showCompleteUI: boolean;
-  onHoverStart: (shape: any, e: any) => void;
+  onHoverStart: DotGraphHoverStart;
   onHoverEnd: () => void;
   tieKeyForId: (id: string) => number | null;
   setSelectedTieKey: React.Dispatch<React.SetStateAction<number | null>>;
   selectedTieKey: number | null;
   spriteScale: number;
   bagSeed: string;
-  bleedOf: (shapeKey: string) => { top: number; right: number; bottom: number; left: number };
   darkMode?: boolean;
   occasionalRefreshMs?: number;
   particleFrames?: number;
   tileSize?: number;
   section?: string;
-};
+}
 
 export default function ShapesLayer({
   shapes,
@@ -41,76 +42,84 @@ export default function ShapesLayer({
   selectedTieKey,
   spriteScale,
   bagSeed,
-  bleedOf,
   darkMode = false,
   occasionalRefreshMs = 0,
   particleFrames = 219,
   tileSize = 128,
   section = '',
 }: ShapesLayerProps) {
-  const setShapeCursor = (active: boolean, e?: any) => {
-    const canvas = e?.nativeEvent?.target as HTMLElement | undefined;
-    if (!canvas?.classList) return;
-    canvas.classList.toggle("hovering-shape", active);
+  const setShapeCursor = (active: boolean, e?: DotGraphHoverEvent) => {
+    const target = e?.nativeEvent?.target;
+    if (!(target instanceof HTMLElement)) return;
+    target.classList.toggle("hovering-shape", active);
   };
 
   const shapeVisuals = useMemo(
     () =>
       shapes.map((shape, i) => {
         const avg = Number.isFinite(shape.averageWeight) ? shape.averageWeight : 0.5;
-        const assignment = shape._id
-          ? getOrAssignShapeEntry(shape._id, section, avg, bagSeed, i)
-          : undefined;
-        const chosenShape = assignment?.shape ?? chooseShape({ avg, seed: bagSeed, orderIndex: i });
-        const fp = (SHAPE_FOOTPRINT as any)[chosenShape] ?? { w: 1, h: 1 };
-        const aspect = fp.w / Math.max(0.0001, fp.h);
-        const b = bleedOf(chosenShape);
-        const sCompX = 1 / (1 + (b.left || 0) + (b.right || 0));
-        const sCompY = 1 / (1 + (b.top || 0) + (b.bottom || 0));
-        return { shape, avg, index: i, sx: spriteScale * aspect * sCompX, sy: spriteScale * sCompY, assignment };
+        const sprite = resolveSpriteVisual({
+          entryId: shape._id,
+          sectionKey: section,
+          avg,
+          seed: bagSeed,
+          orderIndex: i,
+          baseScale: spriteScale,
+        });
+        return {
+          shape,
+          avg,
+          index: i,
+          sx: sprite.layout.scale[0],
+          sy: sprite.layout.scale[1],
+          assignment: sprite.assignment,
+        };
       }),
-    [shapes, bagSeed, bleedOf, spriteScale, section]
+    [shapes, bagSeed, spriteScale, section]
   );
 
   return (
     <>
       {shapeVisuals.map(({ shape, avg, index, sx, sy, assignment }) => {
         const suppressHover = !!(myEntry && shape._id === personalizedEntryId && showCompleteUI);
+        const identifiedShape = hasDotId(shape) ? shape : null;
 
         return (
           <group
-            key={shape._id ?? `${shape.position?.[0]}-${shape.position?.[1]}-${shape.position?.[2]}`}
-            position={shape.position as any}
+            key={shape._id ?? shape.position.join("-")}
+            position={shape.position}
           >
             <sprite
               onPointerOver={(e) => {
                 e.stopPropagation();
-                if (!suppressHover) {
+                if (!suppressHover && identifiedShape) {
                   setShapeCursor(true, e);
-                  onHoverStart(shape, e);
+                  onHoverStart(identifiedShape, e);
                 }
               }}
               onPointerOut={(e) => {
                 e.stopPropagation();
                 setShapeCursor(false, e);
-                if (!suppressHover) onHoverEnd();
+                if (!suppressHover && identifiedShape) onHoverEnd();
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!suppressHover) onHoverStart(shape, e);
-                const key = tieKeyForId(shape._id);
+                if (!identifiedShape) return;
+                if (!suppressHover) onHoverStart(identifiedShape, e);
+                const key = tieKeyForId(identifiedShape._id);
                 setSelectedTieKey((prev) => (prev === key ? null : (key ?? null)));
               }}
               scale={[sx, sy, 1]}
+              frustumCulled={false}
             >
               <spriteMaterial transparent opacity={0} depthWrite={false} depthTest={false} />
             </sprite>
 
-            {selectedTieKey != null && tieKeyForId(shape._id) === selectedTieKey && (
+            {selectedTieKey != null && identifiedShape && tieKeyForId(identifiedShape._id) === selectedTieKey && (
               <Billboard>
                 <group scale={[Math.max(sx, sy) * 0.5, Math.max(sx, sy) * 0.5, 1]}>
                   <Line
-                    points={CIRCLE_PTS as any}
+                    points={CIRCLE_PTS}
                     color={darkMode ? "#9ca3af" : "#6b7280"}
                     lineWidth={1.5}
                     toneMapped={false}

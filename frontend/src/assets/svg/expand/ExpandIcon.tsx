@@ -4,10 +4,10 @@ import expandAllSvg from "./expand_all.svg?raw";
 import collapseAllSvg from "./collapse_all.svg?raw";
 import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
-type ExpandIconProps = {
+interface ExpandIconProps {
   expanded?: boolean;
   className?: string;
-};
+}
 
 export default function ExpandIcon({ expanded = false, className = "ui-icon" }: ExpandIconProps) {
   const iconId = useId().replace(/:/g, "");

@@ -1,7 +1,11 @@
-// src/components/dotgraph/utils/dynamicOffset.ts
+// src/graph-runtime/dotgraph/utils/dynamicOffset.ts
+
 // anchors non-scaling tooltips to the scaling 3D objects as zoom happens.
 
-type Viewport = { width: number; height: number };
+interface Viewport {
+  width: number;
+  height: number;
+}
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 

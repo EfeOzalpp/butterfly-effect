@@ -8,6 +8,8 @@ import {
 } from './particleLRU';
 import { spriteCachingDisabled } from '../internal/debug-flags';
 
+// Frozen textures are particle-heavy outputs. Failed/in-flight sets keep the
+// runtime from retrying expensive work every render.
 const FAILED_KEYS = new Set<string>();
 const INFLIGHT = new Set<string>();
 

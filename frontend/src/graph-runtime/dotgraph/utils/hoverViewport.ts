@@ -1,10 +1,12 @@
-export type HoverViewportParams = {
+// src/graph-runtime/dotgraph/utils/hoverViewport.ts
+
+export interface HoverViewportParams {
   x: number;
   y: number;
   width: number;
   height: number;
   useDesktopLayout: boolean;
-};
+}
 
 export function computeHoverViewportClass({
   x,

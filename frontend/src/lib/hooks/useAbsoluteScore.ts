@@ -1,19 +1,24 @@
-// src/utils/useAbsoluteScore.ts
+// src/lib/hooks/useAbsoluteScore.ts
 import { useMemo } from 'react';
 
-// Minimal shape your data already has
-type WithWeights = { _id?: string; weights?: Record<string, number>; avgWeight?: number };
+interface WithWeights {
+  _id?: string;
+  weights?: Record<string, number>;
+  avgWeight?: number;
+}
 
-export type AbsoluteOpts = {
-  accessor?: (x: WithWeights) => number; // default avgWeightOf
-  idOf?: (x: WithWeights) => string | undefined; // default x._id
-  decimals?: number; // round to N decimals when returning 0..100 scores
-};
+export interface AbsoluteOpts<TItem extends WithWeights = WithWeights> {
+  accessor?: (item: TItem) => number;
+  idOf?: (item: TItem) => string | undefined;
+  decimals?: number;
+}
 
-/** prefer server avgWeight; otherwise mean(weights); fallback 0.5 */
+// Prefer server avgWeight; otherwise mean(weights); fallback 0.5.
 const avgWeightOf = (item: WithWeights): number => {
-  if (Number.isFinite(item?.avgWeight)) return item!.avgWeight!;
-  const vals = Object.values(item?.weights || {});
+  if (typeof item.avgWeight === 'number' && Number.isFinite(item.avgWeight)) {
+    return item.avgWeight;
+  }
+  const vals = Object.values(item.weights ?? {});
   return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0.5;
 };
 
@@ -24,18 +29,16 @@ const toScore100 = (v: number, decimals = 0) => {
   return Math.round(raw * pow) / pow;
 };
 
-const defaultIdOf = <T extends { _id?: string }>(item: T) => item._id;
-
 /**
  * Absolute score hook (no pool comparison).
  * Returns 0..100 for a value, id, or item.
  */
-export function useAbsoluteScore<T extends { _id?: string }>(
-  items: T[],
-  opts?: AbsoluteOpts
+export function useAbsoluteScore<TItem extends WithWeights>(
+  items: TItem[],
+  opts?: AbsoluteOpts<TItem>
 ) {
-  const accessor = (opts?.accessor as ((x: T) => number)) ?? (avgWeightOf as (x: any) => number);
-  const idOf = (opts?.idOf as ((x: T) => string | undefined)) ?? defaultIdOf;
+  const accessor = opts?.accessor ?? avgWeightOf;
+  const idOf = opts?.idOf ?? ((item: TItem) => item._id);
   const decimals = opts?.decimals ?? 0;
 
   const idToValue = useMemo(() => {
@@ -51,10 +54,11 @@ export function useAbsoluteScore<T extends { _id?: string }>(
 
   const getForId = (id?: string) => {
     if (!id || !idToValue.has(id)) return 0;
-    return getForValue(idToValue.get(id)!);
+    const value = idToValue.get(id);
+    return value === undefined ? 0 : getForValue(value);
   };
 
-  const getForItem = (item: T) => {
+  const getForItem = (item: TItem) => {
     const v = accessor(item);
     return getForValue(v);
     // (We don't exclude self because this is absolute, not relative.)

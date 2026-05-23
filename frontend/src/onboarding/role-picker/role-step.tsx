@@ -1,15 +1,23 @@
-// src/components/survey/roleStep.jsx
+// src/onboarding/role-picker/role-step.tsx
 import RolePicker from ".";
+import type { RoleValue } from ".";
 
-const DISPLAY = {
+const DISPLAY: Record<RoleValue, string> = {
   student: "Step Inside",
   staff: "Step Inside",
   visitor: "Get Started",
 };
 
-export default function RoleStep({ value, onChange, onNext, error }) {
+interface RoleStepProps {
+  value: RoleValue | "";
+  onChange: (value: RoleValue) => void;
+  onNext: () => void;
+  error: string;
+}
+
+export default function RoleStep({ value, onChange, onNext, error }: RoleStepProps) {
   const isSelected = Boolean(value);
-  const buttonLabel = isSelected ? DISPLAY[value] : "Start Exploring";
+  const buttonLabel = value === "" ? "Start Exploring" : DISPLAY[value];
   const errorId = !isSelected && error ? "role-picker-error" : undefined;
 
   return (

@@ -5,9 +5,9 @@
 
 import React from 'react';
 
-type EmptyDustProps = {
+interface EmptyDustProps {
   className?: string;
-};
+}
 
 export default function EmptyDust({ className = '' }: EmptyDustProps) {
   return (

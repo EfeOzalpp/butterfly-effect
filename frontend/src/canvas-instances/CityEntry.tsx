@@ -1,4 +1,4 @@
-// canvas-instances/CityEntry.tsx
+// src/canvas-instances/CityEntry.tsx
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
 import { EngineHost } from "../canvas-engine/EngineHost";
 

@@ -7,7 +7,6 @@ import { resolvePaddingSpec } from "../../../canvas-engine/adjustable-rules/reso
 import {
   deviceType,
   getViewportSize,
-  type DeviceType,
 } from "../../../canvas-engine/shared/responsiveness";
 import {
   justifyContentForUiPlacement,
@@ -19,10 +18,10 @@ import {
   usedRowsFromSpec,
 } from "../../../canvas-engine/grid-layout";
 
-type CanvasBox = {
+interface CanvasBox {
   width: number;
   height: number;
-};
+}
 
 function findActiveGridHost(
   preferCityCanvas: boolean,
@@ -50,8 +49,8 @@ function readCanvasBox(host: HTMLElement | null): CanvasBox | null {
 
   const rect = host.getBoundingClientRect();
   const next = {
-    width: Math.floor(rect.width || host.clientWidth),
-    height: Math.floor(rect.height || host.clientHeight),
+    width: Math.floor(rect.width > 0 ? rect.width : host.clientWidth),
+    height: Math.floor(rect.height > 0 ? rect.height : host.clientHeight),
   };
 
   if (next.width <= 0 || next.height <= 0) return null;
@@ -61,9 +60,9 @@ function readCanvasBox(host: HTMLElement | null): CanvasBox | null {
 function readViewportBox(): CanvasBox | null {
   if (typeof window === "undefined") return null;
 
-  const vv: VisualViewport | undefined = (window as any).visualViewport;
-  const width = Math.floor(vv?.width || getViewportSize().w);
-  const height = Math.floor(vv?.height || getViewportSize().h);
+  const vv = window.visualViewport;
+  const width = Math.floor(vv?.width ?? getViewportSize().w);
+  const height = Math.floor(vv?.height ?? getViewportSize().h);
 
   if (width <= 0 || height <= 0) return null;
   return { width, height };
@@ -82,15 +81,14 @@ export function useQuestionnaireGridLayout() {
     let resizeObserver: ResizeObserver | null = null;
     let mutationObserver: MutationObserver | null = null;
     let observedHost: HTMLElement | null = null;
-    const visualViewport: VisualViewport | undefined =
-      typeof window !== "undefined" ? (window as any).visualViewport : undefined;
+    const visualViewport = typeof window !== "undefined" ? window.visualViewport : undefined;
 
     const syncObserverTarget = (host: HTMLElement | null) => {
       if (observedHost === host) return;
       resizeObserver?.disconnect();
       observedHost = host;
       if (host && typeof ResizeObserver !== "undefined") {
-        resizeObserver = new ResizeObserver(() => scheduleMeasure());
+        resizeObserver = new ResizeObserver(() => { scheduleMeasure(); });
         resizeObserver.observe(host);
       }
     };
@@ -113,9 +111,9 @@ export function useQuestionnaireGridLayout() {
     scheduleMeasure();
     window.addEventListener("resize", scheduleMeasure);
     window.addEventListener("orientationchange", scheduleMeasure);
-    visualViewport?.addEventListener?.("resize", scheduleMeasure);
+    if (visualViewport) visualViewport.addEventListener("resize", scheduleMeasure);
     if (typeof MutationObserver !== "undefined" && typeof document !== "undefined") {
-      mutationObserver = new MutationObserver(() => scheduleMeasure());
+      mutationObserver = new MutationObserver(() => { scheduleMeasure(); });
       mutationObserver.observe(document.body, { childList: true, subtree: true });
     }
 
@@ -125,14 +123,14 @@ export function useQuestionnaireGridLayout() {
       mutationObserver?.disconnect();
       window.removeEventListener("resize", scheduleMeasure);
       window.removeEventListener("orientationchange", scheduleMeasure);
-      visualViewport?.removeEventListener?.("resize", scheduleMeasure);
+      if (visualViewport) visualViewport.removeEventListener("resize", scheduleMeasure);
     };
   }, [preferCityCanvas, preferQuestionnaireHost]);
 
   const layout = useMemo(() => {
     if (!canvasBox) return null;
 
-    const spec = resolvePaddingSpec(canvasBox.width, CANVAS_PADDING.questionnaire as never);
+    const spec = resolvePaddingSpec(canvasBox.width, CANVAS_PADDING.questionnaire);
     const grid = makeCenteredSquareGrid({
       w: canvasBox.width,
       h: canvasBox.height,
@@ -152,7 +150,7 @@ export function useQuestionnaireGridLayout() {
     return {
       width: canvasBox.width,
       height: canvasBox.height,
-      device: deviceType(canvasBox.width) as DeviceType,
+      device: deviceType(canvasBox.width),
       rows: grid.rows,
       cols: grid.cols,
       usedRows: usedRowsFromSpec(grid.rows, spec.useTopRatio),
@@ -178,9 +176,9 @@ export function useQuestionnaireGridLayout() {
     );
     const px = uiGridPlacementToPx(layout.size, resolvedPlacement);
     return {
-      left: `${px.left}px`,
-      top: `${px.anchorY}px`,
-      width: `${px.width}px`,
+      left: `${String(px.left)}px`,
+      top: `${String(px.anchorY)}px`,
+      width: `${String(px.width)}px`,
       justifyContent: justifyContentForUiPlacement(placement),
     };
   };

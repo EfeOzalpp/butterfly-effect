@@ -1,0 +1,58 @@
+import type { ShapeAssignment } from "./internal/spritePolicy";
+import type { ShapeKey } from "./selection/types";
+
+// Contracts shared between dotgraph and sprites. This is the shape of the boundary,
+// while the texture/cache details stay inside the sprites folder.
+export type { ShapeKey };
+
+export type SpriteAssignment = ShapeAssignment;
+export type SpriteVec3 = [number, number, number];
+
+export interface SpriteFootprint {
+  w: number;
+  h: number;
+}
+
+export interface SpriteBleed {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
+export interface SpriteVisualLayout {
+  scale: [number, number, number];
+  aspect: number;
+  footprint: SpriteFootprint;
+  bleed: Required<SpriteBleed>;
+}
+
+export interface SpriteVisual {
+  shape: ShapeKey;
+  assignment?: SpriteAssignment;
+  layout: SpriteVisualLayout;
+}
+
+// Props accepted by the Three sprite component. Most callers should still go
+// through the public helpers so shape assignment stays consistent.
+export interface SpriteShapeProps {
+  avg: number;
+  seed?: string | number;
+  orderIndex?: number;
+  position?: SpriteVec3;
+  scale?: number;
+  tileSize?: number;
+  alpha?: number;
+  blend?: number;
+  opacity?: number;
+  freezeParticles?: boolean;
+  particleFrames?: number;
+  particleStepMs?: number;
+  variantSlots?: number;
+  variantSeed?: string | number;
+  darkMode?: boolean;
+  occasionalRefreshMs?: number;
+  enableDepthFog?: boolean;
+  worldPosition?: SpriteVec3;
+  assignment?: SpriteAssignment;
+}

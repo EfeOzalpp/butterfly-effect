@@ -4,10 +4,10 @@ import darkModeSvg from "./dark_mode.svg?raw";
 import lightModeSvg from "./light_mode.svg?raw";
 import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
-type ThemeIconProps = {
+interface ThemeIconProps {
   mode: "dark" | "light";
   className?: string;
-};
+}
 
 export default function ThemeIcon({ mode, className = "ui-icon" }: ThemeIconProps) {
   const iconId = useId().replace(/:/g, "");

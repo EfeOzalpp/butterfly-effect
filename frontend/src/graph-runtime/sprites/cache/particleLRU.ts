@@ -1,13 +1,18 @@
 // graph-runtime/sprites/cache/particleLRU.ts
 import * as THREE from 'three';
 
-type Entry = { key: string; tex: THREE.CanvasTexture };
+interface Entry {
+  key: string;
+  tex: THREE.CanvasTexture;
+}
+// Frozen particle textures are bigger than static sprites, so cap the cache.
 const MAX_CAP = 48;
+type SpriteTextureWindow = Window & { __GP_TEX_REGISTRY: Set<THREE.Texture> };
 
-const getGlobals = () => {
-  const w = window as any;
-  w.__GP_TEX_REGISTRY = w.__GP_TEX_REGISTRY || new Set<THREE.Texture>();
-  return w;
+// DevTools/debug registry so texture pressure is visible while tuning.
+const getGlobals = (): SpriteTextureWindow => {
+  window.__GP_TEX_REGISTRY ??= new Set<THREE.Texture>();
+  return window as SpriteTextureWindow;
 };
 
 class ParticleLRU {
@@ -19,6 +24,7 @@ class ParticleLRU {
   get(key: string) {
     const e = this.map.get(key);
     if (!e) return null;
+    // Touching a texture moves it to the back so the oldest unused entry evicts first.
     this.order = this.order.filter(k => k !== key);
     this.order.push(key);
     return e.tex;
@@ -28,7 +34,9 @@ class ParticleLRU {
     const g = getGlobals();
     try { g.__GP_TEX_REGISTRY.add(tex); } catch {}
     if (this.map.has(key)) {
-      const old = this.map.get(key)!.tex;
+      const current = this.map.get(key);
+      if (!current) return;
+      const old = current.tex;
       if (old !== tex) {
         try { old.dispose(); } catch {}
         try { g.__GP_TEX_REGISTRY.delete(old); } catch {}
@@ -63,10 +71,13 @@ class ParticleLRU {
   private evictIfNeeded() {
     const g = getGlobals();
     while (this.order.length > MAX_CAP) {
-      const lruKey = this.order.shift()!;
+      const lruKey = this.order.shift();
+      if (!lruKey) break;
       const e = this.map.get(lruKey);
       if (!e) continue;
-      try { e.tex.dispose(); } catch {}
+      // Cache eviction must not dispose the texture. Mounted SpriteMaterials may
+      // still reference it, and disposing here can make visible sprites flicker
+      // or turn into blank/placeholder textures during camera movement.
       try { g.__GP_TEX_REGISTRY.delete(e.tex); } catch {}
       this.map.delete(lruKey);
     }

@@ -5,6 +5,7 @@ const SHAPES: ShapeKey[] = [
   'clouds', 'snow', 'house', 'power', 'sun', 'villa',
   'car', 'sea', 'carFactory', 'bus', 'trees',
 ];
+const FALLBACK_SHAPE: ShapeKey = 'clouds';
 
 function clamp01(t: number) {
   return Math.max(0, Math.min(1, t));
@@ -39,7 +40,11 @@ function permute<T>(arr: T[], seedStr: string): T[] {
   const rnd = prng(seedStr);
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
+    const a = out[i];
+    const b = out[j];
+    if (a === undefined || b === undefined) continue;
+    out[i] = b;
+    out[j] = a;
   }
   return out;
 }
@@ -51,31 +56,31 @@ function pickDeterministicFromShapes(
   orderIndex?: number
 ): ShapeKey {
   const n = shapes.length;
-  if (!n) return SHAPES[0];
+  if (!n) return FALLBACK_SHAPE;
 
   const a = clamp01(Number.isFinite(avgIn) ? avgIn : 0.5);
   const seedStr = seed == null ? 'seed:default' : String(seed);
 
-  if (Number.isFinite(orderIndex as number)) {
-    const idx = Math.max(0, Math.floor(orderIndex as number));
+  if (typeof orderIndex === 'number' && Number.isFinite(orderIndex)) {
+    const idx = Math.max(0, Math.floor(orderIndex));
     const batch = Math.floor(idx / n);
     const pos = idx % n;
-    const perm = permute(shapes, `perm:${seedStr}:b${batch}`);
+    const perm = permute(shapes, `perm:${seedStr}:b${String(batch)}`);
     return perm[pos];
   }
 
   const base = Math.min(n - 1, Math.floor(a * n));
   const rot = Math.floor(hash01(`rot:${seedStr}`) * n) % n;
-  return shapes[(base + rot) % n];
+  return shapes[(base + rot) % n] ?? FALLBACK_SHAPE;
 }
 
-function isUniformPool(pool: Array<{ shape: ShapeKey; w: number }>, epsilon = 1e-6) {
+function isUniformPool(pool: { shape: ShapeKey; w: number }[], epsilon = 1e-6) {
   if (pool.length <= 1) return true;
-  const first = pool[0].w;
+  const first = pool[0]?.w ?? 0;
   return pool.every((entry) => Math.abs(entry.w - first) <= epsilon);
 }
 
-function weightsToSlots(pool: Array<{ shape: ShapeKey; w: number }>) {
+function weightsToSlots(pool: { shape: ShapeKey; w: number }[]) {
   const maxWeight = Math.max(...pool.map((entry) => entry.w), 1e-6);
   return pool.map((entry) => ({
     shape: entry.shape,
@@ -84,9 +89,11 @@ function weightsToSlots(pool: Array<{ shape: ShapeKey; w: number }>) {
 }
 
 function buildWeightedSequence(
-  pool: Array<{ shape: ShapeKey; w: number }>,
+  pool: { shape: ShapeKey; w: number }[],
   seedStr: string
 ): ShapeKey[] {
+  // Weighted round-robin gives variety without letting the highest probability
+  // shape dominate every nearby dot.
   const weighted = permute(weightsToSlots(pool), `weights:${seedStr}`);
   const totalSlots = weighted.reduce((sum, entry) => sum + entry.slots, 0);
   const current = new Map(weighted.map((entry) => [entry.shape, 0]));
@@ -117,6 +124,7 @@ export function shapeForAvg(
   seed?: string | number,
   orderIndex?: number
 ): ShapeKey {
+  // Fallback deterministic picker used when probability data is empty or uniform.
   return pickDeterministicFromShapes(SHAPES, avgIn, seed, orderIndex);
 }
 
@@ -129,9 +137,10 @@ export function sampleShapeForAvg(
   const avg = clamp01(Number.isFinite(avgIn) ? avgIn : 0.5);
   const seedStr = seed == null ? 'seed:default' : String(seed);
 
-  const pool: Array<{ shape: ShapeKey; w: number }> = [];
+  const pool: { shape: ShapeKey; w: number }[] = [];
   let total = 0;
 
+  // Build the score-specific candidate pool before sampling.
   for (const shape of SHAPES) {
     const w = getProbAt(spec[shape], avg);
     if (w > 0) {
@@ -151,21 +160,22 @@ export function sampleShapeForAvg(
     );
   }
 
-  if (Number.isFinite(orderIndex as number)) {
-    const idx = Math.max(0, Math.floor(orderIndex as number));
-    const batchSeed = `${seedStr}:weighted:b${Math.floor(idx / Math.max(1, pool.length))}`;
+  if (typeof orderIndex === 'number' && Number.isFinite(orderIndex)) {
+    const idx = Math.max(0, Math.floor(orderIndex));
+    const batchSeed = `${seedStr}:weighted:b${String(Math.floor(idx / Math.max(1, pool.length)))}`;
     const sequence = buildWeightedSequence(pool, batchSeed);
-    return sequence[idx % sequence.length];
+    return sequence[idx % sequence.length] ?? FALLBACK_SHAPE;
   }
 
-  const rng = hash01(`prob:${seedStr}:${orderIndex ?? ''}`) * total;
+  const orderKey = orderIndex === undefined ? '' : String(orderIndex);
+  const rng = hash01(`prob:${seedStr}:${orderKey}`) * total;
   let acc = 0;
   for (const entry of pool) {
     acc += entry.w;
     if (rng <= acc) return entry.shape;
   }
 
-  return pool[pool.length - 1].shape;
+  return pool[pool.length - 1]?.shape ?? FALLBACK_SHAPE;
 }
 
 export type { ShapeKey, ShapeProbSpec };

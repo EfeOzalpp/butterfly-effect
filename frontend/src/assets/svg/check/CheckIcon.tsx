@@ -3,9 +3,9 @@ import { useId, useMemo } from "react";
 import checkSvg from "./check.svg?raw";
 import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
-type CheckIconProps = {
+interface CheckIconProps {
   className?: string;
-};
+}
 
 function sanitizeCheckIconClassName(className: string) {
   return className

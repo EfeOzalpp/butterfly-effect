@@ -1,4 +1,4 @@
-// src/components/survey/survey.tsx
+// src/onboarding/index.tsx
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useUiFlow } from "../app/state/ui-context";
@@ -7,22 +7,13 @@ import { useIdentity } from "../app/state/identity-context";
 import "../styles/onboarding.css";
 
 import { ROLE_SECTIONS } from "./section-picker/sections";
-import { ButtonQuestionnaireFlow, WEIGHTED_QUESTIONS } from "./questionnaire";
+import type { RoleSection, SectionItem, SectionOption } from "./section-picker/sections";
+import type { RoleValue } from "./role-picker";
+import { ButtonQuestionnaireFlow, BUTTON_QUESTIONS } from "./questionnaire";
 
 import { saveUserResponse } from "../services/sanity/saveUserResponse";
-type Audience = 'student' | 'staff' | 'visitor' | '';
 
-type RoleKey = 'student' | 'staff';
-const isRoleKey = (r: Audience): r is RoleKey => r === 'student' || r === 'staff';
-
-type SectionHeader = { type: 'header'; id: string; label: string };
-type SectionOption = {
-  type: 'option';
-  value: string;
-  label: string;
-  aliases?: string[];
-};
-type SectionItem = SectionHeader | SectionOption;
+type Audience = RoleValue | '';
 
 const RoleStep = React.lazy(() => import("./role-picker/role-step"));
 const SectionPickerIntro = React.lazy(
@@ -45,8 +36,7 @@ export default function Survey({
   const shouldScrollToSectionRef = useRef(false);
 
   // latches
-  const [finished, setFinished] = useState(false); // hide QuestionFlow right after submit
-  const exitingRef = useRef(false);
+  const [finished, setFinished] = useState(false); // hide questionnaire immediately after submit
   const prevCompletedRef = useRef(false);
 
   const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen } = useUiFlow();
@@ -81,12 +71,12 @@ export default function Survey({
       window.setTimeout(scrollToSection, 40);
     });
 
-    return () => window.cancelAnimationFrame(rafId);
+    return () => { window.cancelAnimationFrame(rafId); };
   }, [stage]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIntroActive(false), 520);
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => { setIntroActive(false); }, 520);
+    return () => { window.clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -128,35 +118,29 @@ export default function Survey({
     }, 70);
   };
 
-  // Normalize ROLE_SECTIONS into what SectionPickerIntro expects:
-  // - option items must have { value, label, aliases? }
-  // - headers have { type:'header', id, label }
+  // Normalize role sections into the picker contract and add headers for staff mode.
   const availableSections = useMemo<SectionItem[]>(() => {
     if (!audience || audience === 'visitor') return [];
 
-    const toOption = (s: any): SectionOption => ({
+    const toOption = (sectionOption: RoleSection): SectionOption => ({
       type: 'option',
-      value: String(s?.value ?? ''),
-      label: String(s?.label ?? ''),
-      aliases: Array.isArray(s?.aliases) ? s.aliases : undefined,
+      value: sectionOption.value,
+      label: sectionOption.label,
+      aliases: sectionOption.aliases,
     });
 
     if (audience === 'student') {
-      return (ROLE_SECTIONS.student || []).map(toOption).filter((o) => o.value);
+      return ROLE_SECTIONS.student.map(toOption);
     }
 
-    if (audience === 'staff') {
-      const stu = (ROLE_SECTIONS.student || []).map(toOption).filter((o) => o.value);
-      const fac = (ROLE_SECTIONS.staff || []).map(toOption).filter((o) => o.value);
-      return [
-        { type: 'header', id: 'staff', label: 'Institutional departments' },
-        ...fac,
-        { type: 'header', id: 'student', label: 'Student departments' },
-        ...stu,
-      ];
-    }
-
-    return [];
+    const studentOptions = ROLE_SECTIONS.student.map(toOption);
+    const staffOptions = ROLE_SECTIONS.staff.map(toOption);
+    return [
+      { type: 'header', id: 'staff', label: 'Institutional departments' },
+      ...staffOptions,
+      { type: 'header', id: 'student', label: 'Student departments' },
+      ...studentOptions,
+    ];
   }, [audience]);
 
   const handleRoleNext = () => {
@@ -173,7 +157,7 @@ export default function Survey({
       return;
     }
     shouldScrollToSectionRef.current = true;
-    transitionTo('section', () => setSurveySection(''));
+    transitionTo('section', () => { setSurveySection(''); });
   };
 
   const handleBeginFromSection = () => {
@@ -182,13 +166,13 @@ export default function Survey({
       return;
     }
     setError('');
-    transitionTo('questions', () => setAnimationVisible(false));
+    transitionTo('questions', () => { setAnimationVisible(false); });
   };
 
   // Map answers{id->value} into q1..q5 by original question order
   function answersToWeights(answers: Record<string, number | null>) {
     const getVal = (i: number) => {
-      const id = WEIGHTED_QUESTIONS[i]?.id;
+      const id = BUTTON_QUESTIONS[i]?.id;
       const v = id ? answers[id] : undefined;
       return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
     };
@@ -213,7 +197,7 @@ export default function Survey({
     try {
       const weights = answersToWeights(answers);
       const created = await saveUserResponse(surveySection, weights);
-      const id = created?._id || null;
+      const id = created._id;
 
       setSection(surveySection);
       setMySection(surveySection);
@@ -249,9 +233,9 @@ export default function Survey({
 
     // Only index ROLE_SECTIONS when role is student/staff
     const allowed = role === 'staff'
-      ? [...(ROLE_SECTIONS.student || []), ...(ROLE_SECTIONS.staff || [])].map((s) => s.value)
-      : isRoleKey(role)
-        ? (ROLE_SECTIONS[role] || []).map((s) => s.value)
+      ? [...ROLE_SECTIONS.student, ...ROLE_SECTIONS.staff].map((sectionOption) => sectionOption.value)
+      : role === 'student'
+        ? ROLE_SECTIONS.student.map((sectionOption) => sectionOption.value)
         : [];
 
     setSurveySection((prev) => (allowed.includes(prev) ? prev : role === 'visitor' ? 'visitor' : ''));
@@ -264,17 +248,6 @@ export default function Survey({
 
   if (hasCompletedSurvey && !observerMode) {
     return null;
-  }
-
-  // Render
-  if (exitingRef.current) {
-    return (
-      <div className={`survey-section fade-in ${introActive ? 'survey-first-enter' : ''}`}>
-        <Suspense fallback={null}>
-          <RoleStep value="" onChange={handleAudienceChange} onNext={handleRoleNext} error="" />
-        </Suspense>
-      </div>
-    );
   }
 
   return (
@@ -301,7 +274,7 @@ export default function Survey({
           {stage === 'questions' && !finished && (
             <ButtonQuestionnaireFlow
               onAnswersUpdate={onAnswersUpdate}
-              onSubmit={handleSubmitFromQuestions}
+              onSubmit={(answers) => { void handleSubmitFromQuestions(answers); }}
               submitting={submitting}
             />
           )}

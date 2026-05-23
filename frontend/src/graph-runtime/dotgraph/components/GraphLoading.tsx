@@ -1,9 +1,11 @@
+// src/graph-runtime/dotgraph/components/GraphLoading.tsx
+
 import React from "react";
 import { Html } from "@react-three/drei";
 
-type GraphOverlaysProps = {
+interface GraphOverlaysProps {
   isBusy: boolean;
-};
+}
 
 export default function GraphOverlays({
   isBusy,
@@ -14,12 +16,18 @@ export default function GraphOverlays({
   React.useEffect(() => {
     if (!isBusy) {
       hasLoadedRef.current = true;
+      // Timer-backed visibility belongs to the overlay, so this reset is intentional.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(false);
       return;
     }
     if (hasLoadedRef.current) return;
-    const id = setTimeout(() => setVisible(true), 800);
-    return () => clearTimeout(id);
+    const id = setTimeout(() => {
+      setVisible(true);
+    }, 800);
+    return () => {
+      clearTimeout(id);
+    };
   }, [isBusy]);
 
   return (

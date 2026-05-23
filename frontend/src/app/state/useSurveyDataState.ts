@@ -1,85 +1,35 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// src/app/state/useSurveyDataState.ts
+// Owns Sanity survey rows plus the active section filter used by graph views.
+
+import { useCallback, useMemo, useState } from 'react';
 
 import { subscribeSurveyData } from '../../services/sanity/api';
 import { useMockSanityReadMode } from '../../services/sanity/config';
-import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from '../../services/sanity/sections';
 import { getSessionItem, setSessionItem } from '../session';
 import type { SurveyRow } from '../types';
+import { deriveSectionCounts, filterRowsForSection } from './survey-data-utils';
 
 interface UseSurveyDataStateParams {
-  section: string;
   mySection: string | null;
-  setSection: (section: string) => void;
 }
 
 const ALL_ROWS_LIMIT = 5000;
 const VISIBLE_ROWS_LIMIT = 300;
+const SMALL_SECTION_THRESHOLD = 5;
 
 export default function useSurveyDataState({
-  section,
   mySection,
-  setSection,
 }: UseSurveyDataStateParams) {
   const { active: mockReadMode } = useMockSanityReadMode();
-
+  const [section, setSection] = useState<string>('all');
   const [allRows, setAllRows] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const subscribeToSurveyData = useCallback(() => {
-    void mockReadMode;
-    setLoading(true);
-    return subscribeSurveyData({
-      section: 'all',
-      limit: ALL_ROWS_LIMIT,
-      onData: (rows: SurveyRow[]) => {
-        setAllRows(rows);
-        setLoading(false);
-      },
-    });
-  }, [mockReadMode]);
-
-  const counts = useMemo<Record<string, number>>(() => {
-    const bySection: Record<string, number> = {};
-    for (const row of allRows) {
-      const key = row.section || '';
-      bySection[key] = (bySection[key] || 0) + 1;
-    }
-
-    const sum = (ids: string[]) => ids.reduce((acc, id) => acc + (bySection[id] || 0), 0);
-
-    return {
-      all: allRows.length,
-      'all-massart': sum(NON_VISITOR_MASSART),
-      'all-students': sum(STUDENT_IDS),
-      'all-staff': sum(STAFF_IDS),
-      visitor: bySection.visitor || 0,
-      ...bySection,
-    };
-  }, [allRows]);
-
-  const filteredRows = useMemo(() => {
-    if (!section || section === 'all') return allRows;
-    if (section === 'all-massart') {
-      const allowed = new Set(NON_VISITOR_MASSART);
-      return allRows.filter((row) => allowed.has(row.section));
-    }
-    if (section === 'all-students') {
-      const allowed = new Set(STUDENT_IDS);
-      return allRows.filter((row) => allowed.has(row.section));
-    }
-    if (section === 'all-staff') {
-      const allowed = new Set(STAFF_IDS);
-      return allRows.filter((row) => allowed.has(row.section));
-    }
-    return allRows.filter((row) => row.section === section);
-  }, [allRows, section]);
-
-  const data = useMemo(() => filteredRows.slice(0, VISIBLE_ROWS_LIMIT), [filteredRows]);
-
-  useEffect(() => {
+  const applyPostSubmitRedirect = useCallback((nextCounts: Record<string, number>) => {
     if (typeof window === 'undefined') return;
     const justSubmitted = getSessionItem('be.justSubmitted') === '1';
     if (!justSubmitted) return;
+
     const effectiveMySection = mySection ?? getSessionItem('be.mySection') ?? '';
     if (!effectiveMySection) return;
 
@@ -88,21 +38,49 @@ export default function useSurveyDataState({
       return;
     }
 
-    const n = counts[effectiveMySection] ?? 0;
-    const SMALL_SECTION_THRESHOLD = 5;
+    const n = nextCounts[effectiveMySection] ?? 0;
     if (n < SMALL_SECTION_THRESHOLD) {
+      // Tiny non-visitor sections redirect to the MassArt pool so the user's dot has context.
       setSection('all-massart');
       try {
         setSessionItem('be.openPersonalOnNext', '1');
       } catch (err: unknown) {
-        console.warn('[useSurveyDataState] Failed to set openPersonalOnNext in sessionStorage:', err);
+        console.warn('[useSurveyDataState] Failed to set openPersonalOnNext:', err);
       }
     }
 
     sessionStorage.removeItem('be.justSubmitted');
-  }, [counts, mySection, setSection]);
+  }, [mySection]);
+
+  const subscribeToSurveyData = useCallback(() => {
+    setLoading(true);
+    return subscribeSurveyData({
+      section: 'all',
+      limit: ALL_ROWS_LIMIT,
+      onData: (rows: SurveyRow[]) => {
+        setAllRows(rows);
+        setLoading(false);
+        // Run redirect from fresh rows instead of waiting for a separate state effect.
+        applyPostSubmitRedirect(deriveSectionCounts(rows));
+      },
+    });
+  }, [applyPostSubmitRedirect, mockReadMode]);
+
+  const counts = useMemo(
+    () => deriveSectionCounts(allRows),
+    [allRows]
+  );
+
+  const filteredRows = useMemo(
+    () => filterRowsForSection(allRows, section),
+    [allRows, section]
+  );
+
+  const data = useMemo(() => filteredRows.slice(0, VISIBLE_ROWS_LIMIT), [filteredRows]);
 
   return {
+    section,
+    setSection,
     counts,
     allRows,
     data,

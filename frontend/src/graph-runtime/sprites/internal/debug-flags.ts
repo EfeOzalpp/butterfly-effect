@@ -1,11 +1,7 @@
-const TEMP_DISABLE_SPRITE_OPTIMIZATIONS = false;
-const TEMP_DISABLE_SPRITE_CACHE = false;
-const TEMP_DISABLE_SPRITE_QUANTIZATION = false;
-const TEMP_DISABLE_SPRITE_MATERIAL_CACHE = false;
-
-function readWindowFlag(name: string) {
+// Runtime debug switches can be flipped from DevTools without changing source.
+function readWindowFlag(name: keyof Window) {
   if (typeof window === "undefined") return false;
-  return (window as any)[name] === true;
+  return window[name] === true;
 }
 
 export function shouldDisableSpriteCaching() {
@@ -25,13 +21,13 @@ export function shouldDisableSpriteMaterialCaching() {
 }
 
 export function spriteCachingDisabled() {
-  return TEMP_DISABLE_SPRITE_OPTIMIZATIONS || TEMP_DISABLE_SPRITE_CACHE || shouldDisableSpriteOptimizations() || shouldDisableSpriteCaching();
+  return shouldDisableSpriteOptimizations() || shouldDisableSpriteCaching();
 }
 
 export function spriteQuantizationDisabled() {
-  return TEMP_DISABLE_SPRITE_OPTIMIZATIONS || TEMP_DISABLE_SPRITE_QUANTIZATION || shouldDisableSpriteOptimizations() || shouldDisableSpriteQuantization();
+  return shouldDisableSpriteOptimizations() || shouldDisableSpriteQuantization();
 }
 
 export function spriteMaterialCachingDisabled() {
-  return TEMP_DISABLE_SPRITE_OPTIMIZATIONS || TEMP_DISABLE_SPRITE_MATERIAL_CACHE || shouldDisableSpriteOptimizations() || shouldDisableSpriteMaterialCaching();
+  return shouldDisableSpriteOptimizations() || shouldDisableSpriteMaterialCaching();
 }

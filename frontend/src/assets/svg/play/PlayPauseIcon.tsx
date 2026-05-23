@@ -3,10 +3,10 @@ import { useId, useMemo } from "react";
 import pauseSvg from "./pause.svg?raw";
 import { prepareRawSvgMarkup, RAW_SVG_WRAPPER_STYLE } from "../shared/rawSvg";
 
-type PlayPauseIconProps = {
+interface PlayPauseIconProps {
   mode: "play" | "pause";
   className?: string;
-};
+}
 
 const PLAY_SVG = `
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

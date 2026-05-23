@@ -43,7 +43,7 @@ export const CONDITIONS: Record<ConditionKind, ConditionSpec> = {
   },
   C: {
     variants: [
-      { shape: "house", footprint: { w: 1, h: 3 } },
+      { shape: "house", footprint: { w: 1, h: 4 } },
       { shape: "power", footprint: { w: 1, h: 3 } },
     ],
   },

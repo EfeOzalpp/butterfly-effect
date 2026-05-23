@@ -1,8 +1,8 @@
-export type ButtonQuestion = {
+export interface ButtonQuestion {
   id: string;
   prompt: string;
   options: { key: string; label: string; weight: number }[];
-};
+}
 
 export const BUTTON_QUESTIONS: ButtonQuestion[] = [
   {
@@ -16,7 +16,7 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
       { key: 'E', label: 'Imported food',     weight: 0.25 },
     ],
   },
-    {
+  {
     id: 'q2',
     prompt: "What's your usual commute?",
     options: [

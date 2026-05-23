@@ -19,7 +19,3 @@ export function useIdentity(): IdentityState {
   if (!ctx) throw new Error("useIdentity must be used within AppProvider");
   return ctx;
 }
-
-export function useOptionalIdentity(): IdentityState | null {
-  return useContext(IdentityCtx);
-}

@@ -2,11 +2,14 @@
 import * as THREE from 'three';
 import { makeCanvasFacade } from './canvasFacade';
 import { makeSpritePaletteLightContext } from './spriteLight';
+import type { DrawerFn } from '../selection/drawers';
 
-type Drawer = (p: any, x: number, y: number, r: number, opts?: any) => void;
+// Static bridge: run a canvas-engine drawer into an offscreen canvas, then hand
+// that canvas to Three as a CanvasTexture.
+type Drawer = DrawerFn;
 
-export type Footprint = { w: number; h: number };
-export type BleedFrac = { top?: number; right?: number; bottom?: number; left?: number };
+export interface Footprint { w: number; h: number }
+export interface BleedFrac { top?: number; right?: number; bottom?: number; left?: number }
 
 export function makeTextureFromDrawer({
   drawer,
@@ -23,8 +26,6 @@ export function makeTextureFromDrawer({
   timeMs = (typeof performance !== 'undefined' ? performance.now() : 0),
   seedKey,
   darkMode = false,
-  prewarmMs = 0,
-  prewarmStepMs = 33,
   pixelScaleBoost,
 }: {
   drawer: Drawer;
@@ -39,10 +40,10 @@ export function makeTextureFromDrawer({
   timeMs?: number;
   seedKey?: string | number;
   darkMode?: boolean;
-  prewarmMs?: number;
-  prewarmStepMs?: number;
   pixelScaleBoost?: number;
 }): THREE.CanvasTexture {
+  // Footprint + bleed decide canvas size before drawing, so texture swaps do not
+  // resize sprites later in Three.
   const wTiles = Math.max(1e-6, footprint.w || 1);
   const hTiles = Math.max(1e-6, footprint.h || 1);
 
@@ -58,17 +59,17 @@ export function makeTextureFromDrawer({
   const logicalH = Math.max(2, Math.round(totalTilesH * tileSize));
 
   const cnv = document.createElement('canvas');
-  cnv.style.width = `${logicalW}px`;
-  cnv.style.height = `${logicalH}px`;
+  cnv.style.width = `${String(logicalW)}px`;
+  cnv.style.height = `${String(logicalH)}px`;
 
   const p = makeCanvasFacade(cnv, { dpr });
-  const ctx = p.drawingContext as CanvasRenderingContext2D;
+  const ctx = p.drawingContext;
 
   {
-    const prev = (ctx as any).getTransform?.();
+    const prev = ctx.getTransform();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cnv.width, cnv.height);
-    if (prev) (ctx as any).setTransform?.(prev);
+    ctx.setTransform(prev);
   }
 
   const centerX = logicalW / 2;
@@ -84,6 +85,8 @@ export function makeTextureFromDrawer({
   };
   const lightCtx = makeSpritePaletteLightContext(logicalW, logicalH, darkMode);
 
+  // These options make the regular canvas-engine shape draw as a centered,
+  // non-oscillating sprite texture.
   const baseOpts = {
     alpha,
     gradientRGB,
@@ -106,43 +109,16 @@ export function makeTextureFromDrawer({
 
   const r = Math.min(logicalW, logicalH) * 0.8;
 
-  // Run particle simulation warmup frames so particles are mid-flight on first view
-  if (prewarmMs > 0) {
-    const step = Math.max(1, prewarmStepMs);
-    let lastT = 0;
-    for (let t = step; t <= prewarmMs; t += step) {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, cnv.width, cnv.height);
-      drawer(p, centerX, centerY, r, { ...baseOpts, timeMs: t, dtMs: t - lastT, dtSec: (t - lastT) / 1000 });
-      lastT = t;
-    }
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, cnv.width, cnv.height);
-  }
-
   const opts = { ...baseOpts, timeMs };
 
-  let failed = false;
   try {
     drawer(p, centerX, centerY, r, opts);
   } catch (err) {
-    console.warn('[CanvasTextureBridge] drawer failed → fallback', err);
-    failed = true;
-  }
-
-  if (failed) {
-    ctx.save();
-    const prev = (ctx as any).getTransform?.();
+    const prev = ctx.getTransform();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cnv.width, cnv.height);
-    if (prev) (ctx as any).setTransform?.(prev);
-
-    ctx.fillStyle = 'rgba(180,180,180,0.5)';
-    const rr = Math.min(logicalW, logicalH) * 0.25;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, rr, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    ctx.setTransform(prev);
+    throw err;
   }
 
   const tex = new THREE.CanvasTexture(cnv);
@@ -152,7 +128,7 @@ export function makeTextureFromDrawer({
   tex.magFilter = THREE.LinearFilter;
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
-  (tex as any).anisotropy = 8;
+  tex.anisotropy = 8;
   tex.needsUpdate = true;
 
   return tex;

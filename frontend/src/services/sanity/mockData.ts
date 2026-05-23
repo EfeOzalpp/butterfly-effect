@@ -1,9 +1,8 @@
 import { normalizeSurveyRow } from './normalizeSurveyRow';
 import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from './sections';
+import type { NormalizedSurveyRow, SurveyWeights, Unsubscribe } from './types';
 
-type MockWeights = { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number };
-
-export type MockRow = {
+export interface MockRow {
   _id: string;
   _type: 'userResponseV4';
   _createdAt: string;
@@ -16,12 +15,12 @@ export type MockRow = {
   q5: number;
   avgWeight: number;
   submittedAt: string;
-};
+}
 
 const MOCK_STORAGE_KEY = 'be.mockRows';
 const TARGET_BASE_ROW_COUNT = 800;
 
-const MOCK_SEEDS: Array<[string, number, number, number, number, number]> = [
+const MOCK_SEEDS: [string, number, number, number, number, number][] = [
   ['animation',                0.38, 0.42, 0.35, 0.40, 0.37],   // low
   ['animation',                0.77, 0.74, 0.80, 0.76, 0.78],   // high
   ['illustration',             0.48, 0.51, 0.46, 0.50, 0.47],   // mid
@@ -75,7 +74,7 @@ function buildBaseRows(): MockRow[] {
     );
     const submitted = new Date(Date.UTC(2026, 2, 15, 16, 0 - index * 3, 0)).toISOString();
     return {
-      _id: `mock-seed-${index + 1}`,
+      _id: `mock-seed-${String(index + 1)}`,
       _type: 'userResponseV4',
       section,
       q1: values[0],
@@ -96,11 +95,11 @@ const BASE_ROWS: MockRow[] = buildBaseRows();
 const STUDENT_SECTIONS = new Set(STUDENT_IDS);
 const STAFF_SECTIONS = new Set(STAFF_IDS);
 
-type SurveySubscriber = {
+interface SurveySubscriber {
   section: string;
   limit: number;
-  onData: (rows: MockRow[]) => void;
-};
+  onData: (rows: NormalizedSurveyRow[]) => void;
+}
 
 const surveySubscribers = new Set<SurveySubscriber>();
 const countSubscribers = new Set<(counts: Record<string, number>) => void>();
@@ -114,7 +113,7 @@ const clamp01 = (v?: number) =>
 const round3 = (v?: number) =>
   typeof v === 'number' ? Math.round(v * 1000) / 1000 : undefined;
 
-const computeAvg = (weights: MockWeights) => {
+const computeAvg = (weights: SurveyWeights) => {
   const vals = [weights.q1, weights.q2, weights.q3, weights.q4, weights.q5].filter(
     (x): x is number => Number.isFinite(x)
   );
@@ -122,12 +121,23 @@ const computeAvg = (weights: MockWeights) => {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 };
 
+function isMockRow(value: unknown): value is MockRow {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record._id === 'string' &&
+    record._type === 'userResponseV4' &&
+    typeof record._createdAt === 'string' &&
+    typeof record.section === 'string'
+  );
+}
+
 function readStoredRows(): MockRow[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = sessionStorage.getItem(MOCK_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(isMockRow) : [];
   } catch {
     return [];
   }
@@ -137,14 +147,16 @@ function writeStoredRows(rows: MockRow[]) {
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(rows));
-  } catch {}
+  } catch (error: unknown) {
+    console.warn('[mockData] Failed to persist mock rows:', error);
+  }
 }
 
 function allRows() {
   return [...BASE_ROWS, ...readStoredRows()].sort(sortNewestFirst);
 }
 
-function filterRows(section: string, limit: number) {
+function filterRows(section: string, limit: number): NormalizedSurveyRow[] {
   let rows = allRows();
   if (section && section !== 'all') {
     if (section === 'all-massart') {
@@ -161,20 +173,20 @@ function filterRows(section: string, limit: number) {
 }
 
 function buildCounts(rows: MockRow[]) {
-  const bySection: Record<string, number> = {};
+  const bySection: Partial<Record<string, number>> = {};
   for (const row of rows) {
-    bySection[row.section] = (bySection[row.section] || 0) + 1;
+    bySection[row.section] = (bySection[row.section] ?? 0) + 1;
   }
   const sum = (matcher: (section: string) => boolean) =>
-    Object.entries(bySection).reduce((acc, [section, count]) => acc + (matcher(section) ? count : 0), 0);
+    Object.entries(bySection).reduce((acc, [section, count]) => acc + (matcher(section) ? count ?? 0 : 0), 0);
 
   return {
     all: rows.length,
     'all-massart': sum((section) => section !== 'visitor'),
     'all-students': sum((section) => STUDENT_SECTIONS.has(section)),
     'all-staff': sum((section) => STAFF_SECTIONS.has(section)),
-    visitor: bySection.visitor || 0,
     ...bySection,
+    visitor: bySection.visitor ?? 0,
   };
 }
 
@@ -183,7 +195,9 @@ function notifyAllSubscribers() {
     onData(filterRows(section, limit));
   });
   const counts = buildCounts(allRows());
-  countSubscribers.forEach((onData) => onData(counts));
+  countSubscribers.forEach((onData) => {
+    onData(counts);
+  });
 }
 
 export function subscribeMockSurveyData({
@@ -193,11 +207,13 @@ export function subscribeMockSurveyData({
 }: {
   section: string;
   limit?: number;
-  onData: (rows: MockRow[]) => void;
-}) {
+  onData: (rows: NormalizedSurveyRow[]) => void;
+}): Unsubscribe {
   const subscriber: SurveySubscriber = { section, limit, onData };
   surveySubscribers.add(subscriber);
-  const timer = window.setTimeout(() => onData(filterRows(section, limit)), 0);
+  const timer = window.setTimeout(() => {
+    onData(filterRows(section, limit));
+  }, 0);
   return () => {
     window.clearTimeout(timer);
     surveySubscribers.delete(subscriber);
@@ -205,24 +221,30 @@ export function subscribeMockSurveyData({
 }
 
 export function fetchMockSurveyData(
-  callback: (rows: MockRow[]) => void,
+  callback: (rows: NormalizedSurveyRow[]) => void,
   { limit = 300 }: { limit?: number } = {}
-) {
-  const timer = window.setTimeout(() => callback(filterRows('all', limit)), 0);
-  return () => window.clearTimeout(timer);
+): Unsubscribe {
+  const timer = window.setTimeout(() => {
+    callback(filterRows('all', limit));
+  }, 0);
+  return () => {
+    window.clearTimeout(timer);
+  };
 }
 
 export function subscribeMockSectionCounts({ onData }: { onData: (counts: Record<string, number>) => void }) {
   countSubscribers.add(onData);
-  const timer = window.setTimeout(() => onData(buildCounts(allRows())), 0);
+  const timer = window.setTimeout(() => {
+    onData(buildCounts(allRows()));
+  }, 0);
   return () => {
     window.clearTimeout(timer);
     countSubscribers.delete(onData);
   };
 }
 
-export function createMockUserResponse(section: string, weights: MockWeights) {
-  const clamped: MockWeights = {
+export function createMockUserResponse(section: string, weights: SurveyWeights) {
+  const clamped: SurveyWeights = {
     q1: round3(clamp01(weights.q1)),
     q2: round3(clamp01(weights.q2)),
     q3: round3(clamp01(weights.q3)),
@@ -233,7 +255,7 @@ export function createMockUserResponse(section: string, weights: MockWeights) {
   const now = new Date().toISOString();
   const avgWeight = round3(computeAvg(clamped));
   const created: MockRow = {
-    _id: `mock-user-${Date.now()}`,
+    _id: `mock-user-${String(Date.now())}`,
     _type: 'userResponseV4',
     section,
     q1: clamped.q1 ?? 0.5,
@@ -257,7 +279,9 @@ export function clearMockSurveyState() {
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.removeItem(MOCK_STORAGE_KEY);
-    } catch {}
+    } catch (error: unknown) {
+      console.warn('[mockData] Failed to clear mock rows:', error);
+    }
   }
   notifyAllSubscribers();
 }

@@ -1,4 +1,4 @@
-// useRealMobileViewport.ts
+// src/lib/hooks/useRealMobileViewport.ts
 import { useEffect, useState } from 'react';
 
 export function useRealMobileViewport() {
@@ -7,16 +7,16 @@ export function useRealMobileViewport() {
   useEffect(() => {
     const checkMobile = () => {
       const touch = navigator.maxTouchPoints > 0;
-      const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+      const coarse = window.matchMedia('(pointer: coarse)').matches;
       const width = window.innerWidth;
-      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const ua = navigator.userAgent;
 
-      // iOS detection (iPhone / iPad)
-      const isIOS = /iPad|iPhone|iPod/.test(ua) ||
-        (navigator.platform === 'MacIntel' && touch); // iPadOS pretends to be Mac
+      // iPadOS can report a desktop-like user agent, so touch is part of the check.
+      const isIOS = ua.includes('iPad') || ua.includes('iPhone') || ua.includes('iPod') ||
+        (ua.includes('Macintosh') && touch);
 
       // Android detection
-      const isAndroid = /Android/.test(ua);
+      const isAndroid = ua.includes('Android');
 
       // Consider it real mobile if:
       // - Touch exists, and viewport is small, or

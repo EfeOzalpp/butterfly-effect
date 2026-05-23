@@ -1,18 +1,22 @@
-// src/components/survey/sectionPicker/sectionPicker.tsx
+// src/onboarding/section-picker/index.tsx
 import { useMemo, useRef, useState, useEffect, useCallback, useId } from 'react';
+import type { SectionHeader, SectionItem, SectionOption } from './sections';
 
-export type SectionHeader = { type: 'header'; id: string; label: string };
+interface NormalizedSectionOption extends SectionOption {
+  type: 'option';
+}
 
-export type SectionOption = {
-  type?: 'option'; // optional because this component will add it when missing
-  value: string;
-  label: string;
-  aliases?: string[];
-};
+type NormalizedSectionItem = SectionHeader | NormalizedSectionOption;
 
-export type SectionItem = SectionHeader | SectionOption;
+interface IndexedSectionOption extends NormalizedSectionOption {
+  __listIndex: number;
+}
 
-type Props = {
+interface RenderedSectionOption extends NormalizedSectionOption {
+  __renderIndex: number;
+}
+
+interface Props {
   value: string;
   onChange: (val: string) => void;
   onBegin: () => void;
@@ -21,7 +25,15 @@ type Props = {
   placeholderOverride?: string;
   titleOverride?: string;
   onOpenChange?: (open: boolean) => void;
-};
+}
+
+function isSectionHeader(item: SectionItem | NormalizedSectionItem | undefined): item is SectionHeader {
+  return item?.type === 'header';
+}
+
+function normalizeSectionItem(item: SectionItem): NormalizedSectionItem {
+  return isSectionHeader(item) ? item : { ...item, type: 'option' };
+}
 
 export default function SectionPickerIntro({
   value,
@@ -36,20 +48,16 @@ export default function SectionPickerIntro({
   const titleId = useId();
   const helpId = useId();
   const errorId = useId();
-  const hasHeaders = useMemo(
-    () => Array.isArray(sections) && sections.some((s) => s && (s as any).type === 'header'),
-    [sections]
-  );
+  const hasHeaders = useMemo(() => sections.some(isSectionHeader), [sections]);
 
   const optionsWithHeaders = useMemo(() => {
-    if (!Array.isArray(sections)) return [];
-    return sections.map((s) => ((s as any)?.type === 'header' ? { ...(s as any) } : { ...(s as any), type: 'option' }));
+    return sections.map(normalizeSectionItem);
   }, [sections]);
 
   const baseFocusable = useMemo(() => {
-    const out: Array<any> = [];
-    optionsWithHeaders.forEach((item: any, idx: number) => {
-      if (item?.type !== 'header') out.push({ ...item, __listIndex: idx });
+    const out: IndexedSectionOption[] = [];
+    optionsWithHeaders.forEach((item, idx) => {
+      if (!isSectionHeader(item)) out.push({ ...item, __listIndex: idx });
     });
     return out;
   }, [optionsWithHeaders]);
@@ -82,15 +90,15 @@ export default function SectionPickerIntro({
     }, 0);
   }, []);
 
-  const current = useMemo(() => baseFocusable.find((o: any) => o.value === value) || null, [baseFocusable, value]);
+  const current = useMemo(() => baseFocusable.find((option) => option.value === value) ?? null, [baseFocusable, value]);
 
   const filteredFocusable = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return baseFocusable;
-    return baseFocusable.filter((o: any) => {
-      const labelMatch = (o.label || '').toLowerCase().includes(q);
-      const valueMatch = (o.value || '').toLowerCase().includes(q);
-      const aliasMatch = (o.aliases || []).some((a: any) => (a || '').toLowerCase().includes(q));
+    return baseFocusable.filter((option) => {
+      const labelMatch = option.label.toLowerCase().includes(q);
+      const valueMatch = option.value.toLowerCase().includes(q);
+      const aliasMatch = (option.aliases ?? []).some((alias) => alias.toLowerCase().includes(q));
       return labelMatch || valueMatch || aliasMatch;
     });
   }, [baseFocusable, search]);
@@ -98,15 +106,15 @@ export default function SectionPickerIntro({
   const displayedList = useMemo(() => {
     if (!hasHeaders) return filteredFocusable;
 
-    const filteredSet = new Set(filteredFocusable.map((o: any) => o.__listIndex));
-    const out: any[] = [];
+    const filteredSet = new Set(filteredFocusable.map((option) => option.__listIndex));
+    const out: NormalizedSectionItem[] = [];
     let i = 0;
     while (i < optionsWithHeaders.length) {
-      const item: any = optionsWithHeaders[i];
-      if (item.type === 'header') {
+      const item = optionsWithHeaders[i];
+      if (isSectionHeader(item)) {
         let j = i + 1,
           any = false;
-        while (j < optionsWithHeaders.length && optionsWithHeaders[j].type !== 'header') {
+        while (j < optionsWithHeaders.length && !isSectionHeader(optionsWithHeaders[j])) {
           if (filteredSet.has(j)) {
             any = true;
             break;
@@ -116,15 +124,16 @@ export default function SectionPickerIntro({
         if (any) {
           out.push(item);
           let k = i + 1;
-          while (k < optionsWithHeaders.length && optionsWithHeaders[k].type !== 'header') {
-            if (filteredSet.has(k)) out.push(optionsWithHeaders[k]);
+          while (k < optionsWithHeaders.length && !isSectionHeader(optionsWithHeaders[k])) {
+            const option = optionsWithHeaders[k];
+            if (filteredSet.has(k)) out.push(option);
             k++;
           }
           i = k;
           continue;
         } else {
           let k = i + 1;
-          while (k < optionsWithHeaders.length && optionsWithHeaders[k].type !== 'header') k++;
+          while (k < optionsWithHeaders.length && !isSectionHeader(optionsWithHeaders[k])) k++;
           i = k;
           continue;
         }
@@ -137,16 +146,12 @@ export default function SectionPickerIntro({
   }, [hasHeaders, filteredFocusable, optionsWithHeaders]);
 
   const renderedFocusable = useMemo(() => {
-    const out: any[] = [];
-    displayedList.forEach((item: any, idx: number) => {
-      if (item.type !== 'header') out.push({ ...item, __renderIndex: idx });
+    const out: RenderedSectionOption[] = [];
+    displayedList.forEach((item, idx) => {
+      if (!isSectionHeader(item)) out.push({ ...item, __renderIndex: idx });
     });
     return out;
   }, [displayedList]);
-
-  useEffect(() => {
-    setActiveIndex((idx) => (renderedFocusable.length ? Math.min(Math.max(idx, 0), renderedFocusable.length - 1) : 0));
-  }, [renderedFocusable.length]);
 
   useEffect(() => {
     onOpenChange?.(open);
@@ -160,7 +165,7 @@ export default function SectionPickerIntro({
     };
 
     const onDocTouchStart = (e: TouchEvent) => {
-      const touch = e.changedTouches[0];
+      const touch = e.changedTouches.item(0);
       if (!touch) return;
       const isInside = !!wrapperRef.current?.contains(e.target as Node);
       outsideTouchRef.current = {
@@ -173,7 +178,7 @@ export default function SectionPickerIntro({
 
     const onDocTouchMove = (e: TouchEvent) => {
       if (!outsideTouchRef.current.active) return;
-      const touch = e.changedTouches[0];
+      const touch = e.changedTouches.item(0);
       if (!touch) return;
       const dx = Math.abs(touch.clientX - outsideTouchRef.current.startX);
       const dy = Math.abs(touch.clientY - outsideTouchRef.current.startY);
@@ -206,16 +211,16 @@ export default function SectionPickerIntro({
     };
   }, [open, closePicker]);
 
-  useEffect(() => {
-    if (!open) return;
-    if (openedByPointer.current) setSearch('');
-  }, [open]);
+  const maxActiveIndex = Math.max(0, renderedFocusable.length - 1);
+  const safeActiveIndex = Math.min(Math.max(activeIndex, 0), maxActiveIndex);
 
-  useEffect(() => {
-    if (!open) return;
-    const idx = renderedFocusable.findIndex((o: any) => o.value === value);
-    if (idx >= 0) setActiveIndex(idx);
-  }, [value, renderedFocusable, open]);
+  const openPicker = useCallback(() => {
+    if (openedByPointer.current) setSearch('');
+    const selectedIndex = renderedFocusable.findIndex((option) => option.value === value);
+    if (selectedIndex >= 0) setActiveIndex(selectedIndex);
+    setOpen(true);
+    openedByPointer.current = false;
+  }, [renderedFocusable, value]);
 
   const moveActive = useCallback(
     (delta: number) => {
@@ -227,13 +232,13 @@ export default function SectionPickerIntro({
 
   const chooseIndex = useCallback(
     (focusIdx: number, source: 'keyboard' | 'pointer' = 'keyboard') => {
+      if (focusIdx < 0 || focusIdx >= renderedFocusable.length) return;
       const opt = renderedFocusable[focusIdx];
-      if (!opt) return;
       onChange(opt.value);
       if (source === 'pointer') {
         setSearch('');
-        // Delay close so the Lottie selection animation (frames 0→15) can play
-        setTimeout(() => closePicker(), 260);
+        // Delay close so the selection animation can finish.
+        setTimeout(() => { closePicker(); }, 260);
       } else {
         closePicker();
       }
@@ -242,10 +247,10 @@ export default function SectionPickerIntro({
   );
 
   const activeRenderedId =
-    open && renderedFocusable[activeIndex] ? `opt-${renderedFocusable[activeIndex].value}` : undefined;
+    open && renderedFocusable[safeActiveIndex] ? `opt-${renderedFocusable[safeActiveIndex].value}` : undefined;
 
   const placeholderText = placeholderOverride ?? (current ? current.label : 'MassArt Dept...');
-  const describedBy = [helpId, error ? errorId : null].filter(Boolean).join(' ');
+  const describedBy = [helpId, error ? errorId : undefined].filter((id): id is string => Boolean(id)).join(' ');
 
   return (
     <section className="survey survey-step section-select" ref={wrapperRef}>
@@ -265,7 +270,7 @@ export default function SectionPickerIntro({
             openedByPointer.current = true;
           }}
           onClick={() => {
-            setOpen(true);
+            openPicker();
           }}
         >
           <input
@@ -283,26 +288,26 @@ export default function SectionPickerIntro({
             aria-describedby={describedBy || undefined}
             aria-invalid={!!error}
             placeholder={placeholderText}
-            value={open ? search : (current && current.label) || ''}
+            value={open ? search : (current?.label ?? '')}
             inputMode="search"
             autoCapitalize="none"
             onFocus={() => {
-              setOpen(true);
+              openPicker();
             }}
             onChange={(e) => {
               openedByPointer.current = false;
-              if (!open) setOpen(true);
-              setSearch(e.target.value);
+                if (!open) openPicker();
+                setSearch(e.target.value);
             }}
             onKeyDown={(e) => {
               openedByPointer.current = false;
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                if (!open) setOpen(true);
+                if (!open) openPicker();
                 moveActive(1);
               } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                if (!open) setOpen(true);
+                if (!open) openPicker();
                 moveActive(-1);
               } else if (e.key === 'Home') {
                 e.preventDefault();
@@ -312,8 +317,8 @@ export default function SectionPickerIntro({
                 setActiveIndex(Math.max(0, renderedFocusable.length - 1));
               } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (open) chooseIndex(activeIndex, 'keyboard');
-                else setOpen(true);
+                if (open) chooseIndex(safeActiveIndex, 'keyboard');
+                else openPicker();
               } else if (e.key === 'Escape') {
                 e.preventDefault();
                 closePicker();
@@ -355,7 +360,7 @@ export default function SectionPickerIntro({
                   setActiveIndex(Math.max(0, renderedFocusable.length - 1));
                 } else if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  chooseIndex(activeIndex, 'keyboard');
+                  chooseIndex(safeActiveIndex, 'keyboard');
                 } else if (e.key === 'Escape') {
                   e.preventDefault();
                   closePicker();
@@ -368,11 +373,11 @@ export default function SectionPickerIntro({
                 </div>
               )}
 
-              {displayedList.map((item: any, idx: number) => {
-                if (item.type === 'header') {
+              {displayedList.map((item, idx) => {
+                if (isSectionHeader(item)) {
                   return (
                     <span
-                      key={`hdr-${item.id || idx}`}
+                      key={`hdr-${item.id}`}
                       className="section-group-header"
                       role="presentation"
                       aria-hidden="true"
@@ -382,7 +387,7 @@ export default function SectionPickerIntro({
                   );
                 }
                 const selected = value === item.value;
-                const isActive = renderedFocusable[activeIndex]?.__renderIndex === idx;
+                const isActive = renderedFocusable[safeActiveIndex]?.__renderIndex === idx;
                 return (
                   <div
                     id={`opt-${item.value}`}
@@ -391,14 +396,14 @@ export default function SectionPickerIntro({
                     aria-selected={selected}
                     className={'section-option' + (isActive ? ' is-active' : '') + (selected ? ' is-selected' : '')}
                     onMouseEnter={() => {
-                      const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
-                      if (focusIdx !== -1 && focusIdx !== activeIndex) {
+                      const focusIdx = renderedFocusable.findIndex((option) => option.__renderIndex === idx);
+                      if (focusIdx !== -1 && focusIdx !== safeActiveIndex) {
                         setActiveIndex(focusIdx);
                       }
                     }}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={(e) => { e.preventDefault(); }}
                     onClick={() => {
-                      const focusIdx = renderedFocusable.findIndex((f: any) => f.__renderIndex === idx);
+                      const focusIdx = renderedFocusable.findIndex((option) => option.__renderIndex === idx);
                       if (focusIdx >= 0) chooseIndex(focusIdx, 'pointer');
                     }}
                   >

@@ -1,25 +1,33 @@
-import React from "react";
+// src/graph-runtime/dotgraph/components/PersonalizedLayer.tsx
+
+import React, { type CSSProperties } from "react";
 import { Html } from "@react-three/drei";
 import { SpriteShape } from "../../sprites/entry";
 import GamificationPersonalized from "../../gamification/gamification-personal";
+import type {
+  DotGraphEntry,
+  DotGraphPositionClass,
+  DotGraphTieStats,
+  PersonalizedDotShape,
+} from "../types";
 
-type PersonalizedLayerProps = {
+interface PersonalizedLayerProps {
   shouldRenderPersonalUI: boolean;
   shouldRenderExtraPersonalSprite: boolean;
-  effectiveMyShape: any;
-  effectiveMyEntry: any;
+  effectiveMyShape: PersonalizedDotShape | null;
+  effectiveMyEntry: DotGraphEntry | null;
   spriteScale: number;
   bagSeed: string;
   offsetPx: number;
   myDisplayValue: number;
   mode: "absolute" | "relative";
   section: string;
-  myStats: { below: number; equal: number; above: number };
-  myClass: { position: string; tieContext: string };
+  myStats: DotGraphTieStats;
+  myClass: DotGraphPositionClass;
   setPersonalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   viewportClass?: string;
   darkMode?: boolean;
-};
+}
 
 export default function PersonalizedLayer({
   shouldRenderPersonalUI,
@@ -39,22 +47,24 @@ export default function PersonalizedLayer({
   darkMode = false,
 }: PersonalizedLayerProps) {
   if (!shouldRenderPersonalUI) return null;
+  const htmlStyle: CSSProperties & { "--offset-px": string } = {
+    pointerEvents: "none",
+    "--offset-px": `${String(offsetPx)}px`,
+  };
 
   return (
     <>
-      {shouldRenderExtraPersonalSprite && effectiveMyShape && (
+      {shouldRenderExtraPersonalSprite && effectiveMyShape && effectiveMyEntry && (
         <group position={effectiveMyShape.position}>
           <SpriteShape
             avg={
-              Number.isFinite(effectiveMyEntry?.avgWeight)
+              Number.isFinite(effectiveMyEntry.avgWeight)
                 ? Number(effectiveMyEntry.avgWeight)
                 : 0.5
             }
             position={[0, 0, 0]}
             scale={spriteScale}
             tileSize={128}
-            alpha={215}
-            blend={0.6}
             seed={bagSeed}
             orderIndex={0}
             freezeParticles={true}
@@ -71,10 +81,7 @@ export default function PersonalizedLayer({
           center
           zIndexRange={[110, 130]}
           className={viewportClass}
-          style={{
-            pointerEvents: "none",
-            ["--offset-px" as any]: `${offsetPx}px`,
-          }}
+          style={htmlStyle}
         >
           <div>
             <GamificationPersonalized

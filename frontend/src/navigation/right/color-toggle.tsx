@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { usePreferences } from "../../app/state/preferences-context";
 import ThemeIcon from "../../assets/svg/theme/ThemeIcon";
 
-export default function Darkmode() {
+export default function ColorToggle() {
   const { darkMode, setDarkMode } = usePreferences();
   const textRef = useRef(darkMode ? "Dark mode" : "Light mode");
 
@@ -10,14 +10,14 @@ export default function Darkmode() {
     textRef.current = darkMode ? "Dark mode" : "Light mode";
   }, [darkMode]);
 
-  const toggle = (e) => {
+  const toggle = (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setDarkMode(!darkMode);
     textRef.current = !darkMode ? "Dark mode" : "Light mode";
   };
 
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === "Enter" || e.key === " ") toggle(e);
   };
 

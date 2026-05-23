@@ -1,30 +1,37 @@
 import { useMemo } from 'react';
 
-// minimal shape your data already has
-type WithWeights = { _id?: string; weights?: Record<string, number>; avgWeight?: number };
+// src/lib/hooks/useRelativeScore.ts
 
 export type TiePolicy = 'strict' | 'lte';
 
-/** prefer server avgWeight; otherwise mean(weights); fallback 0.5 */
+interface WithWeights {
+  _id?: string;
+  weights?: Record<string, number>;
+  avgWeight?: number;
+}
+
+interface RelativeScoreOptions<TItem extends WithWeights> {
+  accessor?: (item: TItem) => number;
+  tie?: TiePolicy;
+  idOf?: (item: TItem) => string | undefined;
+}
+
+// Prefer server avgWeight; otherwise mean(weights); fallback 0.5.
 export const avgWeightOf = (item: WithWeights): number => {
-  if (Number.isFinite(item?.avgWeight)) return item!.avgWeight!;
-  const vals = Object.values(item?.weights || {});
+  if (typeof item.avgWeight === 'number' && Number.isFinite(item.avgWeight)) {
+    return item.avgWeight;
+  }
+  const vals = Object.values(item.weights ?? {});
   return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0.5;
 };
 
-const defaultIdOf = <T extends { _id?: string }>(item: T) => item._id;
-
-export function useRelativeScores<T extends { _id?: string }>(
-  items: T[],
-  opts?: {
-    accessor?: (x: T) => number;            // default avgWeightOf
-    tie?: TiePolicy;                         // default 'strict'
-    idOf?: (x: T) => string | undefined;     // default x._id
-  }
+export function useRelativeScores<TItem extends WithWeights>(
+  items: TItem[],
+  opts?: RelativeScoreOptions<TItem>
 ) {
-  const accessor = (opts?.accessor as ((x: T) => number)) ?? (avgWeightOf as (x: any) => number);
+  const accessor = opts?.accessor ?? avgWeightOf;
   const tie = opts?.tie ?? 'strict';
-  const idOf = (opts?.idOf as ((x: T) => string | undefined)) ?? defaultIdOf;
+  const idOf = opts?.idOf ?? ((item: TItem) => item._id);
 
   // Precompute once per data change
   const { sorted, idToValue } = useMemo(() => {
@@ -68,7 +75,8 @@ export function useRelativeScores<T extends { _id?: string }>(
     let cnt = belowCount(value);
 
     if (excludeId && idToValue.has(excludeId)) {
-      const ex = idToValue.get(excludeId)!;
+      const ex = idToValue.get(excludeId);
+      if (ex === undefined) return Math.round((cnt / pool) * 100);
       pool -= 1;
       if (tie === 'strict') {
         if (ex < value) cnt -= 1;
@@ -87,7 +95,8 @@ export function useRelativeScores<T extends { _id?: string }>(
     let cnt = belowCount(value);
 
     if (excludeId && idToValue.has(excludeId)) {
-      const ex = idToValue.get(excludeId)!;
+      const ex = idToValue.get(excludeId);
+      if (ex === undefined) return Math.max(0, cnt);
       if (tie === 'strict') {
         if (ex < value) cnt -= 1;
       } else {
@@ -104,24 +113,26 @@ export function useRelativeScores<T extends { _id?: string }>(
   /** % below for a given entry id (self excluded automatically). returns 0 if not found */
   const getForId = (id?: string) => {
     if (!id || !idToValue.has(id)) return 0;
-    return getForValue(idToValue.get(id)!, id);
+    const value = idToValue.get(id);
+    return value === undefined ? 0 : getForValue(value, id);
   };
 
   /** count below for a given entry id (self excluded automatically). returns 0 if not found */
   const getCountForId = (id?: string) => {
     if (!id || !idToValue.has(id)) return 0;
-    return getCountForValue(idToValue.get(id)!, id);
+    const value = idToValue.get(id);
+    return value === undefined ? 0 : getCountForValue(value, id);
   };
 
   /** % below for a data object (self excluded if it has an id) */
-  const getForItem = (item: T) => {
+  const getForItem = (item: TItem) => {
     const id = idOf(item);
     const v = accessor(item);
     return getForValue(v, id);
   };
 
   /** count below for a data object (self excluded if it has an id) */
-  const getCountForItem = (item: T) => {
+  const getCountForItem = (item: TItem) => {
     const id = idOf(item);
     const v = accessor(item);
     return getCountForValue(v, id);

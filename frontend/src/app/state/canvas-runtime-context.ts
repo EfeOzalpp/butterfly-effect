@@ -1,5 +1,10 @@
+// src/app/state/canvas-runtime-context.ts
+// Live canvas signals shared by questionnaire controls and canvas instances.
+
 import { createContext, useContext } from "react";
 import type { Place } from "../../canvas-engine/grid-layout/occupancy";
+
+export const DEFAULT_AVG = 0.5;
 
 export interface CanvasRuntimeState {
   // Continuous signal updated on every survey interaction; drives canvas color and animation in real time.
@@ -19,8 +24,4 @@ export function useCanvasRuntime(): CanvasRuntimeState {
   const ctx = useContext(CanvasRuntimeCtx);
   if (!ctx) throw new Error("useCanvasRuntime must be used within AppProvider");
   return ctx;
-}
-
-export function useOptionalCanvasRuntime(): CanvasRuntimeState | null {
-  return useContext(CanvasRuntimeCtx);
 }

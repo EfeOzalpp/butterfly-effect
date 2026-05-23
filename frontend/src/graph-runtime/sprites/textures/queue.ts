@@ -1,6 +1,20 @@
 // graph-runtime/sprites/textures/queue.ts
-type Job = { run: () => void; prio: number; gen: number; background?: boolean };
-type QueueCounts = { pending: number; inflight: number; paused: boolean; backgroundPending: number; backgroundInflight: number };
+// Texture building can be heavy, so work is pumped through idle time instead
+// of blocking animation frames.
+interface Job {
+  run: () => void;
+  prio: number;
+  gen: number;
+  background?: boolean;
+}
+
+interface QueueCounts {
+  pending: number;
+  inflight: number;
+  paused: boolean;
+  backgroundPending: number;
+  backgroundInflight: number;
+}
 
 let Q: Job[] = [];
 let pumping = false;
@@ -11,10 +25,23 @@ let backgroundInflightCount = 0;
 const listeners = new Set<() => void>();
 let snapshot: QueueCounts = { pending: 0, inflight: 0, paused: false, backgroundPending: 0, backgroundInflight: 0 };
 
+// Generation invalidates stale jobs when a graph/theme reset makes old texture
+// requests irrelevant.
 let GEN = 0;
+const noop = () => {
+  // No subscription was created.
+};
 
-const RIC =
-  typeof requestIdleCallback === 'function' ? requestIdleCallback : null;
+const scheduleIdle: (callback: IdleRequestCallback) => number =
+  typeof requestIdleCallback === 'function'
+    ? requestIdleCallback
+    : (callback) =>
+        window.setTimeout(() => {
+          callback({
+            didTimeout: false,
+            timeRemaining: () => 0,
+          });
+        }, 16);
 
 function refreshSnapshot() {
   const nextPending = Q.length;
@@ -48,7 +75,9 @@ function notify() {
   for (const listener of listeners) {
     try {
       listener();
-    } catch {}
+    } catch {
+      // Keep one bad listener from breaking queue progress updates.
+    }
   }
 }
 
@@ -59,7 +88,8 @@ function step(deadline?: IdleDeadline) {
   const hasTime = () => !deadline || deadline.timeRemaining() > 6;
 
   while (Q.length && (done < 3 || hasTime())) {
-    const job = Q.shift()!;
+    const job = Q.shift();
+    if (!job) break;
     if (job.background) backgroundPendingCount--;
     notify();
     if (job.gen !== GEN) continue;
@@ -76,8 +106,8 @@ function step(deadline?: IdleDeadline) {
     done++;
   }
 
-  if (Q.length && !paused) {
-    (RIC ? RIC : (f => setTimeout(f as any, 16)))(step as any);
+  if (Q.length) {
+    scheduleIdle(step);
   } else {
     pumping = false;
   }
@@ -87,11 +117,12 @@ export function enqueueTexture(run: () => void, prio = 0, background = false) {
   const gen = GEN;
   if (background) backgroundPendingCount++;
   Q.push({ run, prio, gen, background });
+  // Higher priority textures are usually visible sooner, so they move first.
   Q.sort((a, b) => b.prio - a.prio);
   notify();
   if (!pumping && !paused) {
     pumping = true;
-    (RIC ? RIC : (f => setTimeout(f as any, 16)))(step as any);
+    scheduleIdle(step);
   }
 }
 
@@ -111,7 +142,7 @@ export function resumeQueue() {
   notify();
   if (Q.length && !pumping) {
     pumping = true;
-    (RIC ? RIC : (f => setTimeout(f as any, 16)))(step as any);
+    scheduleIdle(step);
   }
 }
 
@@ -152,7 +183,7 @@ export function onceQueueIdle(cb: () => void): () => void {
 
   if (isIdle()) {
     cb();
-    return () => {};
+    return noop;
   }
 
   const off = subscribeQueue(() => {

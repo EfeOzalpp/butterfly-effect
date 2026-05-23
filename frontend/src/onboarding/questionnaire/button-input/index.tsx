@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { useLiveAvgButtons } from "./useLiveAvgButtons";
 import type { LiveAvgButtonChange, LiveAvgButtonItem } from "./types";
 
-export type LiveAvgButtonGroupProps = {
+export interface LiveAvgButtonGroupProps {
   items: LiveAvgButtonItem[];
   title?: string;
   description?: string;
@@ -11,6 +11,10 @@ export type LiveAvgButtonGroupProps = {
   columns?: number;
   initialActiveIds?: string[];
   onChange?: (next: LiveAvgButtonChange) => void;
+}
+
+type ButtonQuestionnaireGridStyle = CSSProperties & {
+  "--button-questionnaire-columns": string;
 };
 
 export default function LiveAvgButtonGroup({
@@ -23,10 +27,14 @@ export default function LiveAvgButtonGroup({
   onChange,
 }: LiveAvgButtonGroupProps) {
   const { isActive, toggleButton } = useLiveAvgButtons(items, initialActiveIds, onChange);
+  const hasHeader = title != null || description != null;
+  const gridStyle: ButtonQuestionnaireGridStyle = {
+    "--button-questionnaire-columns": String(Math.max(1, columns)),
+  };
 
   return (
     <section className={`button-questionnaire ${className ?? ""}`.trim()}>
-      {(title || description) && (
+      {hasHeader && (
         <div className="button-questionnaire__header">
           {title && <h3 className="button-questionnaire__title">{title}</h3>}
           {description && <p className="button-questionnaire__description">{description}</p>}
@@ -35,7 +43,7 @@ export default function LiveAvgButtonGroup({
 
       <div
         className="button-questionnaire__grid"
-        style={{ ["--button-questionnaire-columns" as string]: String(Math.max(1, columns)) } as CSSProperties}
+        style={gridStyle}
       >
         {items.map((item) => {
           const active = isActive(item.id);
@@ -46,7 +54,7 @@ export default function LiveAvgButtonGroup({
               className={`button-questionnaire__button${active ? " is-active" : ""}`}
               aria-pressed={active}
               disabled={item.disabled}
-              onClick={() => toggleButton(item.id)}
+              onClick={() => { toggleButton(item.id); }}
             >
               <span className="button-questionnaire__button-label">{item.label}</span>
             </button>

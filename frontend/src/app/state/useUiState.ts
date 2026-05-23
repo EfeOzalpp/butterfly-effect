@@ -1,7 +1,10 @@
+// src/app/state/useUiState.ts
+// Keeps UI-only state together so app-provider can focus on wiring contexts.
+
 import { useCallback, useEffect, useState } from 'react';
 import { getSessionItem, readStoredMode, setSessionItem } from '../session';
 
-import type { QuestionnaireNavState } from './ui-context';
+import type { QuestionnaireNavState, SpotlightRequest } from './ui-context';
 import type { Mode } from '../types';
 
 const DEFAULT_QUESTIONNAIRE_NAV: QuestionnaireNavState = {
@@ -60,11 +63,18 @@ export default function useUiState() {
 
   const [observerMode, setObserverMode] = useState<boolean>(false);
   const [vizVisible, setVizVisible] = useState<boolean>(false);
-  const openGraph = () => { setVizVisible(true); };
-  const closeGraph = () => { setVizVisible(false); };
-
   const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [widgetsOpen, setWidgetsOpen] = useState<boolean>(false);
+  const openGraph = useCallback(() => { setVizVisible(true); }, []);
+  const closeGraph = useCallback(() => {
+    setVizVisible(false);
+    setLogsOpen(false);
+    setWidgetsOpen(false);
+  }, []);
+
+  const [animationVisible, setAnimationVisible] = useState(false);
+  const [openPersonalized, setOpenPersonalized] = useState(false);
+  const [spotlightRequest, setSpotlightRequest] = useState<SpotlightRequest | null>(null);
 
   const [mode, setMode] = useState<Mode>(() => readStoredMode('absolute'));
   useEffect(() => {
@@ -97,10 +107,16 @@ export default function useUiState() {
     setLogsOpen,
     widgetsOpen,
     setWidgetsOpen,
+    animationVisible,
+    setAnimationVisible,
+    openPersonalized,
+    setOpenPersonalized,
     mode,
     setMode,
     radarMode,
     setRadarMode,
+    spotlightRequest,
+    setSpotlightRequest,
     questionnaireNav,
     setQuestionnaireNav,
     questionnaireAdvanceTick,

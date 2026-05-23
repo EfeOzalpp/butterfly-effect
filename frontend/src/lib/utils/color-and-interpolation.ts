@@ -1,9 +1,17 @@
-// @/lib/utils/hooks.ts
-// Centralized gradient + interpolation helpers used across components
+// src/lib/utils/color-and-interpolation.ts
+// Centralized gradient and interpolation helpers used across components.
 import { useMemo } from 'react';
 
-export type RGB = { r: number; g: number; b: number };
-export type Stop = { stop: number; color: RGB };
+export interface RGB {
+  r: number;
+  g: number;
+  b: number;
+}
+
+export interface Stop {
+  stop: number;
+  color: RGB;
+}
 
 /** Clamp a number to [min,max] */
 export const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
@@ -23,11 +31,11 @@ export const lerpColor = (t: number, c1: RGB, c2: RGB): RGB => ({
 });
 
 /** Convert RGB object to css rgb() string */
-export const rgbString = (c: RGB) => `rgb(${c.r}, ${c.g}, ${c.b})`;
+export const rgbString = (c: RGB) => `rgb(${String(c.r)}, ${String(c.g)}, ${String(c.b)})`;
 
 // ---------------- Palettes ----------------
 
-// Original brand gradient (0 → red, 1 → green)
+// Original brand gradient: 0 red, 1 green.
 export const BRAND_STOPS_ORIGINAL: Stop[] = [
   { stop: 0.0,  color: { r: 249, g: 14,  b: 33 } },
   { stop: 0.46, color: { r: 252, g: 159, b: 29 } },
@@ -41,7 +49,7 @@ export const VIVID_COLOR_STOPS: Stop[] = [
   { stop: 0.00, color: { r: 210, g:  0,  b:  25 } },  // deeper, pure red
   { stop: 0.20, color: { r: 235, g:  90, b:   0 } },  // hot orange
 
-  // middle ridge — narrow but bright
+  // Middle ridge, narrow but bright.
   { stop: 0.40, color: { r: 255, g: 150, b:  40 } },  // golden yellow
   { stop: 0.60, color: { r: 225, g: 175, b:  40 } },
   { stop: 0.7, color: { r: 180, g: 180, b: 120 } },  // bright yellow-green
@@ -104,12 +112,12 @@ const applyGamma = (t: number, gamma = 1) => (gamma !== 1 ? Math.pow(t, gamma) :
 // Simple contrast curve around 0.5; k ~ 0..1.5 subtle; 2+ is strong
 const applyContrast = (t: number, k = 0) => (k ? (t - 0.5) * (1 + k) + 0.5 : t);
 
-export type UseGradientOpts = {
+export interface UseGradientOpts {
   skew?: readonly [number, number, number, number];
   stops?: Stop[];
   gamma?: number;     // >1 darkens mid, <1 brightens mid
   contrast?: number;  // 0..3 recommended; raises separation from 0.5
-};
+}
 
 // --------------- Public API -----------------
 
@@ -135,7 +143,7 @@ export const colorFromPercent = (
  * - Input: percent (0..100) or normalized value (0..1 via {normalized:true})
  * - Options: skew via cubic-bezier, custom stops, gamma/contrast shaping
  * - Output: { css, rgb, t }
- * Mapping: 0 → red, 1 → green.
+ * Mapping: 0 red, 1 green.
  */
 export const useGradientColor = (
   value: number,
@@ -168,7 +176,7 @@ export const useGradientColor = (
 /**
  * useGradientForAverageWeight
  * - Helper for visuals consuming an average weight in 0..1.
- * - Standardized mapping: 0 → red, 1 → green (no flip).
+ * - Standardized mapping: 0 red, 1 green (no flip).
  * - You can pass {stops, gamma, contrast, skew} for fine control.
  */
 export const useGradientForAverageWeight = (
@@ -179,7 +187,7 @@ export const useGradientForAverageWeight = (
 /**
  * useSkewedPercentColor
  * - Matches prior gamified skew curve (0, 0.6, 0.85, 1).
- * - 0% → red, 100% → green.
+ * - 0% red, 100% green.
  */
 export const useSkewedPercentColor = (pct: number) =>
   useGradientColor(pct, { skew: [0, 0.6, 0.85, 1] });
@@ -203,7 +211,7 @@ export const safeSession = {
     try { const raw = sessionStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback; }
     catch { return fallback; }
   },
-  set<T>(key: string, val: T) {
+  set(key: string, val: unknown) {
     try { sessionStorage.setItem(key, JSON.stringify(val)); } catch {}
   }
 };

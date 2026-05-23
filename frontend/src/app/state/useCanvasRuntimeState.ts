@@ -1,8 +1,10 @@
+// src/app/state/useCanvasRuntimeState.ts
+// Stores the live/committed score signals that drive the Canvas 2D scene.
+
 import { useCallback, useState } from 'react';
 
+import { DEFAULT_AVG } from './canvas-runtime-context';
 import type { Place } from '../../canvas-engine/grid-layout/occupancy';
-
-export const DEFAULT_AVG = 0.5;
 
 function normalizeAvg(avg: unknown) {
   return typeof avg === 'number' && Number.isFinite(avg) ? avg : DEFAULT_AVG;

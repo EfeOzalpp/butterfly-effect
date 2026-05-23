@@ -1,4 +1,4 @@
-// src/utils/useGamificationPools.ts
+// src/lib/hooks/useGamificationPools.ts
 import { useMemo, useSyncExternalStore } from 'react';
 import { cdnClient, liveReadClient as liveClient } from '../../services/sanity/client';
 import {
@@ -9,20 +9,43 @@ import {
 } from '../../services/sanity/config';
 import { storageKeyFor, safeSession, bucketForPercent } from '../utils/color-and-interpolation';
 
-type Doc = {
+interface CopyDoc {
   _id: string;
   _updatedAt: string;
   range?: { minPct: number; maxPct: number };
   titles?: string[];
   secondary?: string[];
   enabled?: boolean;
-};
+}
 
-type PoolState = {
-  docs: Doc[];
+interface ReadyCopyDoc extends CopyDoc {
+  range: { minPct: number; maxPct: number };
+  titles: string[];
+  secondary: string[];
+}
+
+interface PoolState {
+  docs: CopyDoc[];
   rev: string;      // increments when docs change (use _updatedAt max)
   loaded: boolean;  // true after first live fetch completes
-};
+}
+
+interface FallbackBucket {
+  titles: string[];
+  secondary: string[];
+}
+
+interface QueueState {
+  queue: number[];
+  cursor: number;
+}
+
+const isReadyCopyDoc = (doc: CopyDoc): doc is ReadyCopyDoc =>
+  !!doc.range &&
+  Array.isArray(doc.titles) &&
+  doc.titles.length > 0 &&
+  Array.isArray(doc.secondary) &&
+  doc.secondary.length > 0;
 
 const buildQuery = (schemaName: string) => `
 *[
@@ -42,11 +65,15 @@ function createStore(initial: PoolState) {
     get: () => state,
     set: (next: Partial<PoolState>) => {
       state = { ...state, ...next };
-      subs.forEach((fn) => fn());
+      subs.forEach((fn) => {
+        fn();
+      });
     },
     subscribe: (fn: () => void) => {
       subs.add(fn);
-      return () => subs.delete(fn);
+      return () => {
+        subs.delete(fn);
+      };
     },
   };
 }
@@ -56,14 +83,17 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
   const store = createStore({ docs: [], rev: 'v0', loaded: false });
   let started = false;
   let unsubListen: { unsubscribe?: () => void } | null = null;
-  let refreshTimer: any = null;
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   const stop = () => {
     if (unsubListen) {
       unsubListen.unsubscribe?.();
       unsubListen = null;
     }
-    clearTimeout(refreshTimer);
+    if (refreshTimer) {
+      clearTimeout(refreshTimer);
+      refreshTimer = null;
+    }
   };
 
   const setFallbackReady = () => {
@@ -88,14 +118,14 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
     }
 
     const QUERY = buildQuery(schemaName);
-    const pump = (rows: Doc[]) => {
-      const docs = rows || [];
+    const pump = (rows: CopyDoc[]) => {
+      const docs = rows;
       const latest = docs.reduce((m, r) => (r._updatedAt > m ? r._updatedAt : m), '');
       store.set({ docs, rev: latest || 'v1', loaded: true });
     };
 
     // initial live fetch
-    liveClient.fetch<Doc[]>(QUERY, {}).then(pump).catch((error) => {
+    liveClient.fetch<CopyDoc[]>(QUERY, {}).then(pump).catch((error: unknown) => {
       if (isSanityQuotaError(error)) {
         enableMockSanityReadFallback(error);
         setFallbackReady();
@@ -109,13 +139,13 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
       .listen(QUERY, {}, { visibility: 'query' })
       .subscribe({
         next: () => {
-          clearTimeout(refreshTimer);
+          if (refreshTimer) clearTimeout(refreshTimer);
           refreshTimer = setTimeout(() => {
             if (shouldUseMockSanityReads()) {
               setFallbackReady();
               return;
             }
-            liveClient.fetch<Doc[]>(QUERY, {}).then(pump).catch((error) => {
+            liveClient.fetch<CopyDoc[]>(QUERY, {}).then(pump).catch((error: unknown) => {
               if (isSanityQuotaError(error)) {
                 enableMockSanityReadFallback(error);
                 setFallbackReady();
@@ -125,7 +155,7 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
             });
           }, 100);
         },
-        error: (error) => {
+        error: (error: unknown) => {
           if (isSanityQuotaError(error)) {
             enableMockSanityReadFallback(error);
             setFallbackReady();
@@ -144,17 +174,10 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
     // Build the picker from current snapshot
     const pick = useMemo(() => {
       const sorted = docs
-        .filter(
-          (d) =>
-            d.range &&
-            Array.isArray(d.titles) &&
-            d.titles?.length &&
-            Array.isArray(d.secondary) &&
-            d.secondary?.length
-        )
-        .sort((a, b) => a.range!.minPct - b.range!.minPct);
+        .filter(isReadyCopyDoc)
+        .sort((a, b) => a.range.minPct - b.range.minPct);
 
-      // Small Fisher–Yates
+      // Small Fisher-Yates shuffle.
       const shuffle = <T,>(arr: T[]) => {
         const a = arr.slice();
         for (let i = a.length - 1; i > 0; i--) {
@@ -168,28 +191,27 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
         pct: number,
         cachePrefix: string,
         id: string,
-        fallback?: Record<string, { titles: string[]; secondary: string[] }>
+        fallback?: Record<string, FallbackBucket>
       ) => {
-        const p = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
-        const found = sorted.find((d) => p >= d.range!.minPct && p <= d.range!.maxPct);
+        const p = Math.max(0, Math.min(100, Math.round(Number.isFinite(pct) ? pct : 0)));
+        const found = sorted.find((d) => p >= d.range.minPct && p <= d.range.maxPct);
 
         // include schema + rev so cache invalidates on CMS changes
         const stableKey = storageKeyFor(`${cachePrefix}:${schemaName}:${rev}`, id, p, 'v1');
 
         // If this id+pct already has an assignment, return it (stability per dot)
         const cached = safeSession.get<{ title: string; secondary: string } | null>(stableKey, null);
-        if (cached?.title && cached?.secondary) return cached;
+        if (cached?.title && cached.secondary) return cached;
 
         // Resolve source arrays (from CMS or fallback)
         const fbKey = fallback ? bucketForPercent(p) : null;
+        const fallbackBucket = fallback && fbKey ? fallback[fbKey] : undefined;
         const titles =
-          found?.titles?.length ? found.titles : fallback ? fallback[fbKey!]?.titles : null;
+          found?.titles.length ? found.titles : fallbackBucket?.titles ?? null;
         const secondary =
-          found?.secondary?.length
+          found?.secondary.length
             ? found.secondary
-            : fallback
-            ? fallback[fbKey!]?.secondary
-            : null;
+            : fallbackBucket?.secondary ?? null;
 
         if (!titles?.length || !secondary?.length) return null;
 
@@ -200,10 +222,10 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
         // === NO-REPEAT BUCKET QUEUE (session-scoped, per range, per schema+rev) ===
         // Build a bucket identifier that is stable for the pct range we matched.
         const bucketId =
-          found?.range
-            ? `${found.range.minPct}-${found.range.maxPct}`
+          found
+            ? `${String(found.range.minPct)}-${String(found.range.maxPct)}`
             : // Fallback bucket uses the coarse fb key (e.g., '41-60')
-              fbKey!;
+              fbKey ?? 'fallback';
 
         // A pool that survives re-renders within the same session and resets on CMS rev change.
         const poolKey = storageKeyFor(
@@ -213,26 +235,32 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
           'v1'
         );
 
-        type PoolState = { queue: number[]; cursor: number };
-        let pool = safeSession.get<PoolState | null>(poolKey, null);
+        let pool = safeSession.get<QueueState | null>(poolKey, null);
 
-        const resetPool = () => {
-          pool = { queue: shuffle(Array.from({ length: N }, (_, i) => i)), cursor: 0 };
-          safeSession.set(poolKey, pool);
+        const createQueue = (): QueueState => ({
+          queue: shuffle(Array.from({ length: N }, (_, i) => i)),
+          cursor: 0,
+        });
+
+        const savePool = (nextPool: QueueState) => {
+          pool = nextPool;
+          safeSession.set(poolKey, nextPool);
         };
 
         if (!pool || !Array.isArray(pool.queue) || typeof pool.cursor !== 'number' || pool.queue.length !== N) {
-          resetPool();
+          savePool(createQueue());
         }
 
         // Draw next index without replacement; reshuffle after exhausting.
-        let idx = pool!.queue[pool!.cursor];
-        pool!.cursor += 1;
-        if (pool!.cursor >= pool!.queue.length) {
-          // exhausted → reshuffle for next cycle
-          resetPool();
+        const currentPool = pool;
+        if (!currentPool) return null;
+        const idx = currentPool.queue[currentPool.cursor] ?? 0;
+        const nextCursor = currentPool.cursor + 1;
+        if (nextCursor >= currentPool.queue.length) {
+          // Exhausted, reshuffle for next cycle.
+          savePool(createQueue());
         } else {
-          safeSession.set(poolKey, pool!);
+          savePool({ ...currentPool, cursor: nextCursor });
         }
 
         // Pair title+secondary at the same index (clamped)
@@ -260,7 +288,7 @@ export function startGamificationCopyPreload() {
   personalizedPool.start();
 }
 
-/** Hooks for components: they only subscribe; they WON’T start fetch if not started yet */
+/** Hooks for components: they only subscribe; they do not start fetch if not started yet */
 export function useGeneralPools() {
   // Soft guarantee: if nothing started them yet, start once here as a safety net.
   generalPool.start();

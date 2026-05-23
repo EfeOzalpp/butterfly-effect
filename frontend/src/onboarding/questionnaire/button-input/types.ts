@@ -1,12 +1,12 @@
-export type LiveAvgButtonItem = {
+export interface LiveAvgButtonItem {
   id: string;
   label: string;
   value: number;
   disabled?: boolean;
-};
+}
 
-export type LiveAvgButtonChange = {
+export interface LiveAvgButtonChange {
   activeIds: string[];
   activeItems: LiveAvgButtonItem[];
   liveAvg: number;
-};
+}

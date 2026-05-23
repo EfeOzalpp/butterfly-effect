@@ -7,7 +7,7 @@ import SearchIcon from "../../assets/svg/search/SearchIcon";
 const PAGE_SIZE = 50;
 
 function fmt(v?: number): string {
-  return v != null ? v.toFixed(2) : "—";
+  return v != null ? v.toFixed(2) : "--";
 }
 
 function fmtQs(row: { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number }): string {
@@ -35,12 +35,6 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
     if (!searchOpen) return;
     filterInputRef.current?.focus();
   }, [searchOpen]);
-
-  useEffect(() => {
-    if (open) return;
-    setFilterFocused(false);
-    if (!query.trim()) setSearchOpen(false);
-  }, [open, query]);
 
   // Sort ascending by submittedAt (earliest = #1)
   const sorted = useMemo(() => {
@@ -94,15 +88,22 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
 
     return parts.map((part, index) =>
       part.toLowerCase() === highlightPattern.toLowerCase() ? (
-        <mark key={`${part}-${index}`} className="logs-highlight">
+        <mark key={`${part}-${String(index)}`} className="logs-highlight">
           {part}
         </mark>
       ) : part
     );
   }
 
+  function closeLogs() {
+    setOpen(false);
+    setFilterFocused(false);
+    if (!query.trim()) setSearchOpen(false);
+  }
+
   function toggle() {
-    setOpen(!open);
+    if (open) closeLogs();
+    else setOpen(true);
     setPage(0);
   }
 
@@ -141,7 +142,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
                     placeholder="search"
                     aria-label={filterFocused ? "Filtering submission logs" : "Filter submission logs"}
                     aria-expanded={searchOpen}
-                    onFocus={() => setFilterFocused(true)}
+                    onFocus={() => { setFilterFocused(true); }}
                     onBlur={closeSearchIfEmpty}
                     onKeyDown={(e) => {
                       if (e.key !== "Escape") return;
@@ -172,7 +173,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
             </div>
           </div>
 
-          <div className="logs-table-wrap" onWheel={(e) => e.stopPropagation()}>
+          <div className="logs-table-wrap" onWheel={(e) => { e.stopPropagation(); }}>
             <table className="logs-table">
               <thead>
                 <tr>
@@ -206,7 +207,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
               type="button"
               className="logs-close-btn"
               aria-label="Close logs"
-              onClick={() => setOpen(false)}
+              onClick={closeLogs}
             >
               <CloseIcon className="ui-close" />
               <span>Logs</span>
@@ -218,7 +219,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
                   <button
                     type="button"
                     className="logs-page-arrow"
-                    onClick={() => setPage((p) => p - 1)}
+                    onClick={() => { setPage((p) => p - 1); }}
                     aria-label="Previous page"
                   >
                     <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
@@ -233,7 +234,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
                   <button
                     type="button"
                     className="logs-page-arrow"
-                    onClick={() => setPage((p) => p + 1)}
+                    onClick={() => { setPage((p) => p + 1); }}
                     aria-label="Next page"
                   >
                     <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">

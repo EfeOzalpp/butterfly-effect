@@ -12,8 +12,8 @@ function injectSvgClasses(svg: string, className: string) {
 
 function scopeSvgIds(svg: string, prefix: string) {
   return svg
-    .replace(/id="([^"]+)"/g, (_, id) => `id="${prefix}-${id}"`)
-    .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${prefix}-${id})`);
+    .replace(/id="([^"]+)"/g, (_match: string, id: string) => `id="${prefix}-${id}"`)
+    .replace(/url\(#([^)]+)\)/g, (_match: string, id: string) => `url(#${prefix}-${id})`);
 }
 
 export function prepareRawSvgMarkup(svg: string, prefix: string, className: string) {

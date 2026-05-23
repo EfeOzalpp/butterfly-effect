@@ -24,7 +24,7 @@ const Navigation = () => {
     const timer = window.setTimeout(() => {
       setIntroActive(false);
     }, 520);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); };
   }, []);
 
   React.useLayoutEffect(() => {
@@ -60,7 +60,7 @@ const Navigation = () => {
     };
     const prefersReducedMotion =
       typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const shouldAnimateOut =
       !introActive &&
       !prefersReducedMotion &&
@@ -68,7 +68,7 @@ const Navigation = () => {
       nextPlacement === "spread" &&
       !!previousRects;
 
-    if (shouldAnimateOut && previousRects) {
+    if (shouldAnimateOut) {
       const motions = [
         { el: leftEl, deltaX: previousRects.left.left - nextRects.left.left },
         { el: rightEl, deltaX: previousRects.right.left - nextRects.right.left },
@@ -77,14 +77,14 @@ const Navigation = () => {
       if (motions.length > 0) {
         motions.forEach(({ el, deltaX }) => {
           el.style.transition = "none";
-          el.style.transform = `translateX(${Math.round(deltaX * 100) / 100}px)`;
+          el.style.transform = `translateX(${String(Math.round(deltaX * 100) / 100)}px)`;
         });
 
         navEl.getBoundingClientRect();
 
         transitionFrameRef.current = window.requestAnimationFrame(() => {
           motions.forEach(({ el }) => {
-            el.style.transition = `transform ${PLACEMENT_TRANSITION_MS}ms cubic-bezier(.22,.61,.36,1)`;
+            el.style.transition = `transform ${String(PLACEMENT_TRANSITION_MS)}ms cubic-bezier(.22,.61,.36,1)`;
             el.style.transform = "translateX(0px)";
           });
           transitionFrameRef.current = null;
@@ -119,7 +119,7 @@ const Navigation = () => {
         className={`navigation${isLandingState ? " is-landing-centered" : ""}`}
       >
         <NavLeft introActive={introActive} />
-        <NavRight isDark={!!darkMode} introActive={introActive} />
+        <NavRight isDark={darkMode} introActive={introActive} />
       </nav>
       <NavBottom introActive={introActive} />
     </>

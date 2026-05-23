@@ -1,5 +1,7 @@
 import type { SceneLightContext } from "../../../canvas-engine/modifiers/lighting";
 
+// Sprite textures are drawn offscreen, so they need their own light context
+// instead of reading the main canvas runtime's scene lighting.
 const SPRITE_PALETTE_CLOSENESS_K = 0.6;
 
 export function makeSpritePaletteLightContext(
