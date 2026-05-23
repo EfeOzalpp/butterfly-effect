@@ -1,7 +1,7 @@
 import type { SceneLightContext } from "../../../modifiers/lighting";
-import { resolveHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
 import { addAlphaOnlyLightStops } from "./color";
+import { resolveHorizonRow } from "./horizon";
 import type { GridMetrics } from "../../geometry/gridCache";
 import type { PLike } from "../../p/makeP";
 

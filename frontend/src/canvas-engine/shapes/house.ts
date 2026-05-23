@@ -645,11 +645,11 @@ export function drawHouse(
 
   // chimney (~1 in 3)
   if (Math.floor(r4 * 3) === 0) {
-    const baseW = Math.max(1, Math.round(pxW * 0.15));
-    const baseH = Math.max(1, Math.round(bodyH * 0.10));
+    const baseW = Math.max(1, Math.round(pxW * 0.18));
+    const baseH = Math.max(1, Math.round(bodyH * 0.075));
     const scale = val(HOUSE.chimney.scaleRange, u) * particleBucketRange(rowBucket.t, 0.52, 1.0);
-    const cW = clampMinMax(baseW * scale, 1, Math.max(1, Math.round(pxW * 0.22)));
-    const cH = clampMinMax(baseH * scale, 1, Math.max(1, Math.round(bodyH * 0.30)));
+    const cW = clampMinMax(baseW * scale, 1, Math.max(1, Math.round(pxW * 0.28)));
+    const cH = clampMinMax(baseH * scale, 1, Math.max(1, Math.round(bodyH * 0.22)));
 
     const onLeft = r4 < 0.5;
     const margin = Math.max(1, pxW * 0.1);
@@ -668,7 +668,7 @@ export function drawHouse(
         cW / 2 -
         smokeColW / 2 +
         Math.round(smokeColW * SMOKE.offsetXFrac);
-      const smokeY = cy - cH - smokeColH + Math.round(localTileH * 0.55);
+      const smokeY = cy - cH - smokeColH + Math.round(localTileH * 0.46);
       const bottomFadePx = isSprite ? Math.max(0, Math.round(smokeColH - localTileH * 0.7)) : 0;
 
       const spawnX0 = Math.min(val(SMOKE.spawnX, 0), val(SMOKE.spawnX, u));
@@ -775,7 +775,7 @@ export function drawHouse(
   p.rect(doorX, doorY, doorW, doorH, Math.round(cell * 0.03));
 }
 
-// ------- Windows (short / mid / compact-tall / tall; 2 per row; max 6) -------
+// ------- Windows (short / mid / compact-tall / tall; 2 per row; max 8) -------
 {
   // lit/dark tints (safe)
   let winLitVariants = Array.isArray(pal.window.lit) ? pal.window.lit : [pal.window.lit];
@@ -800,17 +800,19 @@ export function drawHouse(
   const mid = HOUSE.windows.thresholds.mid;
 
   const PROFILES = {
-    // ↓ tweaked to feel "shorter": smaller windows, higher band, more bottom keep
+    // Short keeps cottage scale; mid is the shorter apartment-style house.
     short: { rows: 1, WIN_W_FRAC: 0.12, WIN_H_FRAC: 0.34, H_GAP_FRAC: 0.16, V_GAP_FRAC: 0.06, TOP_FRAC: 0.20, BOT_FRAC: 0.34 },
-    mid:   { rows: 2, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.16, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.10, TOP_FRAC: 0.16, BOT_FRAC: 0.26 },
-    compactTall: { rows: 2, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.14, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.12, TOP_FRAC: 0.15, BOT_FRAC: 0.26 },
-    tall:  { rows: 3, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.10, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.12, TOP_FRAC: 0.14, BOT_FRAC: 0.26 },
+    mid:   { rows: 3, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.105, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.09, TOP_FRAC: 0.13, BOT_FRAC: 0.24 },
+    compactTall: { rows: 3, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.105, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.10, TOP_FRAC: 0.13, BOT_FRAC: 0.25 },
+    tall:  { rows: 4, WIN_W_FRAC: 0.16, WIN_H_FRAC: 0.078, H_GAP_FRAC: 0.12, V_GAP_FRAC: 0.085, TOP_FRAC: 0.11, BOT_FRAC: 0.22 },
   };
 
+  const bodyTileRows = bodyH / Math.max(1, localTileH);
+  const usesTallWindowStack = cellsH > mid && bodyTileRows >= 2.75;
+
   const profile =
-    (cellsH > mid) ? (
-      bodyH >= Math.max(34, localTileH * 1.9) ? PROFILES.tall : PROFILES.compactTall
-    ) :
+    usesTallWindowStack ? PROFILES.tall :
+    (cellsH > mid) ? PROFILES.compactTall :
     (cellsH >= low) ? PROFILES.mid :
     PROFILES.short;
 
@@ -839,7 +841,7 @@ export function drawHouse(
   while (rows > 1 && rows * winH + (rows - 1) * gapY > usableH) rows -= 1;
   if (rows < 1) rows = 1;
 
-  let totalWindows = Math.min(rows * cols, 6);
+  let totalWindows = Math.min(rows * cols, 8);
   if (totalWindows < 2) totalWindows = 2;
 
   const dynamicLitRatio = Math.pow(1 - u, WINDOW_OSC.litCurve);

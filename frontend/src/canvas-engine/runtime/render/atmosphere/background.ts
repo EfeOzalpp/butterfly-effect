@@ -11,7 +11,7 @@ import { clamp01 } from "../../../shared/math";
 import type { PLike } from "../../p/makeP";
 import { backgroundAnchorCacheKey, resolveStopK, resolveStopKValue } from "./anchors";
 import { parseCssColor, resolveStopColor } from "./color";
-import { drawStars } from "./stars";
+import { createStarGeometryCache, drawStars } from "./stars";
 import { drawLinearStopSurface } from "./surface";
 
 function resolveOuterRadius(p: PLike, outer: RadialGradientSpec["outer"]) {
@@ -138,6 +138,8 @@ export function drawFogOverlay(
   }
 }
 
+// Draw the base sky/ground fill and gradient overlays.
+// Runtime usually caches this pass and draws animated stars separately.
 export function drawBackground(
   p: PLike,
   sceneLookup: SceneLookupKey,
@@ -145,7 +147,8 @@ export function drawBackground(
   alpha = 1,
   liveAvg = 0.5,
   skipStars = false,
-  anchors?: BackgroundAnchorContext
+  anchors?: BackgroundAnchorContext,
+  getStars?: ReturnType<typeof createStarGeometryCache>
 ) {
   const spec = resolveBackgroundSpec(sceneLookup, override);
   const ctx = p.drawingContext;
@@ -211,24 +214,28 @@ export function drawBackground(
   if (!skipStars && spec.stars) {
     ctx.save();
     ctx.globalAlpha = alpha;
-    drawStars(p, ctx, spec.stars, liveAvg);
+    // Direct callers can still draw stars here, but the main loop passes a cache.
+    const starGeometry = getStars ?? createStarGeometryCache();
+    drawStars(p, ctx, spec.stars, liveAvg, starGeometry);
     ctx.restore();
   }
 }
 
+// Live star pass. The background cache skips stars because their alpha changes every frame.
 export function drawBackgroundStarsOnly(
   p: PLike,
   sceneLookup: SceneLookupKey,
   override: BackgroundSpec | null = null,
   alpha = 1,
-  liveAvg = 0.5
+  liveAvg = 0.5,
+  getStars: ReturnType<typeof createStarGeometryCache>
 ) {
   const spec = resolveBackgroundSpec(sceneLookup, override);
   if (!spec.stars) return;
   const ctx = p.drawingContext;
   ctx.save();
   ctx.globalAlpha = alpha;
-  drawStars(p, ctx, spec.stars, liveAvg);
+  drawStars(p, ctx, spec.stars, liveAvg, getStars);
   ctx.restore();
 }
 

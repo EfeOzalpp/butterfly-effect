@@ -11,12 +11,13 @@ import { getPaddingSpecForState } from "../geometry/padding";
 import { computeGridCached, type GridCacheState, type GridMetrics } from "../geometry/gridCache";
 
 import {
-  computeFogState,
   createBackgroundAnchorContext,
   createBgCache,
   createBottomFogStepper,
+  createFogStateCache,
   createRowLightCache,
   createSkyFogCache,
+  createStarGeometryCache,
   drawBackgroundStarsOnly,
   drawFogOverlay,
   drawSkyFogLightOverlay,
@@ -102,6 +103,8 @@ export function createEngineTicker(deps: LoopDeps) {
   const bgCache = createBgCache();
   const rowLightCache = createRowLightCache();
   const skyFogCache = createSkyFogCache();
+  const fogStateCache = createFogStateCache();
+  const starGeometryCache = createStarGeometryCache();
 
   const sortedItemsScratch: EngineFieldItem[] = [];
   const regularItemsScratch: EngineFieldItem[] = [];
@@ -191,7 +194,7 @@ export function createEngineTicker(deps: LoopDeps) {
     });
 
     bgCache(p, sceneLookup, currentBgSpec, liveAvgSignal, backgroundAnchors);
-    drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal);
+    drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, starGeometryCache);
 
     drawGridOverlay(
       p,
@@ -271,7 +274,7 @@ export function createEngineTicker(deps: LoopDeps) {
         { renderOneSandboxed(it, rEff, shared, rootAppearK); },
     });
 
-    const fog = style.fog ? computeFogState({
+    const fog = style.fog ? fogStateCache({
       p,
       metrics: grid.metrics,
       darkMode: style.darkMode,

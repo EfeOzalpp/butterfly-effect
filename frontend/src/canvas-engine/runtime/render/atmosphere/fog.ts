@@ -1,7 +1,7 @@
 import type { SceneLightContext } from "../../../modifiers/lighting";
-import { resolveFogHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
 import { addAlphaOnlyLightStops } from "./color";
+import { resolveFogHorizonRow } from "./horizon";
 import type { GridMetrics } from "../../geometry/gridCache";
 import { getCanvasMeta } from "../../p/canvasMeta";
 import type { PLike } from "../../p/makeP";
@@ -9,11 +9,14 @@ import type { PLike } from "../../p/makeP";
 interface FogColor { r: number; g: number; b: number }
 interface FogGradientStop { k: number; color: FogColor }
 
-const SKY_FOG_HORIZON_BLEND_BY_DISTANCE: readonly number[] = [0.8, 0.7, 0.6]; // 1 to 0 for how much to blend, and 3 properties for the three rows closest to the sky horizon.
+// Manual seam blend for sky rows nearest the ground-fog boundary.
+const SKY_FOG_HORIZON_BLEND_BY_DISTANCE: readonly number[] = [0.75, 0.5, 0.65];
 const SKY_FOG_HORIZON_BLEND_CACHE_KEY = SKY_FOG_HORIZON_BLEND_BY_DISTANCE.join(",");
 const SKY_LIGHT_INNER_RADIUS_K = 0.10;
 const SKY_LIGHT_OUTER_RADIUS_K = 0.26;
 
+// Frame-ready fog layout. The loop should not recalculate these row boundaries
+// unless the grid, theme, viewport, or horizon input changes.
 export interface FogState {
   fogStartY: number;
   fogCanvasH: number;
@@ -27,6 +30,14 @@ export interface FogState {
   groundFogGradient: readonly FogGradientStop[] | null;
   fogLayerAlpha255: number;
 };
+
+interface FogStateInput {
+  p: PLike;
+  metrics: GridMetrics;
+  darkMode: boolean;
+  isRealMobile: boolean;
+  horizonPos?: number;
+}
 
 function remap01(v: number, start: number, end: number) {
   if (end <= start) return v >= end ? 1 : 0;
@@ -54,6 +65,7 @@ function gradientCacheKey(gradientStops: readonly FogGradientStop[] | null | und
 }
 
 function fogOpacityScaleForRowCount(rowCount: number) {
+  // More rows means more stacked fog bands, so each band needs less alpha.
   const referenceRows = 18;
   const rawScale = referenceRows / Math.max(1, rowCount);
   return Math.max(0.45, Math.min(1, rawScale));
@@ -103,6 +115,7 @@ function drawFogBand(args: {
 
   const ctx = p.drawingContext;
   const alpha = Math.max(0, Math.min(1, alpha255 / 255));
+  // Each fog slice overhangs slightly so row seams do not read as hard lines.
   const outerFeather = overhangPx ?? (
     overhangEdge === "top"
       ? Math.max(18, Math.min(72, height * 0.6))
@@ -186,6 +199,7 @@ export function computeFogState(args: {
   const fogStartY = metrics.rowOffsetY[fogPeakRow];
   if (!Number.isFinite(fogStartY)) return null;
 
+  // Bottom fog is sliced by row boundaries so the loop can draw items into it.
   const fogCanvasH = getCanvasMeta(p.canvas).cssH ?? p.height;
   const bottomFogLayerBoundaries = [
     ...metrics.rowOffsetY.slice(fogPeakRow + 1),
@@ -197,6 +211,7 @@ export function computeFogState(args: {
   const baseFogLayerAlpha = darkMode ? 36 / 255 : 26 / 255;
   const FOG_LAYER_ALPHA = baseFogLayerAlpha * fogOpacityScale;
   const numBottomFogLayers = bottomFogLayerBoundaries.length;
+  // Match sky opacity to the accumulated ground fog so the horizon does not pop.
   const targetHorizonOpacity = numBottomFogLayers > 0
     ? 1 - Math.pow(1 - FOG_LAYER_ALPHA, numBottomFogLayers)
     : 0;
@@ -264,6 +279,48 @@ export function computeFogState(args: {
   };
 }
 
+// Fog still draws every frame, but its layout/color inputs only change on resize,
+// scene/padding changes, theme changes, or mobile mode changes.
+export function createFogStateCache() {
+  let hasValue = false;
+  let lastWidth = 0;
+  let lastHeight = 0;
+  let lastMetrics: GridMetrics | null = null;
+  let lastDarkMode = false;
+  let lastIsRealMobile = false;
+  let lastHorizonPos: number | undefined;
+  let lastFog: FogState | null = null;
+
+  return function getFogState(args: FogStateInput): FogState | null {
+    const { p, metrics, darkMode, isRealMobile, horizonPos } = args;
+    const width = p.width;
+    const height = p.height;
+
+    if (
+      hasValue &&
+      width === lastWidth &&
+      height === lastHeight &&
+      metrics === lastMetrics &&
+      darkMode === lastDarkMode &&
+      isRealMobile === lastIsRealMobile &&
+      horizonPos === lastHorizonPos
+    ) {
+      return lastFog;
+    }
+
+    lastWidth = width;
+    lastHeight = height;
+    lastMetrics = metrics;
+    lastDarkMode = darkMode;
+    lastIsRealMobile = isRealMobile;
+    lastHorizonPos = horizonPos;
+    lastFog = computeFogState(args);
+    hasValue = true;
+
+    return lastFog;
+  };
+}
+
 export function createBottomFogStepper(p: PLike, fog: FogState) {
   let bottomFogLayerIndex = 0;
   const fogTopOffsetPx = 0;
@@ -276,6 +333,8 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
     const layerDepthT = fog.fogCanvasH > fog.fogStartY
       ? clamp01(rectH / (fog.fogCanvasH - fog.fogStartY))
       : 0;
+    // Deeper ground bands keep more of the scene gradient; near-horizon bands
+    // blend harder into the fog color.
     const gradientUseK = fog.groundFogGradient
       ? clamp01(Math.pow(remap01(layerDepthT, 0.30, 1), 1.36))
       : 0;
@@ -297,6 +356,7 @@ export function createBottomFogStepper(p: PLike, fog: FogState) {
   };
 
   const drawUntilDepth = (depth: number) => {
+    // loop.ts calls this before drawing a row group so fog can sit between depths.
     while (
       bottomFogLayerIndex < fog.bottomFogLayerBoundaries.length &&
       fog.bottomFogLayerBoundaries[bottomFogLayerIndex] <= depth
@@ -368,7 +428,7 @@ export function drawSkyFog(p: PLike, fog: FogState) {
   }
 }
 
-// Sky light bands
+// Soft light bands over sky fog. This is a screen-blended accent, not the main fog.
 export function drawSkyFogLightOverlay(args: {
   p: PLike;
   fog: FogState | null;

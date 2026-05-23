@@ -3,9 +3,11 @@ export { createBgCache, drawBackground, drawBackgroundStarsOnly, drawFogOverlay 
 export {
   computeFogState,
   createBottomFogStepper,
+  createFogStateCache,
   createSkyFogCache,
   drawSkyFog,
   drawSkyFogLightOverlay,
   type FogState,
 } from "./fog";
 export { createRowLightCache, drawRowTopLightOverlay } from "./rowLight";
+export { createStarGeometryCache } from "./stars";

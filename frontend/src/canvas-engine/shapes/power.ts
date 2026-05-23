@@ -93,7 +93,7 @@ const POWER = {
       offset: [5, 7],
       alpha:  [150, 125],
     },
-    bladeOsc: { amp: [0, 0.4], speed: [0.2, 0.4] },
+    bladeOsc: { amp: [0, 0.2], speed: [0.2, 0.4] },
   },
   kindBalance: {
     midpoint: 0.5,

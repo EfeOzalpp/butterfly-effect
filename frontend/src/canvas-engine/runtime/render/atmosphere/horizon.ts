@@ -1,7 +1,9 @@
+// Atmosphere horizon rules. Visual horizon follows the smallest grid row;
+// fog starts slightly above it so the distant blend does not muddy the ground.
 const FOG_HORIZON_POS_THRESHOLD = 0.527;
 
 export function fogHorizonRowOffset(horizonPos?: number): number {
-  return (horizonPos ?? 0) >= FOG_HORIZON_POS_THRESHOLD ? 3 : 1;
+  return (horizonPos ?? 0) >= FOG_HORIZON_POS_THRESHOLD ? 3 : 2;
 }
 
 export function resolveHorizonRow(rowHeights: number[]): number {

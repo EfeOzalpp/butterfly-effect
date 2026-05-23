@@ -6,8 +6,8 @@ import type {
 import type { CanvasPaddingSpec } from "../../../adjustable-rules/canvas-padding";
 import type { GridMetrics } from "../../geometry/gridCache";
 import type { PLike } from "../../p/makeP";
-import { resolveFogHorizonRow, resolveHorizonRow } from "../../../shared/horizon";
 import { clamp01 } from "../../../shared/math";
+import { resolveFogHorizonRow, resolveHorizonRow } from "./horizon";
 
 function resolveAnchorK(anchor: Exclude<BackgroundStopK, number>, anchors?: BackgroundAnchorContext) {
   const key = typeof anchor === "string" ? anchor : anchor.anchor;
