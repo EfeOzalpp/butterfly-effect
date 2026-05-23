@@ -20,6 +20,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
+    "lint:ci": "eslint src/canvas-engine src/graph-runtime/sprites",
     "lint:all": "eslint ."
   },
   "devDependencies": {
