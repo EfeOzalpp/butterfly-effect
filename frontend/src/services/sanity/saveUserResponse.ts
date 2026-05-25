@@ -1,4 +1,4 @@
-import { USE_MOCK_SANITY, shouldUseMockSanityReads } from './config';
+import { USE_MOCK_SANITY, enableMockSanityReadFallback, shouldUseMockSanityReads } from './config';
 import { createMockUserResponse } from './mockData';
 import type { SurveyWeights } from './types';
 
@@ -14,6 +14,34 @@ export interface SavedUserResponse {
   submittedAt?: string;
 }
 
+interface EdgeSavePayload {
+  section: string;
+  weights: SurveyWeights;
+  clientId: string;
+  clientRequestId: string;
+  website: string;
+}
+
+interface EdgeErrorBody {
+  error?: string;
+  code?: string;
+  resetAt?: string;
+}
+
+class EdgeSaveError extends Error {
+  readonly code?: string;
+  readonly status: number;
+  readonly resetAt?: string;
+
+  constructor(message: string, status: number, code?: string, resetAt?: string) {
+    super(message);
+    this.name = 'EdgeSaveError';
+    this.status = status;
+    this.code = code;
+    this.resetAt = resetAt;
+  }
+}
+
 const clamp01 = (v?: number) =>
   typeof v === 'number' ? Math.max(0, Math.min(1, v)) : undefined;
 
@@ -26,10 +54,47 @@ function readErrorMessage(value: unknown): string | null {
   return typeof record.error === 'string' ? record.error : null;
 }
 
+function readEdgeErrorBody(value: unknown): EdgeErrorBody {
+  if (!value || typeof value !== 'object') return {};
+  const record = value as Record<string, unknown>;
+  return {
+    error: typeof record.error === 'string' ? record.error : undefined,
+    code: typeof record.code === 'string' ? record.code : undefined,
+    resetAt: typeof record.resetAt === 'string' ? record.resetAt : undefined,
+  };
+}
+
 function isSavedUserResponse(value: unknown): value is SavedUserResponse {
   if (!value || typeof value !== 'object') return false;
   const record = value as Record<string, unknown>;
   return typeof record._id === 'string';
+}
+
+function makeRandomId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getClientId(): string {
+  if (typeof window === 'undefined') return makeRandomId();
+
+  const key = 'be.clientId';
+  try {
+    const existing = window.localStorage.getItem(key);
+    if (existing) return existing;
+
+    const next = makeRandomId();
+    window.localStorage.setItem(key, next);
+    return next;
+  } catch {
+    return makeRandomId();
+  }
+}
+
+function shouldFallbackToMockWrite(error: unknown) {
+  return error instanceof EdgeSaveError && error.code === 'SANITY_WRITE_UNAVAILABLE';
 }
 
 export async function saveUserResponse(section: string, weights: SurveyWeights): Promise<SavedUserResponse> {
@@ -41,9 +106,19 @@ export async function saveUserResponse(section: string, weights: SurveyWeights):
     q5: round3(clamp01(weights.q5)),
   };
 
-  const created = (USE_MOCK_SANITY || shouldUseMockSanityReads())
-    ? createMockUserResponse(section, clamped)
-    : await saveUserResponseViaEdge(section, clamped);
+  let created: SavedUserResponse;
+  if (USE_MOCK_SANITY || shouldUseMockSanityReads()) {
+    created = createMockUserResponse(section, clamped);
+  } else {
+    try {
+      created = await saveUserResponseViaEdge(section, clamped);
+    } catch (error) {
+      if (!shouldFallbackToMockWrite(error)) throw error;
+
+      enableMockSanityReadFallback(error);
+      created = createMockUserResponse(section, clamped);
+    }
+  }
 
   if (typeof window !== 'undefined') {
     sessionStorage.setItem('be.myEntryId', created._id);
@@ -73,28 +148,39 @@ export async function saveUserResponse(section: string, weights: SurveyWeights):
 
 async function saveUserResponseViaEdge(section: string, weights: SurveyWeights): Promise<SavedUserResponse> {
   const supabaseUrl: unknown = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey: unknown = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabasePublishableKey: unknown =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (typeof supabaseUrl !== 'string' || supabaseUrl.length === 0) {
     throw new Error('Missing VITE_SUPABASE_URL');
   }
-  if (typeof supabaseAnonKey !== 'string' || supabaseAnonKey.length === 0) {
-    throw new Error('Missing VITE_SUPABASE_ANON_KEY');
+  if (typeof supabasePublishableKey !== 'string' || supabasePublishableKey.length === 0) {
+    throw new Error('Missing VITE_SUPABASE_PUBLISHABLE_KEY');
   }
+
+  const payload: EdgeSavePayload = {
+    section,
+    weights,
+    clientId: getClientId(),
+    clientRequestId: makeRandomId(),
+    // Quiet bot trap. The UI never fills this, so the edge function can reject it if it appears.
+    website: '',
+  };
 
   const res = await fetch(`${supabaseUrl}/functions/v1/save-user-response`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${supabaseAnonKey}`,
+      apikey: supabasePublishableKey,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ section, weights }),
+    body: JSON.stringify(payload),
   });
 
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) {
+    const edgeError = readEdgeErrorBody(json);
     const message = readErrorMessage(json) ?? `Edge function request failed with status ${String(res.status)}`;
-    throw new Error(message);
+    throw new EdgeSaveError(message, res.status, edgeError.code, edgeError.resetAt);
   }
 
   if (!isSavedUserResponse(json)) {
