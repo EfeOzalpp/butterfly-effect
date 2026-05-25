@@ -188,7 +188,7 @@ export function SpriteShape({
   const stableSeedKey = React.useMemo(() => {
     const base = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) });
     return `${base}|seed:${shape}|${String(variant)}`;
-  }, [shape, TILE, dpr, alphaUse, bucketId, variant, localDarkMode]);
+  }, [shape, TILE, dpr, alphaUse, bucketId, variant, localDarkMode, dev]);
 
   const wantsEpochRefresh = React.useMemo(() => {
     if (shape === 'house') return houseHasChimney(stableSeedKey);
@@ -216,7 +216,7 @@ export function SpriteShape({
     return wantsFrozen
       ? makeFrozenKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, simulateMs, stepMs: particleStepMs, bucketId, variant, darkMode: localDarkMode })
       : staticBase;
-  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, localDarkMode, refreshEpoch]);
+  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, localDarkMode, refreshEpoch, dev]);
 
   const [texState, setTexState] = React.useState<{ key: string; tex: THREE.CanvasTexture | null }>(() => {
     const tex = wantsFrozen ? (getFrozenTexture(key) ?? null) : (getStaticTexture(key) ?? null);
@@ -443,6 +443,8 @@ export function SpriteShape({
     vs.blend,
     vs.rgb,
     refreshEpoch,
+    stableSeedKey,
+    dev,
   ]);
 
   const materialCacheDisabled = spriteMaterialCachingDisabled() || !!worldPosition;
