@@ -36,13 +36,29 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const effectiveExpandedWidget = vizVisible ? expandedWidget : null;
   const barGraphExpanded = effectiveExpandedWidget === "bar";
   const radarChartExpanded = effectiveExpandedWidget === "radar";
-  const toggleWidget = (w: "bar" | "radar") => { setExpandedWidget((cur) => (cur === w ? null : w)); };
+  const toggleWidget = (w: "bar" | "radar") => {
+    if (pendingWidgetRef.current != null) {
+      window.clearTimeout(pendingWidgetRef.current);
+      pendingWidgetRef.current = null;
+    }
+    if (expandedWidget === w) { setExpandedWidget(null); return; }
+    if (expandedWidget !== null) {
+      setExpandedWidget(null);
+      pendingWidgetRef.current = window.setTimeout(() => {
+        setExpandedWidget(w);
+        pendingWidgetRef.current = null;
+      }, 80);
+      return;
+    }
+    setExpandedWidget(w);
+  };
   const widgetsRef = useRef<HTMLDivElement | null>(null);
   const widgetsDialogRef = useRef<HTMLDivElement | null>(null);
   const widgetsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const logsWrapRef = useRef<HTMLDivElement | null>(null);
   const modeToggleRef = useRef<HTMLDivElement | null>(null);
   const questionnaireHintTimerRef = useRef<number | null>(null);
+  const pendingWidgetRef = useRef<number | null>(null);
   const [logsSlide, setLogsSlide] = useState(0);
   const [showQuestionnaireDisabledHint, setShowQuestionnaireDisabledHint] = useState(false);
   const [modeToggleShiftPx, setModeToggleShiftPx] = useState(0);
@@ -76,6 +92,9 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     return () => {
       if (questionnaireHintTimerRef.current != null) {
         window.clearTimeout(questionnaireHintTimerRef.current);
+      }
+      if (pendingWidgetRef.current != null) {
+        window.clearTimeout(pendingWidgetRef.current);
       }
     };
   }, []);

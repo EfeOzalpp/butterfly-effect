@@ -18,7 +18,7 @@
   --type-h2-line: 1.35;
   --type-h3-line: 1.5;
   --type-body-line: 1.4;
-  --type-h4-line: 1.4;
+  --type-h4-line: 1.6;  
   --type-tight-line: 1.25;
 
   /* Main background surfaces */
@@ -28,7 +28,7 @@
   /* Main UI surface colors */
   --ui-bg-surface: #f8fafc;
   --ui-bg-surface-glass: rgba(248, 250, 252, 0.7);
-  --ui-bg-surface-hover: #dfdfdf;
+  --ui-bg-surface-hover: rgb(235, 235, 235);
   --ui-bg-surface-selected: rgba(186, 227, 156, 0.6);
 
   /* input fields color */
@@ -123,14 +123,14 @@
   --graph-bar-border: rgba(212, 212, 212, 0.8);
   --graph-divider: rgba(108, 121, 122, 0.2);
 
-  /* Spacing + shape radii */
+  /* Spacing + shape radius */
   --space-sm: 0.3rem;
   --space-md: 0.6rem;
   --space-lg: 0.9rem;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-hero: 16px;
-  --btn-radius: 10px;
+  --radius-md: 2px;
+  --radius-lg: 6px;
+  --radius-hero: 2px;
+  --btn-radius: 2px;
 }
 
 :root[data-theme="dark"] {
@@ -377,6 +377,7 @@ body {
   background: var(--ui-bg-page);
   color: var(--ui-text);
   font-family: var(--font-body);
+  line-height: var(--type-body-line);
 }
 
 #root,

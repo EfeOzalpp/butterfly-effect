@@ -230,10 +230,11 @@ export default function GraphPicker({
                   ) : (
                     <>
                       <span className="label">
+                        {opt.id === "visitor" && <span className="explorer-emoji" aria-hidden>🌍</span>}
                         {ALL_LABELS.get(opt.id) ?? titleFromId(opt.id)}
                         {isPersonal && <span className="you"> (you)</span>}
+                        {showCount && <span className="count"> · {n}</span>}
                       </span>
-                      {showCount && <span className="count">({n})</span>}
                     </>
                   )}
                 </div>

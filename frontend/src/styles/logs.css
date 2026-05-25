@@ -36,7 +36,7 @@
 
 .logs-filter-input::placeholder { color: var(--ui-text-muted); }
 
-.logs-table-wrap { overflow-y: auto; flex: 1 1 auto; background: var(--ui-bg-surface); }
+.logs-table-wrap { overflow-y: auto; flex: 1 1 auto; background: var(--ui-bg-surface); min-height: 220px; }
 
 .logs-table-wrap::-webkit-scrollbar { width: 6px; }
 .logs-table-wrap::-webkit-scrollbar-track { background: var(--ui-bg-surface); border-top: 8px solid transparent; border-bottom: 8px solid transparent; background-clip: padding-box; }
@@ -98,20 +98,20 @@
 /* Responsive scaffolding */
 
 @media (max-width: 767px) {
- .logs-table-wrap { max-height: calc(100svh - 8.8rem); overflow-x: auto; }
+ .logs-table-wrap { min-height: calc(100svh - 8.8rem); max-height: calc(100svh - 8.8rem); overflow-x: auto; }
  .logs-table-wrap .logs-table { width: 620px; table-layout: auto; }
  .logs-th--section, .logs-td--section { min-width: 120px; max-width: 180px; }
  .logs-popover-shell, .widgets-popover-shell { width: min(540px, calc(100vw - 2.4rem)); }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
- .logs-table-wrap { max-height: calc(90svh - 8rem); overflow-x: auto; }
+ .logs-table-wrap { min-height: calc(90svh - 8rem); max-height: calc(90svh - 8rem); overflow-x: auto; }
  .logs-table-wrap .logs-table { width: 620px; table-layout: auto; }
  .logs-th--section, .logs-td--section { min-width: 120px; max-width: 180px; }
  .logs-popover-shell { width: 60dvw; }
 }
 
 @media (min-width: 1024px) {
- .logs-table-wrap { max-height: calc(100svh - 12.8rem); }
+ .logs-table-wrap { min-height: calc(100svh - 12.8rem); max-height: calc(100svh - 12.8rem); }
  .logs-popover-shell { width: min(540px, calc(100vw - 3.2rem)); }
 }

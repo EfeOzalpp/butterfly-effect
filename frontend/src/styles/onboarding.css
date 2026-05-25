@@ -73,7 +73,7 @@
   gap: var(--space-md);
   background: var(--ui-bg-input);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--btn-radius);
   padding: 0;
   color: var(--ui-text);
   font-family: var(--font-body);
@@ -86,6 +86,8 @@
   background: var(--ui-bg-input-hover);
 }
 .section-combobox.is-open {
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   background: var(--ui-bg-surface);

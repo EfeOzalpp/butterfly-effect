@@ -243,33 +243,35 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
 
             {totalPages > 1 && (
               <div className="logs-pagination">
-                {safePage > 0 && (
-                  <button
-                    type="button"
-                    className="logs-page-arrow"
-                    onClick={() => { setPage((p) => p - 1); }}
-                    aria-label="Previous page"
-                  >
-                    <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="logs-page-arrow"
+                  style={safePage === 0 ? { visibility: 'hidden' } : undefined}
+                  tabIndex={safePage === 0 ? -1 : undefined}
+                  aria-hidden={safePage === 0}
+                  onClick={() => { setPage((p) => p - 1); }}
+                  aria-label="Previous page"
+                >
+                  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
                 <span className="logs-page-label">
                   {safePage + 1}<span className="logs-page-sep">/</span>{totalPages}
                 </span>
-                {safePage < totalPages - 1 && (
-                  <button
-                    type="button"
-                    className="logs-page-arrow"
-                    onClick={() => { setPage((p) => p + 1); }}
-                    aria-label="Next page"
-                  >
-                    <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="logs-page-arrow"
+                  style={safePage >= totalPages - 1 ? { visibility: 'hidden' } : undefined}
+                  tabIndex={safePage >= totalPages - 1 ? -1 : undefined}
+                  aria-hidden={safePage >= totalPages - 1}
+                  onClick={() => { setPage((p) => p + 1); }}
+                  aria-label="Next page"
+                >
+                  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
                   <input
                     id="logs-page-input"
                     type="number"

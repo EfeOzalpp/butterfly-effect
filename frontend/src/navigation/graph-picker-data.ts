@@ -13,10 +13,10 @@ interface GraphOption {
 
 const SPECIAL_SECTIONS: GraphOption[] = [
   { id: "all", label: "Everyone" },
+  { id: "visitor", label: "Explorers" },
   { id: "all-massart", label: "MassArt " },
   { id: "all-students", label: "All Students" },
   { id: "all-staff", label: "All Faculty/Staff" },
-  { id: "visitor", label: "Visitors" },
 ];
 
 export const CHOOSE_STUDENT = "__choose-student";
