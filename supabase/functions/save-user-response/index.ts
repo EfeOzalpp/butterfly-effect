@@ -1,6 +1,6 @@
-import "@supabase/functions-js/edge-runtime.d.ts";
-import { createClient as createSanityClient } from "@sanity/client";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient as createSanityClient } from "npm:@sanity/client@6";
+import { createClient as createSupabaseClient } from "npm:@supabase/supabase-js@2";
 
 type QuestionKey = "q1" | "q2" | "q3" | "q4" | "q5";
 type Weights = Record<QuestionKey, number>;
