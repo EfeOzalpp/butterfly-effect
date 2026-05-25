@@ -7,8 +7,8 @@ Main flow:
 ```txt
 index.ts
   -> engine/loop.ts
-  -> render/*
-  -> shapes/registry.ts
+  -> render/passes/*
+  -> shape-adapter/registry.ts
   -> src/canvas-engine/shapes/*
 ```
 
@@ -19,7 +19,8 @@ engine/types.ts         public controls and start options
 engine/field.ts         item payload contract
 engine/state.ts         runtime-owned defaults and mutable state shape
 engine/itemLifecycle.ts per-item appear/replay lifecycle state
-render/*                render-pass params local to each render helper
+shape-adapter/types.ts  runtime-safe shape options
+render/passes/*         render-pass params local to each render helper
 ```
 
 Folder map:
@@ -41,15 +42,18 @@ p/
   raw canvas context details.
 
 render/
-  Background, palette, lighting, item drawing, item ordering, and ghost/fog
-  render helpers.
+  Background, palette, lighting, item drawing, item ordering, ghost/fog render
+  helpers, and the explicit render-pass folders used by the loop.
 
-shapes/
-  Runtime shape registry and z-index policy. The actual art functions live in
-  src/canvas-engine/shapes.
+shape-adapter/
+  Runtime bridge from EngineFieldItem payloads to shape draw functions. Shape
+  metadata like supported render passes lives with the actual shape drawings in
+  src/canvas-engine/shapes/index.ts.
 
 debug/
-  Debug rendering helpers.
+  Debug flags, optional diagnostics, grid overlay rendering, and opt-in cache
+  counters. Runtime files should import debug tools from this folder instead of
+  writing console/debug behavior inline.
 
 util/
   Runtime-local math and easing helpers.

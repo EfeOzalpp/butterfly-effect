@@ -1,5 +1,7 @@
 // src/canvas-engine/runtime/engine/scheduler.ts
 
+import { reportSchedulerTickError } from "../debug";
+
 export type EngineTick = (now: number) => void;
 
 interface FrameEntry {
@@ -72,8 +74,7 @@ function frame(now: number) {
       e.tick(now);
     } catch (err) {
       // Don't kill the scheduler because one engine threw.
-       
-      console.error(`[engine scheduler] tick failed for "${e.id}"`, err);
+      reportSchedulerTickError(e.id, err);
     }
   }
 

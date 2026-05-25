@@ -2,8 +2,8 @@
 
 import { CANVAS_PADDING } from "../../adjustable-rules/canvas-padding/index";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
-import type { SceneLookupKey } from "../../adjustable-rules/sceneState";
-import { resolvePaddingSpec } from "../../adjustable-rules/resolvePadding";
+import type { SceneLookupKey } from "../../scene-state";
+import { resolvePaddingSpec } from "../../adjustable-rules/canvas-padding";
 
 /**
  * Runtime padding policy.

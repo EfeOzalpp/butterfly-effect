@@ -1,4 +1,4 @@
-// src/canvas-engine/shapes/villa.js
+// src/canvas-engine/shapes/villa.ts
 import {
   clamp01,
   val,
@@ -15,12 +15,12 @@ import {
   paintDirectionalTriangleBands,
   mixRgb,
 } from "../modifiers/index";
-import type { DirectionalLightSample, LightClosenessBandMap, RGB } from "../modifiers/index";
+import type { DirectionalLightSample, LightClosenessBandMap, NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
 import { applyExposureContrast, fillRgb, strokeRgb } from "./shared/color";
 import { shapeHash32, seeded01 as sharedSeeded01, seededUnit, pick } from "./shared/random";
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
-type NumberRange = [number, number];
 type VillaProfileName = "short" | "mid" | "tall";
 
 interface VillaPalette extends ShapePalette {
@@ -47,8 +47,8 @@ interface VillaTuning {
   body: { colorBlend: NumberRange; brightnessRange: NumberRange };
   grass: { colorBlend: NumberRange; satRange: NumberRange };
   tree: { colorBlend: NumberRange };
-  door: { widthRange: NumberRange; fixedHeights: NumberRange; sideMarginPxK: number };
-  roof: { triFracFront: NumberRange; triFracSide: NumberRange; dropSideK: number; extendK: number };
+  door: { sideMarginPxK: number };
+  roof: { triFracFront: NumberRange; triFracSide: NumberRange };
   sideVolume: { heightK: number };
   bodyShape: { frontHMinK: number; frontHMaxK: number; sideHMinK: number; sideHMaxK: number };
   variants: { sideRoofChance: number };
@@ -104,9 +104,9 @@ const VILLA_BASE_PALETTE: VillaPalette = {
   ],
 
   door: [
-    { r: 170, g: 120, b: 70 },
-    { r: 160, g: 150, b: 95 },
-    { r: 180, g: 140, b: 100 },
+    { r: 172, g: 108, b: 78 },
+    { r: 146, g: 104, b: 88 },
+    { r: 188, g: 132, b: 96 },
   ],
 
   window: {
@@ -182,9 +182,9 @@ const VILLA_DARK_PALETTE: VillaPalette = {
     { r: 71,  g: 69, b: 77 },
   ],
   door: [
-    { r: 93, g: 76, b: 54 },
-    { r: 88, g: 95, b: 73 },
-    { r: 99, g: 88, b: 77 },
+    { r: 108, g: 74, b: 62 },
+    { r: 94, g: 70, b: 78 },
+    { r: 116, g: 82, b: 68 },
   ],
   window: {
     lit:  { r: 255, g: 186, b: 62 },
@@ -207,15 +207,11 @@ const VILLA: VillaTuning = {
     colorBlend: [0.24, 0.38],
   },
   door: {
-    widthRange: [1.2, 0.9],
-    fixedHeights: [12, 14],
     sideMarginPxK: 0.12,
   },
   roof: {
     triFracFront: [0.20, 0.24],
     triFracSide:  [0.24, 0.36],
-    dropSideK: 0.30,
-    extendK: 0.44,
   },
   sideVolume: {
     heightK: 0.84,
@@ -372,8 +368,20 @@ export function drawVilla(
 
   const baseAlpha = typeof opts.alpha === "number" && Number.isFinite(opts.alpha) ? opts.alpha : 235;
   const opaque = 255;
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const requestedSilhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : baseAlpha;
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
   const u = clamp01(opts.liveAvg ?? 0.5);
   const liveBlend = clamp01(typeof opts.blend === 'number' ? opts.blend : 1);
+
+  function drawPart(includeInSilhouette: boolean, draw: (isMaskPass: boolean) => void): void {
+    if (!shouldDrawShapePart(renderPass, includeInSilhouette)) return;
+    draw(renderPass === "silhouette");
+  }
 
   const { x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts);
   const localTileW = pxW / Math.max(1, f.w);
@@ -423,6 +431,10 @@ export function drawVilla(
     }
   });
   const drawAlpha = (typeof m.alpha === 'number') ? m.alpha : baseAlpha;
+  const appearAlphaK = baseAlpha > 0 ? clamp01(drawAlpha / baseAlpha) : 1;
+  const silhouetteAlpha = renderPass === "silhouette"
+    ? Math.round(requestedSilhouetteAlpha * appearAlphaK)
+    : opaque;
 
   // draw everything inside the appear/scale transform
   p.push();
@@ -430,8 +442,9 @@ export function drawVilla(
   p.scale(m.scaleX, m.scaleY);
   p.translate(-anchorX, -anchorY);
 
-  // platform
-  {
+  // The silhouette pass paints the stable villa mass: grass, body, and roof.
+  // Windows and foliage stay color-only so the depth mask does not stack detail alpha.
+  if (shouldDrawColorDetails) {
     const baseH  = VILLA.platform.baseK * cell;
     const s      = clamp01(val(VILLA.platform.scaleRange, u));
     const h      = Math.max(0, Math.min(baseH * s, pxH * 0.22));
@@ -473,9 +486,17 @@ export function drawVilla(
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const rGrass = Math.round(localTile * 0.06);
-  p.push(); p.noStroke(); fillRgb(p, grassTint, drawAlpha);
-
   const grassTopY: number[] = [];
+  const shouldDrawGrass = shouldDrawShapePart(renderPass, true);
+  if (shouldDrawGrass) {
+    p.push();
+    p.noStroke();
+    fillRgb(
+      p,
+      shapePartColor(renderPass, grassTint, silhouetteColor),
+      renderPass === "silhouette" ? silhouetteAlpha : drawAlpha
+    );
+  }
   for (let col = 0; col < blockCount; col++) {
     const isLeft = (col === 0);
     const gH = Math.max(1, Math.round(baseGrassH * ((isLeft === leftIsTaller) ? tallK : 1)));
@@ -490,10 +511,12 @@ export function drawVilla(
     const tr = isLeft ? 0 : rGrass;
     const br = isLeft ? 0 : rGrass;
 
-    p.rect(gX, gY, gW, gH, tl, tr, br, bl);
+    if (shouldDrawGrass) {
+      p.rect(gX, gY, gW, gH, tl, tr, br, bl);
+    }
     grassTopY[col] = gY;
   }
-  p.pop();
+  if (shouldDrawGrass) p.pop();
 
   // at most one side-facing
   const sidePresent = seeded01(seedKey, 'whichSidePresent') < VILLA.variants.sideRoofChance;
@@ -586,31 +609,37 @@ export function drawVilla(
     const br = isLeftCol ? 0 : rBody;
 
     p.push(); p.noStroke();
-    fillRgb(p, bodyTint, opaque);
-    p.rect(ix, iBodyY, iColW, bodyH, tl, tr, br, bl);
-    paintPixelLightBands(
-      p,
-      { x: ix, y: iBodyY, w: iColW, h: bodyH },
-      colLight,
-      {
-        alpha: opaque,
-        highlightColor: mixRgb(bodyTint, colLight.lightColor, 0.52),
-        shadowColor: mixRgb(bodyTint, colLight.shadowColor, 0.30),
-        corner: rBody,
-        sideK: 0.42,
-        topK: 0.0,
-        shadowK: 0.18,
-      }
-    );
+    drawPart(true, () => {
+      fillRgb(p, shapePartColor(renderPass, bodyTint, silhouetteColor), silhouetteAlpha);
+      p.rect(ix, iBodyY, iColW, bodyH, tl, tr, br, bl);
+    });
 
-    // doors/windows + foliage
-    let bushOnLeft = Math.floor(rBush * 2) === 0;
+    drawPart(false, () => {
+      paintPixelLightBands(
+        p,
+        { x: ix, y: iBodyY, w: iColW, h: bodyH },
+        colLight,
+        {
+          alpha: opaque,
+          highlightColor: mixRgb(bodyTint, colLight.lightColor, 0.52),
+          shadowColor: mixRgb(bodyTint, colLight.shadowColor, 0.30),
+          corner: rBody,
+          sideK: 0.42,
+          topK: 0.0,
+          shadowK: 0.18,
+        }
+      );
+    });
 
-    if (!isSide) {
-      // FRONT: door + vertical window
-      const cellsH = bodyH / cell;
-      const low = 1.5;
-      const mid = 1.8;
+    drawPart(false, () => {
+      // doors/windows + foliage
+      let bushOnLeft = Math.floor(rBush * 2) === 0;
+
+      if (!isSide) {
+        // FRONT: door + vertical window
+        const cellsH = bodyH / cell;
+        const low = 1.5;
+        const mid = 1.8;
 
       let dProfile: VillaProfileName = 'short';
       if (cellsH >= low) dProfile = 'mid';
@@ -669,13 +698,13 @@ export function drawVilla(
         p.rect(winX, y, wW, wH, 2);
       }
 
-      bushOnLeft = !doorOnLeft;
+        bushOnLeft = !doorOnLeft;
 
-    } else {
-      // SIDE: two small windows
-      const cellsH = bodyH / cell;
-      const low = 1.5;
-      const mid = 1.8;
+      } else {
+        // SIDE: two small windows
+        const cellsH = bodyH / cell;
+        const low = 1.5;
+        const mid = 1.8;
 
       let sProfile: VillaProfileName = 'short';
       if (cellsH >= low) sProfile = 'mid';
@@ -708,15 +737,15 @@ export function drawVilla(
       const leftCx  = ix + Math.round(iColW * 0.35);
       const rightCx = ix + Math.round(iColW * 0.65);
 
-      if (y >= iBodyY + 2 && y + wH <= iBodyY + bodyH - 2) {
-        fillRgb(p, c0, drawAlpha); p.rect(leftCx  - Math.round(wW / 2), y, wW, wH, 2);
-        fillRgb(p, c1, drawAlpha); p.rect(rightCx - Math.round(wW / 2), y, wW, wH, 2);
+        if (y >= iBodyY + 2 && y + wH <= iBodyY + bodyH - 2) {
+          fillRgb(p, c0, drawAlpha); p.rect(leftCx  - Math.round(wW / 2), y, wW, wH, 2);
+          fillRgb(p, c1, drawAlpha); p.rect(rightCx - Math.round(wW / 2), y, wW, wH, 2);
+        }
       }
-    }
 
-    // Foliage (front bush)
-    if (!isSide) {
-      const F = VILLA.foliage;
+      // Foliage (front bush)
+      if (!isSide) {
+        const F = VILLA.foliage;
 
       const baseW = iColW * F.baseWk;
       const baseH = iColW * F.baseHk;
@@ -781,51 +810,50 @@ export function drawVilla(
           shadowK: 0.18,
         }
       );
-      p.pop();
-    }
+        p.pop();
+      }
+    });
 
-    // Roofs (unchanged logic)
-    if (!isSide) {
-      const ridgeY = iround(Math.max(pxY, bodyY - roofH));
-      const apexX = ix + iColW / 2;
-      const baseY = iBodyY + Math.min(2, Math.max(1, Math.floor(bodyH * 0.14)));
-      const safeRidgeY = Math.min(ridgeY, baseY - 1);
+    drawPart(true, (isMaskPass) => {
+      // Roofs are part of the silhouette. Strokes and side foliage are color-only.
+      if (!isSide) {
+        const ridgeY = iround(Math.max(pxY, bodyY - roofH));
+        const apexX = ix + iColW / 2;
+        const baseY = iBodyY + Math.min(2, Math.max(1, Math.floor(bodyH * 0.14)));
+        const safeRidgeY = Math.min(ridgeY, baseY - 1);
 
-      const strokeCol = applyExposureContrast(darken(bodyTint, 0.72), ex, ct);
+        p.noStroke();
+        fillRgb(p, shapePartColor(renderPass, bodyTint, silhouetteColor), silhouetteAlpha);
+        p.beginShape();
+        p.vertex(ix,         baseY);
+        p.vertex(ix + iColW, baseY);
+        p.vertex(apexX,      safeRidgeY);
+        p.endShape(p.CLOSE);
 
-      p.noStroke();
-      fillRgb(p, bodyTint, opaque);
-      p.beginShape();
-      p.vertex(ix,         baseY);
-      p.vertex(ix + iColW, baseY);
-      p.vertex(apexX,      safeRidgeY);
-      p.endShape(p.CLOSE);
-
-      p.strokeWeight(Math.max(1, Math.round(localTile * 0.06)));
-      strokeRgb(p, strokeCol, opaque);
-      p.noFill();
-      p.line(apexX, safeRidgeY, ix,         baseY);
-      p.line(apexX, safeRidgeY, ix + iColW, baseY);
-    } else {
-      const roofTint = mixRgb(applyExposureContrast(darken(bodyTint, 0.72), ex, ct), colLight.lightColor, 0.18 * colLight.overallK);
-      const roofRectH = Math.max(1, roofH - Math.max(1, Math.round(localTileH * 0.08)));
-      const topY = Math.max(pxY, iBodyY - roofRectH);
-
-      const extend = Math.max(0, Math.round(iColW * VILLA.roof.extendK));
-      const innerOverlap = Math.max(1, Math.round(iColW * 0.18));
-      const leftInset = Math.max(1, Math.round(iColW * 0.08));
-      let rx, rw;
-      if (isLeftCol) {
-        rx = ix + leftInset - Math.round(iColW * 0.07);
-        rw = iColW + innerOverlap - leftInset + Math.round(iColW * 0.3);
-      } else {
-        rx = ix - extend - innerOverlap + leftInset;
-        rw = iColW + extend + innerOverlap - leftInset;
+        const strokeCol = isMaskPass
+          ? shapePartColor(renderPass, bodyTint, silhouetteColor)
+          : applyExposureContrast(darken(bodyTint, 0.72), ex, ct);
+        p.strokeWeight(Math.max(1, Math.round(localTile * 0.06)));
+        strokeRgb(p, strokeCol, isMaskPass ? silhouetteAlpha : opaque);
+        p.noFill();
+        p.line(apexX, safeRidgeY, ix,         baseY);
+        p.line(apexX, safeRidgeY, ix + iColW, baseY);
+        return;
       }
 
+      const roofTint = mixRgb(applyExposureContrast(darken(bodyTint, 0.72), ex, ct), colLight.lightColor, 0.18 * colLight.overallK);
+      const roofRectH = Math.max(1, iround(roofH - Math.max(0.5, localTileH * 0.08)));
+      const topY = Math.max(pxY, iBodyY - roofRectH);
+
+      // Side roof is the column's roof cap. Earlier versions extended it under
+      // the front volume, which made the visible width depend on draw order.
+      const rx = ix;
+      const rw = iColW;
       p.noStroke();
-      fillRgb(p, roofTint, opaque);
+      fillRgb(p, shapePartColor(renderPass, roofTint, silhouetteColor), silhouetteAlpha);
       p.rect(rx, topY, Math.max(1, rw), roofRectH);
+
+      if (isMaskPass) return;
 
       // Side foliage triangles (unchanged aside from seeded phase above)
       const F = VILLA.foliage;
@@ -938,7 +966,7 @@ export function drawVilla(
         );
         p.pop();
       }
-    }
+    });
 
     p.pop();
   }

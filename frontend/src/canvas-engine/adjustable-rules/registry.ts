@@ -1,8 +1,8 @@
 // src/canvas-engine/adjustable-rules/registry.ts
 
 import type { SceneProfile, SceneProfileContext } from "../multi-canvas-setup/sceneProfile";
-import type { SceneState, BaseMode } from "./sceneState";
-import { isQuestionnaire } from "./sceneState";
+import type { SceneState, BaseMode } from "../scene-state";
+import { isQuestionnaire } from "../scene-state";
 
 import { CANVAS_PADDING }        from './canvas-padding/index';
 import { SHAPE_PLACEMENTS } from "./placement-rules/index";
@@ -13,6 +13,7 @@ import {
   BACKGROUNDS_START_DARK,
   type BackgroundSpec,
 } from "./backgrounds";
+import { DEFAULT_RENDER_CACHE_POLICY } from "./render-cache";
 
 import { defineRuleSet } from "../validation/index";
 
@@ -73,6 +74,7 @@ export function resolveProfile(
   return {
     ...rules,
     background: backgroundForState(state, context),
+    renderCache: DEFAULT_RENDER_CACHE_POLICY,
   };
 }
 

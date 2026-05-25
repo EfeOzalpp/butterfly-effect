@@ -1,4 +1,4 @@
-// src/canvas-engine/shapes/power.js
+// src/canvas-engine/shapes/power.ts
 import {
   applyShapeMods,
   clamp01,
@@ -9,14 +9,15 @@ import {
   oscillateSaturation,
   footprintToPx,
   particleBucketRange,
+  particleDepthAlpha,
+  particleDepthSizeScale,
   particleRowBucket,
 } from "../modifiers/index";
-import type { RGB } from "../modifiers/index";
-import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
+import type { NumberRange, RGB } from "../modifiers/index";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapePuffOverrides, ShapeSeed } from "./types";
 import { applyExposureContrast, fillRgb, strokeRgb } from "./shared/color";
 import { shapeHash32, seededUnit } from "./shared/random";
-
-type NumberRange = [number, number];
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
 interface PowerPalette extends ShapePalette {
   grass: RGB;
@@ -27,23 +28,9 @@ interface PowerPalette extends ShapePalette {
   bladeLine: RGB;
 }
 
-interface PowerSmokeOverrides {
-  count?: number;
-  sizeMin?: number;
-  sizeMax?: number;
-  lifeMin?: number;
-  lifeMax?: number;
-  speedMin?: number;
-  speedMax?: number;
-  gravity?: number;
-  drag?: number;
-  spreadAngle?: number;
-  alpha?: number;
-}
-
 interface PowerOptions extends ShapeDrawOptions<PowerPalette> {
   rotorSpeed?: number;
-  smokeOverrides?: PowerSmokeOverrides;
+  smokeOverrides?: ShapePuffOverrides;
 }
 
 /* Palette */
@@ -160,9 +147,9 @@ function rand01(seed: number): number { return seededUnit(seed); }
 const FACTORY_SMOKE = {
   spawnX: [0.00, 0.80],
   spawnY: [0.10, 0.25], // lowered so frame 1 shows upward motion
-  count:  [48, 16],
-  sizeMin:[3, 0],
-  sizeMax:[6, 1],
+  count:  [54, 20],
+  sizeMin:[3.2, 1.0],
+  sizeMax:[6.8, 2.2],
   lifeMin:[12, 3],
   lifeMax:[24, 5],
   alpha:  [210, 0],
@@ -183,7 +170,7 @@ const FACTORY_SMOKE = {
   satOscAmp: [0.2, 0.4],
   satOscSpeed: [0.12, 0.20],
   brightnessRange: [2, 0.5],
-  colWk: 0.20,
+  colWk: 0.28,
   colHk: 2.60,
 } satisfies {
   spawnX: NumberRange;
@@ -286,6 +273,14 @@ export function drawPower(
   const ex = typeof opts.exposure === 'number' ? opts.exposure : 1;
   const ct = typeof opts.contrast === 'number' ? opts.contrast : 1;
   const baseAlpha = typeof opts.alpha === "number" && Number.isFinite(opts.alpha) ? opts.alpha : 235;
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const requestedSilhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : baseAlpha;
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
   const gradientRGB = opts.gradientRGB ?? undefined;
 
   // Sprite export mode: infer from fitToFootprint or explicit override
@@ -307,8 +302,9 @@ export function drawPower(
   const localTileW = f ? pxW / Math.max(1, f.w) : (cellW ?? pxW);
   const localTileH = f ? pxH / Math.max(1, f.h) : (cellH ?? pxH);
   const localTile = Math.max(1, Math.min(localTileW, localTileH));
-  const rowBucket = f ? particleRowBucket(f, opts) : { t: 1 };
-  const smokeScale = factorySmokeRowContext(rowBucket.t);
+  const rowBucket = f ? particleRowBucket(f, opts) : undefined;
+  const smokeScale = factorySmokeRowContext(rowBucket?.t ?? 1);
+  const particleSizeK = particleDepthSizeScale(rowBucket);
 
   // 🔑 stable seed independent of bleed/footprint padding
   const seedKey = (opts.seedKey ?? opts.seed) ?? `${String(pxX)}|${String(pxY)}|${String(pxW)}x${String(pxH)}`;
@@ -338,6 +334,11 @@ export function drawPower(
   });
 
   const alpha = (typeof m.alpha === 'number') ? m.alpha : baseAlpha;
+  const appearAlphaK = baseAlpha > 0 ? clamp01(alpha / baseAlpha) : 1;
+  const silhouetteAlpha = renderPass === "silhouette"
+    ? Math.round(requestedSilhouetteAlpha * appearAlphaK)
+    : alpha;
+  const massAlpha = renderPass === "silhouette" ? silhouetteAlpha : alpha;
 
   p.push();
   p.translate(m.x, m.y);
@@ -362,9 +363,11 @@ export function drawPower(
   grassTint = applyExposureContrast(grassTint, ex, ct);
 
   const rTop = Math.max(1, Math.round(localTile * POWER.platform.radiusK));
-  p.noStroke();
-  fillRgb(p, grassTint, alpha);
-  p.rect(pxX, platY, pxW, platH, rTop, rTop, 0, 0);
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    p.rect(pxX, platY, pxW, platH, rTop, rTop, 0, 0);
+  }
 
   /* === FACTORY MODE === */
   if (!asTurbine) {
@@ -381,29 +384,37 @@ export function drawPower(
     const roofRise = Math.round(Math.min(pxH * 0.10, localTileH * roofVar));
 
     p.noStroke();
-    fillRgb(p, bodyTint, 255);
-    p.rect(bodyX, bodyTop, bodyW, bodyH);
+    if (shouldDrawMass) {
+      fillRgb(p, shapePartColor(renderPass, bodyTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+      p.rect(bodyX, bodyTop, bodyW, bodyH);
+    }
 
     const xL = bodyX, xR = bodyX + bodyW, yTop = bodyTop + 1;
     const highX = isLeftChimney ? xL : xR;
     const lowX  = isLeftChimney ? xR : xL;
 
-    fillRgb(p, bodyTint, 255);
-    p.triangle(lowX, yTop, highX, yTop, highX, yTop - roofRise);
+    if (shouldDrawMass) {
+      fillRgb(p, shapePartColor(renderPass, bodyTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+      p.triangle(lowX, yTop, highX, yTop, highX, yTop - roofRise);
+    }
 
-    p.strokeWeight(1);
-    strokeRgb(p, pal.mastCore, 255);
-    p.noFill();
-    p.line(lowX, yTop, highX, yTop - roofRise);
-    p.noStroke();
+    if (shouldDrawColorDetails) {
+      p.strokeWeight(1);
+      strokeRgb(p, pal.mastCore, 255);
+      p.noFill();
+      p.line(lowX, yTop, highX, yTop - roofRise);
+      p.noStroke();
+    }
 
     const doorW = bodyW * 0.18;
     const doorH = bodyH * 0.32;
     const doorX = bodyX + bodyW / 2 - doorW / 2;
     const doorY = platY - doorH - 2;
-    const doorTint = applyExposureContrast(mulRgb(bodyTint, 0.8), ex, ct);
-    fillRgb(p, doorTint, 255);
-    p.rect(doorX, doorY, doorW, doorH, 1, 1, 0, 0);
+    if (shouldDrawColorDetails) {
+      const doorTint = applyExposureContrast(mulRgb(bodyTint, 0.8), ex, ct);
+      fillRgb(p, doorTint, 255);
+      p.rect(doorX, doorY, doorW, doorH, 1, 1, 0, 0);
+    }
 
     const tSec = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000;
 
@@ -435,13 +446,13 @@ export function drawPower(
     smoked = clampBrightness(smoked, FACTORY_SMOKE.brightnessRange[0], FACTORY_SMOKE.brightnessRange[1]);
     smoked = applyExposureContrast(smoked, ex, ct);
 
-    const dt = (typeof opts.deltaSec === 'number' && opts.deltaSec > 0)
-      ? opts.deltaSec
+    const dt = (typeof opts.dtSec === 'number' && opts.dtSec > 0)
+      ? opts.dtSec
       : Math.max(1/120, (p.deltaTime ? p.deltaTime / 1000 : 1/60));
 
     let count    = Math.max(4, Math.floor(val(FACTORY_SMOKE.count, u) * smokeScale.count));
-    let sizeMin  = val(FACTORY_SMOKE.sizeMin, u) * smokeScale.size;
-    let sizeMax  = Math.max(sizeMin, val(FACTORY_SMOKE.sizeMax, u) * smokeScale.size);
+    let sizeMin  = val(FACTORY_SMOKE.sizeMin, u) * smokeScale.size * particleSizeK;
+    let sizeMax  = Math.max(sizeMin, val(FACTORY_SMOKE.sizeMax, u) * smokeScale.size * particleSizeK);
     let lifeMin  = Math.max(0.05, val(FACTORY_SMOKE.lifeMin, u) * smokeScale.life);
     let lifeMax  = Math.max(lifeMin, val(FACTORY_SMOKE.lifeMax, u) * smokeScale.life);
     let sAlpha   = Math.max(60, Math.min(255, Math.round(val(FACTORY_SMOKE.alpha, u))));
@@ -485,27 +496,30 @@ export function drawPower(
       y1: FACTORY_SMOKE.spawnY[1],
     };
 
-    stepAndDrawPuffs(p, {
-      key: `factory-smoke:${String(seedKey)}${isSprite ? ':spr' : ''}`,
-      rect: { x: emitX, y: emitY, w: emitW, h: emitH },
-      dir: FACTORY_SMOKE.dir,
-      spreadAngle: spread,
-      speed: { min: speedMin, max: speedMax },
-      gravity,
-      drag,
-      accel: { x: 0, y: 0 },
-      spawn,
-      jitter: { pos: jPos, velAngle: jAng },
-      count,
-      size: { min: sizeMin, max: sizeMax },
-      sizeHz: FACTORY_SMOKE.sizeHz,
-      lifetime: { min: lifeMin, max: lifeMax },
-      fadeInFrac: FACTORY_SMOKE.fadeInFrac,
-      fadeOutFrac: FACTORY_SMOKE.fadeOutFrac,
-      edgeFadePx: isSprite ? { left: 3, right: 3, top: 0, bottom: 8 } : FACTORY_SMOKE.edgeFadePx,
-      color: { r: smoked.r, g: smoked.g, b: smoked.b, a: sAlpha },
-      respawn: true,
-    }, dt);
+    if (shouldDrawColorDetails) {
+      stepAndDrawPuffs(p, {
+        key: `factory-smoke:${String(seedKey)}${isSprite ? ':spr' : ''}`,
+        rect: { x: emitX, y: emitY, w: emitW, h: emitH },
+        dir: FACTORY_SMOKE.dir,
+        spreadAngle: spread,
+        speed: { min: speedMin, max: speedMax },
+        gravity,
+        drag,
+        accel: { x: 0, y: 0 },
+        spawn,
+        jitter: { pos: jPos, velAngle: jAng },
+        count,
+        size: { min: sizeMin, max: sizeMax },
+        sizeHz: FACTORY_SMOKE.sizeHz,
+        lifetime: { min: lifeMin, max: lifeMax },
+        fadeInFrac: FACTORY_SMOKE.fadeInFrac,
+        fadeOutFrac: FACTORY_SMOKE.fadeOutFrac,
+        edgeFadePx: isSprite ? { left: 3, right: 3, top: 0, bottom: 8 } : FACTORY_SMOKE.edgeFadePx,
+        color: { r: smoked.r, g: smoked.g, b: smoked.b, a: sAlpha },
+        depthAlpha: particleDepthAlpha(rowBucket),
+        respawn: true,
+      }, dt);
+    }
 
     // chimney
     const chimTopTarget = Math.max(
@@ -521,20 +535,26 @@ export function drawPower(
       : pal.mast;
     if (gradientRGB) chimTint = blendRGB(chimTint, gradientRGB, 0.08);
     chimTint = applyExposureContrast(chimTint, ex, ct);
-    fillRgb(p, chimTint, 255);
-    p.rect(chimX, chimY, chimW, chimH);
+    if (shouldDrawMass) {
+      fillRgb(p, shapePartColor(renderPass, chimTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+      p.rect(chimX, chimY, chimW, chimH);
+    }
     const capH = Math.max(1, Math.round(localTileH * 0.12));
     const capY = chimY - Math.max(1, Math.round(localTileH * 0.10));
-    p.rect(chimX, capY, chimW, capH);
+    if (shouldDrawMass) {
+      p.rect(chimX, capY, chimW, capH);
+    }
 
-    const capOver = Math.round(chimW * 0.15);
-    const capStrokeW = Math.max(1, Math.round(localTileH * 0.16));
-    p.strokeWeight(capStrokeW);
-    strokeRgb(p, pal.mastCore, 255);
-    const capX0 = chimX - capOver / 2;
-    const capX1 = chimX + chimW + capOver / 2;
-    p.line(capX0, capY, capX1, capY);
-    p.noStroke();
+    if (shouldDrawMass) {
+      const capOver = Math.round(chimW * 0.15);
+      const capStrokeW = Math.max(1, Math.round(localTileH * 0.16));
+      p.strokeWeight(capStrokeW);
+      strokeRgb(p, shapePartColor(renderPass, pal.mastCore, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+      const capX0 = chimX - capOver / 2;
+      const capX1 = chimX + chimW + capOver / 2;
+      p.line(capX0, capY, capX1, capY);
+      p.noStroke();
+    }
 
     // If you enabled canvas-wide clipping above, restore here:
     // if (isSprite && p.width && p.height) { ctx.restore(); }
@@ -544,6 +564,8 @@ export function drawPower(
   }
 
   /* === TURBINE MODE === */
+  // The turbine silhouette includes the full drawn turbine, including rotor blades.
+  // The runtime keeps power masks live so this pass can follow the blade angle.
 
   const compactTurbine = localTile <= 10 || pxW < 18;
   const insetX   = Math.round(pxW * val(POWER.mast.insetX, u));
@@ -583,14 +605,16 @@ export function drawPower(
   const hubCx  = cxTile;
   const hubCy  = mastTopY + Math.round(mastH * val(POWER.rotor.hubYOffsetK, u));
 
-  p.noStroke();
-  fillRgb(p, mastTint2, 255);
-  p.beginShape();
-  p.vertex(b0, mastBottomY);
-  p.vertex(b1, mastBottomY);
-  p.vertex(w1, mastTopY + Math.round(mastH * 0.42));
-  p.vertex(w0, mastTopY + Math.round(mastH * 0.42));
-  p.endShape(p.CLOSE);
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapePartColor(renderPass, mastTint2, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+    p.beginShape();
+    p.vertex(b0, mastBottomY);
+    p.vertex(b1, mastBottomY);
+    p.vertex(w1, mastTopY + Math.round(mastH * 0.42));
+    p.vertex(w0, mastTopY + Math.round(mastH * 0.42));
+    p.endShape(p.CLOSE);
+  }
 
   let coreBase = pal.mastCore;
   if (gradientRGB) coreBase = blendRGB(coreBase, gradientRGB, val(POWER.mast.coreBlend, u));
@@ -604,124 +628,140 @@ export function drawPower(
   const invX = m.scaleX !== 0 ? 1 / m.scaleX : 1;
   const invY = m.scaleY !== 0 ? 1 / m.scaleY : 1;
 
-  p.push();
-  p.rectMode(p.CENTER);
-  p.translate(capCx, capY - capR);
-  p.scale(invX, invY);
-  fillRgb(p, coreTint, 255);
-  p.rect(0, 0, capW, capR * 2, capR, capR, 0, 0);
-  p.pop();
+  if (shouldDrawMass) {
+    p.push();
+    p.rectMode(p.CENTER);
+    p.translate(capCx, capY - capR);
+    p.scale(invX, invY);
+    fillRgb(p, shapePartColor(renderPass, coreTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+    p.rect(0, 0, capW, capR * 2, capR, capR, 0, 0);
+    p.pop();
+  }
 
   const capTopY = (capY - capR) - capR;
 
-  p.push();
-  const hiW = Math.max(2, Math.round(Math.max(4, Math.round(waistW * 0.98)) * 0.36));
-  const hiX = cxTile - Math.max(1, Math.round(Math.max(4, Math.round(waistW * 0.98)) * 0.18));
-  const hiY = mastTopY + Math.round(mastH * 0.30);
-  const hiH = Math.max(6, Math.round(mastH * 0.12));
-  p.translate(hiX + hiW / 2, hiY + hiH / 2);
-  p.scale(invX, invY);
-  p.rectMode(p.CENTER);
-  fillRgb(p, coreTint, Math.round(alpha * 0.45));
-  p.rect(0, 0, hiW, hiH);
-  p.pop();
+  if (shouldDrawMass) {
+    p.push();
+    const hiW = Math.max(2, Math.round(Math.max(4, Math.round(waistW * 0.98)) * 0.36));
+    const hiX = cxTile - Math.max(1, Math.round(Math.max(4, Math.round(waistW * 0.98)) * 0.18));
+    const hiY = mastTopY + Math.round(mastH * 0.30);
+    const hiH = Math.max(6, Math.round(mastH * 0.12));
+    p.translate(hiX + hiW / 2, hiY + hiH / 2);
+    p.scale(invX, invY);
+    p.rectMode(p.CENTER);
+    fillRgb(
+      p,
+      shapePartColor(renderPass, coreTint, silhouetteColor),
+      renderPass === "silhouette" ? silhouetteAlpha : Math.round(alpha * 0.45)
+    );
+    p.rect(0, 0, hiW, hiH);
+    p.pop();
+  }
 
-  {
+  if (shouldDrawMass) {
     p.push();
     p.strokeWeight(Math.max(1, Math.round(localTileW * 0.08)));
-    strokeRgb(p, pal.mastCore, 255);
+    strokeRgb(p, shapePartColor(renderPass, pal.mastCore, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
     p.noFill();
     const lineEndY = capTopY + 2;
     p.line(hubCx, hubCy, hubCx, lineEndY);
     p.pop();
   }
 
-  const bladeRef = Math.max(localTileW, localTileH);
-  const bladeScale = compactTurbine ? 0.72 : 1;
-  const bladeL = Math.max(hubR * 2, Math.round(bladeRef * val(POWER.rotor.bladeLk, u) * bladeScale));
-  const bladeW = compactTurbine
-    ? Math.max(2, Math.round(bladeRef * val(POWER.rotor.bladeWk, u) * 0.78))
-    : Math.max(3, Math.round(bladeRef * val(POWER.rotor.bladeWk, u)));
-  const tipR   = compactTurbine
-    ? Math.max(1, Math.round(bladeW * 0.4))
-    : Math.round(bladeW * POWER.rotor.bladeTipRound);
-
-  const tSec  = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000;
-  const seed  = hash32(`power|${String(seedKey)}`) >>> 0;
-  const phase = rand01(seed) * POWER.rotor.spinJitter;
-  const speed = (typeof opts.rotorSpeed === 'number') ? opts.rotorSpeed : val(POWER.rotor.spinSpeed, u);
-
   const hubTint   = applyExposureContrast(pal.hub,   ex, ct);
-  const lineTint  = applyExposureContrast(pal.bladeLine, ex, ct);
 
-  const baseBlade = applyExposureContrast(pal.blade, ex, ct);
-  const oscAmp    = val(POWER.rotor.bladeOsc.amp, u);
-  const oscSpd    = val(POWER.rotor.bladeOsc.speed, u);
-  const phase2    = phase + Math.PI * 2 * rand01(seed ^ 0xABCDEF);
-  const oscK      = 1 + oscAmp * Math.sin(tSec * oscSpd + phase2);
-  const bladeTint = mulRgb(baseBlade, oscK);
+  if (shouldDrawMass) {
+    const bladeRef = Math.max(localTileW, localTileH);
+    const bladeScale = compactTurbine ? 0.72 : 1;
+    const bladeL = Math.max(hubR * 2, Math.round(bladeRef * val(POWER.rotor.bladeLk, u) * bladeScale));
+    const bladeW = compactTurbine
+      ? Math.max(2, Math.round(bladeRef * val(POWER.rotor.bladeWk, u) * 0.78))
+      : Math.max(3, Math.round(bladeRef * val(POWER.rotor.bladeWk, u)));
+    const tipR   = compactTurbine
+      ? Math.max(1, Math.round(bladeW * 0.4))
+      : Math.round(bladeW * POWER.rotor.bladeTipRound);
 
-  const rotorMods = applyShapeMods({
-    p, x: hubCx, y: hubCy, r: hubR,
-    opts: { timeMs: opts.timeMs, liveAvg: opts.liveAvg },
-    mods: {
-      rotation: { speed, phase },
-      scale2D:  {
-        x: compactTurbine ? 1 : val(POWER.rotor.scaleK, u),
-        y: compactTurbine ? 1 : val(POWER.rotor.scaleK, u),
-        anchor: 'bottom-center'
-      },
-    }
-  });
+    const tSec  = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000;
+    const seed  = hash32(`power|${String(seedKey)}`) >>> 0;
+    const phase = rand01(seed) * POWER.rotor.spinJitter;
+    const speed = (typeof opts.rotorSpeed === 'number') ? opts.rotorSpeed : val(POWER.rotor.spinSpeed, u);
+    const lineTint = applyExposureContrast(pal.bladeLine, ex, ct);
 
-  p.push();
-  p.translate(hubCx, hubCy);
-  p.rotate(rotorMods.rotation || 0);
+    const baseBlade = applyExposureContrast(pal.blade, ex, ct);
+    const oscAmp    = val(POWER.rotor.bladeOsc.amp, u);
+    const oscSpd    = val(POWER.rotor.bladeOsc.speed, u);
+    const phase2    = phase + Math.PI * 2 * rand01(seed ^ 0xABCDEF);
+    const oscK      = 1 + oscAmp * Math.sin(tSec * oscSpd + phase2);
+    const bladeTint = mulRgb(baseBlade, oscK);
 
-  const sc = rotorMods.scaleX;
-  p.translate(0, hubR);
-  p.scale(sc, sc);
-  p.translate(0, -hubR);
+    const rotorMods = applyShapeMods({
+      p, x: hubCx, y: hubCy, r: hubR,
+      opts: { timeMs: opts.timeMs, liveAvg: opts.liveAvg },
+      mods: {
+        rotation: { speed, phase },
+        scale2D:  {
+          x: compactTurbine ? 1 : val(POWER.rotor.scaleK, u),
+          y: compactTurbine ? 1 : val(POWER.rotor.scaleK, u),
+          anchor: 'bottom-center'
+        },
+      }
+    });
 
-  const showBladeLine = !compactTurbine && bladeL >= 10 && bladeW >= 3;
-  const lineW   = showBladeLine ? Math.max(1, Math.round(val(POWER.rotor.line.weight, u))) : 0;
-  const lineLen = Math.round(bladeL * val(POWER.rotor.line.lenK, u));
-  const lineOff = Math.round(Math.min(val(POWER.rotor.line.offset, u), hubR * 0.5));
-  const lineA   = Math.round(val(POWER.rotor.line.alpha, u));
-  const lineY   = Math.round(bladeW / 2 - Math.max(1, lineW || 1));
-
-  for (let i = 0; i < 3; i++) {
-    const ang = i * (Math.PI * 2 / 3);
     p.push();
-    p.rotate(ang);
+    p.translate(hubCx, hubCy);
+    p.rotate(rotorMods.rotation || 0);
 
-    if (showBladeLine) {
-      p.strokeWeight(lineW);
-      strokeRgb(p, lineTint, Math.min(alpha, lineA));
-      p.noFill();
-      p.line(hubR + lineOff, lineY, hubR + lineOff + lineLen, lineY);
+    const sc = rotorMods.scaleX;
+    p.translate(0, hubR);
+    p.scale(sc, sc);
+    p.translate(0, -hubR);
+
+    const showBladeLine = !compactTurbine && bladeL >= 10 && bladeW >= 3;
+    const lineW   = showBladeLine ? Math.max(1, Math.round(val(POWER.rotor.line.weight, u))) : 0;
+    const lineLen = Math.round(bladeL * val(POWER.rotor.line.lenK, u));
+    const lineOff = Math.round(Math.min(val(POWER.rotor.line.offset, u), hubR * 0.5));
+    const lineA   = Math.round(val(POWER.rotor.line.alpha, u));
+    const lineY   = Math.round(bladeW / 2 - Math.max(1, lineW || 1));
+
+    for (let i = 0; i < 3; i++) {
+      const ang = i * (Math.PI * 2 / 3);
+      p.push();
+      p.rotate(ang);
+
+      if (showBladeLine) {
+        p.strokeWeight(lineW);
+        strokeRgb(
+          p,
+          shapePartColor(renderPass, lineTint, silhouetteColor),
+          renderPass === "silhouette" ? silhouetteAlpha : Math.min(alpha, lineA)
+        );
+        p.noFill();
+        p.line(hubR + lineOff, lineY, hubR + lineOff + lineLen, lineY);
+      }
+
+      p.noStroke();
+      fillRgb(p, shapePartColor(renderPass, bladeTint, silhouetteColor), massAlpha);
+      p.rectMode(p.CENTER);
+      const rootGap = Math.max(1, Math.round(hubR * (compactTurbine ? 0.12 : 0.2)));
+      p.rect(bladeL / 2, 0, bladeL - rootGap, bladeW, tipR);
+
+      p.rectMode(p.CORNER);
+      const rootLen = compactTurbine
+        ? Math.max(3, Math.round(bladeL * 0.14))
+        : Math.max(6, Math.round(bladeL * 0.18));
+      p.rect(-rootGap, -Math.round(bladeW * 0.65), rootLen, Math.round(bladeW * 1.3), Math.round(bladeW * 0.6));
+
+      p.pop();
     }
-
-    p.noStroke();
-    fillRgb(p, bladeTint, alpha);
-    p.rectMode(p.CENTER);
-    const rootGap = Math.max(1, Math.round(hubR * (compactTurbine ? 0.12 : 0.2)));
-    p.rect(bladeL / 2, 0, bladeL - rootGap, bladeW, tipR);
-
-    p.rectMode(p.CORNER);
-    const rootLen = compactTurbine
-      ? Math.max(3, Math.round(bladeL * 0.14))
-      : Math.max(6, Math.round(bladeL * 0.18));
-    p.rect(-rootGap, -Math.round(bladeW * 0.65), rootLen, Math.round(bladeW * 1.3), Math.round(bladeW * 0.6));
-
     p.pop();
   }
-  p.pop();
 
   // hub on top
-  p.noStroke();
-  fillRgb(p, hubTint, alpha);
-  p.circle(hubCx, hubCy, hubR * 2);
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapePartColor(renderPass, hubTint, silhouetteColor), massAlpha);
+    p.circle(hubCx, hubCy, hubR * 2);
+  }
 
   // If you enabled canvas-wide clipping above, restore here:
   // if (isSprite && p.width && p.height) { ctx.restore(); }

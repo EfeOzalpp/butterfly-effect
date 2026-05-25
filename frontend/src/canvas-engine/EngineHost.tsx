@@ -6,7 +6,6 @@ import { useCanvasEngine } from "./hooks/useCanvasEngine";
 import { useViewportKey } from "./hooks/useViewportKey";
 import { useSceneField } from "./hooks/useSceneField";
 import { stopCanvasEngine } from "./runtime/index";
-import { useRealMobileViewport } from "../lib/hooks/useRealMobileViewport";
 import type { Place } from "./grid-layout/occupancy";
 
 import { HOST_DEFS, type CanvasBounds, type HostDef, type HostId } from "./multi-canvas-setup/hostDefs";
@@ -66,13 +65,12 @@ export function EngineHost({
   });
 
   const viewportKey = useViewportKey(120);
-  const isRealMobile = useRealMobileViewport();
 
   useSceneField(
     engine,
     id,
     allocAvg,
-    { questionnaireOpen, isRealMobile },
+    { questionnaireOpen },
     reservedFootprints,
     viewportKey
   );

@@ -5,7 +5,7 @@ import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { Place } from "../grid-layout/occupancy";
 import type { ConditionKind, ShapeName } from "../adjustable-rules/shapeCatalog";
 import type { Size } from "../adjustable-rules/conditionFootprints";
-import type { SceneLookupKey } from "../adjustable-rules/sceneState";
+import type { SceneLookupKey } from "../scene-state";
 import type { ScenePlacementRules } from "../adjustable-rules/placement-rules/index";
 import type { EngineFieldItem } from "../runtime/engine/field";
 

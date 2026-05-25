@@ -9,6 +9,8 @@ import {
   blendRGB,
   stepAndDrawParticles,
   particleBucketRange,
+  particleDepthAlpha,
+  particleDepthSizeScale,
   particleRowBucket,
   clamp01,
   val,
@@ -16,20 +18,16 @@ import {
   footprintToPx,
   rowHeightAt,
   rowWidthAt,
-  sampleDirectionalLightRect,
-  pickLightBandValue,
-  mixRgb,
 } from "../modifiers/index";
-import type { LightClosenessBandMap, RGB } from "../modifiers/index";
+import type { NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
+import { applyDepthTint } from "./shared/depthTint";
 import { finiteNumber } from "./shared/numbers";
 
-type NumberRange = [number, number];
 type CloudPaletteTheme = "warm" | "cool";
 
 interface CloudsPalette extends ShapePalette {
   default: RGB;
-  defaultByLight?: LightClosenessBandMap<number>;
   rain: RGB;
 }
 
@@ -51,7 +49,7 @@ interface CloudsOptions extends ShapeDrawOptions<CloudsPalette> {
   cloudAlpha?: number;
 }
 
-/* ───────────────── Palettes ───────────────── */
+// Palettes
 const CLOUDS_BASE_PALETTE: CloudsPalette = {
   default: { r: 236, g: 238, b: 242 },
   rain:    { r: 20,  g: 165, b: 255 },
@@ -59,11 +57,6 @@ const CLOUDS_BASE_PALETTE: CloudsPalette = {
 
 const CLOUDS_DARK_PALETTE: CloudsPalette = {
   default: { r: 139, g: 140, b: 185 },
-  defaultByLight: {
-    far:  0.45,
-    mid:  0.63,
-    near: 0.85,
-  },
   rain:    { r: 11,  g: 104, b: 195 },
 };
 
@@ -77,7 +70,7 @@ const CLOUDS_COOL_PALETTE: CloudsPalette = {
   rain:    { r: 15,  g: 148, b: 238 },
 };
 
-/* ───────────────── Defaults (tweakable) ───────────────── */
+// Defaults
 const RAIN = {
   enabled: true as boolean,
   spawnX0: 0.12, spawnX1: 0.88,
@@ -191,7 +184,7 @@ function rainRowContextScale(t: number) {
   };
 }
 
-/* ───────────────── Draw ───────────────── */
+// Draw
 export function drawClouds(
   p: ShapeCanvas,
   _cx: number,
@@ -219,30 +212,34 @@ export function drawClouds(
   const drawRain = opts.drawRain !== false;
   const drawCloudBody = opts.drawCloudBody !== false;
 
-  // ── Texture-pixel scaling for sprite textures ────────────────────────────
+  // Texture-pixel scaling for sprite textures
+  const visualRow = f.r0 + f.h - 1;
   const rowBucket = particleRowBucket(f, opts);
-  const rainRowBucket = particleRowBucket({ ...f, h: 1 }, opts);
+  const rainRowBucket = rowBucket;
   const cloudRow = cloudRowContext(rowBucket.t);
   const rainScale = rainRowContextScale(rainRowBucket.t);
+  const rainDepthSizeK = particleDepthSizeScale(rainRowBucket);
   const pixelScale = typeof opts.particlePixelScale === "number" && Number.isFinite(opts.particlePixelScale)
     ? Math.max(0.25, opts.particlePixelScale)
     : Math.max(1, (opts.pixelScale ?? opts.coreScaleMult ?? 1));
-  const sizeK = rainScale.size * Math.pow(pixelScale, 1.15);
-  const lengthK = rainScale.length * Math.pow(pixelScale, 1.05);
+  const sizeK = rainScale.size * rainDepthSizeK * Math.pow(pixelScale, 1.15);
+  const lengthK = rainScale.length * rainDepthSizeK * Math.pow(pixelScale, 1.05);
   const motionK = rainScale.motion * pixelScale;
   const lifeK = rainScale.life * Math.pow(pixelScale, 1.2);
   const countK = rainScale.count * Math.sqrt(pixelScale);
 
-  /* ── Layout base ── */
-  const topCellW = rowWidthAt(f.r0, opts);
+  // Layout base
+  // Sky footprints span multiple rows. Use the same bottom/depth row as
+  // footprintToPx so near-horizon clouds shrink like other near-horizon items.
+  const visualCellW = rowWidthAt(visualRow, opts);
   const { x: fpX, y: y0, w: fpW } = footprintToPx(f, opts);
-  const wTop = f.w * topCellW;
+  const wTop = f.w * visualCellW;
   const anchorX = fpX + fpW / 2;
   const x0 = anchorX - wTop / 2;
-  const hTop = rowHeightAt(f.r0, opts);
+  const hTop = rowHeightAt(visualRow, opts);
   const anchorY = y0 + hTop * 0.60;
 
-  /* ── Resolve cloud geometry ── */
+  // Resolve cloud geometry
   const wEnv = wTop * val(CLOUDS.widthEnv, u) * cloudRow.width;
   const hEnv = hTop * val(CLOUDS.heightEnv, u) * cloudRow.height;
   const spreadXBase = val(CLOUDS.spreadX, u) * cloudRow.overlap;
@@ -263,12 +260,6 @@ export function drawClouds(
     { count: lobeCount, spreadX, arcLift, rBase, rJitter, seed }
   );
 
-  /* ── Cloud color ── */
-  const cloudLight = sampleDirectionalLightRect(
-    { x: x0, y: y0, w: wTop, h: hTop * 1.2 },
-    opts.lightCtx ?? null
-  );
-
   const cloudBlendDefault = val(CLOUDS.blend, u);
   const cloudBlend = typeof opts.cloudBlend === 'number' ? opts.cloudBlend : cloudBlendDefault;
 
@@ -279,24 +270,19 @@ export function drawClouds(
 
   const sMax = Math.max(0, Math.min(1, val(CLOUDS.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
-  const defaultLightness = pickLightBandValue(l, pal.defaultByLight, cloudLight.closenessK);
   const capped = hslToRgb({
     h,
     s: Math.min(s, sMax),
-    l: defaultLightness,
+    l,
   });
 
-  let cloudRgb = oscillateSaturation(capped, t, {
+  const cloudRgb = applyDepthTint(oscillateSaturation(capped, t, {
     amp:   (typeof opts.oscAmp === 'number' ? opts.oscAmp : val(CLOUDS.oscAmp, u)),
     speed: (typeof opts.oscSpeed === 'number' ? opts.oscSpeed : val(CLOUDS.oscSpeed, u)),
     phase: opts.oscPhase ?? 0,
-  });
+  }), opts);
 
-  cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
-  const cloudHighlight = mixRgb(cloudRgb, cloudLight.lightColor, 0.36);
-  const cloudShadow = mixRgb(cloudRgb, cloudLight.shadowColor, 0.24);
-
-  /* ── Wobble ── */
+  // Wobble
   const wobbleK = val(CLOUDS.wobbleAmp, u) * val(WOBBLE.ampScale, u) * cloudRow.wobbleAmp;
   const ampX = (opts.dispAmp ?? Math.min(12, Math.max(6, Math.round(hTop * 0.12)))) * wobbleK;
   const ampY = (typeof opts.dispAmpY === 'number' ? opts.dispAmpY : Math.round(ampX * 0.85)) * wobbleK;
@@ -315,7 +301,7 @@ export function drawClouds(
   });
   const lobeDriftK = cloudRow.lobeDrift;
 
-  /* ── APPEAR envelope for the cloud *shape* ── */
+  // Appear envelope for the cloud shape
   const appear = applyShapeMods({
     p,
     x: anchorX, y: anchorY, r: Math.min(wTop, hTop),
@@ -335,7 +321,7 @@ export function drawClouds(
 
   const cloudAlpha = typeof appear.alpha === 'number' ? appear.alpha : finiteNumber(opts.cloudAlpha, 235);
 
-  /* ── RAIN under clouds ── */
+  // Rain under clouds
   if (drawRain && RAIN.enabled) {
     const rect = { x: x0, y: y0 + hTop * 0.5, w: wTop, h: hTop * 2.5 };
 
@@ -363,13 +349,15 @@ export function drawClouds(
         ? cssToRgbViaCanvas(p, opts.rainCss)
         : blendRGB(pal.rain, opts.gradientRGB ?? undefined, rainBlend);
 
-    const rainColor = { r: rainTint.r, g: rainTint.g, b: rainTint.b, a: syncedAlpha };
+    const depthRainTint = applyDepthTint(rainTint, opts, 0.7);
+    const rainColor = { r: depthRainTint.r, g: depthRainTint.g, b: depthRainTint.b, a: syncedAlpha };
 
     stepAndDrawParticles(p, {
       key: `${String(f.r0)}:${String(f.c0)}:${String(f.w)}x${String(f.h)}:${String(seed)}:rain`,
       rect,
       mode: 'line',
       color: rainColor,
+      depthAlpha: particleDepthAlpha(rainRowBucket),
 
       spawn: { x0: RAIN.spawnX0, x1: RAIN.spawnX1, y0: RAIN.spawnY0, y1: RAIN.spawnY1 },
       angle: { min: RAIN.angleMin, max: RAIN.angleMax },
@@ -397,7 +385,7 @@ export function drawClouds(
     }, dt);
   }
 
-  /* ── CLOUDS above rain ── */
+  // Clouds above rain
   if (drawCloudBody) {
     p.push();
     p.translate(appear.x, appear.y);
@@ -423,28 +411,6 @@ export function drawClouds(
       const cx2 = lx + groupDrift.dx + dx;
       const cy2 = ly + groupDrift.dy + dy;
       p.circle(cx2, cy2, rr);
-
-      if (cloudLight.overallK > 0.01) {
-        const offX = cloudLight.xBias * l.r * 0.22;
-        const offY = cloudLight.yBias * l.r * 0.18;
-        p.fill(
-          cloudHighlight.r,
-          cloudHighlight.g,
-          cloudHighlight.b,
-          Math.round(cloudAlpha * 0.18 * Math.max(cloudLight.leftK, cloudLight.rightK, cloudLight.topK))
-        );
-        p.circle(cx2 + offX, cy2 + offY, rr * 0.62);
-
-        p.fill(
-          cloudShadow.r,
-          cloudShadow.g,
-          cloudShadow.b,
-          Math.round(cloudAlpha * 0.10 * Math.max(cloudLight.leftK, cloudLight.rightK))
-        );
-        p.circle(cx2 - offX * 0.9, cy2 - offY * 0.5, rr * 0.54);
-
-        p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, cloudAlpha);
-      }
     }
     p.pop();
   }

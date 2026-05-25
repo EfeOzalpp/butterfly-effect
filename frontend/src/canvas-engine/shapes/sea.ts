@@ -10,16 +10,20 @@ import {
   stepAndDrawPuffs,
   applyShapeMods,
   footprintToPx,
+  particleDepthAlpha,
+  particleDepthSizeScale,
+  particleRowBucket,
 } from "../modifiers/index";
-import type { RGB } from "../modifiers/index";
+import type { NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
-
-type NR = [number, number];
+import { shapePartColor } from "./shared/silhouette";
 
 interface SeaPalette extends ShapePalette {
   top: RGB;
   bottom: RGB;
 }
+
+type SeaPaletteTheme = "warm" | "cool";
 
 // base palettes
 const SEA_BASE_PALETTE: SeaPalette = {
@@ -46,14 +50,13 @@ const SEA_COOL_PALETTE: SeaPalette = {
 const GRASS_BASE: RGB = { r: 150, g: 190, b: 150 };
 const GRASS_DARK: RGB  = { r: 72,  g: 102, b: 130 };
 
-// tuning (override with opts.tuning)
+// Sea drawing constants. Callers choose footprint and scene context; the shape
+// owns its water, bowl, foam, and spill art direction.
 const SEA_TUNING = {
-  span: { forceTilesX: 2, leaderOnly: true },
-
   gradient: {
     gamma: true,
-    blendTop:    [0.10, 0.05] as NR,
-    blendBottom: [0.10, 0.05] as NR,
+    blendTop:    [0.10, 0.05] as NumberRange,
+    blendBottom: [0.10, 0.05] as NumberRange,
   },
 
   colorClamp: {
@@ -63,12 +66,12 @@ const SEA_TUNING = {
   },
 
   scale: {
-    baseYRange:  [0.88, 0.45] as NR,
-    oscHzRange:  [0.45, 0.85] as NR,
-    oscAmpRange: [0.04, 0.008] as NR,
+    baseYRange:  [0.88, 0.45] as NumberRange,
+    oscHzRange:  [0.45, 0.85] as NumberRange,
+    oscAmpRange: [0.04, 0.008] as NumberRange,
   },
 
-  appear: { kRange: [0.82, 1.0] as NR, easing: 'cubic' as 'cubic' | 'linear' },
+  appear: { easing: 'cubic' as 'cubic' | 'linear' },
 
   overflow: { allow: false, extraTopPx: 0, extraBottomPx: 0 },
 
@@ -84,14 +87,13 @@ const SEA_TUNING = {
 
   foam: {
     enable: true,
-    band:   { heightPx: 10, offsetTopPx: 4, oscAmpPx: 3, oscHzRange: [0.12, 0.25] as NR },
-    motion: { dir: 'up' as const, spreadAngle: 0.35, speedPxSec: [10, 24] as NR, gravity: -8, drag: 0.8, jitterPos: 0.5, jitterAngle: 0.15 },
-    pool:   { count: 18, sizePx: [0.8, 1.8] as NR, sizeHz: 6, lifetimeSec: [0.8, 1.6] as NR, fadeInFrac: 0.2, fadeOutFrac: 0.35 },
+    band:   { heightPx: 10, offsetTopPx: 4, oscAmpPx: 3, oscHzRange: [0.12, 0.25] as NumberRange },
+    motion: { dir: 'up' as const, spreadAngle: 0.35, speedPxSec: [10, 24] as NumberRange, gravity: -8, drag: 0.8, jitterPos: 0.5, jitterAngle: 0.15 },
+    pool:   { count: 18, sizePx: [0.8, 1.8] as NumberRange, sizeHz: 6, lifetimeSec: [0.8, 1.6] as NumberRange, fadeInFrac: 0.2, fadeOutFrac: 0.35 },
     edgeFadePx: { left: 6, right: 6, top: 0, bottom: 10 },
     color:  { base: { r: 250, g: 252, b: 255, a: 200 }, varyBySize: true },
   },
 
-  // SEA_TUNING.bowl
   bowl: {
     enable: true,
     thicknessK:  0.2,
@@ -107,16 +109,12 @@ const SEA_TUNING = {
       colWidthK:  0.85,
       cornerK:    0.12,
     },
-    color:      GRASS_BASE,
-    grassBlend: { colorBlend: [0.20, 0.34] as NR, satRange: [0.00, 0.16] as NR, brightRange: [0.35, 0.90] as NR },
+    grassBlend: { colorBlend: [0.20, 0.34] as NumberRange, satRange: [0.00, 0.16] as NumberRange, brightRange: [0.35, 0.90] as NumberRange },
     alphaMul:   1.0,
-    // optional tuning fields callers may provide via opts.tuning.bowl
     pieceRadiusPx:    undefined as number | undefined,
     baseOverlapPx:    undefined as number | undefined,
     postBottomLiftPx: undefined as number | undefined,
   },
-
-  waterBottomRadiusPx: 10,
 
   // Horizon cap rectangle (drawn without tile clip)
   capRect: {
@@ -146,14 +144,14 @@ const SEA_TUNING = {
     rightNudgePx: 0,
 
     count:  34,
-    sizePx: [1.0, 2.2] as NR,
+    sizePx: [1.0, 2.2] as NumberRange,
 
-    leftSpeedPxSec:  [60, 120] as NR,
-    rightSpeedPxSec: [60, 120] as NR,
+    leftSpeedPxSec:  [60, 120] as NumberRange,
+    rightSpeedPxSec: [60, 120] as NumberRange,
 
     gravity: 360,
     drag:    6,
-    lifetimeSec: [1.2, 2.0] as NR,
+    lifetimeSec: [1.2, 2.0] as NumberRange,
 
     spillPx: 40,
 
@@ -164,13 +162,13 @@ const SEA_TUNING = {
     coneAccelX:  120,
     spreadAngle: 0.45,
 
-    leftSpawnFracX:  [0.70, 0.96] as NR,
-    rightSpawnFracX: [0.00, 0.20] as NR,
+    leftSpawnFracX:  [0.70, 0.96] as NumberRange,
+    rightSpawnFracX: [0.00, 0.20] as NumberRange,
 
     liveGate: { min: 0.25, max: 0, soft: 0.12 },
 
     leftEdgeFadeLeftPx: 2,
-    leftLifetimeSec:    [1.2, 2.0] as NR,
+    leftLifetimeSec:    [1.2, 2.0] as NumberRange,
     leftExtraRoomPx:    24,
 
     mobile: { cellMax: 28, leftNudgePx: 8, rightNudgePx: -4 },
@@ -178,14 +176,9 @@ const SEA_TUNING = {
 };
 
 interface SeaOptions extends ShapeDrawOptions<SeaPalette> {
-  tuning?: Partial<typeof SEA_TUNING>;
-  allowForcedSpan?: boolean;
-  spanLeader?: boolean;
+  paletteTheme?: SeaPaletteTheme;
   oscHz?: number;
   oscAmp?: number;
-  foamKey?: string;
-  blendTopK?: number;
-  blendBottomK?: number;
 }
 
 // helpers
@@ -206,7 +199,7 @@ function cssRgba(r: number, g: number, b: number, a: number): string {
   return `rgba(${String(r)},${String(g)},${String(b)},${String(a)})`;
 }
 
-// Map a world-space Y to the current water gradient color (topRGB→bottomRGB)
+// Map a world-space Y to the current water gradient color.
 function seaRGBAtY(y: number, topY: number, bottomY: number, topRGB: RGB, bottomRGB: RGB): RGB {
   const t = Math.max(0, Math.min(1, (y - topY) / Math.max(1e-6, (bottomY - topY))));
   return {
@@ -238,6 +231,10 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   const cellH = opts.cellH ?? cell;
   const f = opts.footprint;
   if (!cell || !f) return;
+  const renderPass = opts.renderPass ?? "color";
+  const isSilhouettePass = renderPass === "silhouette";
+  const shouldDrawColorDetails = !isSilhouettePass;
+  const silhouetteColor = opts.silhouetteColor;
 
   // Detect "sprite mode"
   // - auto when CanvasAnimatedTexture / Frozen path sets fitToFootprint: true
@@ -245,53 +242,27 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   const isSprite = (opts.fitToFootprint ?? false) || (opts.spriteMode ?? false);
   const pxK = isSprite ? Math.max(1, opts.coreScaleMult ?? opts.pixelScale ?? 1) : 1;
 
-  // merge tunables
-  const OT = opts.tuning ?? {};
-  const T = { ...SEA_TUNING, ...OT };
-  T.span        = { ...SEA_TUNING.span,        ...(OT.span        ?? {}) };
-  T.gradient    = { ...SEA_TUNING.gradient,    ...(OT.gradient    ?? {}) };
-  T.colorClamp  = { ...SEA_TUNING.colorClamp,  ...(OT.colorClamp  ?? {}) };
-  T.scale       = { ...SEA_TUNING.scale,       ...(OT.scale       ?? {}) };
-  T.appear      = { ...SEA_TUNING.appear,      ...(OT.appear      ?? {}) };
-  T.overflow    = { ...SEA_TUNING.overflow,    ...(OT.overflow    ?? {}) };
-  T.opacity     = { ...SEA_TUNING.opacity,     ...(OT.opacity     ?? {}) };
-  T.antialias   = { ...SEA_TUNING.antialias,   ...(OT.antialias   ?? {}) };
-  T.topBorder   = { ...SEA_TUNING.topBorder,   ...(OT.topBorder   ?? {}) };
-
-  // foam
-  T.foam            = { ...SEA_TUNING.foam,            ...(OT.foam            ?? {}) };
-  T.foam.band       = { ...SEA_TUNING.foam.band,       ...(OT.foam?.band      ?? {}) };
-  T.foam.motion     = { ...SEA_TUNING.foam.motion,     ...(OT.foam?.motion    ?? {}) };
-  T.foam.pool       = { ...SEA_TUNING.foam.pool,       ...(OT.foam?.pool      ?? {}) };
-  T.foam.edgeFadePx = { ...SEA_TUNING.foam.edgeFadePx, ...(OT.foam?.edgeFadePx ?? {}) };
-  T.foam.color      = { ...SEA_TUNING.foam.color,      ...(OT.foam?.color     ?? {}) };
-
-  // bowl
-  T.bowl            = { ...SEA_TUNING.bowl,            ...(OT.bowl            ?? {}) };
-  T.bowl.grassBlend = { ...SEA_TUNING.bowl.grassBlend, ...(OT.bowl?.grassBlend ?? {}) };
+  const T = SEA_TUNING;
 
   const tSec = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000;
   const u = clamp01(opts.liveAvg ?? 0.5);
 
   const baseAlpha = typeof opts.alpha === 'number' ? opts.alpha : 235;
   const alphaMulGlobal = clamp01(T.opacity.mul);
+  const requestedSilhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : baseAlpha;
 
-  // forced span logic
-  // In sprite mode we never fake-span; keep it local to the tile
-  const forceX = Math.max(1, (T.span.forceTilesX | 0));
-  const canFakeSpanCanvas = (opts.allowForcedSpan ?? false) && forceX > 1 && f.w < forceX;
-  const canFakeSpan = isSprite ? false : canFakeSpanCanvas;
-  const spanTilesX = canFakeSpan ? forceX : f.w;
-  const leaderOnly = canFakeSpan ? T.span.leaderOnly : false;
-  const isLeader =
-    opts.spanLeader === true ? true :
-    leaderOnly ? ((f.c0 % spanTilesX) === 0) : true;
-  if (!isLeader) return;
+  const spanTilesX = f.w;
+  const rowBucket = particleRowBucket(f, opts);
+  const particleDepthA = particleDepthAlpha(rowBucket);
+  const particleSizeK = particleDepthSizeScale(rowBucket);
 
   // tile rect
   const x0 = f.c0 * (cellW ?? 0);
   const { y: y0, h } = footprintToPx(f, opts);
-  const w  = Math.max(f.w, spanTilesX) * (cellW ?? 0);
+  const w  = spanTilesX * (cellW ?? 0);
 
   const cx = x0 + w / 2;
   const bottomY = y0 + h;
@@ -306,8 +277,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
   // WATER colors (gamma + clamp)
   const useGamma = T.gradient.gamma;
-  const blendTopK    = clamp01(opts.blendTopK    ?? val(T.gradient.blendTop,    u));
-  const blendBottomK = clamp01(opts.blendBottomK ?? val(T.gradient.blendBottom, u));
+  const blendTopK    = clamp01(val(T.gradient.blendTop,    u));
+  const blendBottomK = clamp01(val(T.gradient.blendBottom, u));
   const blender = useGamma ? blendRGBGamma : blendRGB;
   let topRGB    = opts.gradientRGB ? blender(pal.top,    opts.gradientRGB, blendTopK)    : pal.top;
   let bottomRGB = opts.gradientRGB ? blender(pal.bottom, opts.gradientRGB, blendBottomK) : pal.bottom;
@@ -347,6 +318,11 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
   const drawAlpha = (typeof env.alpha === 'number') ? env.alpha : (baseAlpha * alphaMulGlobal);
   const aFactor = Math.max(0, Math.min(255, Math.round(drawAlpha))) / 255;
+  const appearAlphaK = (baseAlpha * alphaMulGlobal) > 0
+    ? clamp01(drawAlpha / (baseAlpha * alphaMulGlobal))
+    : 1;
+  const silhouetteFactor = clamp01((requestedSilhouetteAlpha * appearAlphaK) / 255);
+  const silhouetteRGB = shapePartColor(renderPass, topRGB, silhouetteColor);
 
   // Begin group transform; clip the tile
   p.push();
@@ -373,16 +349,20 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const OVER = 4;
     const gy0 = y - OVER;
     const gy1 = y + hh + OVER;
-    const g = ctx.createLinearGradient(0, gy0, 0, gy1);
-    g.addColorStop(0, cssRgba(topRGB.r,    topRGB.g,    topRGB.b,    aFactor));
-    g.addColorStop(1, cssRgba(bottomRGB.r, bottomRGB.g, bottomRGB.b, aFactor));
-    ctx.fillStyle = g;
+    if (isSilhouettePass) {
+      ctx.fillStyle = cssRgba(silhouetteRGB.r, silhouetteRGB.g, silhouetteRGB.b, silhouetteFactor);
+    } else {
+      const g = ctx.createLinearGradient(0, gy0, 0, gy1);
+      g.addColorStop(0, cssRgba(topRGB.r,    topRGB.g,    topRGB.b,    aFactor));
+      g.addColorStop(1, cssRgba(bottomRGB.r, bottomRGB.g, bottomRGB.b, aFactor));
+      ctx.fillStyle = g;
+    }
     ctx.fillRect(x - 2, gy0, ww + 4, (gy1 - gy0));
     ctx.restore();
   }
 
   // Foam (sticks to water)
-  if (T.foam.enable) {
+  if (T.foam.enable && shouldDrawColorDetails) {
     const bandH   = Math.max(1, T.foam.band.heightPx);
     const bandOff = Math.max(0, T.foam.band.offsetTopPx);
     const foamHz  = val(T.foam.band.oscHzRange, u);
@@ -393,8 +373,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const speedLo = Array.isArray(T.foam.motion.speedPxSec) ? T.foam.motion.speedPxSec[0] : 10;
     const speedHi = Array.isArray(T.foam.motion.speedPxSec) ? T.foam.motion.speedPxSec[1] : speedLo;
 
-    const sizeLo  = (Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[0] : 1) * pxK;
-    const sizeHi  = Math.max(sizeLo, (Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[1] : sizeLo) * pxK);
+    const sizeLo  = (Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[0] : 1) * pxK * particleSizeK;
+    const sizeHi  = Math.max(sizeLo, (Array.isArray(T.foam.pool.sizePx) ? T.foam.pool.sizePx[1] : sizeLo) * pxK * particleSizeK);
 
     const lifeLo  = Array.isArray(T.foam.pool.lifetimeSec) ? T.foam.pool.lifetimeSec[0] : 1;
     const lifeHi  = Array.isArray(T.foam.pool.lifetimeSec) ? T.foam.pool.lifetimeSec[1] : 1.6;
@@ -409,12 +389,12 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     };
 
     const dtSec =
-      (typeof opts.deltaSec === 'number' && opts.deltaSec > 0)
-        ? opts.deltaSec
+      (typeof opts.dtSec === 'number' && opts.dtSec > 0)
+        ? opts.dtSec
         : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
     stepAndDrawPuffs(p, {
-      key: (opts.foamKey ?? `seafoam:${String(f.r0)}:${String(f.c0)}:${String(spanTilesX)}x${String(f.h)}`) + (isSprite ? ':spr' : ''),
+      key: `seafoam:${String(f.r0)}:${String(f.c0)}:${String(spanTilesX)}x${String(f.h)}${isSprite ? ':spr' : ''}`,
       rect,
       dir: T.foam.motion.dir,
       spreadAngle: T.foam.motion.spreadAngle,
@@ -434,6 +414,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
       fadeOutFrac:T.foam.pool.fadeOutFrac,
       edgeFadePx: T.foam.edgeFadePx,
       color: colorFn,
+      depthAlpha: particleDepthA,
       respawn: true,
     }, dtSec);
   }
@@ -462,18 +443,24 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const left = -rectW / 2;
     const top  = -rectH;
 
-    const rectAlpha = aFactor * T.capRect.alphaMul;
+    const rectAlpha = isSilhouettePass
+      ? silhouetteFactor
+      : aFactor * T.capRect.alphaMul;
 
-    const baseTop = T.capRect.color.top;
-    const baseBot = T.capRect.color.bottom;
-    const satOsc = T.capRect.satOsc;
-    const topCol = oscillateSaturation(baseTop, tSec, { amp: satOsc.amp, speed: satOsc.speed, phase: satOsc.phase });
-    const botCol = oscillateSaturation(baseBot, tSec, { amp: satOsc.amp, speed: satOsc.speed, phase: satOsc.phase + Math.PI / 4 });
+    if (isSilhouettePass) {
+      ctx.fillStyle = cssRgba(silhouetteRGB.r, silhouetteRGB.g, silhouetteRGB.b, rectAlpha);
+    } else {
+      const baseTop = T.capRect.color.top;
+      const baseBot = T.capRect.color.bottom;
+      const satOsc = T.capRect.satOsc;
+      const topCol = oscillateSaturation(baseTop, tSec, { amp: satOsc.amp, speed: satOsc.speed, phase: satOsc.phase });
+      const botCol = oscillateSaturation(baseBot, tSec, { amp: satOsc.amp, speed: satOsc.speed, phase: satOsc.phase + Math.PI / 4 });
 
-    const grad = ctx.createLinearGradient(0, top, 0, 0);
-    grad.addColorStop(0, cssRgba(topCol.r, topCol.g, topCol.b, rectAlpha));
-    grad.addColorStop(1, cssRgba(botCol.r, botCol.g, botCol.b, rectAlpha));
-    ctx.fillStyle = grad;
+      const grad = ctx.createLinearGradient(0, top, 0, 0);
+      grad.addColorStop(0, cssRgba(topCol.r, topCol.g, topCol.b, rectAlpha));
+      grad.addColorStop(1, cssRgba(botCol.r, botCol.g, botCol.b, rectAlpha));
+      ctx.fillStyle = grad;
+    }
 
     ctx.beginPath();
     roundedRect(ctx, left, top, rectW, rectH, radius);
@@ -485,7 +472,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   }
 
   // SPILL (particle-2) — gated by liveAvg; spills outside tile
-  if (T.spill.enable) {
+  if (T.spill.enable && shouldDrawColorDetails) {
     // Remove clip before spill so particles can render into the bleed area (sea has 0.45-tile
     // horizontal bleed on each side — enough for the falling corridors to sit outside the pool).
     if (wantClip) ctx.restore();
@@ -495,8 +482,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
     if (spillK > 0.01) {
       const dtSec =
-        (typeof opts.deltaSec === 'number' && opts.deltaSec > 0)
-          ? opts.deltaSec
+        (typeof opts.dtSec === 'number' && opts.dtSec > 0)
+          ? opts.dtSec
           : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
       // sprite-mode adjustments: keep inside tile + remove global shift/nudges
@@ -552,8 +539,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
         ? { x0: 0.10, x1: 0.90, y0: 0.00, y1: spawnFracY }
         : { x0: rightSpawnFracX[0], x1: rightSpawnFracX[1], y0: 0.00, y1: spawnFracY };
 
-      const rMin  = (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[0] : T.spill.sizePx) * pxK;
-      const rMax  = Math.max(rMin, (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[1] : rMin) * pxK);
+      const rMin  = (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[0] : T.spill.sizePx) * pxK * particleSizeK;
+      const rMax  = Math.max(rMin, (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[1] : rMin) * pxK * particleSizeK);
       const gatedCount = Math.max(0, Math.floor(T.spill.count * spillK));
       const alphaMul = spillK;
 
@@ -609,6 +596,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
             const c = seaRGBAtY(pr.y, waterTopY, waterBottomY, topRGB, bottomRGB);
             return { r: c.r, g: c.g, b: c.b, a: Math.round(175 * aFactor * alphaMul) };
           },
+          depthAlpha: particleDepthA,
 
           respawn: true,
         }, dtSec);
@@ -658,8 +646,11 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     bowlRGB = clampSaturation(bowlRGB, satLo, satHi, 1);
     bowlRGB = clampBrightness(bowlRGB, briLo, briHi, 1);
 
-    const aBowl = Math.round(255 * clamp01(T.bowl.alphaMul) * aFactor);
-    ctx.fillStyle = cssRgba(bowlRGB.r, bowlRGB.g, bowlRGB.b, aBowl / 255);
+    const bowlFill = shapePartColor(renderPass, bowlRGB, silhouetteColor);
+    const aBowl = isSilhouettePass
+      ? Math.round(255 * silhouetteFactor)
+      : Math.round(255 * clamp01(T.bowl.alphaMul) * aFactor);
+    ctx.fillStyle = cssRgba(bowlFill.r, bowlFill.g, bowlFill.b, aBowl / 255);
 
     const rCorner = Math.round(cell * kCorner);
     {
@@ -683,7 +674,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   }
 
   // top border (optional)
-  if (T.topBorder.enable && (T.topBorder.topLinePx > 0)) {
+  if (shouldDrawColorDetails && T.topBorder.enable && (T.topBorder.topLinePx > 0)) {
     const aLine = Math.round(drawAlpha * clamp01(T.topBorder.topLineAlpha));
     const kMix = clamp01(T.topBorder.topLineMix);
     const lineRGB = {

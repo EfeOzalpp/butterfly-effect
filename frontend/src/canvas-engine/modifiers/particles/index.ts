@@ -5,5 +5,10 @@ export type { ParticleEmitterOpts, ParticleMode } from "./particle-1";
 export { stepAndDrawPuffs } from "./particle-2";
 export type { PuffDir, PuffEmitterOpts } from "./particle-2";
 
-export { particleRowBucket, particleBucketRange } from "./perspective";
+export {
+  particleBucketRange,
+  particleDepthAlpha,
+  particleDepthSizeScale,
+  particleRowBucket,
+} from "./perspective";
 export type { ParticleRowBucket } from "./perspective";

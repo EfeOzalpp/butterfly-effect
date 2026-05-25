@@ -25,11 +25,13 @@ export { displacementOsc, makeArchLobes } from "./shape-modifiers";
 // - val/mix from shape range helpers
 export { val, mix } from "./shape-modifiers";
 export { applyShapeMods } from "./shape-modifiers";
-export type { Anchor, ShapeMods, ApplyShapeModsOpts } from "./shape-modifiers";
+export type { Anchor, ShapeMods, ApplyShapeModsOpts, NumberRange } from "./shape-modifiers";
 
 // Particle emitters and particle-specific perspective helpers.
 export {
   particleBucketRange,
+  particleDepthAlpha,
+  particleDepthSizeScale,
   particleRowBucket,
   stepAndDrawParticles,
   stepAndDrawPuffs,

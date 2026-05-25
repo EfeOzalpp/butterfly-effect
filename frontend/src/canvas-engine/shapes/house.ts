@@ -11,18 +11,20 @@ import {
   applyShapeMods,
   footprintToPx,
   particleBucketRange,
+  particleDepthAlpha,
+  particleDepthSizeScale,
   particleRowBucket,
   sampleDirectionalLightRect,
   pickLightBandValue,
   paintPixelLightBands,
   mixRgb,
 } from "../modifiers/index";
-import type { RGB, LightClosenessBandMap } from "../modifiers/index";
-import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
+import type { RGB, LightClosenessBandMap, NumberRange } from "../modifiers/index";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapePuffOverrides, ShapeSeed } from "./types";
 import { applyExposureContrast, fillRgb } from "./shared/color";
 import { shapeHash32, seededUnit, pick, pickByOccurrence } from "./shared/random";
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
-type NumberRange = [number, number];
 type HousePaletteTheme = "warm" | "cool";
 
 interface HousePalette extends ShapePalette {
@@ -38,23 +40,9 @@ interface HousePalette extends ShapePalette {
   solarPanel: RGB;
 }
 
-interface SmokeOverrides {
-  count?: number;
-  sizeMin?: number;
-  sizeMax?: number;
-  lifeMin?: number;
-  lifeMax?: number;
-  speedMin?: number;
-  speedMax?: number;
-  gravity?: number;
-  drag?: number;
-  spreadAngle?: number;
-  alpha?: number;
-}
-
 interface HouseOptions extends ShapeDrawOptions<HousePalette> {
   paletteTheme?: HousePaletteTheme;
-  smokeOverrides?: SmokeOverrides;
+  smokeOverrides?: ShapePuffOverrides;
 }
 
 type DoorProfileName = "short" | "mid" | "tall";
@@ -230,7 +218,6 @@ interface HouseTuning {
   body: { colorBlend: NumberRange; brightnessRange: NumberRange };
   grass: { colorBlend: NumberRange; satRange: NumberRange };
   chimney: { scaleRange: NumberRange };
-  door: { widthRange: NumberRange; fixedHeights: NumberRange };
   windows: { perFloor: number; size: NumberRange; marginY: number; thresholds: { low: number; mid: number } };
 }
 
@@ -238,7 +225,6 @@ const HOUSE: HouseTuning = {
   body: { colorBlend: [0.2, 0.02], brightnessRange: [0.45, 0.7] },
   grass: { colorBlend: [0.14, 0.28], satRange: [0.03, 0.14] },
   chimney: { scaleRange: [2, 0] },
-  door: { widthRange: [1.3, 0.8], fixedHeights: [14, 20] },
   windows: { perFloor: 2, size: [10, 12], marginY: 12, thresholds: { low: 1.5, mid: 2.5 } }
 };
 
@@ -383,10 +369,18 @@ export function drawHouse(
   const ct = typeof opts.contrast === 'number' ? opts.contrast : 1;
 
   const baseAlpha = typeof opts.alpha === "number" && Number.isFinite(opts.alpha) ? opts.alpha : 255;
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const requestedSilhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : baseAlpha;
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
   const u = clamp01(opts.liveAvg ?? 0.5);
   const t = ((typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
   const rowBucket = particleRowBucket(f, opts);
   const smokeScale = smokeRowContext(rowBucket.t);
+  const particleSizeK = particleDepthSizeScale(rowBucket);
 
   const { x: pxX, y: pxY, w: pxW, h: pxH } = footprintToPx(f, opts);
   const localTileW = pxW / Math.max(1, f.w);
@@ -421,6 +415,12 @@ export function drawHouse(
   });
 
   const alpha = typeof m.alpha === 'number' ? m.alpha : baseAlpha;
+  const appearAlphaK = baseAlpha > 0 ? clamp01(alpha / baseAlpha) : 1;
+  const silhouetteAlpha = renderPass === "silhouette"
+    ? Math.round(requestedSilhouetteAlpha * appearAlphaK)
+    : alpha;
+  const massAlpha = renderPass === "silhouette" ? silhouetteAlpha : alpha;
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
 
   // Apply transform so the whole house scales around bottom-center
   p.push();
@@ -456,9 +456,13 @@ export function drawHouse(
     grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
   }
 
-  p.noStroke();
-  fillRgb(p, grassTint, alpha);
-  p.rect(pxX, grassY, pxW, grassH, rGrassTop, rGrassTop, 0, 0);
+  // The silhouette pass paints only stable mass: grass, house body, roof, and chimney.
+  // Smoke, panels, doors, and windows stay color-only so they do not stack depth alpha.
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    p.rect(pxX, grassY, pxW, grassH, rGrassTop, rGrassTop, 0, 0);
+  }
 
   // body + roof
   const availH = Math.max(3, grassY - pxY);
@@ -506,43 +510,51 @@ export function drawHouse(
   roofTint = mixRgb(roofTint, buildingLight.lightColor, 0.18 * buildingLight.overallK);
   const rBody = Math.max(1, Math.round(localTile * 0.06));
 
-  p.noStroke();
-  fillRgb(p, bodyTint, 255);
-  p.rect(pxX, bodyY, pxW, bodyH, rBody);
-  paintPixelLightBands(
-    p,
-    { x: pxX, y: bodyY, w: pxW, h: bodyH },
-    buildingLight,
-    {
-      alpha: 255,
-      highlightColor: mixRgb(bodyTint, buildingLight.lightColor, 0.52),
-      shadowColor: mixRgb(bodyTint, buildingLight.shadowColor, 0.30),
-      corner: rBody,
-      sideK: 0.42,
-      topK: 0.0,
-      shadowK: 0.18,
-    }
-  );
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapePartColor(renderPass, bodyTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+    p.rect(pxX, bodyY, pxW, bodyH, rBody);
+  }
+  if (shouldDrawColorDetails) {
+    paintPixelLightBands(
+      p,
+      { x: pxX, y: bodyY, w: pxW, h: bodyH },
+      buildingLight,
+      {
+        alpha: 255,
+        highlightColor: mixRgb(bodyTint, buildingLight.lightColor, 0.52),
+        shadowColor: mixRgb(bodyTint, buildingLight.shadowColor, 0.30),
+        corner: rBody,
+        sideK: 0.42,
+        topK: 0.0,
+        shadowK: 0.18,
+      }
+    );
+  }
 
-  fillRgb(p, roofTint, alpha);
-  p.rect(pxX, roofY, pxW, roofH, rBody, rBody, 0, 0);
-  paintPixelLightBands(
-    p,
-    { x: pxX, y: roofY, w: pxW, h: roofH },
-    buildingLight,
-    {
-      alpha,
-      highlightColor: mixRgb(roofTint, buildingLight.lightColor, 0.44),
-      shadowColor: mixRgb(roofTint, buildingLight.shadowColor, 0.24),
-      corner: rBody,
-      sideK: 0.28,
-      topK: 0.18,
-      shadowK: 0.12,
-    }
-  );
+  if (shouldDrawMass) {
+    fillRgb(p, shapePartColor(renderPass, roofTint, silhouetteColor), massAlpha);
+    p.rect(pxX, roofY, pxW, roofH, rBody, rBody, 0, 0);
+  }
+  if (shouldDrawColorDetails) {
+    paintPixelLightBands(
+      p,
+      { x: pxX, y: roofY, w: pxW, h: roofH },
+      buildingLight,
+      {
+        alpha,
+        highlightColor: mixRgb(roofTint, buildingLight.lightColor, 0.44),
+        shadowColor: mixRgb(roofTint, buildingLight.shadowColor, 0.24),
+        corner: rBody,
+        sideK: 0.28,
+        topK: 0.18,
+        shadowK: 0.12,
+      }
+    );
+  }
 
   // --- Solar panels (bigger, slightly above roof top line, side-linked tilt)
-  {
+  if (shouldDrawColorDetails) {
     const hasPanels = Math.floor(r6 * 3) !== 0; // ~2/3 of houses
     const vis = Math.max(0, Math.min(1, (u - 0.80) / 0.20));
     const tinyRoof = localTile <= 8 || pxW < 18 || roofH < 3;
@@ -657,7 +669,7 @@ export function drawHouse(
     const cy = roofY;
 
     // smoke behind chimney
-    {
+    if (shouldDrawColorDetails) {
       const smokeColW = Math.max(2, Math.round(Math.max(cW, localTileW * 0.18) * smokeScale.columnW));
       const smokeColH = Math.max(
         Math.round(localTileH * 1.6),
@@ -677,8 +689,8 @@ export function drawHouse(
       const spawnY1 = Math.max(val(SMOKE.spawnY, u), 1 - (1 - val(SMOKE.spawnY, u)));
 
       const count     = Math.max(4, Math.floor(val(SMOKE.count, u) * smokeScale.count));
-      const sizeMin   = val(SMOKE.sizeMin, u) * smokeScale.size * spriteScale;
-      const sizeMax   = Math.max(sizeMin, val(SMOKE.sizeMax, u) * smokeScale.size * spriteScale);
+      const sizeMin   = val(SMOKE.sizeMin, u) * smokeScale.size * particleSizeK * spriteScale;
+      const sizeMax   = Math.max(sizeMin, val(SMOKE.sizeMax, u) * smokeScale.size * particleSizeK * spriteScale);
       const lifeMin   = Math.max(0.05, val(SMOKE.lifeMin, u) * smokeScale.life);
       const lifeMax   = Math.max(lifeMin, val(SMOKE.lifeMax, u) * smokeScale.life);
       const sAlpha    = Math.max(0, Math.min(255, Math.round(val(SMOKE.alpha, u))));
@@ -729,18 +741,19 @@ export function drawHouse(
         edgeFadePx: { ...SMOKE.edgeFadePx, bottom: bottomFadePx },
 
         color: smokeColor,
+        depthAlpha: particleDepthAlpha(rowBucket),
         respawn: true,
       }, dt);
     }
 
     // chimney on top
-    fillRgb(p, bodyTint, alpha);
+    fillRgb(p, shapePartColor(renderPass, bodyTint, silhouetteColor), massAlpha);
     p.rectMode(p.CORNER);
     p.rect(cx, cy - cH, cW, cH);
   }
 
 // ------- Door (3 profiles: short / mid / tall) -------
-{
+if (shouldDrawColorDetails) {
   let doorTint = pick(pal.door, r5);
   if (gradientRGB) {
     doorTint = blendRGB(doorTint, gradientRGB, val(HOUSE.body.colorBlend, u));
@@ -769,14 +782,15 @@ export function drawHouse(
   const doorH = Math.max(smallScale ? 3 : 6, Math.round(bodyH * cfg.H_FRAC));
 
   const doorX = pxX + (pxW - doorW) / 2;
-  const doorY = bodyY + bodyH - doorH + Math.round(bodyH * cfg.Y_OFFSET_FRAC);
+  const doorDrop = Math.max(1, Math.round(bodyH * 0.035));
+  const doorY = bodyY + bodyH - doorH + Math.round(bodyH * cfg.Y_OFFSET_FRAC) + doorDrop;
 
   fillRgb(p, doorTint, alpha);
   p.rect(doorX, doorY, doorW, doorH, Math.round(cell * 0.03));
 }
 
 // ------- Windows (short / mid / compact-tall / tall; 2 per row; max 8) -------
-{
+if (shouldDrawColorDetails) {
   // lit/dark tints (safe)
   let winLitVariants = Array.isArray(pal.window.lit) ? pal.window.lit : [pal.window.lit];
   let winDark = pal.window.dark;

@@ -8,20 +8,22 @@ import {
   applyShapeMods,
   stepAndDrawPuffs,
   footprintToPx,
+  particleDepthAlpha,
+  particleDepthSizeScale,
+  particleRowBucket,
   particleSizePerspectiveScale,
   particleMotionPerspectiveScale,
 } from "../modifiers/index";
-import type { RGB } from "../modifiers/index";
+import type { NumberRange, RGB } from "../modifiers/index";
 
 import { drawCarAsset } from "./car";
 import type { CarVariant } from "./car";
-import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapePuffOverrides, ShapeSeed } from "./types";
 import { applyExposureContrast } from "./shared/color";
 import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
 import { finiteNumber } from "./shared/numbers";
 import { seeded01 } from "./shared/random";
-
-type NumberRange = [number, number];
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
 interface CarFactoryPalette extends ShapePalette {
   grass: RGB;
@@ -33,22 +35,8 @@ interface CarFactoryPalette extends ShapePalette {
   solarPanel: RGB;
 }
 
-interface SmokeOverrides {
-  count?: number;
-  sizeMin?: number;
-  sizeMax?: number;
-  lifeMin?: number;
-  lifeMax?: number;
-  speedMin?: number;
-  speedMax?: number;
-  gravity?: number;
-  drag?: number;
-  spreadAngle?: number;
-  alpha?: number;
-}
-
 interface CarFactoryOptions extends ShapeDrawOptions<CarFactoryPalette> {
-  smokeOverrides?: SmokeOverrides;
+  smokeOverrides?: ShapePuffOverrides;
   carVariantList?: readonly CarVariant[];
   carVariantCycleMs?: number;
   carVariantFadeMs?: number;
@@ -319,7 +307,17 @@ export function drawCarFactory(
   const ex  = finiteNumber(opts.exposure, 1);
   const ct  = finiteNumber(opts.contrast, 1);
   const tMs = typeof opts.timeMs === 'number' ? opts.timeMs : p.millis();
-  const particleScale = particleSizePerspectiveScale(f, opts);
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const requestedSilhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : a;
+  const isSilhouettePass = renderPass === "silhouette";
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
+  const rowBucket = particleRowBucket(f, opts);
+  const particleScale = particleSizePerspectiveScale(f, opts) * particleDepthSizeScale(rowBucket);
   const motionScale = particleMotionPerspectiveScale(f, opts);
 
   const { x: x0, y: y0, w: W, h: H } = footprintToPx(f, opts);
@@ -339,6 +337,11 @@ export function drawCarFactory(
     },
   });
   const alpha = (typeof env.alpha === 'number') ? env.alpha : a;
+  const appearAlphaK = a > 0 ? clamp01(alpha / a) : 1;
+  const silhouetteAlpha = isSilhouettePass
+    ? Math.round(requestedSilhouetteAlpha * appearAlphaK)
+    : alpha;
+  const massAlpha = isSilhouettePass ? silhouetteAlpha : alpha;
 
   // ---- color helpers ----
   const kBlendGeneral = val(CF.blendK, u);
@@ -438,7 +441,7 @@ export function drawCarFactory(
   const roofRw = factoryW + 2 * roofOver;        // width
   const roofRy = slabY - roofH;                  // top Y
 
-  // ---- precompute chimney top for smoke, then draw smoke BEFORE chimney ----
+  // Precompute chimney top for smoke, then draw smoke before chimney.
   const baseW = chimW; // no X-scale clamp on chimney
   const topW  = Math.round(baseW * CF.chimTopNarrowK);
   const chimRise = slabH * CF.chimHeightFrac;
@@ -447,10 +450,10 @@ export function drawCarFactory(
   const bottomY = grassY;
   const topRightX = chimX + (baseW + topW) / 2;
   const topLeftX  = chimX + (baseW - topW) / 2;
-  // world-space top Y after Y-scale about bottom
+  // World-space top Y after Y-scale about bottom.
   const chimneyTopY = topY0 * chimScaleY + bottomY * (1 - chimScaleY);
 
-  // ---- draw (z-order) ----------------------------------------------------
+  // Draw factory parts in local painter order.
   p.push();
   p.translate(env.x, env.y);
   p.scale(env.scaleX, env.scaleY);
@@ -460,13 +463,16 @@ export function drawCarFactory(
   // If you *really* want a clip, prefer the full canvas bounds (when available):
   // if (isSprite && p.width && p.height) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, p.width, p.height); ctx.clip(); }
 
-  // 0) grass (villa-style tint)
-  p.noStroke();
-  p.fill(grass.r, grass.g, grass.b, alpha);
-  p.rect(x0, grassY, W, grassH, rGrassTop, rGrassTop, 0, 0);
+  // The silhouette pass keeps only stable factory mass: grass, chimney, wall, roof, and panels.
+  if (shouldDrawMass) {
+    const grassFill = shapePartColor(renderPass, grass, silhouetteColor);
+    p.noStroke();
+    p.fill(grassFill.r, grassFill.g, grassFill.b, massAlpha);
+    p.rect(x0, grassY, W, grassH, rGrassTop, rGrassTop, 0, 0);
+  }
 
   // 1) SMOKE first (so chimney renders on top of it)
-  {
+  if (shouldDrawColorDetails) {
     // base col dims
     let colW = Math.max(6, Math.round(cell * CF.smoke.colWk));
     let colH = Math.max(24, Math.round(cell * 2 * CF.smoke.colHk));
@@ -539,8 +545,8 @@ export function drawCarFactory(
     );
 
     const dt =
-      (typeof opts.deltaSec === 'number' && opts.deltaSec > 0)
-        ? opts.deltaSec
+      (typeof opts.dtSec === 'number' && opts.dtSec > 0)
+        ? opts.dtSec
         : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
     stepAndDrawPuffs(p, {
@@ -568,6 +574,7 @@ export function drawCarFactory(
       edgeFadePx: isSprite ? { left: 4, right: 4, top: 0, bottom: 10 } : { ...CF.smoke.edgeFadePx, top: 0 },
 
       color: { r: smoked.r, g: smoked.g, b: smoked.b, a: sAlpha },
+      depthAlpha: particleDepthAlpha(rowBucket),
       respawn: true,
     }, dt);
   }
@@ -575,9 +582,10 @@ export function drawCarFactory(
   // (Previously we re-clipped here and later restored; those are gone.)
 
   // 2) CHIMNEY (single shape, no seam) + CAP
-  {
+  if (shouldDrawMass) {
     p.noStroke();
-    p.fill(chimneyRGB.r, chimneyRGB.g, chimneyRGB.b, 255);
+    const chimneyFill = shapePartColor(renderPass, chimneyRGB, silhouetteColor);
+    p.fill(chimneyFill.r, chimneyFill.g, chimneyFill.b, isSilhouettePass ? silhouetteAlpha : 255);
 
     // Y-only scaling, anchored at bottom-center
     p.push();
@@ -608,10 +616,11 @@ export function drawCarFactory(
       b: Math.round(chimneyRGB.b * CF.chimCap.shadeK),
     };
 
-    p.fill(capRGB.r, capRGB.g, capRGB.b, 255);
+    const capFill = shapePartColor(renderPass, capRGB, silhouetteColor);
+    p.fill(capFill.r, capFill.g, capFill.b, isSilhouettePass ? silhouetteAlpha : 255);
     p.rect(capX, capY, capW, capTh, capRad, capRad, capRad, capRad);
 
-    if (CF.chimCap.lipPx > 0) {
+    if (CF.chimCap.lipPx > 0 && shouldDrawColorDetails) {
       const lipH = Math.max(1, Math.round(CF.chimCap.lipPx));
       const lipRGB = {
         r: Math.min(255, capRGB.r + 18),
@@ -627,30 +636,30 @@ export function drawCarFactory(
 
   // 3–8) FACTORY BODY & CONTENT — X-only scale, anchored by side
   p.push();
-  {
+  if (shouldDrawMass) {
     p.translate(bodyAnchorX, 0);
     p.scale(bodyScaleX, 1);
     p.translate(-bodyAnchorX, 0);
 
-    // 3) factory body (wall)
+    const wallFill = shapePartColor(renderPass, wall, silhouetteColor);
     p.noStroke();
-    p.fill(wall.r, wall.g, wall.b, alpha);
+    p.fill(wallFill.r, wallFill.g, wallFill.b, massAlpha);
     p.rect(bodyX, slabY, factoryW, slabH, Math.round(cell * 0.08));
 
-    // 4) roof cap (drawn inside group; panels are drawn outside)
-    {
-      p.noStroke();
-      p.fill(roofRGB.r, roofRGB.g, roofRGB.b, alpha);
-      p.rect(roofRx, roofRy, roofRw, roofH, CF.roofRadiusPx, CF.roofRadiusPx, 0, 0);
-    }
+    const roofFill = shapePartColor(renderPass, roofRGB, silhouetteColor);
+    p.noStroke();
+    p.fill(roofFill.r, roofFill.g, roofFill.b, massAlpha);
+    p.rect(roofRx, roofRy, roofRw, roofH, CF.roofRadiusPx, CF.roofRadiusPx, 0, 0);
 
     // 5) backdrop (behind car) within the frame area
-    p.noStroke();
-    p.fill(backdrop.r, backdrop.g, backdrop.b, alpha);
-    p.rect(frameX, frameY, frameW, frameH, CF.frameRadiusPx);
+    if (shouldDrawColorDetails) {
+      p.noStroke();
+      p.fill(backdrop.r, backdrop.g, backdrop.b, alpha);
+      p.rect(frameX, frameY, frameW, frameH, CF.frameRadiusPx);
+    }
 
     // 6) CAR in window — ignore body scale via inverse transform
-    {
+    if (shouldDrawColorDetails) {
       const cx = winX + winW / 2;
       const bottomPad = Math.max(2, Math.round(winH * 0.10));
       const wheelBaselineY = winY + winH - bottomPad;
@@ -730,7 +739,7 @@ export function drawCarFactory(
     }
 
     // 7) FRAME RING WITH HOLE (even-odd)
-    {
+    if (shouldDrawColorDetails) {
       const ctx2 = p.drawingContext;
       ctx2.save();
       ctx2.beginPath();
@@ -742,7 +751,7 @@ export function drawCarFactory(
     }
 
     // 8) GLASS pane — smaller stroke, even less opaque
-    {
+    if (shouldDrawColorDetails) {
       const strokeRGB = {
         r: Math.round(wall.r * 0.82),
         g: Math.round(wall.g * 0.86),
@@ -803,16 +812,19 @@ export function drawCarFactory(
         p.scale(sPanels, sPanels);
         p.rotate(tilt);
 
-        p.fill(panelTint0.r, panelTint0.g, panelTint0.b, alpha);
+        const panelFill = shapePartColor(renderPass, panelTint0, silhouetteColor);
+        p.fill(panelFill.r, panelFill.g, panelFill.b, massAlpha);
         p.rect(-pW / 2, -pH, pW, pH, corner);
 
-        const hi = {
-          r: Math.min(255, panelTint0.r + 22),
-          g: Math.min(255, panelTint0.g + 22),
-          b: Math.min(255, panelTint0.b + 22),
-        };
-        p.fill(hi.r, hi.g, hi.b, Math.round(alpha * 0.35));
-        p.rect(-pW * 0.53, -pH * 0.88, pW * 0.70, pH * 0.10, corner);
+        if (shouldDrawColorDetails) {
+          const hi = {
+            r: Math.min(255, panelTint0.r + 22),
+            g: Math.min(255, panelTint0.g + 22),
+            b: Math.min(255, panelTint0.b + 22),
+          };
+          p.fill(hi.r, hi.g, hi.b, Math.round(alpha * 0.35));
+          p.rect(-pW * 0.53, -pH * 0.88, pW * 0.70, pH * 0.10, corner);
+        }
 
         p.pop();
       }

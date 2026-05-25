@@ -1,4 +1,4 @@
-// src/canvas-engine/shapes/snow.js
+// src/canvas-engine/shapes/snow.ts
 import {
   clamp01,
   val,
@@ -11,6 +11,8 @@ import {
   displacementOsc,
   stepAndDrawPuffs,
   particleBucketRange,
+  particleDepthAlpha,
+  particleDepthSizeScale,
   particleRowBucket,
   footprintToPx,
   rowHeightAt,
@@ -20,11 +22,10 @@ import {
   mixRgb,
   paintPixelLightBands,
 } from "../modifiers/index";
-import type { LightClosenessBandMap, RGB } from "../modifiers/index";
+import type { LightClosenessBandMap, NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
 import { applyExposureContrast } from "./shared/color";
-
-type NumberRange = [number, number];
+import { applyDepthTint } from "./shared/depthTint";
 
 interface SnowPalette extends ShapePalette {
   cloud: RGB;
@@ -34,13 +35,7 @@ interface SnowPalette extends ShapePalette {
 }
 
 interface SnowOptions extends ShapeDrawOptions<SnowPalette> {
-  appearX?: number;
-  appearY?: number;
-  appearScaleX?: number;
-  appearScaleY?: number;
-  cloudAlpha?: number;
   showGround?: boolean;
-  hideGroundAboveRow?: number;
   hideGroundAboveFrac?: number;
   hideGroundBelowBucketT?: number;
 }
@@ -60,17 +55,6 @@ const SNOW_DARK_PALETTE: SnowPalette = {
   },
   flake:  { r: 160, g: 174, b: 208 },
   ground: { r: 148, g: 162, b: 194 },
-};
-
-const SNOW_FAR_DEPTH_TINT: { cloud: { light: RGB; dark: RGB }; flake: { light: RGB; dark: RGB } } = {
-  cloud: {
-    light: { r: 255, g: 222, b: 230 },
-    dark:  { r: 255, g: 150, b: 174 },
-  },
-  flake: {
-    light: { r: 255, g: 228, b: 236 },
-    dark:  { r: 248, g: 184, b: 200 },
-  },
 };
 
 /* Cloud tuning */
@@ -192,7 +176,6 @@ export function drawSnow(
   const exposure = typeof opts.exposure === "number" && Number.isFinite(opts.exposure) ? opts.exposure : 1;
   const contrast = typeof opts.contrast === "number" && Number.isFinite(opts.contrast) ? opts.contrast : 1;
   const rowBucket = particleRowBucket(f, opts);
-  const farDepthK = Math.pow(clamp01(1 - rowBucket.t), 1.15);
 
   const t = ((typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
   const u = clamp01(opts.liveAvg ?? 0.5);
@@ -202,34 +185,24 @@ export function drawSnow(
       : (((f.r0 * 73856093) ^ (f.c0 * 19349663) ^ (f.w * 83492791) ^ (f.h * 29791)) >>> 0);
 
   // tile anchors
+  const visualRow = f.r0 + f.h - 1;
   const { x: fpX, y: y0, w: fpW, h: fpH } = footprintToPx(f, opts);
-  const topCellW = rowWidthAt(f.r0, opts);
-  const wTop = f.w * topCellW;
+  // Snow clouds are sky-like multi-row footprints, so size their body from the
+  // depth row used by footprintToPx instead of the footprint's top row.
+  const visualCellW = rowWidthAt(visualRow, opts);
+  const wTop = f.w * visualCellW;
   const footprintCx = fpX + fpW / 2;
   const x0 = footprintCx - wTop / 2;
-  const hTop = rowHeightAt(f.r0, opts);
+  const hTop = rowHeightAt(visualRow, opts);
 
-  // cloud visual center (also the local origin for appear transforms)
+  // Cloud visual center. Ground, cloud body, and particles all line up from here.
   const cx = footprintCx;
   const cy = y0 + hTop * 0.62;
 
-  /* ───────── appear (shared by ground + cloud) ───────── */
-  const appear = {
-    alpha: typeof opts.alpha === "number" && Number.isFinite(opts.alpha) ? opts.alpha : 235,
-    x: (opts.appearX ?? cx),
-    y: (opts.appearY ?? cy),
-    scaleX: typeof opts.appearScaleX === "number" && Number.isFinite(opts.appearScaleX) ? opts.appearScaleX : 1,
-    scaleY: typeof opts.appearScaleY === "number" && Number.isFinite(opts.appearScaleY) ? opts.appearScaleY : 1,
-  };
-  const aDraw = appear.alpha;
-  const dx = appear.x - cx;
-  const dy = appear.y - cy;
+  const drawAlpha = typeof opts.alpha === "number" && Number.isFinite(opts.alpha) ? opts.alpha : 235;
 
-  /* ───────── resolve ground visibility knobs ───────── */
+  // Resolve ground visibility from the row/bucket knobs the runtime actually passes.
   let showGround = opts.showGround !== false; // default true
-  if (showGround && typeof opts.hideGroundAboveRow === 'number') {
-    if (f.r0 <= opts.hideGroundAboveRow) showGround = false;
-  }
   if (
     showGround &&
     typeof opts.hideGroundAboveFrac === 'number' &&
@@ -247,7 +220,7 @@ export function drawSnow(
     showGround = false;
   }
 
-  /* ───────── GROUND STRIP (translated + scaled with appear) ───────── */
+  // Ground strip. It uses local coordinates so the cloud and strip stay aligned.
   if (showGround) {
     const baseH  = Math.max(4, Math.round(cell / 3));
     const kY     = val(SGROUND.scaleY, u);
@@ -263,16 +236,14 @@ export function drawSnow(
     const mixed = gradientRGB ? blendRGB(base, gradientRGB, gBlend) : base;
     const groundLRange = opts.darkMode ? [0.62, 0.78] : SGROUND.lightnessRange;
     let clamped   = clampBrightness(mixed, groundLRange[0], groundLRange[1]);
-    clamped       = applyExposureContrast(clamped, exposure, contrast);
+    clamped       = applyDepthTint(applyExposureContrast(clamped, exposure, contrast), opts);
 
     const rTop = Math.round(cell * 0.06);
 
-    // draw in local space around (cx,cy) so appear scale feels natural
     p.push();
-    p.translate(appear.x, appear.y);
-    p.scale(appear.scaleX, appear.scaleY);
+    p.translate(cx, cy);
     p.noStroke();
-    p.fill(clamped.r, clamped.g, clamped.b, aDraw); // ← use appear alpha
+    p.fill(clamped.r, clamped.g, clamped.b, drawAlpha);
       p.rect(
       (fpX - cx),
       (topY - cy),
@@ -291,7 +262,7 @@ export function drawSnow(
       { x: (fpX - cx), y: (topY - cy), w: fpW, h: stripH },
       groundLight,
       {
-        alpha: aDraw,
+        alpha: drawAlpha,
         highlightColor: groundHighlight,
         shadowColor: groundShadow,
         corner: rTop,
@@ -304,7 +275,7 @@ export function drawSnow(
     }
   }
 
-  /* ───────── CLOUD GEOMETRY / TINT ───────── */
+  // Cloud geometry and tint.
   const wEnv     = wTop * val(SCLOUD.widthEnv,  u);
   const hEnv     = hTop * val(SCLOUD.heightEnv, u);
   const spreadX  = val(SCLOUD.spreadX, u);
@@ -325,13 +296,9 @@ export function drawSnow(
 
   const cloudBlend = val(SCLOUD.blend, u);
   const cloudPalette = pickLightBandValue(pal.cloud, pal.cloudByLight, cloudLight.closenessK);
-  let baseTint = gradientRGB
+  const baseTint = gradientRGB
     ? blendRGB(cloudPalette, gradientRGB, cloudBlend)
     : cloudPalette;
-  if (farDepthK > 0.001) {
-    const farCloudTint = opts.darkMode ? SNOW_FAR_DEPTH_TINT.cloud.dark : SNOW_FAR_DEPTH_TINT.cloud.light;
-    baseTint = mixRgb(baseTint, farCloudTint, (opts.darkMode ? 0.22 : 0.12) * farDepthK);
-  }
 
   const sMax = Math.max(0, Math.min(1, val(SCLOUD.sCap, u)));
   const { h, s, l } = rgbToHsl(baseTint);
@@ -346,16 +313,25 @@ export function drawSnow(
   cloudRgb = clampBrightness(cloudRgb, cloudLRange[0], cloudLRange[1]);
   cloudRgb = applyExposureContrast(cloudRgb, exposure, contrast);
   cloudRgb = mixRgb(cloudRgb, cloudLight.lightColor, 0.16 * cloudLight.overallK);
+  cloudRgb = applyDepthTint(cloudRgb, opts);
   const cloudHighlight = mixRgb(cloudRgb, cloudLight.lightColor, 0.34);
   const cloudShadow = mixRgb(cloudRgb, cloudLight.shadowColor, 0.22);
 
-  /* ───────── PARTICLES (translate only; no scale) ───────── */
+  // Particles stay in screen-space motion; they are not part of the silhouette/depth pass.
   const of     = Math.max(0, Math.min(1, val(SNOW.emitterOverflowFrac, u)));
   const extraW = Math.round(wTop * of);
   const emitW  = wTop + extraW;
-  const emitX  = (x0 - Math.round(extraW / 2)) + dx; // translation only
-  const emitY  = (y0 + hTop * 0.6) + dy;             // translation only
+  const emitX  = x0 - Math.round(extraW / 2);
+  const emitY  = y0 + hTop * 0.6;
   const snowRect = { x: emitX, y: emitY, w: emitW, h: hTop * 2.2 };
+  // Wide snowfall needs a real side fade. The emitter culls at its rect edge,
+  // so a 2px fade makes the right side feel clipped when the plume spreads out.
+  const sideFadePx = Math.round(
+    Math.max(
+      SNOW.edgeFadePx.right,
+      Math.min(28, Math.max(8, emitW * 0.075))
+    )
+  );
 
   const sxA = val(SNOW.spawnX, 0), sxB = val(SNOW.spawnX, 1);
   const syA = val(SNOW.spawnY, 0), syB = val(SNOW.spawnY, 1);
@@ -367,8 +343,9 @@ export function drawSnow(
   const baseCount = Math.max(6, Math.floor(val(SNOW.count, u)));
 
   const horizonScale = snowRowContextScale(rowBucket.t);
+  const particleSizeK = particleDepthSizeScale(rowBucket);
   const spriteScale      = Math.max(1, (opts.pixelScale ?? opts.coreScaleMult ?? 1));
-  const sizeK     = horizonScale.size * Math.pow(spriteScale, 1.75);
+  const sizeK     = horizonScale.size * particleSizeK * Math.pow(spriteScale, 1.75);
   const speedK    = horizonScale.motion * spriteScale * 1.35;
   const gravityK  = horizonScale.motion * spriteScale * 1.35;
   const lifeK     = horizonScale.life * Math.pow(spriteScale, 5);
@@ -394,13 +371,9 @@ export function drawSnow(
 
   let flakeBase  = oscillateSaturation(pal.flake, t, { amp: satAmp, speed: satSpd, phase: 0 });
   flakeBase = gradientRGB ? blendRGB(flakeBase, gradientRGB, blendK) : flakeBase;
-  if (farDepthK > 0.001) {
-    const farFlakeTint = opts.darkMode ? SNOW_FAR_DEPTH_TINT.flake.dark : SNOW_FAR_DEPTH_TINT.flake.light;
-    flakeBase = mixRgb(flakeBase, farFlakeTint, (opts.darkMode ? 0.12 : 0.06) * farDepthK);
-  }
   const flakeLRange = opts.darkMode ? [0.7, 0.84] : SNOW.lightnessRange;
   flakeBase      = clampBrightness(flakeBase, flakeLRange[0], flakeLRange[1]);
-  flakeBase      = applyExposureContrast(flakeBase, exposure, contrast);
+  flakeBase      = applyDepthTint(applyExposureContrast(flakeBase, exposure, contrast), opts, 0.7);
 
   const snowColor  = { r: flakeBase.r, g: flakeBase.g, b: flakeBase.b, a: alpha };
   const dt = Math.max(0.001, (p.deltaTime || 16) / 1000);
@@ -426,24 +399,19 @@ export function drawSnow(
     lifetime: { min: lifeMin, max: lifeMax },
     fadeInFrac: SNOW.fadeInFrac,
     fadeOutFrac: SNOW.fadeOutFrac,
-    edgeFadePx: SNOW.edgeFadePx,
+    edgeFadePx: { ...SNOW.edgeFadePx, left: sideFadePx, right: sideFadePx },
 
     color: snowColor,
+    depthAlpha: particleDepthAlpha(rowBucket),
     respawn: true,
   }, dt);
 
-  /* ───────── CLOUD (same appear transform; scalable) ───────── */
+  // Cloud body.
   p.push();
-  p.translate(appear.x, appear.y);
-  p.scale(appear.scaleX, appear.scaleY);
+  p.translate(cx, cy);
   p.noStroke();
-  p.fill(
-    cloudRgb.r,
-    cloudRgb.g,
-    cloudRgb.b,
-    typeof opts.cloudAlpha === "number" && Number.isFinite(opts.cloudAlpha) ? opts.cloudAlpha : aDraw
-  );
-  const cloudAlpha = typeof opts.cloudAlpha === "number" && Number.isFinite(opts.cloudAlpha) ? opts.cloudAlpha : aDraw;
+  p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, drawAlpha);
+  const cloudAlpha = drawAlpha;
   const wobbleAmpX = Math.max(0.8, hTop * 0.045);
   const wobbleAmpY = Math.max(0.5, hTop * 0.035);
   const wobbleAmpS = 0.045;

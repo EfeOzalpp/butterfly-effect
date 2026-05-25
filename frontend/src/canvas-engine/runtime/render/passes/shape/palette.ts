@@ -1,8 +1,7 @@
-// src/canvas-engine/runtime/render/palette.ts
+// src/canvas-engine/runtime/render/passes/shape/palette.ts
 
-import { gradientColor, VIVID_COLOR_STOPS } from "../../modifiers/index";
-
-export interface RGB { r: number; g: number; b: number }
+import { gradientColor, VIVID_COLOR_STOPS } from "../../../../modifiers/index";
+import type { RGB } from "../../../../modifiers/index";
 
 export interface PaletteCache {
   lastU: number;
@@ -12,7 +11,6 @@ export interface PaletteCache {
 export function createPaletteCache(): PaletteCache {
   return { lastU: NaN, cachedGradient: null };
 }
-
 
 export function getGradientRGB(params: {
   liveAvg: number;

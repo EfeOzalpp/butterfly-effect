@@ -1,15 +1,10 @@
-// Runtime-owned mutable state and its defaults.
+// Runtime-owned mutable style/input defaults.
 // This file should not draw anything or reach into DOM setup.
 // It only says what state the engine starts with.
 
-import type { EngineFieldItem } from "./field";
 import type { RGB } from "../../modifiers/index";
-
-import type { GridCacheState } from "../geometry/gridCache";
-import type { LiveState } from "./itemLifecycle";
-import type { Ghost } from "../render/ghosts";
-import type { DebugFlags } from "../debug/flags";
-import { DEBUG_DEFAULT } from "../debug/flags";
+import { DEBUG_DEFAULT, type DebugFlags } from "../debug";
+import type { EngineFieldItem } from "./field";
 
 export interface EngineStyle {
   // Base visual knobs. These are changed through controls.setFieldStyle().
@@ -22,11 +17,11 @@ export interface EngineStyle {
 
   // Timing knobs for item enter/exit behavior.
   appearMs: number;
+  appearStaggerMs: number;
   exitMs: number;
 
   // Environment switches passed down into render/fog/shape behavior.
   darkMode: boolean;
-  isRealMobile: boolean;
   fog: boolean;
 
   // Debug flags are kept with style because they change what gets rendered.
@@ -52,9 +47,9 @@ export const ENGINE_STYLE_DEFAULT: EngineStyle = {
   exposure: 1.08,
   contrast: 1.03,
   appearMs: 300,
+  appearStaggerMs: 520,
   exitMs: 300,
   darkMode: false,
-  isRealMobile: false,
   fog: true,
   debug: { ...DEBUG_DEFAULT },
 };
@@ -76,18 +71,4 @@ export function createEngineInputs(): EngineInputs {
 // Start hidden and empty. The app owns when to provide items and show them.
 export function createEngineField(): EngineField {
   return { items: [], visible: false };
-}
-
-// Full engine state shape used by lower-level helpers that need the complete runtime bag.
-// Most files should prefer smaller local parameter interfaces instead of taking this whole object.
-export interface EngineState {
-  style: EngineStyle;
-  inputs: EngineInputs;
-  field: EngineField;
-
-  paletteCache: { lastU: number; gradientRGB: { r: number; g: number; b: number } | null };
-  gridCache: GridCacheState;
-
-  liveStates: Map<string, LiveState>;
-  ghosts: Ghost[];
 }

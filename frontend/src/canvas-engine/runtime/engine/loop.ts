@@ -3,9 +3,10 @@
 import type { PLike } from "../p/makeP";
 import { normalizeDprTransform, reassertDprTransformIfMutated } from "../util/transform";
 
-import type { SceneLookupKey } from "../../adjustable-rules/sceneState";
+import type { SceneLookupKey } from "../../scene-state";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
 import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
+import type { RenderCachePolicy } from "../../adjustable-rules/render-cache";
 
 import { getPaddingSpecForState } from "../geometry/padding";
 import { computeGridCached, type GridCacheState, type GridMetrics } from "../geometry/gridCache";
@@ -13,28 +14,32 @@ import { computeGridCached, type GridCacheState, type GridMetrics } from "../geo
 import {
   createBackgroundAnchorContext,
   createBgCache,
-  createBottomFogStepper,
+} from "../render/passes/background";
+import {
+  createFogLayerCache,
   createFogStateCache,
-  createRowLightCache,
-  createSkyFogCache,
   createStarGeometryCache,
   drawBackgroundStarsOnly,
-  drawFogOverlay,
-  drawSkyFogLightOverlay,
-} from "../render/atmosphere";
-import { drawGridOverlay } from "../render/gridOverlay";
-import { sortItemsForRenderInto } from "../render/itemOrder";
-import { getGradientRGB, type PaletteCache } from "../render/palette";
+} from "../render/passes/atmosphere";
+import { createRowLightCache } from "../render/passes/light";
+import { drawGridOverlay, type DebugFlags } from "../debug";
 import { drawGhosts, type Ghost } from "../render/ghosts";
-import { drawItems } from "../render/items";
+import {
+  createFarShapeBitmapRenderer,
+  createShapeDepthOverlayRenderer,
+  drawItems,
+  getGradientRGB,
+  resolveShapeDepthTint,
+  sortItemsForRenderInto,
+  type PaletteCache,
+} from "../render/passes/shape";
 import { createSceneLightContext } from "../../modifiers/index";
 
-import { drawItemFromRegistry } from "../shapes/draw";
-import type { ShapeRegistry } from "../shapes/registry";
-import type { RuntimeShapeOptions } from "../shapes/types";
+import { drawItemFromRegistry } from "../shape-adapter/draw";
+import type { ShapeRegistry } from "../shape-adapter/registry";
+import type { RuntimeShapeOptions } from "../shape-adapter/types";
 
 import type { EngineFieldItem } from "./field";
-import type { DebugFlags } from "../debug/flags";
 import type { LiveState } from "./itemLifecycle";
 
 export interface LoopDeps {
@@ -51,9 +56,9 @@ export interface LoopDeps {
     exposure: number;
     contrast: number;
     appearMs: number;
+    appearStaggerMs: number;
     exitMs: number;
     darkMode: boolean;
-    isRealMobile: boolean;
     fog: boolean;
     debug: DebugFlags;
   };
@@ -64,6 +69,7 @@ export interface LoopDeps {
   getSceneLookup: () => SceneLookupKey;
   getPaddingSpecOverride: () => CanvasPaddingSpec | null;
   getBackgroundSpecOverride: () => BackgroundSpec | null;
+  getRenderCachePolicy: () => RenderCachePolicy;
 
   // caches
   gridCache: GridCacheState;
@@ -74,9 +80,6 @@ export interface LoopDeps {
 
   // shapes
   shapeRegistry: ShapeRegistry;
-
-  // ordering
-  Z: Record<string, number>;
 }
 
 export function createEngineTicker(deps: LoopDeps) {
@@ -88,13 +91,13 @@ export function createEngineTicker(deps: LoopDeps) {
     getSceneLookup,
     getPaddingSpecOverride,
     getBackgroundSpecOverride,
+    getRenderCachePolicy,
     gridCache,
     paletteCache,
 
     liveStates,
     ghostsRef,
     shapeRegistry,
-    Z,
   } = deps;
 
   let running = true;
@@ -102,28 +105,28 @@ export function createEngineTicker(deps: LoopDeps) {
   // Offscreen caches — redrawn only when inputs change, blitted each frame
   const bgCache = createBgCache();
   const rowLightCache = createRowLightCache();
-  const skyFogCache = createSkyFogCache();
+  const fogLayerCache = createFogLayerCache();
   const fogStateCache = createFogStateCache();
   const starGeometryCache = createStarGeometryCache();
+  const drawFarShapeBitmap = createFarShapeBitmapRenderer(
+    () => getRenderCachePolicy().farShapeBitmap
+  );
+  const drawShapeDepthOverlay = createShapeDepthOverlayRenderer(
+    () => getRenderCachePolicy().shapeDepthMask
+  );
 
   const sortedItemsScratch: EngineFieldItem[] = [];
-  const regularItemsScratch: EngineFieldItem[] = [];
-  const fogForegroundItemsScratch: EngineFieldItem[] = [];
-  const regularSharedScratch: RuntimeShapeOptions = {};
-  const fogForegroundSharedScratch: RuntimeShapeOptions = {};
-  const regularShapeOccurrenceScratch = new Map<string, number>();
-  const fogForegroundShapeOccurrenceScratch = new Map<string, number>();
+  const sharedScratch: RuntimeShapeOptions = {};
+  const shapeOccurrenceScratch = new Map<string, number>();
 
   let sortedItemsSource: EngineFieldItem[] | null = null;
   let sortedItemsMetrics: GridMetrics | null = null;
-  let sortedItemsZ: Record<string, number> | null = null;
 
   function sortedItemsForFrame(items: EngineFieldItem[], metrics: GridMetrics): EngineFieldItem[] {
-    if (items !== sortedItemsSource || metrics !== sortedItemsMetrics || Z !== sortedItemsZ) {
-      sortItemsForRenderInto(sortedItemsScratch, items, { Z, gridMetrics: metrics });
+    if (items !== sortedItemsSource || metrics !== sortedItemsMetrics) {
+      sortItemsForRenderInto(sortedItemsScratch, items, { gridMetrics: metrics });
       sortedItemsSource = items;
       sortedItemsMetrics = metrics;
-      sortedItemsZ = Z;
     }
     return sortedItemsScratch;
   }
@@ -145,6 +148,15 @@ export function createEngineTicker(deps: LoopDeps) {
       sharedOpts.gradientRGB = itemGradient;
       sharedOpts.rootAppearK = rootAppearK;
       sharedOpts.usedRows = gridCache.usedRows;
+      const depthTint = resolveShapeDepthTint({
+        p,
+        item: it,
+        gridMetrics: gridCache.metrics,
+        shapeAlpha: sharedOpts.alpha,
+        darkMode: sharedOpts.darkMode,
+      });
+      sharedOpts.depthTintColor = depthTint?.color;
+      sharedOpts.depthTintK = depthTint?.blend;
 
       // Override cell/cellW/cellH with the actual tile size for this item's row.
       // baseShared carries the horizon reference (smallest tile); shapes that use
@@ -153,17 +165,37 @@ export function createEngineTicker(deps: LoopDeps) {
       const fp = it.footprint;
       const m = gridCache.metrics;
       if (fp != null && m.rowHeights.length > 0) {
-        // cellH/cell use bottomRow to avoid pxH mismatch on multi-row shapes.
-        // cellW uses r0 (top row) to match cellAnchorToPx2 which uses r0 for x.
+        // Use the footprint's bottom row for the whole local tile contract.
+        // footprintToPx/cellAnchorToPx2 use the same row, so the color pass and
+        // baked depth mask do not drift on multi-row perspective shapes.
         const r0 = fp.r0;
         const bottomRow = r0 + fp.h - 1;
         sharedOpts.cell  = m.rowHeights[bottomRow]  ?? gridCache.cellH;
         sharedOpts.cellH = m.rowHeights[bottomRow]  ?? gridCache.cellH;
-        sharedOpts.cellW = m.cellWPerRow[r0]        ?? gridCache.cellW;
+        sharedOpts.cellW = m.cellWPerRow[bottomRow] ?? gridCache.cellW;
 
       }
 
-      drawItemFromRegistry(shapeRegistry, p, it, rEff, sharedOpts);
+      const drewCachedShape = drawFarShapeBitmap({
+        p,
+        shapeRegistry,
+        item: it,
+        rEff,
+        sharedOptions: sharedOpts,
+        gridMetrics: gridCache.metrics,
+      });
+      if (!drewCachedShape) {
+        drawItemFromRegistry(shapeRegistry, p, it, rEff, sharedOpts);
+      }
+
+      drawShapeDepthOverlay({
+        p,
+        shapeRegistry,
+        item: it,
+        rEff,
+        sharedOptions: sharedOpts,
+        shapeWasDrawnLive: !drewCachedShape,
+      });
     } finally {
       p.pop();
       reassertDprTransformIfMutated(p);
@@ -192,9 +224,15 @@ export function createEngineTicker(deps: LoopDeps) {
       padding: spec,
       metrics: grid.metrics,
     });
+    const fog = style.fog ? fogStateCache({
+      p,
+      metrics: grid.metrics,
+      darkMode: style.darkMode,
+    }) : null;
 
     bgCache(p, sceneLookup, currentBgSpec, liveAvgSignal, backgroundAnchors);
     drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, starGeometryCache);
+    fogLayerCache(p, fog);
 
     drawGridOverlay(
       p,
@@ -224,15 +262,11 @@ export function createEngineTicker(deps: LoopDeps) {
     });
 
     const sortedItems = sortedItemsForFrame(field.items, grid.metrics);
-    regularItemsScratch.length = 0;
-    fogForegroundItemsScratch.length = 0;
     let lightItem: EngineFieldItem | null = null;
     for (const item of sortedItems) {
       if (item.shape === "sun") {
-        lightItem ??= item;
-        fogForegroundItemsScratch.push(item);
-      } else {
-        regularItemsScratch.push(item);
+        lightItem = item;
+        break;
       }
     }
 
@@ -274,83 +308,29 @@ export function createEngineTicker(deps: LoopDeps) {
         { renderOneSandboxed(it, rEff, shared, rootAppearK); },
     });
 
-    const fog = style.fog ? fogStateCache({
-      p,
-      metrics: grid.metrics,
-      darkMode: style.darkMode,
-      isRealMobile: style.isRealMobile,
-      horizonPos: spec.horizonPos,
-    }) : null;
-
     rowLightCache({
       p,
       metrics: grid.metrics,
       light: sceneLight,
       alpha: style.darkMode ? 0.18 : 0.11,
-      minRow: fog ? fog.fogPeakRow + 1 : 0,
+      minRow: 0,
     });
 
-    const bottomFogStepper = fog ? createBottomFogStepper(p, fog) : null;
-
     drawItems({
-      items: regularItemsScratch,
+      items: sortedItems,
       visible: field.visible,
       nowMs: tMs,
       appearMs: style.appearMs,
-      Z,
+      appearStaggerMs: style.appearStaggerMs,
       liveStates,
       perShapeScale: style.perShapeScale,
       baseR: style.r,
       baseShared,
-      gridMetrics: grid.metrics,
-      itemsAreSorted: true,
-      sharedScratch: regularSharedScratch,
-      shapeOccurrenceScratch: regularShapeOccurrenceScratch,
+      sharedScratch,
+      shapeOccurrenceScratch,
       renderOne: (it, rEff, shared, rootAppearK) =>
         { renderOneSandboxed(it, rEff, shared, rootAppearK); },
-      onBeforeGroundItem: bottomFogStepper ? ({ depth }) => {
-        bottomFogStepper.drawUntilDepth(depth);
-      } : undefined,
-      onAfterRowGroup: bottomFogStepper ? () => {
-        bottomFogStepper.drawNext();
-      } : undefined,
     });
-
-    if (bottomFogStepper) {
-      bottomFogStepper.drawRemaining();
-    }
-
-    if (fog) {
-      skyFogCache(p, fog);
-      drawSkyFogLightOverlay({
-        p,
-        fog,
-        light: sceneLight,
-        alpha: style.darkMode ? 0.22 : 0.14,
-      });
-    }
-
-    drawFogOverlay(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, backgroundAnchors);
-
-    if (fogForegroundItemsScratch.length > 0) {
-      drawItems({
-        items: fogForegroundItemsScratch,
-        visible: field.visible,
-        nowMs: tMs,
-        appearMs: style.appearMs,
-        Z,
-        liveStates,
-        perShapeScale: style.perShapeScale,
-        baseR: style.r,
-        baseShared,
-        gridMetrics: grid.metrics,
-        itemsAreSorted: true,
-        sharedScratch: fogForegroundSharedScratch,
-        shapeOccurrenceScratch: fogForegroundShapeOccurrenceScratch,
-        renderOne: (it, rEff, shared, rootAppearK) =>
-          { renderOneSandboxed(it, rEff, shared, rootAppearK); },
-      });
-    }
   }
 
   return {

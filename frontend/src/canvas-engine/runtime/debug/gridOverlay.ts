@@ -1,4 +1,4 @@
-// src/canvas-engine/runtime/render/gridOverlay.ts
+// src/canvas-engine/runtime/debug/gridOverlay.ts
 
 import type { PLike } from "../p/makeP";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";

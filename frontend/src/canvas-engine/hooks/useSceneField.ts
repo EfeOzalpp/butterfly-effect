@@ -7,10 +7,10 @@ import type { HostId } from "../multi-canvas-setup/hostDefs";
 import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 import type { CanvasEngineControls } from "../runtime";
 
-import { resolveSceneState } from "../adjustable-rules/sceneState";
-import type { BaseMode, SceneLookupKey } from "../adjustable-rules/sceneState";
+import { resolveSceneState } from "../scene-state";
+import type { BaseMode, SceneLookupKey } from "../scene-state";
 
-import { resolvePaddingSpec } from "../adjustable-rules/resolvePadding";
+import { resolvePaddingSpec } from "../adjustable-rules/canvas-padding";
 
 import { getCanvasMeta } from "../runtime/p/canvasMeta";
 import { getViewportSize } from "../shared/responsiveness";
@@ -51,7 +51,6 @@ function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
 
 export interface SceneSignals {
   questionnaireOpen: boolean;
-  isRealMobile: boolean;
 }
 
 export function useSceneField(
@@ -71,7 +70,7 @@ export function useSceneField(
   const ruleset = hostDef.scene.ruleset;
 
   const baseMode: BaseMode = hostDef.scene.baseMode;
-  const { questionnaireOpen, isRealMobile } = signals;
+  const { questionnaireOpen } = signals;
 
   // Recompose field when the actual canvas size changes, even if viewport size does not.
   useEffect(() => {
@@ -149,7 +148,8 @@ export function useSceneField(
     const spec = resolvePaddingSpec(ruleWidthPx, profile.padding);
     engineControls.setPaddingSpec(spec);
     engineControls.setBackgroundSpec(profile.background);
-    engineControls.setFieldStyle({ darkMode, isRealMobile });
+    engineControls.setRenderCachePolicy(profile.renderCache);
+    engineControls.setFieldStyle({ darkMode });
 
     engineControls.setFieldItems(result.placed);
     engineControls.setFieldVisible(result.placed.length > 0);
@@ -166,6 +166,5 @@ export function useSceneField(
     ruleset,
     reservedFootprints,
     darkMode,
-    isRealMobile,
   ]);
 }

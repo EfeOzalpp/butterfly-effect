@@ -1,7 +1,7 @@
 // src/canvas-engine/scene-logic/composeField.ts
 
 import { deviceType } from "../shared/responsiveness";
-import { resolvePaddingSpec } from "../adjustable-rules/resolvePadding";
+import { resolvePaddingSpec } from "../adjustable-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
 import { SHAPES, SHAPE_TO_COND } from "../adjustable-rules/shapeCatalog";
 import { footprintForShape } from "../adjustable-rules/conditionFootprints";

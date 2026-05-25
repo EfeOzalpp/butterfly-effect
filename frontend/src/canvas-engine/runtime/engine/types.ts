@@ -1,11 +1,12 @@
-import type { SceneLookupKey } from "../../adjustable-rules/sceneState";
+import type { SceneLookupKey } from "../../scene-state";
 import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
 import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
+import type { RenderCachePolicy } from "../../adjustable-rules/render-cache";
 import type { EngineLayoutMode } from "../platform/mount";
 import type { DprMode } from "../platform/viewport";
 import type { CanvasBounds } from "../../multi-canvas-setup/hostDefs";
-import type { ShapeRegistry } from "../shapes/registry";
-import type { DebugFlags } from "../debug/flags";
+import type { ShapeRegistry } from "../shape-adapter/registry";
+import type { DebugFlags } from "../debug";
 import type { RGB } from "../../modifiers/index";
 import type { EngineFieldItem } from "./field";
 
@@ -25,9 +26,9 @@ export interface EngineFieldStyle {
   exposure?: number;
   contrast?: number;
   appearMs?: number;
+  appearStaggerMs?: number;
   exitMs?: number;
   darkMode?: boolean;
-  isRealMobile?: boolean;
   fog?: boolean;
   debug?: Partial<DebugFlags>;
 }
@@ -47,6 +48,7 @@ export interface EngineControls {
   // Optional escape hatches: if caller already resolved these, runtime uses them.
   setPaddingSpec: (spec: CanvasPaddingSpec | null) => void;
   setBackgroundSpec: (spec: BackgroundSpec | null) => void;
+  setRenderCachePolicy: (policy: RenderCachePolicy | null) => void;
 
   setVisible: (v: boolean) => void;
 

@@ -19,6 +19,7 @@ import { applyExposureContrast, fillRgb } from "./shared/color";
 import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
 import { finiteNumber } from "./shared/numbers";
 import { pick, pickByOccurrence, seeded01, shapeHash32 } from "./shared/random";
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
 interface BusPalette extends ShapePalette {
   grass: RGB[];
@@ -134,6 +135,15 @@ export function drawBus(
   const ct = finiteNumber(opts.contrast, 1);
   const alpha = finiteNumber(opts.alpha, 235);
   const u = clamp01(opts.liveAvg ?? 0.5);
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const silhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : alpha;
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
+  const massAlpha = renderPass === "silhouette" ? silhouetteAlpha : alpha;
 
   const cell = opts.cell;
   const f = opts.footprint;
@@ -207,13 +217,17 @@ export function drawBus(
   }
 
   p.noStroke();
-  fillRgb(p, grassTint, alpha);
-  p.rect(tileX, grassY, tileW, grassH, r * 0.18);
+  if (shouldDrawMass) {
+    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    p.rect(tileX, grassY, tileW, grassH, r * 0.18);
+  }
 
-  let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
-  aspColor = clampBrightness(aspColor, val(BUS.asphalt.min, u), val(BUS.asphalt.max, u));
-  fillRgb(p, aspColor, alpha);
-  p.rect(tileX, aspY, tileW, aspH, r * 0.14);
+  if (shouldDrawColorDetails) {
+    let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
+    aspColor = clampBrightness(aspColor, val(BUS.asphalt.min, u), val(BUS.asphalt.max, u));
+    fillRgb(p, aspColor, alpha);
+    p.rect(tileX, aspY, tileW, aspH, r * 0.14);
+  }
 
   const wheelY = aspY + aspH * 0.25;
   const designW = r * 6.4;
@@ -241,42 +255,48 @@ export function drawBus(
     const busHighlight = mixRgb(litBodyTint, bodyLight.lightColor, 0.46);
     const busShadow = mixRgb(litBodyTint, bodyLight.shadowColor, 0.28);
 
-    const wheelD = Math.max(3, r * 0.85);
-    fillRgb(p, pal.wheel, 255);
-    p.circle(busX + w * 0.22, wheelY, wheelD);
-    p.circle(busX + w * 0.38, wheelY, wheelD);
-    p.circle(busX + w * 0.78, wheelY, wheelD);
-
-    fillRgb(p, litBodyTint, 255);
-    p.rect(busX, bodyY, w, bodyH, r * 0.22);
-    paintPixelLightBands(p, { x: busX, y: bodyY, w, h: bodyH }, bodyLight, {
-      alpha: 255,
-      highlightColor: busHighlight,
-      shadowColor: busShadow,
-      corner: Math.round(r * 0.22),
-      sideK: 0.40,
-      topK: 0.24,
-      shadowK: 0.16,
-    });
-
-    fillRgb(p, winTint, 255);
-    const smallCount = 4;
-    const gap = w * 0.02;
-    const frontW = Math.max(w * 0.20, r * 2.4);
-    const winH = bodyH * 0.42;
-    const winY = bodyY + bodyH * 0.20;
-    const usableForSmall = w - frontW - gap * (smallCount + 2);
-    const smallW = Math.max(6, usableForSmall / smallCount);
-
-    let wx = busX + gap;
-    for (let i = 0; i < smallCount; i++) {
-      p.rect(wx, winY, smallW, winH, r * 0.08);
-      wx += smallW + gap;
+    if (shouldDrawColorDetails) {
+      const wheelD = Math.max(3, r * 0.85);
+      fillRgb(p, pal.wheel, 255);
+      p.circle(busX + w * 0.22, wheelY, wheelD);
+      p.circle(busX + w * 0.38, wheelY, wheelD);
+      p.circle(busX + w * 0.78, wheelY, wheelD);
     }
 
-    const frontX = busX + w - frontW;
-    const frontY = winY - Math.max(0, r * 0.02);
-    p.rect(frontX, frontY, frontW, winH, r * 0.10, r * 0.30, 0, r * 0.08);
+    if (shouldDrawMass) {
+      fillRgb(p, shapePartColor(renderPass, litBodyTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+      p.rect(busX, bodyY, w, bodyH, r * 0.22);
+    }
+    if (shouldDrawColorDetails) {
+      paintPixelLightBands(p, { x: busX, y: bodyY, w, h: bodyH }, bodyLight, {
+        alpha: 255,
+        highlightColor: busHighlight,
+        shadowColor: busShadow,
+        corner: Math.round(r * 0.22),
+        sideK: 0.40,
+        topK: 0.24,
+        shadowK: 0.16,
+      });
+
+      fillRgb(p, winTint, 255);
+      const smallCount = 4;
+      const gap = w * 0.02;
+      const frontW = Math.max(w * 0.20, r * 2.4);
+      const winH = bodyH * 0.42;
+      const winY = bodyY + bodyH * 0.20;
+      const usableForSmall = w - frontW - gap * (smallCount + 2);
+      const smallW = Math.max(6, usableForSmall / smallCount);
+
+      let wx = busX + gap;
+      for (let i = 0; i < smallCount; i++) {
+        p.rect(wx, winY, smallW, winH, r * 0.08);
+        wx += smallW + gap;
+      }
+
+      const frontX = busX + w - frontW;
+      const frontY = winY - Math.max(0, r * 0.02);
+      p.rect(frontX, frontY, frontW, winH, r * 0.10, r * 0.30, 0, r * 0.08);
+    }
   }
   endFitScale(p);
 

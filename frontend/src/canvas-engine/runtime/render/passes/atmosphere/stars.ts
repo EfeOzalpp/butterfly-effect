@@ -1,7 +1,7 @@
-import type { BackgroundSpec } from "../../../adjustable-rules/backgrounds";
-import type { PLike } from "../../p/makeP";
-import { clamp01 } from "../../../shared/math";
-import { mix } from "./color";
+import type { BackgroundSpec } from "../../../../adjustable-rules/backgrounds";
+import type { PLike } from "../../../p/makeP";
+import { clamp01 } from "../../../../shared/math";
+import { mix } from "../shared/color";
 
 interface StarParticle {
   x: number;
@@ -14,6 +14,39 @@ interface StarParticle {
 function hash01(seed: number) {
   const x = Math.sin(seed * 127.1) * 43758.5453123;
   return x - Math.floor(x);
+}
+
+function gcd(a: number, b: number): number {
+  let x = Math.abs(Math.round(a));
+  let y = Math.abs(Math.round(b));
+  while (y !== 0) {
+    const next = x % y;
+    x = y;
+    y = next;
+  }
+  return x || 1;
+}
+
+function coprimeStride(count: number): number {
+  if (count <= 2) return 1;
+  const target = Math.max(1, Math.round(count * 0.6180339887498948));
+
+  for (let offset = 0; offset < count; offset += 1) {
+    const hi = target + offset;
+    if (hi < count && gcd(hi, count) === 1) return hi;
+
+    const lo = target - offset;
+    if (lo > 0 && gcd(lo, count) === 1) return lo;
+  }
+
+  return 1;
+}
+
+function starX(index: number, count: number, width: number, stride: number): number {
+  if (count <= 1) return width * hash01(index + 1.11);
+
+  const stripe = (index * stride) % count;
+  return ((stripe + hash01(index + 1.11)) / count) * width;
 }
 
 function isRangePair(
@@ -71,9 +104,10 @@ export function createStarGeometryCache() {
     if (key === lastKey) return stars;
 
     stars.length = 0;
+    const xStride = coprimeStride(starCount);
     for (let i = 0; i < starCount; i += 1) {
       stars.push({
-        x: hash01(i + 1.11) * width,
+        x: starX(i, starCount, width, xStride),
         y: hash01(i + 7.73) * maxY,
         r: spec.minR + (spec.maxR - spec.minR) * hash01(i + 15.37),
         hz: flickerRange[0] + (flickerRange[1] - flickerRange[0]) * hash01(i + 23.91),

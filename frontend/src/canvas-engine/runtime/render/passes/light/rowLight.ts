@@ -1,9 +1,9 @@
-import type { SceneLightContext } from "../../../modifiers/lighting";
-import { clamp01 } from "../../../shared/math";
-import { addAlphaOnlyLightStops } from "./color";
-import { resolveHorizonRow } from "./horizon";
-import type { GridMetrics } from "../../geometry/gridCache";
-import type { PLike } from "../../p/makeP";
+import type { SceneLightContext } from "../../../../modifiers/lighting";
+import { clamp01 } from "../../../../shared/math";
+import { addAlphaOnlyLightStops } from "../shared/color";
+import { resolveHorizonRow } from "../shared/horizon";
+import type { GridMetrics } from "../../../geometry/gridCache";
+import type { PLike } from "../../../p/makeP";
 
 const SKY_LIGHT_INNER_RADIUS_K = 0.10;
 const SKY_LIGHT_OUTER_RADIUS_K = 0.26;

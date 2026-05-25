@@ -1,7 +1,7 @@
 // src/canvas-engine/validation/validateSceneProfile.ts
 
 import type { SceneProfile } from "../multi-canvas-setup/sceneProfile";
-import type { SceneLookupKey } from "../adjustable-rules/sceneState";
+import type { SceneLookupKey } from "../scene-state";
 import { invariant } from "./invariant";
 
 export function validateSceneProfile(id: string, mode: SceneLookupKey, profile: SceneProfile) {
@@ -9,5 +9,6 @@ export function validateSceneProfile(id: string, mode: SceneLookupKey, profile: 
   invariant(!!profile.padding, `[${id}] missing "padding" on SceneProfile`);
   invariant(!!profile.placements, `[${id}] missing "placements" on SceneProfile`);
   invariant(!!profile.background, `[${id}] missing "background" on SceneProfile`);
+  invariant(!!profile.renderCache, `[${id}] missing "renderCache" on SceneProfile`);
   invariant(typeof mode === "string", `[${id}] invalid mode`);
 }

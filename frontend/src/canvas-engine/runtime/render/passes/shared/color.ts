@@ -1,7 +1,12 @@
-import { gradientColor, VIVID_COLOR_STOPS } from "../../../modifiers/index";
-import { clamp01, mixRgb } from "../../../shared/math";
+// src/canvas-engine/runtime/render/passes/shared/color.ts
 
-export type { RGB } from "../../../shared/math";
+// Color helpers used by more than one render pass. Background gradients,
+// star ranges, and row light overlays all depend on this, so it intentionally
+// stays outside background/atmosphere/light.
+import { gradientColor, VIVID_COLOR_STOPS } from "../../../../modifiers/index";
+import { clamp01, mixRgb } from "../../../../shared/math";
+
+export type { RGB } from "../../../../shared/math";
 export interface RGBA { r: number; g: number; b: number; a: number }
 
 export function mix(a: number, b: number, t: number) {

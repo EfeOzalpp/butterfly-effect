@@ -33,21 +33,24 @@ import { makeP } from "./p/makeP";
 import { clamp01 } from "./util/easing";
 
 // Scene lookup key (BaseMode | SceneModifier) is used by runtime ticker to pick rules.
-import type { SceneLookupKey } from "../adjustable-rules/sceneState";
+import type { SceneLookupKey } from "../scene-state";
 
 import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
 import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
+import { DEFAULT_RENDER_CACHE_POLICY, type RenderCachePolicy } from "../adjustable-rules/render-cache";
 
 import { resolveBounds } from "./geometry/bounds";
 import { createGridCache, invalidateGridCache } from "./geometry/gridCache";
 import { installResizeHandlers } from "./platform/resize";
 
-import { createPaletteCache } from "./render/palette";
-import { Z_INDEX } from "./shapes/zIndex";
-import { createDefaultShapeRegistry, type ShapeRegistry } from "./shapes/registry";
+import { createPaletteCache } from "./render/passes/shape";
+import { createDefaultShapeRegistry, type ShapeRegistry } from "./shape-adapter/registry";
 
 
 export type { EngineControls as CanvasEngineControls } from "./engine/types";
+
+const FIELD_REFRESH_APPEAR_MS = 0;
+const FIELD_REFRESH_STAGGER_MS = 0;
 
 export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineControls {
   const { mount = "#canvas-root", onReady, dprMode = "fixed1", zIndex = 2, layout = "fixed", fpsCap, initialDarkMode } = opts;
@@ -64,6 +67,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   let sceneLookupKey: SceneLookupKey = "start";
   let paddingSpecOverride: CanvasPaddingSpec | null = null;
   let backgroundSpecOverride: BackgroundSpec | null = null;
+  let renderCachePolicy: RenderCachePolicy = DEFAULT_RENDER_CACHE_POLICY;
 
   // live/ghost state storage (owned by runtime)
   const liveStates = new Map<string, LiveState>();
@@ -106,12 +110,12 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     getSceneLookup: () => sceneLookupKey,
     getPaddingSpecOverride: () => paddingSpecOverride,
     getBackgroundSpecOverride: () => backgroundSpecOverride,
+    getRenderCachePolicy: () => renderCachePolicy,
     gridCache,
     paletteCache,
     liveStates,
     ghostsRef,
     shapeRegistry,
-    Z: Z_INDEX,
   });
 
   // stop + global instance registry
@@ -152,18 +156,21 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
   function setFieldItems(nextItems: EngineFieldItem[] = []) {
     const safeNextItems = Array.isArray(nextItems) ? nextItems : [];
+    const isRefresh = field.items.length > 0 && safeNextItems.length > 0;
     reconcileLiveStatesOnFieldUpdate({
       prevItems: field.items,
       nextItems: safeNextItems,
       liveStates,
       nowMs: p.millis(),
+      appearMs: isRefresh ? Math.min(style.appearMs, FIELD_REFRESH_APPEAR_MS) : style.appearMs,
+      appearStaggerMs: isRefresh ? Math.min(style.appearStaggerMs, FIELD_REFRESH_STAGGER_MS) : style.appearStaggerMs,
     });
 
     field.items = safeNextItems;
   }
 
   function setFieldStyle(args: EngineFieldStyle = {}) {
-    const { r, gradientRGBOverride, blend, perShapeScale, exposure, contrast, appearMs, exitMs } = args;
+    const { r, gradientRGBOverride, blend, perShapeScale, exposure, contrast, appearMs, appearStaggerMs, exitMs } = args;
 
     if (typeof r === "number" && Number.isFinite(r) && r > 0) style.r = r;
 
@@ -180,9 +187,11 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     }
 
     if (typeof appearMs === "number" && Number.isFinite(appearMs) && appearMs >= 0) style.appearMs = appearMs | 0;
+    if (typeof appearStaggerMs === "number" && Number.isFinite(appearStaggerMs) && appearStaggerMs >= 0) {
+      style.appearStaggerMs = appearStaggerMs | 0;
+    }
     if (typeof exitMs === "number" && Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
     if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
-    if (typeof args.isRealMobile === "boolean") style.isRealMobile = args.isRealMobile;
     if (typeof args.fog === "boolean") style.fog = args.fog;
 
     if (args.debug && typeof args.debug === "object") {
@@ -218,6 +227,10 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     backgroundSpecOverride = spec ?? null;
   }
 
+  function setRenderCachePolicy(policy: RenderCachePolicy | null) {
+    renderCachePolicy = policy ?? DEFAULT_RENDER_CACHE_POLICY;
+  }
+
   const controls: EngineControls = {
     setInputs,
     setFieldItems,
@@ -227,6 +240,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     setSceneMode,
     setPaddingSpec,
     setBackgroundSpec,
+    setRenderCachePolicy,
     stop,
     get canvas() {
       return canvasEl;

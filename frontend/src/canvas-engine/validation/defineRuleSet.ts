@@ -1,8 +1,8 @@
 // src/canvas-engine/validation/defineRuleSet.ts
 
 import type { SceneProfile, SceneProfileContext } from "../multi-canvas-setup/sceneProfile";
-import type { SceneState, SceneLookupKey } from "../adjustable-rules/sceneState";
-import { isQuestionnaire } from "../adjustable-rules/sceneState";
+import type { SceneState, SceneLookupKey } from "../scene-state";
+import { isQuestionnaire } from "../scene-state";
 import { validateSceneProfile } from "./validateSceneProfile";
 import type { SceneRuleSet } from "../multi-canvas-setup/types";
 

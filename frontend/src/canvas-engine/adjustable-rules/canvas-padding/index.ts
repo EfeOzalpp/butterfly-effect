@@ -1,10 +1,11 @@
 // src/canvas-engine/adjustable-rules/canvas-padding/index.ts
 
-import type { SceneLookupKey } from '../sceneState';
+import type { SceneLookupKey } from '../../scene-state';
 import type { DeviceType } from '../../shared/responsiveness';
 import type { CanvasPaddingSpec } from './types';
 
 export type { CanvasPaddingSpec } from './types';
+export { resolvePaddingSpec } from "./resolve";
 
 import { START_PADDING }         from './start';
 import { QUESTIONNAIRE_PADDING }          from './questionnaire';

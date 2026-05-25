@@ -28,6 +28,7 @@ export interface ParticleEmitterOpts {
   respawnStratified?: boolean;
 
   color?: RGBA | ((pr: Particle) => RGBA | undefined);
+  depthAlpha?: number;
 
   spawn?: ParticleSpawnArea;
 
@@ -376,6 +377,7 @@ export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpt
   }
 
   p.push();
+  const depthAlpha = clamp01(opts.depthAlpha ?? 1);
 
   for (const pr of state.particles) {
 
@@ -405,7 +407,7 @@ export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpt
     const eT = fT > 0 ? smoothstep01(dT / fT) : 1;
     const eB = fB > 0 ? smoothstep01(dB / fB) : 1;
 
-    alpha *= eL * eR * eT * eB;
+    alpha *= eL * eR * eT * eB * depthAlpha;
     alpha = Math.max(0, Math.min(255, alpha));
 
     if (mode === "dot") {

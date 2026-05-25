@@ -2,7 +2,7 @@
 
 import { SCENE_RULESETS } from "../adjustable-rules/registry";
 import type { SceneRuleSet } from "./types";
-import type { BaseMode } from "../adjustable-rules/sceneState";
+import type { BaseMode } from "../scene-state";
 import type { DprMode } from "../runtime/platform/viewport";
 
 // give the canvas the size you want

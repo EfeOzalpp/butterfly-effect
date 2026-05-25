@@ -1,6 +1,7 @@
 import type { PLike } from "../p/makeP";
 import type { EngineFieldItem } from "../engine/field";
-import type { ShapeRegistry } from "./registry";
+import { warnUnknownShape } from "../debug";
+import { supportsShapeRenderPass, type ShapeRegistry } from "./registry";
 import type { RuntimeShapeOptions } from "./types";
 
 export function drawItemFromRegistry(
@@ -9,11 +10,13 @@ export function drawItemFromRegistry(
   it: EngineFieldItem,
   rEff: number,
   opts: RuntimeShapeOptions
-) {
+): boolean {
   const fn = registry.get(it.shape);
   if (!fn) {
-    if (import.meta.env.DEV) console.warn("Unknown shape:", it.shape, it);
-    return;
+    warnUnknownShape(it);
+    return false;
   }
+  if (!supportsShapeRenderPass(fn, opts.renderPass ?? "color")) return false;
   fn(p, it, rEff, opts);
+  return true;
 }

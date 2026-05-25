@@ -49,6 +49,7 @@ export interface PuffEmitterOpts {
   edgeFadePx?: ParticleEdgeFade;
 
   color?: RGBA | ((pr: Particle) => RGBA | undefined);
+  depthAlpha?: number;
 
   respawn?: boolean;
 }
@@ -273,6 +274,7 @@ export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec
 
   p.push();
   p.noStroke();
+  const depthAlpha = clamp01(opts.depthAlpha ?? 1);
 
   for (const pr of state.particles) {
 
@@ -301,7 +303,7 @@ export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec
     const eT = fT > 0 ? smoothstep01(dT / fT) : 1;
     const eB = fB > 0 ? smoothstep01(dB / fB) : 1;
 
-    let alpha = aBase * fIn * fOut * eL * eR * eT * eB;
+    let alpha = aBase * fIn * fOut * eL * eR * eT * eB * depthAlpha;
     alpha = Math.max(0, Math.min(255, alpha));
 
     p.fill(baseColor.r, baseColor.g, baseColor.b, alpha);

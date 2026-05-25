@@ -7,12 +7,11 @@ import {
   applyShapeMods,
   footprintToPx,
 } from "../modifiers/index";
-import type { RGB } from "../modifiers/index";
+import type { NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
 import { applyExposureContrast } from "./shared/color";
 import { finiteNumber } from "./shared/numbers";
 
-type NumberRange = [number, number];
 type SunPaletteTheme = "warm" | "cool";
 
 interface SunPalette extends ShapePalette {

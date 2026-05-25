@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/render/ghosts.ts
 
 import type { EngineFieldItem } from "../engine/field";
-import type { RuntimeShapeOptions } from "../shapes/types";
+import type { RuntimeShapeOptions } from "../shape-adapter/types";
 import { clamp01, easeOutCubic } from "../util/easing";
 
 export interface Ghost {

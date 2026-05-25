@@ -3,6 +3,8 @@ import type { EngineFieldItem } from "./field";
 
 export interface LiveState {
   bornAtMs: number;
+  appearMs?: number;
+  appearStaggerMs?: number;
 }
 
 function footprintKey(footprint?: GridFootprint): string {
@@ -24,8 +26,10 @@ export function reconcileLiveStatesOnFieldUpdate(args: {
   nextItems: EngineFieldItem[];
   liveStates: Map<string, LiveState>;
   nowMs: number;
+  appearMs?: number;
+  appearStaggerMs?: number;
 }) {
-  const { prevItems, nextItems, liveStates, nowMs } = args;
+  const { prevItems, nextItems, liveStates, nowMs, appearMs, appearStaggerMs } = args;
 
   const prevById = new Map<string, EngineFieldItem>();
   for (const it of prevItems) prevById.set(it.id, it);
@@ -39,11 +43,13 @@ export function reconcileLiveStatesOnFieldUpdate(args: {
 
   for (const next of nextItems) {
     const state = liveStates.get(next.id);
-    if (!state) continue;
-
     const prev = prevById.get(next.id);
-    if (!prev || shouldReplayAppear(prev, next)) {
-      state.bornAtMs = nowMs;
+    if (!state || !prev || shouldReplayAppear(prev, next)) {
+      liveStates.set(next.id, {
+        bornAtMs: nowMs,
+        appearMs,
+        appearStaggerMs,
+      });
     }
   }
 }

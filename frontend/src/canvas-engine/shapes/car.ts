@@ -19,6 +19,7 @@ import { applyExposureContrast, fillRgb } from "./shared/color";
 import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
 import { finiteNumber } from "./shared/numbers";
 import { pick, seededTag01 } from "./shared/random";
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
 interface CarPalette extends ShapePalette {
   grass: RGB[];
@@ -151,6 +152,16 @@ export function drawCarAsset(
   const ct = finiteNumber(opts.contrast, 1);
   const alpha = finiteNumber(opts.alpha, 235);
   const u = clamp01(opts.liveAvg ?? 0.5);
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const silhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : alpha;
+  const isSilhouettePass = renderPass === "silhouette";
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
+  const massAlpha = isSilhouettePass ? silhouetteAlpha : alpha;
 
   const seedKey: ShapeSeed =
     (opts.seedKey ?? opts.seed)
@@ -189,9 +200,11 @@ export function drawCarAsset(
     p.push();
   }
 
-  fillRgb(p, pal.wheel, alpha);
-  p.circle(cx - w * 0.38, wheelY, wheelR);
-  p.circle(cx + w * 0.38, wheelY, wheelR);
+  if (shouldDrawColorDetails) {
+    fillRgb(p, pal.wheel, alpha);
+    p.circle(cx - w * 0.38, wheelY, wheelR);
+    p.circle(cx + w * 0.38, wheelY, wheelR);
+  }
 
   const baseAmpR = val(CAR.bodyOscY.ampR, u);
   const intensity = clamp01(val(CAR.bodyOscY.intensity, u));
@@ -207,7 +220,7 @@ export function drawCarAsset(
     opts: { timeMs: opts.timeMs ?? p.millis(), liveAvg: u },
     mods: { translateOscY: { amp: oscAmp, speed: oscHz, phase: oscPhase } },
   });
-  const bodyYOffset = mBody.y;
+  const bodyYOffset = isSilhouettePass ? 0 : mBody.y;
 
   const variant: CarVariant =
     opts.variant ?? (rVariant < 0.40 ? CAR_VARIANTS.suv : rVariant < 0.80 ? CAR_VARIANTS.sedan : CAR_VARIANTS.jeep);
@@ -221,23 +234,27 @@ export function drawCarAsset(
     const suvHighlight = mixRgb(suvTint, bodyLight.lightColor, 0.46);
     const suvShadow = mixRgb(suvTint, bodyLight.shadowColor, 0.30);
 
-    p.noStroke();
-    fillRgb(p, suvTint, alpha);
-    p.rect(cx - w / 2, bodyCy - h / 2, w, h, r * 0.42);
-    paintPixelLightBands(p, bodyRect, bodyLight, {
-      alpha,
-      highlightColor: suvHighlight,
-      shadowColor: suvShadow,
-      corner: Math.round(r * 0.42),
-      sideK: 0.40,
-      topK: 0.28,
-      shadowK: 0.18,
-    });
+    if (shouldDrawMass) {
+      p.noStroke();
+      fillRgb(p, shapePartColor(renderPass, suvTint, silhouetteColor), massAlpha);
+      p.rect(cx - w / 2, bodyCy - h / 2, w, h, r * 0.42);
+    }
+    if (shouldDrawColorDetails) {
+      paintPixelLightBands(p, bodyRect, bodyLight, {
+        alpha,
+        highlightColor: suvHighlight,
+        shadowColor: suvShadow,
+        corner: Math.round(r * 0.42),
+        sideK: 0.40,
+        topK: 0.28,
+        shadowK: 0.18,
+      });
 
-    fillRgb(p, windowTint, alpha);
-    const winH = h * 0.42;
-    const winY = bodyCy - h * 0.18 - winH / 2;
-    p.rect(cx - w * 0.30, winY, w * 0.60, winH, r * 0.10);
+      fillRgb(p, windowTint, alpha);
+      const winH = h * 0.42;
+      const winY = bodyCy - h * 0.18 - winH / 2;
+      p.rect(cx - w * 0.30, winY, w * 0.60, winH, r * 0.10);
+    }
   } else if (variant === CAR_VARIANTS.sedan) {
     const chassisW = w * 0.94;
     const chassisH = Math.max(6, r * 0.40);
@@ -260,9 +277,25 @@ export function drawCarAsset(
     const sedanHighlight = mixRgb(sedanTint, bodyLight.lightColor, 0.44);
     const sedanShadow = mixRgb(sedanTint, bodyLight.shadowColor, 0.26);
 
-    p.noStroke();
-    fillRgb(p, sedanTint, alpha);
-    p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.22);
+    if (shouldDrawMass) {
+      p.noStroke();
+      fillRgb(p, shapePartColor(renderPass, sedanTint, silhouetteColor), massAlpha);
+      p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.22);
+
+      fillRgb(p, shapePartColor(renderPass, sedanTint, silhouetteColor), massAlpha);
+      p.beginShape();
+      p.vertex(x0, cabinBaseY);
+      p.vertex(x1, cabinBaseY);
+      p.vertex(xt1, cabinTopY);
+      p.vertex(xt0, cabinTopY);
+      p.endShape(p.CLOSE);
+    }
+
+    if (!shouldDrawColorDetails) {
+      p.pop();
+      return;
+    }
+
     paintPixelLightBands(
       p,
       { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
@@ -277,14 +310,6 @@ export function drawCarAsset(
         shadowK: 0.16,
       }
     );
-
-    fillRgb(p, sedanTint, alpha);
-    p.beginShape();
-    p.vertex(x0, cabinBaseY);
-    p.vertex(x1, cabinBaseY);
-    p.vertex(xt1, cabinTopY);
-    p.vertex(xt0, cabinTopY);
-    p.endShape(p.CLOSE);
 
     const litLeft = bodyLight.leftK >= bodyLight.rightK;
     const sideLitK = Math.max(bodyLight.leftK, bodyLight.rightK);
@@ -359,23 +384,27 @@ export function drawCarAsset(
     const jeepHighlight = mixRgb(jeepTint, bodyLight.lightColor, 0.46);
     const jeepShadow = mixRgb(jeepTint, bodyLight.shadowColor, 0.28);
 
-    p.noStroke();
-    fillRgb(p, jeepTint, alpha);
-    p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.18);
-    paintPixelLightBands(
-      p,
-      { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
-      bodyLight,
-      {
-        alpha,
-        highlightColor: jeepHighlight,
-        shadowColor: jeepShadow,
-        corner: Math.round(r * 0.18),
-        sideK: 0.40,
-        topK: 0.20,
-        shadowK: 0.16,
-      }
-    );
+    if (shouldDrawMass) {
+      p.noStroke();
+      fillRgb(p, shapePartColor(renderPass, jeepTint, silhouetteColor), massAlpha);
+      p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.18);
+    }
+    if (shouldDrawColorDetails) {
+      paintPixelLightBands(
+        p,
+        { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
+        bodyLight,
+        {
+          alpha,
+          highlightColor: jeepHighlight,
+          shadowColor: jeepShadow,
+          corner: Math.round(r * 0.18),
+          sideK: 0.40,
+          topK: 0.20,
+          shadowK: 0.16,
+        }
+      );
+    }
 
     const cabinW = w * 0.64;
     const cabinH = Math.max(10, r * 1.15);
@@ -388,22 +417,26 @@ export function drawCarAsset(
       ? cx - chassisW / 2 + sidePad
       : cx + chassisW / 2 - cabinW - sidePad;
 
-    fillRgb(p, jeepTint, alpha);
-    p.rect(cabinX0, cabinTopY, cabinW, cabinH, r * 0.10);
-    paintPixelLightBands(
-      p,
-      { x: cabinX0, y: cabinTopY, w: cabinW, h: cabinH },
-      bodyLight,
-      {
-        alpha,
-        highlightColor: jeepHighlight,
-        shadowColor: jeepShadow,
-        corner: Math.round(r * 0.10),
-        sideK: 0.32,
-        topK: 0.24,
-        shadowK: 0.14,
-      }
-    );
+    if (shouldDrawMass) {
+      fillRgb(p, shapePartColor(renderPass, jeepTint, silhouetteColor), massAlpha);
+      p.rect(cabinX0, cabinTopY, cabinW, cabinH, r * 0.10);
+    }
+    if (shouldDrawColorDetails) {
+      paintPixelLightBands(
+        p,
+        { x: cabinX0, y: cabinTopY, w: cabinW, h: cabinH },
+        bodyLight,
+        {
+          alpha,
+          highlightColor: jeepHighlight,
+          shadowColor: jeepShadow,
+          corner: Math.round(r * 0.10),
+          sideK: 0.32,
+          topK: 0.24,
+          shadowK: 0.14,
+        }
+      );
+    }
 
     const pad = Math.max(3, r * 0.22);
     const innerW = cabinW - pad * 2;
@@ -413,9 +446,11 @@ export function drawCarAsset(
     const eachH = innerH * 0.70;
     const winY = cabinTopY + pad + (innerH - eachH) * 0.30;
 
-    fillRgb(p, windowTint, alpha);
-    p.rect(cabinX0 + pad, winY, eachW, eachH, r * 0.08);
-    p.rect(cabinX0 + pad + eachW + gap, winY, eachW, eachH, r * 0.08);
+    if (shouldDrawColorDetails) {
+      fillRgb(p, windowTint, alpha);
+      p.rect(cabinX0 + pad, winY, eachW, eachH, r * 0.08);
+      p.rect(cabinX0 + pad + eachW + gap, winY, eachW, eachH, r * 0.08);
+    }
   }
 
   p.pop();
@@ -433,6 +468,15 @@ export function drawCar(
   const ct = finiteNumber(opts.contrast, 1);
   const alpha = finiteNumber(opts.alpha, 235);
   const u = clamp01(opts.liveAvg ?? 0.5);
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const silhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : alpha;
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
+  const massAlpha = renderPass === "silhouette" ? silhouetteAlpha : alpha;
 
   const cell = opts.cell;
   const f = opts.footprint;
@@ -503,13 +547,17 @@ export function drawCar(
   }
 
   p.noStroke();
-  fillRgb(p, grassTint, alpha);
-  p.rect(tileX, grassY, tileW, grassH, r * 0.18);
+  if (shouldDrawMass) {
+    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    p.rect(tileX, grassY, tileW, grassH, r * 0.18);
+  }
 
-  let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
-  aspColor = clampBrightness(aspColor, val(CAR.asphalt.min, u), val(CAR.asphalt.max, u));
-  fillRgb(p, aspColor, alpha);
-  p.rect(tileX, aspY, tileW, aspH, r * 0.14);
+  if (shouldDrawColorDetails) {
+    let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
+    aspColor = clampBrightness(aspColor, val(CAR.asphalt.min, u), val(CAR.asphalt.max, u));
+    fillRgb(p, aspColor, alpha);
+    p.rect(tileX, aspY, tileW, aspH, r * 0.14);
+  }
 
   const wheelY = aspY + aspH * 0.62;
   const designW = r * 3.2;
@@ -526,6 +574,9 @@ export function drawCar(
     liveAvg: u,
     lightCtx: opts.lightCtx,
     seedKey,
+    renderPass,
+    silhouetteColor,
+    silhouetteAlpha,
     useAppear: false,
   });
   endFitScale(p);

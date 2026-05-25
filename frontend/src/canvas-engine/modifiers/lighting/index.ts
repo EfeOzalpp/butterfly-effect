@@ -103,6 +103,9 @@ interface TriangleBandOptions {
   shadowColor: RGB;
 }
 
+const PIXEL_LIGHT_BAND_ALPHA_BOOST = 1.22;
+const TRIANGLE_LIGHT_BAND_ALPHA_BOOST = 1.24;
+
 export const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS: LightBreakpoints = {
   mid: 0.52,
   near: 0.74,
@@ -166,6 +169,11 @@ function addRoundedRectPath(
 
 function rgbaString(color: RGB, alpha: number): string {
   return `rgba(${String(color.r)},${String(color.g)},${String(color.b)},${String(clamp01(alpha))})`;
+}
+
+function alphaByte(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(255, Math.round(value)));
 }
 
 export { mixRgb } from "../../shared/math";
@@ -264,9 +272,9 @@ export function paintPixelLightBands(
   const shadowW = Math.max(2, Math.round(w * 0.12));
   const shadowX = light.leftK >= light.rightK ? x + w - shadowW : x;
   const corner = opts.corner ?? 0;
-  const sideAlpha = Math.round(opts.alpha * (opts.sideK ?? 0.48) * sideLitK);
-  const topAlpha = Math.round(opts.alpha * (opts.topK ?? 0.34) * light.topK);
-  const shadowAlpha = Math.round(opts.alpha * (opts.shadowK ?? 0.22) * sideLitK);
+  const sideAlpha = alphaByte(opts.alpha * (opts.sideK ?? 0.48) * sideLitK * PIXEL_LIGHT_BAND_ALPHA_BOOST);
+  const topAlpha = alphaByte(opts.alpha * (opts.topK ?? 0.34) * light.topK * PIXEL_LIGHT_BAND_ALPHA_BOOST);
+  const shadowAlpha = alphaByte(opts.alpha * (opts.shadowK ?? 0.22) * sideLitK);
 
   p.noStroke();
   p.fill(opts.highlightColor.r, opts.highlightColor.g, opts.highlightColor.b, sideAlpha);
@@ -344,21 +352,21 @@ export function paintDirectionalTriangleBands(
   p.push();
   p.noStroke();
 
-  p.fill(highlightColor.r, highlightColor.g, highlightColor.b, Math.round(alpha * 0.42 * litK));
+  p.fill(highlightColor.r, highlightColor.g, highlightColor.b, alphaByte(alpha * 0.42 * litK * TRIANGLE_LIGHT_BAND_ALPHA_BOOST));
   p.beginShape();
   p.vertex(apexX, apexY);
   p.vertex(litLeft ? leftX : rightX, bandBaseY);
   p.vertex(litInnerX, bandBaseY);
   p.endShape(p.CLOSE);
 
-  p.fill(highlightColor.r, highlightColor.g, highlightColor.b, Math.round(alpha * 0.34 * light.topK * roofVisibleK));
+  p.fill(highlightColor.r, highlightColor.g, highlightColor.b, alphaByte(alpha * 0.34 * light.topK * roofVisibleK * TRIANGLE_LIGHT_BAND_ALPHA_BOOST));
   p.beginShape();
   p.vertex(leftX + topBaseInset, bandBaseY);
   p.vertex(rightX - topBaseInset, bandBaseY);
   p.vertex(centerX, topApexY);
   p.endShape(p.CLOSE);
 
-  p.fill(shadowColor.r, shadowColor.g, shadowColor.b, Math.round(alpha * 0.24 * litK));
+  p.fill(shadowColor.r, shadowColor.g, shadowColor.b, alphaByte(alpha * 0.24 * litK));
   p.beginShape();
   p.vertex(apexX, apexY);
   p.vertex(litLeft ? rightX : leftX, bandBaseY);

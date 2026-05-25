@@ -16,14 +16,14 @@ import {
   paintPixelLightBands,
   paintDirectionalTriangleBands,
 } from "../modifiers/index";
-import type { Anchor, LightClosenessBand, LightClosenessBandMap, RGB } from "../modifiers/index";
+import type { Anchor, LightClosenessBand, LightClosenessBandMap, NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
 import { applyExposureContrast, fillRgb } from "./shared/color";
 import { finiteNumber } from "./shared/numbers";
 import { pick, seeded01 } from "./shared/random";
+import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
 
 type TreesPaletteTheme = "warm" | "cool";
-type NumberRange = [number, number];
 
 interface TreesPalette extends ShapePalette {
   grass: RGB[];
@@ -76,12 +76,7 @@ interface TreesTuning {
   clusterScaleClamp: NumberRange;
 }
 
-/* ───────────────────────────────────────────────────────────
-   Exposure/contrast helper
-   ─────────────────────────────────────────────────────────── */
-/* ───────────────────────────────────────────────────────────
-   Base palette
-   ─────────────────────────────────────────────────────────── */
+// Base palettes.
 const TREES_BASE_PALETTE: TreesPalette = {
   grass: [
     { r: 122, g: 172, b: 102 },
@@ -128,7 +123,7 @@ const TREES_DARK_PALETTE: TreesPalette = {
   asphalt: { r: 68, g: 79,  b: 96  },
   trunk:   { r: 60, g: 54,  b: 46  },
   foliage: [
-    // fallback since there is by light color palette for darkmode now
+    // Fallback if the light-band palettes are not used.
     { r: 48, g: 86,  b: 82 },
     { r: 42, g: 78,  b: 74 },
     { r: 56, g: 94,  b: 84 },
@@ -212,9 +207,7 @@ const TREES_COOL_PALETTE: TreesPalette = {
   ],
 };
 
-/* ───────────────────────────────────────────────────────────
-   Tunables
-   ─────────────────────────────────────────────────────────── */
+// Tunables.
 const TREES: TreesTuning = {
   grass:   { colorBlend: [0.22, 0.30], satRange: [0.06, 0.18] },
 
@@ -285,17 +278,14 @@ const TREES: TreesTuning = {
   clusterScaleClamp: [0.92, 1.08],
 };
 
-/* ───────────────────────────────────────────────────────────
-   Helpers
-   ─────────────────────────────────────────────────────────── */
-/* ── Sprite-friendly deterministic RNG helpers (tagged substreams) ── */
+// Sprite-friendly deterministic RNG helpers.
 function rFromKey(key: ShapeSeed, tag: string): number { return seeded01(key, tag); }
 function pickFromKey<T>(arr: readonly T[], key: ShapeSeed, tag: string): T {
   const r = rFromKey(key, tag);
   return pick(arr, r);
 }
 
-/* foliage tint: base → mix with grass → optional gradient → clamp → E/C */
+// Foliage tint: base, grass mix, optional gradient, clamp, then exposure/contrast.
 function foliageTint(grassTint: RGB, u: number, gradientRGB: RGB | null | undefined, ex: number, ct: number, rSeed: number, pal: TreesPalette, liveBlend = 1, darkMode = false, lightBand: LightClosenessBand = 'mid', farSideK = 0): RGB {
   const foliageSet = darkMode && pal.foliageByLight?.[lightBand]
     ? pal.foliageByLight[lightBand]
@@ -320,9 +310,7 @@ function foliageTint(grassTint: RGB, u: number, gradientRGB: RGB | null | undefi
   return applyExposureContrast(mixed, ex, ct);
 }
 
-/* ───────────────────────────────────────────────────────────
-   drawTrees (1×1 tile) — with sprite-variant randomization
-   ─────────────────────────────────────────────────────────── */
+// Draws a 1x1 tree cluster with deterministic sprite variation.
 export function drawTrees(
   p: ShapeCanvas,
   _cx: number,
@@ -342,12 +330,21 @@ export function drawTrees(
   const ct = finiteNumber(opts.contrast, 1);
   const u  = clamp01(opts.liveAvg ?? 0.5);
   const liveBlend = clamp01(typeof opts.blend === 'number' ? opts.blend : 1);
+  const renderPass = opts.renderPass ?? "color";
+  const silhouetteColor = opts.silhouetteColor;
+  const requestedSilhouetteAlpha =
+    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
+      ? opts.silhouetteAlpha
+      : 255;
+  const isSilhouettePass = renderPass === "silhouette";
+  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
   const rowBucket = particleRowBucket(f, opts);
   const farSideSatK = clamp01(1 - rowBucket.t);
   // Keep trees fully opaque at rest; appear modifier still handles fade-in.
   const alpha = 255;
 
-  // Sprite hint (doesn’t change behavior; we key variety off seedKey)
+  // Sprite hint only; variety is keyed from seedKey.
   // Deterministic, variant-aware seedKey (used by sprites). Fallback keeps old behavior.
   const seedKey: ShapeSeed = (opts.seedKey ?? opts.seed) ?? `trees|${String(f.r0)}|${String(f.c0)}|${String(f.w)}x${String(f.h)}`;
 
@@ -366,6 +363,10 @@ export function drawTrees(
     mods: { appear: TREES.appear, sizeOsc: { mode: 'none' } }
   });
   const drawAlpha = (typeof appear.alpha === 'number') ? appear.alpha : alpha;
+  const silhouetteAlpha = isSilhouettePass
+    ? Math.round(requestedSilhouetteAlpha * clamp01(drawAlpha / alpha))
+    : drawAlpha;
+  const massAlpha = isSilhouettePass ? silhouetteAlpha : drawAlpha;
 
   // gentle cluster scale clamp (uniform, anchored bottom-center)
   const clampK0 = TREES.clusterScaleClamp[0];
@@ -378,7 +379,7 @@ export function drawTrees(
     mods: { scale2D: { x: sClamp, y: sClamp, anchor: 'bottom-center' } }
   });
 
-  /* ─── Ground: grass + asphalt (UNTRANSFORMED so it never shrinks) ─── */
+  // Ground: grass and asphalt stay untransformed so they never shrink.
   const grassH = h * 0.55;
   const grassY = y0 + h - grassH;
   const grassLight = sampleDirectionalLightRect(
@@ -407,28 +408,33 @@ export function drawTrees(
     grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
   }
 
-  p.noStroke();
-  fillRgb(p, grassTint, drawAlpha);
-  p.rect(x0, grassY, w, grassH, Math.round(cell * 0.04));
+  // The silhouette pass includes the grass pad and tree cluster. The asphalt strip is road.
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    p.rect(x0, grassY, w, grassH, Math.round(cell * 0.04));
+  }
 
   let asp = applyExposureContrast(pal.asphalt, ex, ct);
   asp = clampBrightness(asp, val(TREES.asphalt.min, u), val(TREES.asphalt.max, u));
   const aspH = grassH * 0.28;
   const aspY = grassY + (grassH - aspH) / 2;
 
-  // left-anchored X-scale on asphalt
-  const sx = val(TREES.asphalt.xScaleRange, u);
-  p.push();
-  p.translate(x0, aspY + aspH / 2);
-  p.scale(sx, 1);
-  p.translate(-x0, -(aspY + aspH / 2));
-  fillRgb(p, asp, drawAlpha);
-  p.rect(x0, aspY, w, aspH, Math.round(cell * 0.16));
-  p.pop();
+  if (shouldDrawColorDetails) {
+    // left-anchored X-scale on asphalt
+    const sx = val(TREES.asphalt.xScaleRange, u);
+    p.push();
+    p.translate(x0, aspY + aspH / 2);
+    p.scale(sx, 1);
+    p.translate(-x0, -(aspY + aspH / 2));
+    fillRgb(p, asp, drawAlpha);
+    p.rect(x0, aspY, w, aspH, Math.round(cell * 0.16));
+    p.pop();
+  }
 
   const groundY = aspY + aspH * 0.6;
 
-  /* ─── Trees: appear + clamp ONLY to the cluster ─── */
+  // Trees: appear and scale clamp apply only to the cluster.
   p.push();
   // appear transform
   p.translate(appear.x, appear.y);
@@ -439,7 +445,7 @@ export function drawTrees(
   p.scale(clampTf.scaleX, clampTf.scaleY);
   p.translate(-anchorX, -anchorY);
 
-  /* ─── Tree cluster ─── */
+  // Tree cluster.
   const countR = rFromKey(seedKey, 'count');
   const minC = TREES.layout.countRange[0];
   const maxC = TREES.layout.countRange[1];
@@ -515,31 +521,33 @@ export function drawTrees(
 
       // trunk
       p.noStroke();
-      fillRgb(p, trunkLit, 255);
+      fillRgb(p, shapePartColor(renderPass, trunkLit, silhouetteColor), isSilhouettePass ? silhouetteAlpha : 255);
       p.rect(-tw/2, -th, tw, th, 2);
 
       // foliage capsule
       const rad = Math.round(Math.min(fw, fh) * TREES.poplar.radiusK);
-      fillRgb(p, leavesTint, 255);
+      fillRgb(p, shapePartColor(renderPass, leavesTint, silhouetteColor), isSilhouettePass ? silhouetteAlpha : 255);
       p.rect(-fw/2, -th - fh, fw, fh, rad);
-      paintPixelLightBands(
-        p,
-        { x: -fw/2, y: -th - fh, w: fw, h: fh },
-        treeLight,
-        {
-          alpha: 255,
-          highlightColor: poplarHighlight,
-          shadowColor: poplarShadow,
-          corner: rad,
-          sideK: 0.40,
-          topK: 0.24,
-          shadowK: 0.18,
-        }
-      );
+      if (shouldDrawColorDetails) {
+        paintPixelLightBands(
+          p,
+          { x: -fw/2, y: -th - fh, w: fw, h: fh },
+          treeLight,
+          {
+            alpha: 255,
+            highlightColor: poplarHighlight,
+            shadowColor: poplarShadow,
+            corner: rad,
+            sideK: 0.40,
+            topK: 0.24,
+            shadowK: 0.18,
+          }
+        );
+      }
 
       p.pop();
     } else {
-      /* CONIFER — ONLY 2 or 3 small overlapping triangles per tier */
+      // Conifer: only 2 or 3 small overlapping triangles per tier.
       const levels = Math.round(TREES.conifer.levelsRange[0] +
         (TREES.conifer.levelsRange[1] - TREES.conifer.levelsRange[0]) * rx);
 
@@ -576,7 +584,7 @@ export function drawTrees(
       // trunk
       const tw = Math.max(1, Math.round(w * (TREES.conifer.trunkWk[0] + (TREES.conifer.trunkWk[1] - TREES.conifer.trunkWk[0]) * rx)));
       p.noStroke();
-      fillRgb(p, trunkLit, 255);
+      fillRgb(p, shapePartColor(renderPass, trunkLit, silhouetteColor), isSilhouettePass ? silhouetteAlpha : 255);
       p.rect(-tw/2, -th, tw, th, 2);
 
       // per-level parameters
@@ -589,7 +597,6 @@ export function drawTrees(
       const nT = (rFromKey(k, 'triCount') < 0.5) ? 2 : 3;
       const hFracs = nT === 2 ? TREES.conifer.triHeightFracs2 : TREES.conifer.triHeightFracs3;
       const wFracs = nT === 2 ? TREES.conifer.triWidthFracs2 : TREES.conifer.triWidthFracs3;
-      let minTipY = -th;
 
       // draw bottom -> top so upper triangles overlap those below
       for (let l = 0; l < levels; l++) {
@@ -604,20 +611,36 @@ export function drawTrees(
         let tipY  = baseY - (levelH * hFracs[0]);
 
         // lower triangle
-        fillRgb(p, leavesTint, 255);
+        fillRgb(p, shapePartColor(renderPass, leavesTint, silhouetteColor), isSilhouettePass ? silhouetteAlpha : 255);
         p.beginShape();
         p.vertex(-tierHW * wFracs[0], baseY);
         p.vertex( tierHW * wFracs[0], baseY);
         p.vertex( 0,                   tipY);
         p.endShape(p.CLOSE);
-        minTipY = Math.min(minTipY, tipY);
+        if (shouldDrawColorDetails) {
+          paintDirectionalTriangleBands(
+            p,
+            {
+              leftX: -tierHW * wFracs[0],
+              rightX: tierHW * wFracs[0],
+              baseY,
+              apexX: 0,
+              apexY: tipY,
+            },
+            treeLight,
+            {
+              alpha: 255,
+              highlightColor: coniferHighlight,
+              shadowColor: coniferShadow,
+            }
+          );
+        }
 
         // remaining small triangles stacked upward with intra-tier overlap
         for (let t = 1; t < nT; t++) {
           baseY = tipY + intraK * levelH; // overlap downward into previous
           const triH = levelH * hFracs[t];
           tipY  = baseY - triH;
-          minTipY = Math.min(minTipY, tipY);
 
           const hwT = tierHW * wFracs[t];
           p.beginShape();
@@ -625,25 +648,26 @@ export function drawTrees(
           p.vertex( hwT, baseY);
           p.vertex( 0,   tipY);
           p.endShape(p.CLOSE);
+          if (shouldDrawColorDetails) {
+            paintDirectionalTriangleBands(
+              p,
+              {
+                leftX: -hwT,
+                rightX: hwT,
+                baseY,
+                apexX: 0,
+                apexY: tipY,
+              },
+              treeLight,
+              {
+                alpha: 255,
+                highlightColor: coniferHighlight,
+                shadowColor: coniferShadow,
+              }
+            );
+          }
         }
       }
-
-      paintDirectionalTriangleBands(
-        p,
-        {
-          leftX: -baseHalfW * wFracs[0],
-          rightX: baseHalfW * wFracs[0],
-          baseY: -th,
-          apexX: 0,
-          apexY: minTipY,
-        },
-        treeLight,
-        {
-          alpha: 255,
-          highlightColor: coniferHighlight,
-          shadowColor: coniferShadow,
-        }
-      );
 
       p.pop();
     }
