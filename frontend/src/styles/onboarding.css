@@ -1,11 +1,18 @@
 /* Survey skeleton */
 
-.fade-out { animation: fadeOut 100ms ease-in forwards; }
-.fade-in { animation: fadeIn 100ms ease-in forwards; }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.survey-section.survey-first-enter .survey-step { animation: surveyScaleIn 520ms cubic-bezier(.22,.61,.36,1) both; }
 @keyframes surveyScaleIn { from { opacity: 0; transform: scale(0.975); } to { opacity: 1; transform: scale(1); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-out { animation: fadeOut 100ms ease-in forwards; }
+  .fade-in { animation: fadeIn 100ms ease-in forwards; }
+  .survey-section.survey-first-enter .survey-step { animation: surveyScaleIn 520ms cubic-bezier(.22,.61,.36,1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-out { opacity: 0; }
+  .fade-in { opacity: 1; }
+}
 
 /* Onboarding foundation */
 .survey.survey-step.role-select, .survey.survey-step.questionnaire { display: flex; justify-content: center; align-items: center; flex-direction: column; }
@@ -110,10 +117,13 @@
 .answer-row { position: relative; display: flex; flex-direction: column; }
 .slider-inner { display: flex; flex-direction: row; gap: var(--space-md); align-items: center; min-height: 1.2rem; }
 
-.questionnaire-title { opacity: 1; transform: translateY(0); transition: opacity 100ms ease, transform 100ms ease; }
+.questionnaire-title { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: no-preference) {
+  .questionnaire-title { transition: opacity 100ms ease, transform 100ms ease; }
+  .questionnaire-panel-enter { animation: fadeIn 180ms ease-in both; }
+}
 .questionnaire-title.is-leaving { opacity: 0; transform: translateY(-6px); }
 .questionnaire-title.is-entering { opacity: 0; transform: translateY(6px); }
-.questionnaire-panel-enter { animation: fadeIn 180ms ease-in both; }
 
 .questionnaire-grid-header {
   position: absolute;
@@ -147,7 +157,9 @@
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%) translateY(-8px) scale(0.98);
-  transition: opacity 180ms ease, transform 220ms cubic-bezier(.22,.61,.36,1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .questionnaire-read-banner { transition: opacity 180ms ease, transform 220ms cubic-bezier(.22,.61,.36,1); }
 }
 
 .questionnaire-read-banner-copy {
@@ -393,8 +405,10 @@ button.city-button,
 
 .z-index-respective .survey-section-wrapper, .z-index-respective .survey-section-wrapper { pointer-events: none; }
 
-.welcome-title,
-.questionnaire-question-title { animation: titleWipe 1800ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: no-preference) {
+  .welcome-title,
+  .questionnaire-question-title { animation: titleWipe 1800ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
 
 .welcome-title { background: var(--ui-text-title); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
 .questionnaire-question-title { background: var(--ui-questionnaire-title);  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
@@ -414,6 +428,7 @@ button.city-button,
 .q-slider { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; outline: none; background: var(--ui-border); }
 .q-slider:hover { outline: 1px solid var(--btn-primary-bg); outline-offset: 3px; }
 .q-slider:focus { outline: none; }
+.q-slider:focus-visible { outline: 2px solid var(--btn-primary-bg); outline-offset: 4px; }
 
 .q-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 3px; height: 20px; box-sizing: content-box; border: 2px solid var(--ui-bg-surface); background: var(--thumb-color, #999); border-radius: 3px; opacity: 0.85; }
 .q-slider::-moz-range-thumb { width: 3px; height: 20px; box-sizing: content-box; border: 2px solid var(--ui-bg-surface); background: var(--thumb-color, #999); border-radius: 3px; opacity: 0.85; }
@@ -472,7 +487,7 @@ button.city-button,
 @media (min-width: 1025px) {
   /* canvas flow for pre-questionnaire */
   .onboarding-canvas { top: 0; right: 0; width: 100%; height: clamp(675px, 2.8vw, 860px); position: absolute; overflow: hidden; }
-  .welcome-title-layer { height: clamp(625px, 2.8vw, 860px); top: -104px; }
+  .welcome-title-layer { height: clamp(625px, 2.8vw, 860px); top: -114px; }
 }
 
 /* 768 and above */

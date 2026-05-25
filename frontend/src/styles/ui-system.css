@@ -276,3 +276,36 @@ button.city-button:hover .city-button__inner,
   .system-color { max-height: 48px; max-width: 48px; min-height: 48px; min-width: 48px; }
   .mock-read-banner-close { width: 20px !important; height: 20px !important; }
 }
+
+/* ── Focus visible — WCAG 2.4.7 / 2.4.11 ─────────────────────────── */
+
+button.begin-button:focus-visible .begin-button__inner,
+button.next-button:focus-visible .next-button__inner,
+button.questionnaire:focus-visible .questionnaire__inner,
+button.section-continue-button:focus-visible .section-continue-button__inner {
+  outline: 2px solid var(--btn-primary-bg);
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+button.city-button:focus-visible .city-button__inner,
+.logs-button:focus-visible .logs-button__inner,
+.widgets-button:focus-visible .widgets-button__inner {
+  outline: 2px solid var(--ui-border-strong);
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+.system-color:focus-visible,
+.nav-toggle:focus-visible,
+.mock-read-banner-close:focus-visible {
+  outline: 2px solid var(--ui-border-strong);
+  outline-offset: 3px;
+}
+
+.widgets-item:focus-visible,
+.widgets-close-strip:focus-visible,
+.radar-footer-btn:focus-visible {
+  outline: 2px solid var(--ui-border-strong);
+  outline-offset: -2px;
+}

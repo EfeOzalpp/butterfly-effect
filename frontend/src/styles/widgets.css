@@ -27,7 +27,9 @@
   grid-template-rows: 0fr;
   opacity: 0;
   pointer-events: none;
-  transition: grid-template-rows 180ms cubic-bezier(.22,.61,.36,1), opacity 120ms ease;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .widgets-popover-shell { transition: grid-template-rows 180ms cubic-bezier(.22,.61,.36,1), opacity 120ms ease; }
 }
 
 .widgets-popover-shell.is-open {
@@ -88,7 +90,9 @@
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: min-height 280ms cubic-bezier(.22,.61,.36,1), max-height 280ms cubic-bezier(.22,.61,.36,1), opacity 180ms ease;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .widgets-expandable { transition: min-height 280ms cubic-bezier(.22,.61,.36,1), max-height 280ms cubic-bezier(.22,.61,.36,1), opacity 180ms ease; }
 }
 
 .widgets-expandable.is-expanded {
@@ -172,13 +176,13 @@
 .rc-label {
   fill: var(--ui-text-secondary);
   font-family: var(--font-body);
-  font-size: 9px;
+  font-size: var(--type-label-size);
 }
 
 .rc-value {
   fill: var(--ui-text);
   font-family: var(--font-body);
-  font-size: 9px;
+  font-size: var(--type-label-size);
   font-weight: var(--fw-bold);
 }
 

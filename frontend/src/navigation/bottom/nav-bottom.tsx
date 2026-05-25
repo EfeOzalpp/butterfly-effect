@@ -38,6 +38,8 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const radarChartExpanded = effectiveExpandedWidget === "radar";
   const toggleWidget = (w: "bar" | "radar") => { setExpandedWidget((cur) => (cur === w ? null : w)); };
   const widgetsRef = useRef<HTMLDivElement | null>(null);
+  const widgetsDialogRef = useRef<HTMLDivElement | null>(null);
+  const widgetsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const logsWrapRef = useRef<HTMLDivElement | null>(null);
   const modeToggleRef = useRef<HTMLDivElement | null>(null);
   const questionnaireHintTimerRef = useRef<number | null>(null);
@@ -128,6 +130,32 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     windowWidth,
   ]);
 
+  useEffect(() => {
+    if (!visibleWidgetsOpen) return;
+    const dialog = widgetsDialogRef.current;
+    if (!dialog) return;
+    const sel = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const getFocusable = () => Array.from(dialog.querySelectorAll<HTMLElement>(sel));
+    getFocusable()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      widgetsTriggerRef.current?.focus();
+    };
+  }, [visibleWidgetsOpen]);
+
   if (!cityPanelOpen && !questionnaireOpen && !vizVisible) return null;
 
   return (
@@ -158,7 +186,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
               style={isMobileGraphNav ? { left: "-64px" } : undefined}
             >
               <div className="widgets-popover-clip">
-                <div className="widgets-popover" role="dialog" aria-label="Widgets">
+                <div ref={widgetsDialogRef} className="widgets-popover" role="dialog" aria-label="Widgets" aria-modal="true">
                 <div className="widgets-list">
                   <div className={`widgets-entry widgets-entry--bar-graph${barGraphExpanded ? " is-expanded" : ""}`}>
                     <button
@@ -211,6 +239,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             </div>
 
             <button
+              ref={widgetsTriggerRef}
               type="button"
               className="widgets-button"
               data-label="Widgets"
@@ -229,7 +258,11 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
       {questionnaireOpen && !vizVisible && questionnaireNav.total > 0 && (
         <div className={`bottom bottom-right${introActive ? " nav-first-enter" : ""}`}>
           <div className="questionnaire-nav-stack">
-            <p className="q-step-indicator questionnaire-nav-progress">
+            <p
+              className="q-step-indicator questionnaire-nav-progress"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {questionnaireNav.step} / {questionnaireNav.total}
             </p>
             <div className="questionnaire-nav-action">

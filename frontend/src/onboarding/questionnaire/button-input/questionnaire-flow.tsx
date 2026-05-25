@@ -81,7 +81,7 @@ export default function ButtonQuestionnaireFlow({
   const hintBanner = (
     <div
       className={`questionnaire-read-banner${showQuestionHint ? " is-visible" : ""}`}
-      role="information"
+      role="status"
       aria-live="polite"
     >
       <span className="questionnaire-read-banner-copy">

@@ -30,11 +30,39 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterFocused, setFilterFocused] = useState(false);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!searchOpen) return;
     filterInputRef.current?.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const sel = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const getFocusable = () => Array.from(dialog.querySelectorAll<HTMLElement>(sel));
+    getFocusable()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      triggerRef.current?.focus();
+    };
+  }, [open]);
 
   // Sort ascending by submittedAt (earliest = #1)
   const sorted = useMemo(() => {
@@ -120,7 +148,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
     <div className="logs-wrap">
       <div className={`logs-popover-shell${open ? " is-open" : ""}`} aria-hidden={!open}>
         <div className="logs-popover-clip">
-          <div className="logs-popover" role="dialog" aria-label="Submission logs">
+          <div ref={dialogRef} className="logs-popover" role="dialog" aria-label="Submission logs" aria-modal="true">
           <div className="logs-header">
             <span className="logs-title">Submission logs</span>
             <div className="logs-header-tools">
@@ -265,6 +293,7 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
       </div>
 
       <button
+        ref={triggerRef}
         type="button"
         className="logs-button"
         data-label="Logs"

@@ -28,7 +28,7 @@ const AppInner: React.FC = () => {
   const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
 
   return (
-    <div className="app-content">
+    <main id="main-content" className="app-content">
       <AppBrowserPolicies questionnaireOpen={questionnaireOpen} vizVisible={vizVisible} />
       <MockReadBanner />
 
@@ -80,7 +80,7 @@ const AppInner: React.FC = () => {
       <div className="radial-background">
         <div className="radial-gradient"></div>
       </div>
-    </div>
+    </main>
   );
 };
 

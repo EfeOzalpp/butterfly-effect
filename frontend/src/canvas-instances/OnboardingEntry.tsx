@@ -9,7 +9,11 @@ export default function CanvasEntry({ visible = true }: { visible?: boolean }) {
   const { questionnaireOpen } = useUiFlow();
 
   return (
-    <div className={`onboarding-canvas${questionnaireOpen ? ' questionnaire-active' : ''}`}>
+    <div
+      className={`onboarding-canvas${questionnaireOpen ? ' questionnaire-active' : ''}`}
+      role="img"
+      aria-label="Animated sustainability visualization"
+    >
       <div id="canvas-root" style={{ width: "100%", height: "100%" }} />
       <EngineHost
         id="start"
