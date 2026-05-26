@@ -78,7 +78,7 @@ Dotgraph should import sprites from:
 import { SpriteShape } from "../sprites/entry";
 ```
 
-`sprites/entry.ts` is the public sprite API. Dotgraph should not reach into `sprites/internal`, `sprites/textures`, or `sprites/cache` unless we intentionally expand the public contract.
+`sprites/entry.ts` is the public sprite API. Dotgraph should not reach into `sprites/internal`, `sprites/textures`, or `sprites/textures/cache` unless we intentionally expand the public contract.
 
 Sprite internals are split like this:
 
@@ -92,10 +92,11 @@ selection/
 
 textures/
   Canvas texture creation, frozen texture generation, queue progress, and
-  texture registry.
+  queue scheduling.
 
-cache/
-  Texture cache and particle cache storage.
+textures/cache/
+  Texture registry, frozen texture registry, particle LRU cache, and tracked
+  texture disposal.
 
 internal/
   Runtime policy, scheduling, debug flags, and the low-level sprite component.
