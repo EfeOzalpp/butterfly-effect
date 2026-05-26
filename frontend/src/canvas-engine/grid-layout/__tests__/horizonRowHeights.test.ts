@@ -15,7 +15,7 @@ describe("computeHorizonRowHeights", () => {
 
   test("all rowHeights are positive", () => {
     const { rowHeights } = computeHorizonRowHeights(600, 10, 0.5, 800);
-    rowHeights.forEach((h) => expect(h).toBeGreaterThan(0));
+    rowHeights.forEach((h) => { expect(h).toBeGreaterThan(0); });
   });
 
   test("rowOffsetY starts at 0", () => {
