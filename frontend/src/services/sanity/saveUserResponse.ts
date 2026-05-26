@@ -121,9 +121,13 @@ export async function saveUserResponse(section: string, weights: SurveyWeights):
   }
 
   if (typeof window !== 'undefined') {
-    sessionStorage.setItem('be.myEntryId', created._id);
-    sessionStorage.setItem('be.mySection', section);
-    sessionStorage.setItem('be.justSubmitted', '1');
+    try {
+      sessionStorage.setItem('be.myEntryId', created._id);
+      sessionStorage.setItem('be.mySection', section);
+      sessionStorage.setItem('be.justSubmitted', '1');
+    } catch (err) {
+      console.warn('[saveUserResponse] Failed to persist identity to sessionStorage:', err);
+    }
 
     try {
       const snapshot = {

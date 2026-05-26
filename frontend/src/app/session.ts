@@ -2,17 +2,31 @@ import type { Mode } from "./types";
 
 export function getSessionItem(key: string): string | null {
   if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(key);
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
 }
 
 export function setSessionItem(key: string, value: string) {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(key, value);
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    return;
+  }
 }
 
 export function removeSessionItems(keys: string[]) {
   if (typeof window === "undefined") return;
-  for (const key of keys) sessionStorage.removeItem(key);
+  for (const key of keys) {
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      continue;
+    }
+  }
 }
 
 export function readStoredMode(defaultMode: Mode): Mode {

@@ -4,8 +4,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { subscribeSurveyData } from '../../services/sanity/api';
-import { useMockSanityReadMode } from '../../services/sanity/config';
-import { getSessionItem, setSessionItem } from '../session';
+import { getSessionItem, removeSessionItems, setSessionItem } from '../session';
 import type { SurveyRow } from '../types';
 import { deriveSectionCounts, filterRowsForSection } from './survey-data-utils';
 
@@ -20,13 +19,11 @@ const SMALL_SECTION_THRESHOLD = 5;
 export default function useSurveyDataState({
   mySection,
 }: UseSurveyDataStateParams) {
-  const { active: mockReadMode } = useMockSanityReadMode();
   const [section, setSection] = useState<string>('all');
   const [allRows, setAllRows] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const applyPostSubmitRedirect = useCallback((nextCounts: Record<string, number>) => {
-    if (typeof window === 'undefined') return;
     const justSubmitted = getSessionItem('be.justSubmitted') === '1';
     if (!justSubmitted) return;
 
@@ -34,7 +31,7 @@ export default function useSurveyDataState({
     if (!effectiveMySection) return;
 
     if (effectiveMySection === 'visitor') {
-      sessionStorage.removeItem('be.justSubmitted');
+      removeSessionItems(['be.justSubmitted']);
       return;
     }
 
@@ -42,14 +39,10 @@ export default function useSurveyDataState({
     if (n < SMALL_SECTION_THRESHOLD) {
       // Tiny non-visitor sections redirect to the MassArt pool so the user's dot has context.
       setSection('all-massart');
-      try {
-        setSessionItem('be.openPersonalOnNext', '1');
-      } catch (err: unknown) {
-        console.warn('[useSurveyDataState] Failed to set openPersonalOnNext:', err);
-      }
+      setSessionItem('be.openPersonalOnNext', '1');
     }
 
-    sessionStorage.removeItem('be.justSubmitted');
+    removeSessionItems(['be.justSubmitted']);
   }, [mySection]);
 
   const subscribeToSurveyData = useCallback(() => {
@@ -64,7 +57,7 @@ export default function useSurveyDataState({
         applyPostSubmitRedirect(deriveSectionCounts(rows));
       },
     });
-  }, [applyPostSubmitRedirect, mockReadMode]);
+  }, [applyPostSubmitRedirect]);
 
   const counts = useMemo(
     () => deriveSectionCounts(allRows),

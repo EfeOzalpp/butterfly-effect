@@ -7,21 +7,42 @@ import GamificationCopyPreloader from "../lib/hooks/useGamificationTextPreload";
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
 import { useMockBanner } from "./useMockBanner";
 
+interface IdleWindow {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+  cancelIdleCallback?: (handle: number) => void;
+  setTimeout: Window["setTimeout"];
+  clearTimeout: Window["clearTimeout"];
+}
+
 interface AppBrowserPoliciesProps {
   questionnaireOpen: boolean;
   vizVisible: boolean;
+}
+
+function scheduleIdle(callback: () => void, timeout = 1500) {
+  if (typeof window === "undefined") return undefined;
+
+  const idleWindow = window as unknown as IdleWindow;
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    const handle = idleWindow.requestIdleCallback(callback, { timeout });
+    return () => {
+      idleWindow.cancelIdleCallback?.(handle);
+    };
+  }
+
+  const timer = idleWindow.setTimeout(callback, 0);
+  return () => {
+    idleWindow.clearTimeout(timer);
+  };
 }
 
 export function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
 
   useEffect(() => {
-    const cb = () => { setStart(true); };
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      window.requestIdleCallback(cb, { timeout: 1500 });
-    } else {
-      setTimeout(cb, 0);
-    }
+    return scheduleIdle(() => {
+      setStart(true);
+    });
   }, []);
 
   return start ? <GamificationCopyPreloader /> : null;
@@ -51,13 +72,9 @@ export function AppBrowserPolicies({
   useEffect(() => {
     if (typeof window === "undefined" || !vizVisible) return;
     // When users leave the graph, the onboarding canvas is likely next.
-    const prefetch = () => { void import("../canvas-instances/OnboardingEntry"); };
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(prefetch, { timeout: 1500 });
-    } else {
-      const t = setTimeout(prefetch, 0);
-      return () => { clearTimeout(t); };
-    }
+    return scheduleIdle(() => {
+      void import("../canvas-instances/OnboardingEntry");
+    });
   }, [vizVisible]);
 
   useEffect(() => {

@@ -71,12 +71,21 @@ function resilientListen({
   let closed = false;
   let attempt = 0;
   let shouldResyncOnWelcome = false;
+  let reconnectTimer: number | null = null;
 
   const baseDelay = 1500;
   const maxDelay = 20000;
 
+  const clearReconnectTimer = () => {
+    if (reconnectTimer === null) return;
+    window.clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  };
+
   const reconnectAfter = (delay: number) => {
-    window.setTimeout(() => {
+    clearReconnectTimer();
+    reconnectTimer = window.setTimeout(() => {
+      reconnectTimer = null;
       if (closed || shouldUseMockSanityReads()) return;
       poller?.disable();
       start();
@@ -140,6 +149,8 @@ function resilientListen({
   return () => {
     closed = true;
     sub?.unsubscribe();
+    poller?.disable();
+    clearReconnectTimer();
   };
 }
 
@@ -223,12 +234,15 @@ export function subscribeSurveyData({
   let currentRows: NormalizedSurveyRow[] = [];
   let mockUnsub: Unsubscribe | null = null;
   let unsub: Unsubscribe = noop;
+  let closed = false;
 
   const emit = () => {
+    if (closed) return;
     onData(currentRows);
   };
 
   const pump = (rows: RawSurveyRow[]) => {
+    if (closed) return;
     currentRows = rows.map(normalizeSurveyRow).sort(sortNewestFirst).slice(0, limit);
     emit();
   };
@@ -236,12 +250,14 @@ export function subscribeSurveyData({
   const fetchRows = () => liveClient.fetch<RawSurveyRow[]>(query, params);
 
   const switchToMock = () => {
+    if (closed || mockUnsub) return;
     poller.disable();
     unsub();
     mockUnsub = subscribeMockSurveyData({ section, limit, onData });
   };
 
   const applyMutation = (event: MutationEvent<RawSurveyRow>) => {
+    if (closed) return;
     if (event.transition === 'disappear') {
       currentRows = removeById(currentRows, event.documentId);
       emit();
@@ -258,6 +274,7 @@ export function subscribeSurveyData({
     fetchRows()
       .then(pump)
       .catch((error: unknown) => {
+        if (closed) return;
         if (shouldFallbackToMock(error)) {
           switchToMock();
           return;
@@ -268,6 +285,7 @@ export function subscribeSurveyData({
 
   const poller = makePoller(() => {
     fetchRows().then(pump).catch((error: unknown) => {
+      if (closed) return;
       console.error('[sanityAPI] poll fetch', error);
     });
   }, 6000);
@@ -275,8 +293,9 @@ export function subscribeSurveyData({
   fetchRows()
     .then(pump)
     .catch((error: unknown) => {
+      if (closed) return;
       if (shouldFallbackToMock(error)) {
-        mockUnsub = subscribeMockSurveyData({ section, limit, onData });
+        switchToMock();
         return;
       }
       console.error('[sanityAPI] initial fetch', error);
@@ -288,9 +307,9 @@ export function subscribeSurveyData({
     onMutation: applyMutation,
     onReconnect: refetch,
     onError: (error) => {
+      if (closed) return 'stop';
       if (shouldFallbackToMock(error)) {
-        poller.disable();
-        mockUnsub = subscribeMockSurveyData({ section, limit, onData });
+        switchToMock();
         return 'stop';
       }
       console.error('[sanityAPI] listen error', errorMessage(error));
@@ -300,6 +319,7 @@ export function subscribeSurveyData({
   });
 
   return () => {
+    closed = true;
     unsub();
     mockUnsub?.();
     poller.disable();

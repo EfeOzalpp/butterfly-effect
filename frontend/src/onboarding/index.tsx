@@ -12,6 +12,8 @@ import type { RoleValue } from "./role-picker";
 import { ButtonQuestionnaireFlow, BUTTON_QUESTIONS } from "./questionnaire";
 
 import { saveUserResponse } from "../services/sanity/saveUserResponse";
+import { track } from "../lib/posthog";
+import { setSessionItem } from "../app/session";
 
 type Audience = RoleValue | '';
 
@@ -39,7 +41,7 @@ export default function Survey({
   const [finished, setFinished] = useState(false); // hide questionnaire immediately after submit
   const prevCompletedRef = useRef(false);
 
-  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen } = useUiFlow();
+  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
 
@@ -109,6 +111,22 @@ export default function Survey({
     setSectionOpen,
   ]);
 
+  const prevResetKeyRef = useRef(surveyResetKey);
+  useEffect(() => {
+    if (surveyResetKey === prevResetKeyRef.current) return;
+    prevResetKeyRef.current = surveyResetKey;
+    setStage('role');
+    setAudience('visitor');
+    setSurveySection('');
+    setError('');
+    setSubmitting(false);
+    setFinished(false);
+    setFadeState('fade-in');
+    setQuestionnaireOpen(false);
+    setSectionOpen(false);
+    setAnimationVisible(false);
+  }, [surveyResetKey, setAnimationVisible, setQuestionnaireOpen, setSectionOpen]);
+
   const transitionTo = (next: typeof stage, side?: () => void) => {
     setFadeState('fade-out');
     setTimeout(() => {
@@ -149,7 +167,9 @@ export default function Survey({
       return;
     }
     setError('');
+    track({ name: 'Role Selected', props: { role: audience } });
     if (audience === 'visitor') {
+      track({ name: 'Survey Started', props: { role: audience } });
       transitionTo('questions', () => {
         setSurveySection('visitor');
         setAnimationVisible(false);
@@ -166,6 +186,8 @@ export default function Survey({
       return;
     }
     setError('');
+    track({ name: 'Section Selected', props: { section: surveySection, role: audience } });
+    track({ name: 'Survey Started', props: { role: audience } });
     transitionTo('questions', () => { setAnimationVisible(false); });
   };
 
@@ -199,6 +221,7 @@ export default function Survey({
       const created = await saveUserResponse(surveySection, weights);
       const id = created._id;
 
+      track({ name: 'Survey Completed', props: { section: surveySection, role: audience } });
       setSection(surveySection);
       setMySection(surveySection);
       setMyEntryId(id);
@@ -208,11 +231,7 @@ export default function Survey({
       setSurveyActive(false);
       setAnimationVisible(true);
 
-      if (typeof window !== 'undefined') {
-        if (id) sessionStorage.setItem('be.myEntryId', id);
-        sessionStorage.setItem('be.mySection', surveySection);
-        if (audience) sessionStorage.setItem('be.myRole', audience);
-      }
+      if (audience) setSessionItem('be.myRole', audience);
 
     } catch (err) {
       console.error('[Survey] submit error:', err);
