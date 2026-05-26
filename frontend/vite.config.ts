@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     // Only runs during `vite build` when SENTRY_AUTH_TOKEN is present.
-    // Set SENTRY_AUTH_TOKEN in your CI environment (not in .env — it's a secret).
+    // Set SENTRY_AUTH_TOKEN in your CI environment (not in .env; it is a secret).
     sentryVitePlugin({
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
