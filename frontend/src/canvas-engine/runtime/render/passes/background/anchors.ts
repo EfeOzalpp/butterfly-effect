@@ -2,8 +2,8 @@ import type {
   BackgroundAnchorContext,
   BackgroundStopK,
   RgbaStop,
-} from "../../../../adjustable-rules/backgrounds";
-import type { CanvasPaddingSpec } from "../../../../adjustable-rules/canvas-padding";
+} from "../../../../scene-rules/backgrounds";
+import type { CanvasPaddingSpec } from "../../../../scene-rules/canvas-padding";
 import type { GridMetrics } from "../../../geometry/gridCache";
 import type { PLike } from "../../../p/makeP";
 import { clamp01 } from "../../../../shared/math";

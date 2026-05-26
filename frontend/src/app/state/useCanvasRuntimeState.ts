@@ -1,5 +1,5 @@
 // src/app/state/useCanvasRuntimeState.ts
-// Stores the live/committed score signals that drive the Canvas 2D scene.
+// Stores the live score signal and reserved UI footprint data for the Canvas 2D scene.
 
 import { useCallback, useState } from 'react';
 
@@ -25,15 +25,10 @@ function sameFootprints(a: Place[], b: Place[]) {
 
 export default function useCanvasRuntimeState() {
   const [liveAvgState, _setLiveAvgState] = useState<number>(DEFAULT_AVG);
-  const [allocAvgState, _setAllocAvgState] = useState<number>(DEFAULT_AVG);
   const [reservedFootprintsState, _setReservedFootprintsState] = useState<Place[]>([]);
 
   const setLiveAvg = useCallback((avg?: number) => {
     _setLiveAvgState(normalizeAvg(avg));
-  }, []);
-
-  const commitAllocAvg = useCallback((avg?: number) => {
-    _setAllocAvgState(normalizeAvg(avg));
   }, []);
 
   const setReservedFootprints = useCallback((next: Place[]) => {
@@ -42,15 +37,12 @@ export default function useCanvasRuntimeState() {
 
   const resetCanvasRuntimeState = useCallback(() => {
     _setLiveAvgState(DEFAULT_AVG);
-    _setAllocAvgState(DEFAULT_AVG);
     _setReservedFootprintsState([]);
   }, []);
 
   return {
     liveAvgState,
     setLiveAvg,
-    allocAvgState,
-    commitAllocAvg,
     reservedFootprintsState,
     setReservedFootprints,
     resetCanvasRuntimeState,

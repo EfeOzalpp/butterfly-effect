@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useUiFlow } from "../../../app/state/ui-context";
 
-import { CANVAS_PADDING } from "../../../canvas-engine/adjustable-rules/canvas-padding/index";
-import { resolvePaddingSpec } from "../../../canvas-engine/adjustable-rules/resolvePadding";
+import { CANVAS_PADDING, resolvePaddingSpec } from "../../../canvas-engine/scene-rules/canvas-padding";
 import {
   deviceType,
   getViewportSize,

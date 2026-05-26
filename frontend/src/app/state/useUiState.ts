@@ -72,6 +72,9 @@ export default function useUiState() {
     setWidgetsOpen(false);
   }, []);
 
+  const [surveyResetKey, setSurveyResetKey] = useState(0);
+  const incrementSurveyResetKey = useCallback(() => { setSurveyResetKey((k) => k + 1); }, []);
+
   const [animationVisible, setAnimationVisible] = useState(false);
   const [openPersonalized, setOpenPersonalized] = useState(false);
   const [spotlightRequest, setSpotlightRequest] = useState<SpotlightRequest | null>(null);
@@ -122,5 +125,7 @@ export default function useUiState() {
     questionnaireAdvanceTick,
     requestQuestionnaireAdvance,
     resetQuestionnaireNav,
+    surveyResetKey,
+    incrementSurveyResetKey,
   };
 }

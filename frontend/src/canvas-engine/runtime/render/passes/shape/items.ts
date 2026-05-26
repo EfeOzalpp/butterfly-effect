@@ -3,14 +3,16 @@
 import type { EngineFieldItem } from "../../../engine/field";
 import type { LiveState } from "../../../engine/itemLifecycle";
 import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
+import { copyRuntimeShapeOptionsInto } from "../../../shape-adapter/options";
 import { clamp01, easeOutCubic } from "../../../util/easing";
 
 // drawItems is called by engine/loop.ts during every canvas frame.
 // loop.ts owns the frame-wide context: time, grid metrics, lighting, palette,
 // and the actual "draw one shape" function.
 // This helper owns the item pass: sort the items, track appear state, enrich
-// the shared shape options, then hand each item back to renderOne.
+// the shape opts, then hand each item back to renderOne.
 export function drawItems(params: {
+  // Upstream params: frame/item state supplied by engine/loop.ts.
   items: EngineFieldItem[];
   visible: boolean;
   nowMs: number;
@@ -21,14 +23,16 @@ export function drawItems(params: {
   liveStates: Map<string, LiveState>;
   perShapeScale: Record<string, number> | undefined;
   baseR: number;
-  // baseShared is created in loop.ts. It contains data every shape needs:
+  // baseOpts is created in loop.ts. It contains data every shape needs:
   // cell size, grid metrics, gradient color, time, dark mode, light context, etc.
-  baseShared: RuntimeShapeOptions;
-  sharedScratch?: RuntimeShapeOptions;
+  baseOpts: RuntimeShapeOptions;
+  optsScratch?: RuntimeShapeOptions;
   shapeOccurrenceScratch?: Map<string, number>;
+  // Downstream param: send the fully prepared opts back to loop.ts for sandboxed drawing.
   // renderOne comes from loop.ts instead of being imported here because loop.ts
   // wraps shape drawing with p.push()/p.pop() and DPR transform repair.
-  renderOne: (it: EngineFieldItem, rEff: number, shared: RuntimeShapeOptions, rootAppearK: number) => void;
+  renderOne: (it: EngineFieldItem, rEff: number, opts: RuntimeShapeOptions, rootAppearK: number) => void;
+  // End params.
 }) {
   const {
     items,
@@ -39,8 +43,8 @@ export function drawItems(params: {
     liveStates,
     perShapeScale,
     baseR,
-    baseShared,
-    sharedScratch,
+    baseOpts,
+    optsScratch,
     shapeOccurrenceScratch,
     renderOne,
   } = params;
@@ -49,7 +53,7 @@ export function drawItems(params: {
 
   const shapeOccurrence = shapeOccurrenceScratch ?? new Map<string, number>();
   shapeOccurrence.clear();
-  const shared = sharedScratch ?? {};
+  const opts = optsScratch ?? {};
   const staggerDenom = Math.max(1, items.length - 1);
 
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
@@ -91,17 +95,23 @@ export function drawItems(params: {
 
     // Reuse one options object through the item pass. Shapes draw synchronously,
     // so this avoids allocating a new options object for every item every frame.
-    Object.assign(shared, baseShared);
-    shared.footprint = it.footprint;
-    shared.alpha = Math.round(235 * alphaK);
-    shared.seedKey = `${it.shape}|${it.id}`;
-    shared.shapeOccurrenceIndex = occurrenceIndex;
-    shared.renderPass = "color";
-    shared.silhouetteColor = undefined;
-    shared.silhouetteAlpha = undefined;
-    shared.depthTintColor = undefined;
-    shared.depthTintK = undefined;
+    copyRuntimeShapeOptionsInto(opts, baseOpts);
 
-    renderOne(it, rEff, shared, easedK);
+    const projection = opts.projection ?? (opts.projection = {});
+    const style = opts.style ?? (opts.style = {});
+    const identity = opts.identity ?? (opts.identity = {});
+    const pass = opts.pass ?? (opts.pass = {});
+
+    projection.footprint = it.footprint;
+    style.alpha = Math.round(235 * alphaK);
+    identity.seedKey = `${it.shape}|${it.id}`;
+    identity.shapeOccurrenceIndex = occurrenceIndex;
+    pass.renderPass = "color";
+    pass.maskColor = undefined;
+    pass.maskAlpha = undefined;
+    pass.depthTintColor = undefined;
+    pass.depthTintK = undefined;
+
+    renderOne(it, rEff, opts, easedK);
   }
 }

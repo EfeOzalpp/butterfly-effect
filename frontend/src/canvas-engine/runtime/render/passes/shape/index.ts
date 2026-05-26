@@ -4,7 +4,6 @@ export { drawItems } from "./items";
 export {
   sortItemsForRenderInto,
 } from "./itemOrder";
-export { createFarShapeBitmapRenderer } from "./shapeBitmapCache";
-export { createShapeDepthOverlayRenderer } from "./shapeDepthOverlay";
+export { createShapeRenderCache } from "./shapeRenderCache";
 export { resolveShapeDepthTint, type ShapeDepthTint } from "./shapeDepthStyle";
 export { createPaletteCache, getGradientRGB, type PaletteCache } from "./palette";

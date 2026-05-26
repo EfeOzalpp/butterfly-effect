@@ -23,7 +23,7 @@ flowchart TD
         end
 
         subgraph Canvas ["Canvas Runtime Context"]
-            CC["Signals driving the canvas engine\nliveAvg · allocAvg\ncondAvgs · reservedFootprints"]
+            CC["Signals driving the canvas engine\nliveAvg\nreservedFootprints"]
             CC_note["(app/state/useCanvasRuntimeState.ts)\n(app/state/canvas-runtime-context.ts)"]
         end
 

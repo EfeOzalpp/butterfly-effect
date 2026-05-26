@@ -1,6 +1,5 @@
 import type { EngineFieldItem } from "../../../engine/field";
-import type { GridMetrics } from "../../../../grid-layout/gridMetrics";
-import { metricsDepth } from "../../../../grid-layout/gridMetrics";
+import { metricsDepth, type GridMetrics } from "../../../geometry/gridCache";
 
 interface ItemOrderContext {
   gridMetrics?: GridMetrics;

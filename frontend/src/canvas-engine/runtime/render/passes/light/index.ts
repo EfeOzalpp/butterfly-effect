@@ -1,5 +1,6 @@
 // src/canvas-engine/runtime/render/passes/light/index.ts
 
-// Light pass owns scene-level highlight overlays. Per-shape light response still
-// happens inside shape color calculations through lightCtx.
+// Light pass owns scene-level overlays. Shape-local highlights are not drawn
+// here; runtime passes lightCtx into shapes, and shapes draw their own color-mode
+// light response from that input.
 export { createRowLightCache, drawRowTopLightOverlay } from "./rowLight";

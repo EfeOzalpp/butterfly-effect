@@ -4,21 +4,29 @@ import { addAlphaOnlyLightStops } from "../shared/color";
 import { resolveHorizonRow } from "../shared/horizon";
 import type { GridMetrics } from "../../../geometry/gridCache";
 import type { PLike } from "../../../p/makeP";
+import {
+  clearOffscreenEntry,
+  createOffscreenCache,
+  getOrCreateCanvasLayer,
+} from "../../cache/offscreenCache";
 
 const SKY_LIGHT_INNER_RADIUS_K = 0.10;
 const SKY_LIGHT_OUTER_RADIUS_K = 0.26;
 
 // Offscreen cache for drawRowTopLightOverlay: pure geometry, no time dependency.
 export function createRowLightCache() {
-  let offscreen: HTMLCanvasElement | null = null;
+  const cache = createOffscreenCache();
   let cacheKey = "";
 
-  return function drawRowLightCached(args: Parameters<typeof drawRowTopLightOverlay>[0]) {
+  const drawRowLightCached = function drawRowLightCached(args: Parameters<typeof drawRowTopLightOverlay>[0]) {
     const { p, metrics, light, alpha = 1, minRow = 0, maxRowExclusive } = args;
     if (!light || alpha <= 0) return;
 
     const w = p.width;
     const h = p.height;
+    const { entry, targetChanged } = getOrCreateCanvasLayer(cache, p);
+    if (targetChanged) cacheKey = "";
+
     const key = [
       String(w),
       String(h),
@@ -32,25 +40,27 @@ export function createRowLightCache() {
       metrics.rowOffsetY.join(","),
     ].join("|");
 
-    if (offscreen?.width !== w || offscreen.height !== h) {
-      offscreen ??= document.createElement("canvas");
-      offscreen.width = w;
-      offscreen.height = h;
-      cacheKey = "";
-    }
-
     if (key !== cacheKey) {
-      const offCtx = offscreen.getContext("2d");
-      if (!offCtx) throw new Error("2D canvas context not available");
-      offCtx.clearRect(0, 0, w, h);
-      const fakeP = { drawingContext: offCtx, width: w, height: h } as unknown as PLike;
+      clearOffscreenEntry(entry);
+      const fakeP = {
+        drawingContext: entry.ctx,
+        width: entry.bounds.w,
+        height: entry.bounds.h,
+      } as unknown as PLike;
       drawRowTopLightOverlay({ p: fakeP, metrics, light, alpha, minRow, maxRowExclusive });
       cacheKey = key;
     }
 
     const ctx = p.drawingContext;
-    ctx.drawImage(offscreen, 0, 0);
+    ctx.drawImage(entry.canvas, 0, 0);
   };
+
+  return Object.assign(drawRowLightCached, {
+    clear() {
+      cache.clear();
+      cacheKey = "";
+    },
+  });
 }
 
 export function drawRowTopLightOverlay(args: {

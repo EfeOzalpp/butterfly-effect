@@ -47,12 +47,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     openPersonalized, setOpenPersonalized,
     questionnaireNav, setQuestionnaireNav,
     questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
+    surveyResetKey, incrementSurveyResetKey,
   } = useUiState();
   const {
     liveAvgState,
     setLiveAvg,
-    allocAvgState,
-    commitAllocAvg,
     reservedFootprintsState,
     setReservedFootprints,
     resetCanvasRuntimeState,
@@ -79,7 +78,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setMySection(mockSection);
     setMyEntryId(mockEntryId);
     setMyRole(mockRole);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mock bootstrap, intentional
     setSection(mockSection);
     setSurveyActive(false);
     setHasCompletedSurvey(true);
@@ -107,9 +105,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setMyRole(null);
       setSection("all");
       setQuestionnaireOpen(false);
+      setSectionOpen(false);
+      setCityPanelOpen(false);
       setLogsOpen(false);
       setWidgetsOpen(false);
+      setAnimationVisible(false);
+      setOpenPersonalized(false);
+      setSpotlightRequest(null);
       resetCanvasRuntimeState();
+      incrementSurveyResetKey();
     });
 
     removeSessionItems(["be.myEntryId", "be.mySection", "be.myRole", "be.myDoc"]);
@@ -121,12 +125,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setMyRole,
     setMySection,
     setObserverMode,
+    setSectionOpen,
+    setCityPanelOpen,
     setQuestionnaireOpen,
+    setAnimationVisible,
+    setOpenPersonalized,
+    setSpotlightRequest,
     setSection,
     setSurveyActive,
     setVizVisible,
     setLogsOpen,
     setWidgetsOpen,
+    incrementSurveyResetKey,
   ]);
 
   const preferencesValue = useMemo<PreferencesState>(
@@ -146,6 +156,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       animationVisible, setAnimationVisible,
       openPersonalized, setOpenPersonalized,
       resetToStart,
+      surveyResetKey,
       radarMode, setRadarMode,
       logsOpen, setLogsOpen,
       widgetsOpen, setWidgetsOpen,
@@ -165,6 +176,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       animationVisible, setAnimationVisible,
       openPersonalized, setOpenPersonalized,
       resetToStart,
+      surveyResetKey,
       radarMode, setRadarMode,
       logsOpen, setLogsOpen,
       widgetsOpen, setWidgetsOpen,
@@ -179,16 +191,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       liveAvg: liveAvgState,
       setLiveAvg,
-      allocAvg: allocAvgState,
-      commitAllocAvg,
       reservedFootprints: reservedFootprintsState,
       setReservedFootprints,
     }),
     [
       liveAvgState,
       setLiveAvg,
-      allocAvgState,
-      commitAllocAvg,
       reservedFootprintsState,
       setReservedFootprints,
     ]

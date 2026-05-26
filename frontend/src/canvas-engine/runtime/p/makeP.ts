@@ -1,64 +1,12 @@
-// canvas-engine/engine/p/makeP.ts
+// src/canvas-engine/runtime/p/makeP.ts
 
+import type { CanvasColor, CanvasDrawSurface } from "../../shared/canvas";
 import { getCanvasMeta, setCanvasMeta } from "./canvasMeta";
 
-interface CssRGB {
-  r: number;
-  g: number;
-  b: number;
-}
+export type PLike = CanvasDrawSurface;
 
-export interface PLike {
-  canvas: HTMLCanvasElement;
-  readonly width: number;
-  readonly height: number;
-  readonly deltaTime: number;
-  millis(): number;
-  drawingContext: CanvasRenderingContext2D;
-
-  P2D: "2d";
-
-  createCanvas(w: number, h: number): HTMLCanvasElement;
-  resizeCanvas(w: number, h: number): void;
-  pixelDensity(dpr: number): void;
-
-  background(css: string): void;
-
-  push(): void;
-  pop(): void;
-
-  translate(x: number, y: number): void;
-  scale(x: number, y?: number): void;
-  rotate(r: number): void;
-
-  noFill(): void;
-  fill(r: number | string, g?: number, b?: number, a?: number): void;
-
-  noStroke(): void;
-  stroke(r: number, g: number, b: number, a?: number): void;
-
-  strokeWeight(w: number): void;
-
-  CORNER: "corner";
-  CENTER: "center";
-  rectMode(mode: "corner" | "center"): void;
-
-  rect(x: number, y: number, w: number, h: number, tl?: number, tr?: number, br?: number, bl?: number): void;
-  circle(x: number, y: number, d: number): void;
-  line(x1: number, y1: number, x2: number, y2: number): void;
-  triangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): void;
-
-  beginShape(): void;
-  vertex(x: number, y: number): void;
-  endShape(mode?: string): void;
-  CLOSE: "close";
-
-  color(css: string): CssRGB;
-  red(c: CssRGB): number;
-  green(c: CssRGB): number;
-  blue(c: CssRGB): number;
-
-  __tick(now: number): void;
+export interface RuntimeSurface {
+  p: PLike;
 }
 
 function rgbaCss(r: number, g: number, b: number, a: number): string {
@@ -72,14 +20,19 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
 
   // Engine-side state that must survive save/restore
   let _rectMode: "corner" | "center" = "corner";
-  const _pStateStack: { _rectMode: "corner" | "center" }[] = [];
+  const _pStateStack: {
+    _rectMode: "corner" | "center";
+    doFill: boolean;
+    doStroke: boolean;
+    lineWidth: number;
+  }[] = [];
 
   // simple css→rgb parser using canvas
   const scratchContext = document.createElement("canvas").getContext("2d");
   if (!scratchContext) throw new Error("2D canvas context not available");
   const _scratch = scratchContext;
 
-  function parseCss(css: string): CssRGB {
+  function parseCss(css: string): CanvasColor {
     _scratch.fillStyle = "#000";
     _scratch.fillStyle = css;
     const s = _scratch.fillStyle; // canonicalized css
@@ -143,13 +96,22 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
     },
 
     push() {
-      _pStateStack.push({ _rectMode });
+      _pStateStack.push({
+        _rectMode,
+        doFill: state.doFill,
+        doStroke: state.doStroke,
+        lineWidth: state.lineWidth,
+      });
       ctx.save();
     },
     pop() {
       ctx.restore();
       const s = _pStateStack.pop();
       _rectMode = s?._rectMode ?? "corner";
+      state.doFill = s?.doFill ?? true;
+      state.doStroke = s?.doStroke ?? false;
+      state.lineWidth = s?.lineWidth ?? 1;
+      ctx.lineWidth = state.lineWidth;
     },
 
     translate(x, y) {

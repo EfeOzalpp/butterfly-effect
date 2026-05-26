@@ -15,7 +15,6 @@ export function EngineHost({
   open = true,
   visible = true,
   liveAvg = 0.5,
-  allocAvg = 0.5,
   questionnaireOpen = false,
   reservedFootprints,
 }: {
@@ -23,7 +22,6 @@ export function EngineHost({
   open?: boolean;
   visible?: boolean;
   liveAvg?: number;
-  allocAvg?: number;
   questionnaireOpen?: boolean;
   reservedFootprints?: Place[];
 }) {
@@ -69,7 +67,7 @@ export function EngineHost({
   useSceneField(
     engine,
     id,
-    allocAvg,
+    liveAvg,
     { questionnaireOpen },
     reservedFootprints,
     viewportKey

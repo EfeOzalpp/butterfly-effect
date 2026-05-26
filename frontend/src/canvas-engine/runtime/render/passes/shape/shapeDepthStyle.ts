@@ -1,7 +1,7 @@
 import type { EngineFieldItem } from "../../../engine/field";
 import type { PLike } from "../../../p/makeP";
-import type { GridMetrics } from "../../../../grid-layout/gridMetrics";
-import type { RGB } from "../../../../modifiers/index";
+import type { GridMetrics } from "../../../geometry/gridCache";
+import type { RGB } from "../../../../shared/math";
 import { clamp01 } from "../../../../shared/math";
 
 const DEPTH_FRONT_CLEAR_K = 0.18;

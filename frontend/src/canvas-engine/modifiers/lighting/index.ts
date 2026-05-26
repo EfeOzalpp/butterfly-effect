@@ -1,9 +1,9 @@
-import { clamp01 } from "../color-modifiers";
-import type { RGB } from "../color-modifiers";
+import { clamp01 } from "../../shared/math";
+import type { RGB } from "../../shared/math";
 import { footprintToPx } from "../projection";
 import type { GridFootprint, PixelRect, ProjectionContext } from "../projection";
 
-export type { RGB } from "../color-modifiers";
+export type { RGB } from "../../shared/math";
 
 interface LightItem {
   x: number;

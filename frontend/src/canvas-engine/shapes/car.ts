@@ -1,25 +1,38 @@
 // src/canvas-engine/shapes/car.ts
 
 import {
+  applySrgbExposureContrast,
   applyShapeMods,
+  beginFitScale,
   blendRGB,
   clampBrightness,
   clampSaturation,
   clamp01,
-  val,
+  endFitScale,
+  finiteNumber,
+  fitScaleToRectWidth,
+  resolveRangeValue,
   footprintToPx,
   sampleDirectionalLightRect,
   pickLightBandValue,
   mixRgb,
   paintPixelLightBands,
+  fillRgb,
+  pick,
+  seededTag01 as rFromKey,
+  shapeColorForRenderPass,
+  shouldDrawInRenderPass,
 } from "../modifiers/index";
 import type { LightClosenessBandMap, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
-import { applyExposureContrast, fillRgb } from "./shared/color";
-import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
-import { finiteNumber } from "./shared/numbers";
-import { pick, seededTag01 } from "./shared/random";
-import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
+import {
+  shapeIdentity,
+  shapeLifecycle,
+  shapePass,
+  shapeProjection,
+  shapeSprite,
+  shapeStyle,
+} from "./options";
 
 interface CarPalette extends ShapePalette {
   grass: RGB[];
@@ -42,9 +55,7 @@ interface CarTuning {
   };
 }
 
-const CAR_VARIANTS = { suv: "suv", sedan: "sedan", jeep: "jeep" } as const;
-type CarVariant = typeof CAR_VARIANTS[keyof typeof CAR_VARIANTS];
-export type { CarVariant };
+export type CarVariant = "suv" | "sedan" | "jeep";
 
 interface CarAssetOptions extends ShapeDrawOptions<CarPalette> {
   variant?: CarVariant;
@@ -53,7 +64,24 @@ interface CarAssetOptions extends ShapeDrawOptions<CarPalette> {
 
 type CarDrawOptions = ShapeDrawOptions<CarPalette>;
 
-// light mode
+// Tunables.
+const CAR_VARIANTS = { suv: "suv", sedan: "sedan", jeep: "jeep" } as const satisfies Record<CarVariant, CarVariant>;
+
+const CAR: CarTuning = {
+  grass: { colorBlend: [0.16, 0.30] },
+  body: { colorBlend: [0.04, 0.10] },
+  asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
+
+  // Body/chassis/window wiggle only; wheels stay locked to the road.
+  bodyOscY: {
+    ampR: [0.015, 0.01],
+    intensity: [1, 0.3],
+    speedHz: [4, 0.35],
+    phase: [0.00, 0.00],
+  },
+};
+
+// Palettes.
 const CAR_BASE_PALETTE: CarPalette = {
   grass: [
     { r: 110, g: 160, b: 90 },
@@ -79,7 +107,6 @@ const CAR_BASE_PALETTE: CarPalette = {
   wheel: { r: 40, g: 40, b: 40 },
 };
 
-// dark mode
 const CAR_DARK_PALETTE: CarPalette = {
   grass: [
     { r: 52, g: 96, b: 104 },
@@ -120,26 +147,6 @@ const CAR_DARK_PALETTE: CarPalette = {
   wheel: { r: 22, g: 25, b: 31 },
 };
 
-// parameters
-const CAR: CarTuning = {
-  grass: { colorBlend: [0.16, 0.30] },
-  body: { colorBlend: [0.04, 0.10] },
-  asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
-
-  // body/chassis/window wiggle only; wheels stay locked to the road
-  bodyOscY: {
-    ampR: [0.015, 0.01],
-    intensity: [1, 0.3],
-    speedHz: [4, 0.35],
-    phase: [0.00, 0.00],
-  },
-};
-
-// Deterministic RNG from seedKey + tag. The tag-first order matches old car.js.
-function rFromKey(seedKey: ShapeSeed, tag: string): number {
-  return seededTag01(seedKey, tag);
-}
-
 export function drawCarAsset(
   p: ShapeCanvas,
   cx: number,
@@ -147,24 +154,30 @@ export function drawCarAsset(
   r: number,
   opts: CarAssetOptions = {}
 ): void {
-  const pal = opts.palette ?? (opts.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
-  const ex = finiteNumber(opts.exposure, 1);
-  const ct = finiteNumber(opts.contrast, 1);
-  const alpha = finiteNumber(opts.alpha, 235);
-  const u = clamp01(opts.liveAvg ?? 0.5);
-  const renderPass = opts.renderPass ?? "color";
-  const silhouetteColor = opts.silhouetteColor;
-  const silhouetteAlpha =
-    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
-      ? opts.silhouetteAlpha
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const identity = shapeIdentity(opts);
+  const pass = shapePass(opts);
+
+  const darkMode = style.darkMode === true;
+  const pal = style.palette ?? (darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
+  const ex = finiteNumber(style.exposure, 1);
+  const ct = finiteNumber(style.contrast, 1);
+  const alpha = finiteNumber(style.alpha, 235);
+  const u = clamp01(style.liveAvg ?? 0.5);
+  const renderPass = pass.renderPass ?? "color";
+  const maskColor = pass.maskColor;
+  const maskAlpha =
+    typeof pass.maskAlpha === "number" && Number.isFinite(pass.maskAlpha)
+      ? pass.maskAlpha
       : alpha;
-  const isSilhouettePass = renderPass === "silhouette";
-  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
-  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
-  const massAlpha = isSilhouettePass ? silhouetteAlpha : alpha;
+  const isDepthMaskPass = renderPass === "depthMask";
+  const shouldDrawMass = shouldDrawInRenderPass(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
+  const massAlpha = isDepthMaskPass ? maskAlpha : alpha;
 
   const seedKey: ShapeSeed =
-    (opts.seedKey ?? opts.seed)
+    (identity.seedKey ?? identity.seed)
     ?? `car-asset|${String(Math.round(cx))}|${String(Math.round(wheelY))}|${String(Math.round(r))}`;
 
   const rBodyPick = rFromKey(seedKey, "bodyTint");
@@ -172,10 +185,10 @@ export function drawCarAsset(
   const rSide = rFromKey(seedKey, "sideBias");
 
   let bodyTint = pick(pal.body, rBodyPick);
-  if (opts.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(CAR.body.colorBlend, u));
-  if (opts.darkMode) bodyTint = clampBrightness(bodyTint, 0.5, 1.0);
-  bodyTint = applyExposureContrast(bodyTint, ex, ct);
-  const windowTint = applyExposureContrast(pal.window, ex, ct);
+  if (style.gradientRGB) bodyTint = blendRGB(bodyTint, style.gradientRGB, resolveRangeValue(CAR.body.colorBlend, u));
+  if (darkMode) bodyTint = clampBrightness(bodyTint, 0.5, 1.0);
+  bodyTint = applySrgbExposureContrast(bodyTint, ex, ct);
+  const windowTint = applySrgbExposureContrast(pal.window, ex, ct);
 
   const w = r * 3.2;
   const wheelR = Math.max(2, r * 0.52);
@@ -186,11 +199,7 @@ export function drawCarAsset(
       x: cx,
       y: wheelY,
       r,
-      opts: { alpha, timeMs: opts.timeMs ?? p.millis(), liveAvg: u },
-      mods: {
-        appear: { scaleFrom: 0.0, alphaFrom: 0.0, anchor: "bottom-center", ease: "back", backOvershoot: 1.25 },
-        sizeOsc: { mode: "none" },
-      },
+      opts: { alpha, timeMs: lifecycle.timeMs ?? p.millis(), liveAvg: u, rootAppearK: lifecycle.rootAppearK },
     });
     p.push();
     p.translate(m.x, m.y);
@@ -206,21 +215,21 @@ export function drawCarAsset(
     p.circle(cx + w * 0.38, wheelY, wheelR);
   }
 
-  const baseAmpR = val(CAR.bodyOscY.ampR, u);
-  const intensity = clamp01(val(CAR.bodyOscY.intensity, u));
+  const baseAmpR = resolveRangeValue(CAR.bodyOscY.ampR, u);
+  const intensity = clamp01(resolveRangeValue(CAR.bodyOscY.intensity, u));
   const oscAmp = r * baseAmpR * intensity;
-  const oscHz = val(CAR.bodyOscY.speedHz, u);
-  const oscPhase = val(CAR.bodyOscY.phase, u);
+  const oscHz = resolveRangeValue(CAR.bodyOscY.speedHz, u);
+  const oscPhase = resolveRangeValue(CAR.bodyOscY.phase, u);
 
   const mBody = applyShapeMods({
     p,
     x: cx,
     y: 0,
     r,
-    opts: { timeMs: opts.timeMs ?? p.millis(), liveAvg: u },
+    opts: { timeMs: lifecycle.timeMs ?? p.millis(), liveAvg: u },
     mods: { translateOscY: { amp: oscAmp, speed: oscHz, phase: oscPhase } },
   });
-  const bodyYOffset = isSilhouettePass ? 0 : mBody.y;
+  const bodyYOffset = isDepthMaskPass ? 0 : mBody.y;
 
   const variant: CarVariant =
     opts.variant ?? (rVariant < 0.40 ? CAR_VARIANTS.suv : rVariant < 0.80 ? CAR_VARIANTS.sedan : CAR_VARIANTS.jeep);
@@ -229,14 +238,14 @@ export function drawCarAsset(
     const h = r * 1.9;
     const bodyCy = wheelY - h * 0.46 + bodyYOffset;
     const bodyRect = { x: cx - w / 2, y: bodyCy - h / 2, w, h };
-    const bodyLight = sampleDirectionalLightRect(bodyRect, opts.lightCtx ?? null);
+    const bodyLight = sampleDirectionalLightRect(bodyRect, style.lightCtx ?? null);
     const suvTint = mixRgb(bodyTint, bodyLight.lightColor, 0.28 * bodyLight.overallK);
     const suvHighlight = mixRgb(suvTint, bodyLight.lightColor, 0.46);
     const suvShadow = mixRgb(suvTint, bodyLight.shadowColor, 0.30);
 
     if (shouldDrawMass) {
       p.noStroke();
-      fillRgb(p, shapePartColor(renderPass, suvTint, silhouetteColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, suvTint, maskColor), massAlpha);
       p.rect(cx - w / 2, bodyCy - h / 2, w, h, r * 0.42);
     }
     if (shouldDrawColorDetails) {
@@ -271,7 +280,7 @@ export function drawCarAsset(
     const xt1 = cx + cabinTopW / 2;
     const bodyLight = sampleDirectionalLightRect(
       { x: cx - chassisW / 2, y: cabinTopY, w: chassisW, h: wheelY - cabinTopY },
-      opts.lightCtx ?? null
+      style.lightCtx ?? null
     );
     const sedanTint = mixRgb(bodyTint, bodyLight.lightColor, 0.26 * bodyLight.overallK);
     const sedanHighlight = mixRgb(sedanTint, bodyLight.lightColor, 0.44);
@@ -279,10 +288,10 @@ export function drawCarAsset(
 
     if (shouldDrawMass) {
       p.noStroke();
-      fillRgb(p, shapePartColor(renderPass, sedanTint, silhouetteColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, sedanTint, maskColor), massAlpha);
       p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.22);
 
-      fillRgb(p, shapePartColor(renderPass, sedanTint, silhouetteColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, sedanTint, maskColor), massAlpha);
       p.beginShape();
       p.vertex(x0, cabinBaseY);
       p.vertex(x1, cabinBaseY);
@@ -378,7 +387,7 @@ export function drawCarAsset(
     const chassisCy = wheelY - chassisH * 0.58 + bodyYOffset;
     const bodyLight = sampleDirectionalLightRect(
       { x: cx - chassisW / 2, y: wheelY - r * 1.8 + bodyYOffset, w: chassisW, h: r * 1.8 },
-      opts.lightCtx ?? null
+      style.lightCtx ?? null
     );
     const jeepTint = mixRgb(bodyTint, bodyLight.lightColor, 0.28 * bodyLight.overallK);
     const jeepHighlight = mixRgb(jeepTint, bodyLight.lightColor, 0.46);
@@ -386,7 +395,7 @@ export function drawCarAsset(
 
     if (shouldDrawMass) {
       p.noStroke();
-      fillRgb(p, shapePartColor(renderPass, jeepTint, silhouetteColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, jeepTint, maskColor), massAlpha);
       p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.18);
     }
     if (shouldDrawColorDetails) {
@@ -418,7 +427,7 @@ export function drawCarAsset(
       : cx + chassisW / 2 - cabinW - sidePad;
 
     if (shouldDrawMass) {
-      fillRgb(p, shapePartColor(renderPass, jeepTint, silhouetteColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, jeepTint, maskColor), massAlpha);
       p.rect(cabinX0, cabinTopY, cabinW, cabinH, r * 0.10);
     }
     if (shouldDrawColorDetails) {
@@ -463,30 +472,38 @@ export function drawCar(
   r: number,
   opts: CarDrawOptions = {}
 ): void {
-  const pal = opts.palette ?? (opts.darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
-  const ex = finiteNumber(opts.exposure, 1);
-  const ct = finiteNumber(opts.contrast, 1);
-  const alpha = finiteNumber(opts.alpha, 235);
-  const u = clamp01(opts.liveAvg ?? 0.5);
-  const renderPass = opts.renderPass ?? "color";
-  const silhouetteColor = opts.silhouetteColor;
-  const silhouetteAlpha =
-    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
-      ? opts.silhouetteAlpha
-      : alpha;
-  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
-  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
-  const massAlpha = renderPass === "silhouette" ? silhouetteAlpha : alpha;
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const identity = shapeIdentity(opts);
+  const sprite = shapeSprite(opts);
+  const pass = shapePass(opts);
 
-  const cell = opts.cell;
-  const f = opts.footprint;
+  const darkMode = style.darkMode === true;
+  const pal = style.palette ?? (darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
+  const ex = finiteNumber(style.exposure, 1);
+  const ct = finiteNumber(style.contrast, 1);
+  const alpha = finiteNumber(style.alpha, 235);
+  const u = clamp01(style.liveAvg ?? 0.5);
+  const renderPass = pass.renderPass ?? "color";
+  const maskColor = pass.maskColor;
+  const maskAlpha =
+    typeof pass.maskAlpha === "number" && Number.isFinite(pass.maskAlpha)
+      ? pass.maskAlpha
+      : alpha;
+  const shouldDrawMass = shouldDrawInRenderPass(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
+  const massAlpha = renderPass === "depthMask" ? maskAlpha : alpha;
+
+  const cell = projection.cell;
+  const f = projection.footprint;
   let tileX: number;
   let tileY: number;
   let tileW: number;
   let tileH: number;
 
   if (cell && f) {
-    ({ x: tileX, y: tileY, w: tileW, h: tileH } = footprintToPx(f, opts));
+    ({ x: tileX, y: tileY, w: tileW, h: tileH } = footprintToPx(f, projection));
   } else {
     tileW = r * 3.0;
     tileH = r * 3.0;
@@ -496,7 +513,7 @@ export function drawCar(
 
   const cx0 = cell && f ? tileX + tileW / 2 : cx;
   const seedKey: ShapeSeed =
-    (opts.seedKey ?? opts.seed)
+    (identity.seedKey ?? identity.seed)
     ?? `car|${String(Math.round(tileX))}|${String(Math.round(tileY))}|${String(Math.round(tileW))}x${String(Math.round(tileH))}`;
 
   const rGrass1 = rFromKey(seedKey, "ground:grass1");
@@ -513,11 +530,7 @@ export function drawCar(
     x: cx0,
     y: baseY,
     r,
-    opts: { alpha, timeMs: opts.timeMs, liveAvg: opts.liveAvg, rootAppearK: opts.rootAppearK },
-    mods: {
-      appear: { scaleFrom: 0.0, alphaFrom: 0.0, anchor: "bottom-center", ease: "back", backOvershoot: 1.25 },
-      sizeOsc: { mode: "none" },
-    },
+    opts: { alpha, timeMs: lifecycle.timeMs, liveAvg: style.liveAvg, rootAppearK: lifecycle.rootAppearK },
   });
 
   p.push();
@@ -527,34 +540,34 @@ export function drawCar(
 
   const grassLight = sampleDirectionalLightRect(
     { x: tileX, y: grassY, w: tileW, h: grassH },
-    opts.lightCtx ?? null
+    style.lightCtx ?? null
   );
-  const grassPalette = opts.darkMode
+  const grassPalette = darkMode
     ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
     : pal.grass;
   const g1 = pick(grassPalette, rGrass1);
   const g2 = pick(grassPalette, rGrass2);
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
-  if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(CAR.grass.colorBlend, u));
-  if (opts.darkMode) {
+  if (style.gradientRGB) grassTint = blendRGB(grassTint, style.gradientRGB, resolveRangeValue(CAR.grass.colorBlend, u));
+  if (darkMode) {
     grassTint = clampSaturation(grassTint, 0.0, 0.22, 1);
     grassTint = clampBrightness(grassTint, 0.28, 0.42);
   }
-  grassTint = applyExposureContrast(grassTint, ex, ct);
-  if (opts.darkMode) {
+  grassTint = applySrgbExposureContrast(grassTint, ex, ct);
+  if (darkMode) {
     const grassLightK = grassLight.overallK * (0.03 + 0.08 * grassLight.closenessK);
     grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
   }
 
   p.noStroke();
   if (shouldDrawMass) {
-    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    fillRgb(p, shapeColorForRenderPass(renderPass, grassTint, maskColor), massAlpha);
     p.rect(tileX, grassY, tileW, grassH, r * 0.18);
   }
 
   if (shouldDrawColorDetails) {
-    let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
-    aspColor = clampBrightness(aspColor, val(CAR.asphalt.min, u), val(CAR.asphalt.max, u));
+    let aspColor = applySrgbExposureContrast(pal.asphalt, ex, ct);
+    aspColor = clampBrightness(aspColor, resolveRangeValue(CAR.asphalt.min, u), resolveRangeValue(CAR.asphalt.max, u));
     fillRgb(p, aspColor, alpha);
     p.rect(tileX, aspY, tileW, aspH, r * 0.14);
   }
@@ -562,21 +575,25 @@ export function drawCar(
   const wheelY = aspY + aspH * 0.62;
   const designW = r * 3.2;
   const sidePad = Math.max(2, tileW * 0.06);
-  const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: opts.allowUpscale === true });
+  const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: sprite.allowUpscale === true });
 
   beginFitScale(p, { cx: cx0, anchorY: wheelY, scale: s });
   drawCarAsset(p, cx0, wheelY, r, {
-    alpha,
-    exposure: ex,
-    contrast: ct,
-    darkMode: opts.darkMode === true,
-    gradientRGB: opts.gradientRGB,
-    liveAvg: u,
-    lightCtx: opts.lightCtx,
-    seedKey,
-    renderPass,
-    silhouetteColor,
-    silhouetteAlpha,
+    style: {
+      alpha,
+      exposure: ex,
+      contrast: ct,
+      darkMode,
+      gradientRGB: style.gradientRGB,
+      liveAvg: u,
+      lightCtx: style.lightCtx,
+    },
+    identity: { seedKey },
+    pass: {
+      renderPass,
+      maskColor,
+      maskAlpha,
+    },
     useAppear: false,
   });
   endFitScale(p);

@@ -2,6 +2,7 @@
 // This is the central runtime for appear, scale, translation, rotation, and opacity modifiers.
 
 import { clamp01 } from "./ranges";
+import { resolveAppear } from "./appear";
 import type { ApplyShapeModsOpts } from "./types";
 import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./transformMath";
 
@@ -23,14 +24,9 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
   let scaleX = 1;
   let scaleY = 1;
 
-  if (mods.appear) {
-    const {
-      scaleFrom = 0.0,
-      alphaFrom = 0.0,
-      anchor = "bottom-center",
-      ease = "cubic",
-      backOvershoot = 1.6,
-    } = mods.appear;
+  const appear = resolveAppear(mods.appear, typeof opts.rootAppearK === "number");
+  if (appear) {
+    const { scaleFrom, alphaFrom, anchor, ease, backOvershoot } = appear;
 
     const kIn = typeof opts.rootAppearK === "number" ? opts.rootAppearK : 1;
     let k = clamp01(kIn);

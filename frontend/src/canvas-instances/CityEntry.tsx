@@ -3,7 +3,7 @@ import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
 import { EngineHost } from "../canvas-engine/EngineHost";
 
 export default function CityOverlay({ open }: { open: boolean }) {
-  const { liveAvg, allocAvg, reservedFootprints } = useCanvasRuntime();
+  const { liveAvg, reservedFootprints } = useCanvasRuntime();
 
   return (
     <div
@@ -16,7 +16,6 @@ export default function CityOverlay({ open }: { open: boolean }) {
         id="city"
         open={open}
         liveAvg={liveAvg}
-        allocAvg={allocAvg}
         reservedFootprints={reservedFootprints}
       />
     </div>

@@ -1,38 +1,42 @@
 import type { EngineFieldItem } from "../../../engine/field";
 import type { PLike } from "../../../p/makeP";
-import { makeP } from "../../../p/makeP";
-import { getCanvasMeta, setCanvasMeta } from "../../../p/canvasMeta";
 import { shapeRegistrySupportsRenderPass, type ShapeRegistry } from "../../../shape-adapter/registry";
+import { copyRuntimeShapeOptionsInto } from "../../../shape-adapter/options";
 import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
-import type { ShapeDepthMaskCachePolicy } from "../../../../adjustable-rules/render-cache";
-import type { RGB } from "../../../../modifiers/index";
+import type { ShapeDepthMaskCachePolicy } from "../../../../scene-rules/render-cache";
+import type { RGB } from "../../../../shared/math";
 import { footprintToPx } from "../../../../modifiers/index";
-import { clamp01 } from "../../../../shared/math";
+import { clamp01, finiteNumber } from "../../../../shared/math";
+import {
+  shapeIdentity,
+  shapeLifecycle,
+  shapePass,
+  shapeProjection,
+  shapeStyle,
+} from "../../../../shapes/options";
 import { createDepthMaskDebugTracker } from "../../../debug";
 import { drawItemFromRegistry } from "../../../shape-adapter/draw";
-import { pixelSizeForBounds, snapBoundsToDevicePixels, type PixelBounds } from "./pixelBounds";
+import {
+  canvasDpr,
+  createOffscreenCache,
+  maxCachePixelsForCanvas,
+  pixelSizeForBounds,
+  snapBoundsToDevicePixels,
+  type OffscreenBounds,
+  type OffscreenCacheEntry,
+} from "../../cache/offscreenCache";
 
-type MaskBounds = PixelBounds;
+type MaskBounds = OffscreenBounds;
+type CachedMask = OffscreenCacheEntry;
 
-interface CachedMask {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  maskP: PLike;
-  bounds: MaskBounds;
-  pixels: number;
-}
-
-function finiteNumber(value: number | undefined, fallback: number) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function resolveMaskBounds(item: EngineFieldItem, rEff: number, sharedOptions: RuntimeShapeOptions): MaskBounds | null {
-  const cell = finiteNumber(sharedOptions.cell, rEff);
-  const cellW = finiteNumber(sharedOptions.cellW, cell);
-  const cellH = finiteNumber(sharedOptions.cellH, cell);
+function resolveMaskBounds(item: EngineFieldItem, rEff: number, opts: RuntimeShapeOptions): MaskBounds | null {
+  const projection = shapeProjection(opts);
+  const cell = finiteNumber(projection.cell, rEff);
+  const cellW = finiteNumber(projection.cellW, cell);
+  const cellH = finiteNumber(projection.cellH, cell);
 
   const rect = item.footprint
-    ? footprintToPx(item.footprint, sharedOptions)
+    ? footprintToPx(item.footprint, projection)
     : { x: item.x - rEff, y: item.y - rEff, w: rEff * 2, h: rEff * 2 };
   if (rect.w <= 0 || rect.h <= 0) return null;
 
@@ -60,44 +64,36 @@ function colorKey(color: RGB) {
   return `${String(color.r)},${String(color.g)},${String(color.b)}`;
 }
 
-function depthOverlayFromOptions(sharedOptions: RuntimeShapeOptions) {
-  const color = sharedOptions.depthTintColor;
-  const blend = sharedOptions.depthTintK;
+function depthOverlayFromOptions(opts: RuntimeShapeOptions) {
+  const pass = shapePass(opts);
+  const color = pass.depthTintColor;
+  const blend = pass.depthTintK;
   if (!color || typeof blend !== "number" || !Number.isFinite(blend) || blend <= 0) return null;
   return { color, blend: clamp01(blend) };
-}
-
-function renderTargetKey(p: PLike, dpr: number) {
-  return [
-    String(p.canvas.width),
-    String(p.canvas.height),
-    rounded(p.width),
-    rounded(p.height),
-    rounded(dpr, 100),
-  ].join("|");
 }
 
 function maskCacheKey(args: {
   item: EngineFieldItem;
   rEff: number;
-  sharedOptions: RuntimeShapeOptions;
+  opts: RuntimeShapeOptions;
   bounds: MaskBounds;
   dpr: number;
   color: RGB;
 }) {
-  const { item, rEff, sharedOptions, bounds, dpr, color } = args;
-  const liveAvgQ = Math.round(clamp01(sharedOptions.liveAvg ?? 0.5) * 20);
+  const { item, rEff, opts, bounds, dpr, color } = args;
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const identity = shapeIdentity(opts);
   return [
     item.id,
     item.shape,
     footprintKey(item),
     rounded(rEff),
-    rounded(sharedOptions.cell),
-    rounded(sharedOptions.cellW),
-    rounded(sharedOptions.cellH),
-    String(sharedOptions.shapeOccurrenceIndex ?? 0),
-    String(liveAvgQ),
-    String(sharedOptions.darkMode ? 1 : 0),
+    rounded(projection.cell),
+    rounded(projection.cellW),
+    rounded(projection.cellH),
+    String(identity.shapeOccurrenceIndex ?? 0),
+    String(style.darkMode ? 1 : 0),
     rounded(bounds.x),
     rounded(bounds.y),
     rounded(bounds.w),
@@ -127,75 +123,29 @@ function maskFallbackKey(args: {
   ].join("|");
 }
 
-function touchCacheEntry(cache: Map<string, CachedMask>, key: string, entry: CachedMask) {
-  cache.delete(key);
-  cache.set(key, entry);
-}
-
-function trimMaskCache(args: {
-  cache: Map<string, CachedMask>;
-  maxPixels: number;
-  currentPixels: number;
-}) {
-  const { cache, maxPixels } = args;
-  let currentPixels = args.currentPixels;
-  let trimmed = 0;
-  while (currentPixels > maxPixels) {
-    const oldest = cache.keys().next().value;
-    if (typeof oldest !== "string") return { trimmed, currentPixels };
-    const entry = cache.get(oldest);
-    currentPixels -= entry?.pixels ?? 0;
-    cache.delete(oldest);
-    trimmed += 1;
-  }
-  return { trimmed, currentPixels };
-}
-
-function maskPixelSize(bounds: MaskBounds, dpr: number) {
-  return pixelSizeForBounds(bounds, dpr);
-}
-
-function maxMaskCachePixels(p: PLike, policy: ShapeDepthMaskCachePolicy) {
-  return Math.max(1, Math.floor(p.canvas.width * p.canvas.height * policy.maxPixelsPerCanvasPixel));
-}
-
-function createMaskCanvas(bounds: MaskBounds, dpr: number): CachedMask {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("2D canvas context not available");
-  const maskP = makeP(canvas, ctx);
-
-  const { pixelW, pixelH, pixels } = maskPixelSize(bounds, dpr);
-  canvas.width = pixelW;
-  canvas.height = pixelH;
-  setCanvasMeta(canvas, { dpr, cssW: bounds.w, cssH: bounds.h });
-
-  return { canvas, ctx, maskP, bounds, pixels };
-}
-
 function isAlwaysLiveDepthMask(policy: ShapeDepthMaskCachePolicy, shape: string) {
   return policy.alwaysLiveShapes.includes(shape);
 }
 
 export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskCachePolicy) {
-  const cache = new Map<string, CachedMask>();
+  const cache = createOffscreenCache<MaskBounds>();
   const fallbackKeys = new Map<string, string>();
-  const scratchOptions: RuntimeShapeOptions = {};
+  const bakeOpts: RuntimeShapeOptions = {};
   const debug = createDepthMaskDebugTracker();
-  let targetKey = "";
-  let cachePixels = 0;
   let frameTimeMs = Number.NaN;
   let bakesThisFrame = 0;
 
+  function clearCache() {
+    const clearedCount = cache.clear();
+    fallbackKeys.clear();
+    debug.markCleared(clearedCount);
+  }
+
   function syncRenderTarget(p: PLike, dpr: number) {
-    const nextKey = renderTargetKey(p, dpr);
-    if (nextKey !== targetKey) {
-      const clearedCount = cache.size;
-      cache.clear();
+    const result = cache.syncRenderTarget(p, dpr);
+    if (result.changed) {
       fallbackKeys.clear();
-      cachePixels = 0;
-      debug.markCleared(clearedCount);
-      targetKey = nextKey;
+      debug.markCleared(result.cleared);
     }
   }
 
@@ -206,108 +156,112 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
   }
 
   function trimCacheToPolicy(p: PLike, policy: ShapeDepthMaskCachePolicy) {
-    const result = trimMaskCache({
-      cache,
-      maxPixels: maxMaskCachePixels(p, policy),
-      currentPixels: cachePixels,
-    });
-    cachePixels = result.currentPixels;
-    debug.markTrimmed(result.trimmed);
+    const trimmed = cache.trim(maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel));
+    debug.markTrimmed(trimmed);
   }
 
   function bakeMask(args: {
+    // Upstream params: cache-miss draw data from drawShapeDepthOverlay.
     entry: CachedMask;
     shapeRegistry: ShapeRegistry;
     item: EngineFieldItem;
     rEff: number;
-    sharedOptions: RuntimeShapeOptions;
+    opts: RuntimeShapeOptions;
     color: RGB;
     timeMs: number;
     dpr: number;
+    // End params.
   }) {
-    const { entry, shapeRegistry, item, rEff, sharedOptions, color, timeMs, dpr } = args;
-    const { ctx, maskP, bounds, canvas } = entry;
+    const { entry, shapeRegistry, item, rEff, opts, color, timeMs, dpr } = args;
+    const { ctx, p: maskP, bounds, canvas } = entry;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     maskP.__tick(timeMs);
-    Object.assign(scratchOptions, sharedOptions);
-    scratchOptions.renderPass = "silhouette";
-    scratchOptions.silhouetteColor = color;
-    scratchOptions.silhouetteAlpha = 255;
-    scratchOptions.depthTintColor = undefined;
-    scratchOptions.depthTintK = undefined;
-    scratchOptions.alpha = 255;
-    scratchOptions.rootAppearK = 1;
+    copyRuntimeShapeOptionsInto(bakeOpts, opts);
+    const style = bakeOpts.style ?? (bakeOpts.style = {});
+    const lifecycle = bakeOpts.lifecycle ?? (bakeOpts.lifecycle = {});
+    const particles = bakeOpts.particles ?? (bakeOpts.particles = {});
+    const pass = bakeOpts.pass ?? (bakeOpts.pass = {});
+    style.alpha = 255;
+    lifecycle.rootAppearK = 1;
+    particles.particleStore = undefined;
+    pass.renderPass = "depthMask";
+    pass.maskColor = color;
+    pass.maskAlpha = 255;
+    pass.depthTintColor = undefined;
+    pass.depthTintK = undefined;
 
     maskP.push();
     maskP.translate(-bounds.x, -bounds.y);
-    drawItemFromRegistry(shapeRegistry, maskP, item, rEff, scratchOptions);
+    drawItemFromRegistry(shapeRegistry, maskP, item, rEff, bakeOpts);
     maskP.pop();
 
-    scratchOptions.renderPass = "color";
-    scratchOptions.silhouetteColor = undefined;
-    scratchOptions.silhouetteAlpha = undefined;
+    pass.renderPass = "color";
+    pass.maskColor = undefined;
+    pass.maskAlpha = undefined;
   }
 
-  return function drawShapeDepthOverlay(args: {
+  const drawShapeDepthOverlay = function drawShapeDepthOverlay(args: {
+    // Upstream params: item draw result from engine/loop.ts after the color pass.
     p: PLike;
     shapeRegistry: ShapeRegistry;
     item: EngineFieldItem;
     rEff: number;
-    sharedOptions: RuntimeShapeOptions;
+    opts: RuntimeShapeOptions;
     shapeWasDrawnLive: boolean;
+    // End params.
   }) {
-    const { p, shapeRegistry, item, rEff, sharedOptions, shapeWasDrawnLive } = args;
+    const { p, shapeRegistry, item, rEff, opts, shapeWasDrawnLive } = args;
     const policy = getPolicy();
-    const timeMs = sharedOptions.timeMs ?? performance.now();
+    const timeMs = shapeLifecycle(opts).timeMs ?? performance.now();
     syncFrameBudget(timeMs);
 
     debug.markCall();
-    if (!shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "silhouette")) {
+    if (!shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
       debug.markSkippedUnsupported();
-      debug.maybeLog(cache.size, cachePixels);
+      debug.maybeLog(cache.size, cache.pixels);
       return;
     }
-    if ((sharedOptions.rootAppearK ?? 1) < 0.995) {
+    if ((shapeLifecycle(opts).rootAppearK ?? 1) < 0.995) {
       debug.markSkippedAppear();
-      debug.maybeLog(cache.size, cachePixels);
+      debug.maybeLog(cache.size, cache.pixels);
       return;
     }
 
-    const overlay = depthOverlayFromOptions(sharedOptions);
+    const overlay = depthOverlayFromOptions(opts);
     if (!overlay) return;
     if (overlay.blend < policy.minBlend) {
       debug.markSkippedBlend();
-      debug.maybeLog(cache.size, cachePixels);
+      debug.maybeLog(cache.size, cache.pixels);
       return;
     }
 
-    const dpr = getCanvasMeta(p.canvas).dpr ?? 1;
+    const dpr = canvasDpr(p);
     syncRenderTarget(p, dpr);
 
-    const roughBounds = resolveMaskBounds(item, rEff, sharedOptions);
+    const roughBounds = resolveMaskBounds(item, rEff, opts);
     if (!roughBounds) {
       debug.markSkippedBounds();
-      debug.maybeLog(cache.size, cachePixels);
+      debug.maybeLog(cache.size, cache.pixels);
       return;
     }
     const bounds = snapBoundsToDevicePixels(roughBounds, dpr);
 
-    const key = maskCacheKey({ item, rEff, sharedOptions, bounds, dpr, color: overlay.color });
+    const key = maskCacheKey({ item, rEff, opts, bounds, dpr, color: overlay.color });
     const fallbackKey = maskFallbackKey({ item, bounds, dpr, color: overlay.color });
     // Keep the mask animation policy matched to the visible shape.
-    // If far-shape LOD froze the color pass, the silhouette must freeze too.
+    // If far-shape LOD froze the color pass, the depth mask must freeze too.
     const alwaysLiveMask = shapeWasDrawnLive && isAlwaysLiveDepthMask(policy, item.shape);
     let entry = cache.get(key);
 
     if (!entry) {
-      const maskPixels = maskPixelSize(bounds, dpr).pixels;
-      if (maskPixels > maxMaskCachePixels(p, policy)) {
+      const maskPixels = pixelSizeForBounds(bounds, dpr).pixels;
+      if (maskPixels > maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel)) {
         debug.markSkippedTooLarge();
-        debug.maybeLog(cache.size, cachePixels);
+        debug.maybeLog(cache.size, cache.pixels);
         return;
       }
       if (bakesThisFrame >= policy.maxBakesPerFrame) {
@@ -319,13 +273,12 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
         } else {
           if (staleKey) fallbackKeys.delete(fallbackKey);
           debug.markSkippedWarmupBudget();
-          debug.maybeLog(cache.size, cachePixels);
+          debug.maybeLog(cache.size, cache.pixels);
           return;
         }
       } else {
-        entry = createMaskCanvas(bounds, dpr);
+        entry = cache.createEntry(bounds, dpr);
         bakesThisFrame += 1;
-        cachePixels += entry.pixels;
         debug.markCreated(entry.pixels);
         debug.markBaked();
         bakeMask({
@@ -333,9 +286,9 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
           shapeRegistry,
           item,
           rEff,
-          sharedOptions,
+          opts,
           color: overlay.color,
-          timeMs: sharedOptions.timeMs ?? performance.now(),
+          timeMs: shapeLifecycle(opts).timeMs ?? performance.now(),
           dpr,
         });
         cache.set(key, entry);
@@ -351,13 +304,13 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
           shapeRegistry,
           item,
           rEff,
-          sharedOptions,
+          opts,
           color: overlay.color,
-          timeMs: sharedOptions.timeMs ?? performance.now(),
+          timeMs: shapeLifecycle(opts).timeMs ?? performance.now(),
           dpr,
         });
       }
-      touchCacheEntry(cache, key, entry);
+      cache.touch(key, entry);
       fallbackKeys.set(fallbackKey, key);
     }
 
@@ -367,6 +320,10 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     ctx.drawImage(entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
     ctx.restore();
     debug.markDrawn();
-    debug.maybeLog(cache.size, cachePixels);
+    debug.maybeLog(cache.size, cache.pixels);
   };
+
+  return Object.assign(drawShapeDepthOverlay, {
+    clear: clearCache,
+  });
 }

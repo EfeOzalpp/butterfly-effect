@@ -20,30 +20,38 @@ engine/field.ts         item payload contract
 engine/state.ts         runtime-owned defaults and mutable state shape
 engine/itemLifecycle.ts per-item appear/replay lifecycle state
 shape-adapter/types.ts  runtime-safe shape options
+render/cache/*          shared offscreen cache mechanics
 render/passes/*         render-pass params local to each render helper
 ```
+
+`EngineControls.setSceneProfile()` is the app-to-runtime scene handoff. The app
+resolves scene state into a lookup key, padding spec, background spec, and render
+cache policy before runtime receives it. The frame loop receives that same
+profile through `getProfile()` instead of separate scene/padding/background
+cache getters.
 
 Folder map:
 
 ```txt
 engine/
-  Public controls, runtime state, frame scheduler, instance registry, item
-  lifecycle, and the main frame loop.
+  Public controls, runtime state, frame scheduler, item lifecycle, and the main
+  frame loop.
 
 geometry/
-  Runtime layout orchestration. This calls the grid-layout and adjustable-rule
+  Runtime layout orchestration. This calls the grid-layout and scene-rule
   helpers, then shapes the result for the render pass.
 
 platform/
-  DOM mount, canvas sizing, resize handlers, and browser-facing setup.
+  DOM mount ownership, canvas sizing, resize handlers, and browser-facing setup.
 
 p/
   Small p5-like drawing facade over Canvas 2D. This keeps shape files away from
   raw canvas context details.
 
 render/
-  Background, palette, lighting, item drawing, item ordering, ghost/fog render
-  helpers, and the explicit render-pass folders used by the loop.
+  Pass-specific drawing code plus shared offscreen cache mechanics. Passes own
+  cache keys and bake/draw behavior; render/cache owns canvas entries and
+  eviction.
 
 shape-adapter/
   Runtime bridge from EngineFieldItem payloads to shape draw functions. Shape
@@ -69,7 +77,7 @@ That means expensive or stable work should usually happen before the loop, or be
 
 ```txt
 scene rules -> resolved lookup key
-grid inputs -> cached grid metrics
+grid-layout -> runtime/geometry/gridCache -> cached grid metrics
 field items -> prepared render order
 shape drawing -> registry lookup
 ```

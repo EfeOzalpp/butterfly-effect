@@ -1,6 +1,8 @@
 // src/canvas-engine/grid-layout/occupancy.ts
 
-export interface Place { r0: number; c0: number; w: number; h: number }
+import type { GridFootprint } from "../shared/geometry";
+
+export type Place = GridFootprint;
 
 export type CellForbidden = (r: number, c: number) => boolean;
 export interface PlaceOpts {

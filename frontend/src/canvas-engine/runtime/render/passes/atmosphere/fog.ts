@@ -1,6 +1,11 @@
 import { clamp01 } from "../../../../shared/math";
 import type { GridMetrics } from "../../../geometry/gridCache";
 import type { PLike } from "../../../p/makeP";
+import {
+  clearOffscreenEntry,
+  createOffscreenCache,
+  getOrCreateCanvasLayer,
+} from "../../cache/offscreenCache";
 import { resolveHorizonRow } from "../shared/horizon";
 
 interface FogColor { r: number; g: number; b: number }
@@ -188,7 +193,7 @@ function computeFogState(args: {
   if (!Number.isFinite(fogStartY)) return null;
 
   // Ground fog still uses row boundaries, but it is now one cached background
-  // atmosphere pass. Shape depth is handled by the per-shape silhouette overlay.
+  // atmosphere pass. Shape depth is handled by the per-shape depth mask overlay.
   const fogCanvasH = p.height;
   const groundFogLayerBoundaries = [
     ...metrics.rowOffsetY.slice(horizonRow + 1),
@@ -294,14 +299,17 @@ function drawGroundFog(p: PLike, fog: FogState) {
 // Offscreen cache for the whole static fog layer. Shape depth now lives in
 // render/passes/shape/shapeDepthOverlay.ts, so this layer can stay behind all scene objects.
 export function createFogLayerCache() {
-  let offscreen: HTMLCanvasElement | null = null;
+  const cache = createOffscreenCache();
   let cacheKey = "";
 
-  return function drawFogLayerCached(p: PLike, fog: FogState | null) {
+  const drawFogLayerCached = function drawFogLayerCached(p: PLike, fog: FogState | null) {
     if (!fog) return;
 
     const w = p.width;
     const h = p.height;
+    const { entry, targetChanged } = getOrCreateCanvasLayer(cache, p);
+    if (targetChanged) cacheKey = "";
+
     const key = [
       String(w),
       String(h),
@@ -318,25 +326,27 @@ export function createFogLayerCache() {
       fog.groundFogLayerBoundaries.join(","),
     ].join("|");
 
-    if (offscreen?.width !== w || offscreen.height !== h) {
-      offscreen ??= document.createElement("canvas");
-      offscreen.width = w;
-      offscreen.height = h;
-      cacheKey = "";
-    }
-
     if (key !== cacheKey) {
-      const offCtx = offscreen.getContext("2d");
-      if (!offCtx) throw new Error("2D canvas context not available");
-      offCtx.clearRect(0, 0, w, h);
-      const fakeP = { drawingContext: offCtx, width: w, height: h } as unknown as PLike;
+      clearOffscreenEntry(entry);
+      const fakeP = {
+        drawingContext: entry.ctx,
+        width: entry.bounds.w,
+        height: entry.bounds.h,
+      } as unknown as PLike;
       drawFogLayer(fakeP, fog);
       cacheKey = key;
     }
 
     const ctx = p.drawingContext;
-    ctx.drawImage(offscreen, 0, 0);
+    ctx.drawImage(entry.canvas, 0, 0);
   };
+
+  return Object.assign(drawFogLayerCached, {
+    clear() {
+      cache.clear();
+      cacheKey = "";
+    },
+  });
 }
 
 function drawFogLayer(p: PLike, fog: FogState) {

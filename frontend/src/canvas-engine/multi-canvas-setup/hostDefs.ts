@@ -1,7 +1,7 @@
 // src/canvas-engine/multi-canvas-setup/hostDefs.ts
 
-import { SCENE_RULESETS } from "../adjustable-rules/registry";
-import type { SceneRuleSet } from "./types";
+import { SCENE_RULESETS } from "../scene-rules/registry";
+import type { SceneRuleSet } from "../scene-rules/profile";
 import type { BaseMode } from "../scene-state";
 import type { DprMode } from "../runtime/platform/viewport";
 

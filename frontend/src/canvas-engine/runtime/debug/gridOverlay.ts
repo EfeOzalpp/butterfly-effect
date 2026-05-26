@@ -1,8 +1,8 @@
 // src/canvas-engine/runtime/debug/gridOverlay.ts
 
 import type { PLike } from "../p/makeP";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
-import type { GridMetrics } from "../../grid-layout/gridMetrics";
+import type { GridMetrics } from "../geometry/gridCache";
+import type { CanvasPaddingSpec } from "../../scene-rules/canvas-padding";
 
 export interface GridOverlayParams {
   cellW: number;

@@ -11,7 +11,7 @@ export function useLiveAvgButtons(
   initialActiveIds: string[] = [],
   onChange?: (next: LiveAvgButtonChange) => void
 ) {
-  const { setLiveAvg, commitAllocAvg } = useCanvasRuntime();
+  const { setLiveAvg } = useCanvasRuntime();
   const [activeIds, setActiveIds] = useState<string[]>(() =>
     initialActiveIds.filter((id, index, arr) => arr.indexOf(id) === index)
   );
@@ -55,19 +55,10 @@ export function useLiveAvgButtons(
           ? prev.filter((entry) => entry !== id)
           : [...prev, id];
 
-        const nextActiveItems = next
-          .map((entry) => itemMap.get(entry))
-          .filter((entry): entry is LiveAvgButtonItem => !!entry && !entry.disabled);
-
-        const nextAvg = nextActiveItems.length
-          ? nextActiveItems.reduce((sum, entry) => sum + clamp01(entry.value), 0) / nextActiveItems.length
-          : DEFAULT_AVG;
-
-        commitAllocAvg(nextAvg);
         return next;
       });
     },
-    [commitAllocAvg, itemMap]
+    [itemMap]
   );
 
   const isActive = useCallback((id: string) => activeIds.includes(id), [activeIds]);

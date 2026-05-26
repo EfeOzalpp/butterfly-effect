@@ -1,13 +1,13 @@
 import type { SceneLookupKey } from "../../scene-state";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
-import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
-import type { RenderCachePolicy } from "../../adjustable-rules/render-cache";
+import type { CanvasPaddingSpec } from "../../scene-rules/canvas-padding";
+import type { BackgroundSpec } from "../../scene-rules/backgrounds";
+import type { RenderCachePolicy } from "../../scene-rules/render-cache";
 import type { EngineLayoutMode } from "../platform/mount";
 import type { DprMode } from "../platform/viewport";
 import type { CanvasBounds } from "../../multi-canvas-setup/hostDefs";
 import type { ShapeRegistry } from "../shape-adapter/registry";
 import type { DebugFlags } from "../debug";
-import type { RGB } from "../../modifiers/index";
+import type { RGB } from "../../shared/math";
 import type { EngineFieldItem } from "./field";
 
 export type { EngineFieldItem } from "./field";
@@ -27,10 +27,20 @@ export interface EngineFieldStyle {
   contrast?: number;
   appearMs?: number;
   appearStaggerMs?: number;
-  exitMs?: number;
   darkMode?: boolean;
   fog?: boolean;
   debug?: Partial<DebugFlags>;
+}
+
+export interface EngineSceneProfile {
+  lookupKey: SceneLookupKey;
+  paddingSpec: CanvasPaddingSpec | null;
+  background: BackgroundSpec | null;
+  renderCache: RenderCachePolicy;
+}
+
+export interface EngineSceneSource {
+  getProfile: () => EngineSceneProfile;
 }
 
 export interface EngineControls {
@@ -42,13 +52,7 @@ export interface EngineControls {
   setFieldStyle: (args?: EngineFieldStyle) => void;
   setFieldVisible: (v: boolean) => void;
 
-  // mode/policy inputs to runtime
-  setSceneMode: (mode: SceneLookupKey) => void;
-
-  // Optional escape hatches: if caller already resolved these, runtime uses them.
-  setPaddingSpec: (spec: CanvasPaddingSpec | null) => void;
-  setBackgroundSpec: (spec: BackgroundSpec | null) => void;
-  setRenderCachePolicy: (policy: RenderCachePolicy | null) => void;
+  setSceneProfile: (profile: EngineSceneProfile) => void;
 
   setVisible: (v: boolean) => void;
 

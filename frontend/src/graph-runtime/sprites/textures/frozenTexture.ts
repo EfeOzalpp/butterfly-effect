@@ -93,23 +93,31 @@ function makePainter(
   const lightCtx = makeSpritePaletteLightContext(cnv.width / dpr, cnv.height / dpr, darkMode ?? false);
 
   const baseOpts = {
-    alpha,
-    gradientRGB,
-    liveAvg,
-    blend,
-    cell: tileSize,
-    footprint: { r0: bTop, c0: bLeft, w: wTiles, h: hTiles },
-    seedKey,
-    fitToFootprint: true,
-    coreScaleMult: pixelScale,
-    pixelScale,
-    particlePixelScale: pixelScale,
+    projection: {
+      cell: tileSize,
+      footprint: { r0: bTop, c0: bLeft, w: wTiles, h: hTiles },
+    },
+    style: {
+      alpha,
+      gradientRGB,
+      liveAvg,
+      blend,
+      darkMode: darkMode ?? false,
+      lightCtx,
+    },
+    identity: {
+      seedKey,
+    },
+    sprite: {
+      fitToFootprint: true,
+      coreScaleMult: pixelScale,
+      pixelScale,
+      particlePixelScale: pixelScale,
+    },
     oscAmp: 0,
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
     sizeOsc: { mode: 'none' },
-    darkMode: darkMode ?? false,
-    lightCtx,
   };
 
   function clear() {
@@ -127,9 +135,10 @@ function makePainter(
     clear();
     drawer(p, centerX, centerY, r, {
       ...baseOpts,
-      timeMs: nowMs,
-      dtMs,
-      dtSec: dtMs / 1000,
+      lifecycle: {
+        timeMs: nowMs,
+        dtSec: dtMs / 1000,
+      },
     });
   }
 

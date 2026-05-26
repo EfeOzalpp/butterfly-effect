@@ -1,17 +1,8 @@
 // Shape modifier config contracts.
 // These are declarative knobs that shapes pass into applyShapeMods before drawing.
-export type Anchor =
-  | "center"
-  | "top"
-  | "bottom"
-  | "left"
-  | "right"
-  | "top-left"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right"
-  | "bottom-center"
-  | "top-center";
+import type { Anchor } from "../../shared/geometry";
+
+export type { Anchor };
 
 export interface Scale2D {
   x?: number;
@@ -64,8 +55,9 @@ export interface TranslateOscY {
 }
 
 export interface ShapeMods {
-  // Entry animation applied when the canvas/root signal is opening.
-  appear?: AppearMod;
+  // Entry animation envelope. When rootAppearK is present, applyShapeMods uses
+  // the standard root appear unless a shape provides overrides or disables it.
+  appear?: AppearMod | false;
 
   // Size and motion modifiers. Shapes decide which configs they support.
   scale?: Scale;

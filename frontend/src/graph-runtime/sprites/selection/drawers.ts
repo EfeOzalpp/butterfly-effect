@@ -1,6 +1,6 @@
 // graph-runtime/sprites/selection/drawers.ts
 import type { ShapeKey } from './types';
-import type { ShapeDrawFn, ShapeDrawOptions } from '../../../canvas-engine/shapes/types';
+import type { ShapeDrawFn, ShapeDrawOptions, ShapeStyleOptions } from '../../../canvas-engine/shapes/types';
 
 import {
   drawClouds,
@@ -18,7 +18,10 @@ import {
 
 // Sprites pass the shared timing/layout options, but not shape-specific palettes.
 // Keeping palette out of this contract lets each shape keep its own internal palette type.
-export type SpriteDrawerOptions = Omit<ShapeDrawOptions, 'palette' | 'paletteTheme'>;
+type SpriteStyleOptions = Omit<ShapeStyleOptions, 'palette'> & { palette?: never };
+export type SpriteDrawerOptions = Omit<ShapeDrawOptions, 'style'> & {
+  style?: SpriteStyleOptions;
+};
 export type DrawerFn = ShapeDrawFn<SpriteDrawerOptions>;
 
 // Bridge from graph sprite keys to canvas-engine art drawers.

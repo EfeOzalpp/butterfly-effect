@@ -50,6 +50,8 @@ export interface UiState {
   openPersonalized: boolean;
   setOpenPersonalized: (v: boolean) => void;
   resetToStart: () => void;
+  // Incremented by resetToStart so the Survey can detect mid-flow resets.
+  surveyResetKey: number;
 
   // Graph overlay controls.
   radarMode: boolean;

@@ -54,6 +54,30 @@ export function driveBrightness(base: RGB, t: number, l0: number, l1: number): R
   return hslToRgb({ h, s, l: lTarget });
 }
 
+export function scaleRgb({ r, g, b }: RGB, k: number): RGB {
+  const scale = (value: number) => Math.max(0, Math.min(255, Math.round(value * k)));
+  return { r: scale(r), g: scale(g), b: scale(b) };
+}
+
+// Direct sRGB/channel-space exposure used by the authored Canvas2D shapes.
+// This preserves their current palette response; the default applyExposureContrast
+// below is perceptual and used by higher-level visual style composition.
+export function applySrgbExposureContrast(rgb: RGB, exposure = 1, contrast = 1): RGB {
+  const e = Math.max(0.1, Math.min(3, exposure));
+  const k = Math.max(0.5, Math.min(2, contrast));
+  const adjust = (v: number): number => {
+    let x = (v / 255) * e;
+    x = (x - 0.5) * k + 0.5;
+    return Math.max(0, Math.min(1, x)) * 255;
+  };
+
+  return {
+    r: Math.round(adjust(rgb.r)),
+    g: Math.round(adjust(rgb.g)),
+    b: Math.round(adjust(rgb.b)),
+  };
+}
+
 /** Simple perceptual exposure / contrast adjustment (in linear space) */
 export function applyExposureContrast(base: RGB, exposure = 1.0, contrast = 1.0): RGB {
   const e = Math.max(0.01, Math.min(5, exposure));

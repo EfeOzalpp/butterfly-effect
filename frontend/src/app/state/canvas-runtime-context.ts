@@ -7,12 +7,9 @@ import type { Place } from "../../canvas-engine/grid-layout/occupancy";
 export const DEFAULT_AVG = 0.5;
 
 export interface CanvasRuntimeState {
-  // Continuous signal updated on every survey interaction; drives canvas color and animation in real time.
+  // Continuous signal updated on every survey interaction; drives canvas visuals and composition.
   liveAvg: number;
   setLiveAvg: (avg?: number) => void;
-  // Committed signal updated on Next / Finish / drag release; drives scene composition.
-  allocAvg: number;
-  commitAllocAvg: (avg?: number) => void;
   // Grid cells reserved by questionnaire UI; canvas avoids placing shapes in these zones.
   reservedFootprints: Place[];
   setReservedFootprints: (next: Place[]) => void;

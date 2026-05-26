@@ -1,7 +1,7 @@
 import type {
   BackgroundAnchorContext,
   LinearGradientSpec,
-} from "../../../../adjustable-rules/backgrounds";
+} from "../../../../scene-rules/backgrounds";
 import type { PLike } from "../../../p/makeP";
 import { clamp01 } from "../../../../shared/math";
 import { resolveStopK } from "./anchors";

@@ -1,28 +1,32 @@
 import type { EngineFieldItem } from "../../../engine/field";
 import type { PLike } from "../../../p/makeP";
-import { makeP } from "../../../p/makeP";
-import { getCanvasMeta, setCanvasMeta } from "../../../p/canvasMeta";
 import type { ShapeRegistry } from "../../../shape-adapter/registry";
+import { copyRuntimeShapeOptionsInto } from "../../../shape-adapter/options";
 import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
-import type { GridMetrics } from "../../../../grid-layout/gridMetrics";
-import type { FarShapeBitmapCachePolicy } from "../../../../adjustable-rules/render-cache";
+import type { GridMetrics } from "../../../geometry/gridCache";
+import type { FarShapeBitmapCachePolicy } from "../../../../scene-rules/render-cache";
 import { footprintToPx } from "../../../../modifiers/index";
+import { finiteNumber } from "../../../../shared/math";
+import {
+  shapeIdentity,
+  shapeLifecycle,
+  shapePass,
+  shapeProjection,
+  shapeStyle,
+} from "../../../../shapes/options";
 import { drawItemFromRegistry } from "../../../shape-adapter/draw";
-import { pixelSizeForBounds, snapBoundsToDevicePixels, type PixelBounds } from "./pixelBounds";
+import {
+  canvasDpr,
+  createOffscreenCache,
+  maxCachePixelsForCanvas,
+  pixelSizeForBounds,
+  snapBoundsToDevicePixels,
+  type OffscreenBounds,
+  type OffscreenCacheEntry,
+} from "../../cache/offscreenCache";
 
-type ShapeBitmapBounds = PixelBounds;
-
-interface CachedShapeBitmap {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  bitmapP: PLike;
-  bounds: ShapeBitmapBounds;
-  pixels: number;
-}
-
-function finiteNumber(value: number | undefined, fallback: number) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
+type ShapeBitmapBounds = OffscreenBounds;
+type CachedShapeBitmap = OffscreenCacheEntry;
 
 function rounded(value: number | undefined, precision = 10) {
   return String(Math.round(finiteNumber(value, 0) * precision) / precision);
@@ -33,20 +37,21 @@ function footprintKey(item: EngineFieldItem) {
   return f ? `${String(f.r0)},${String(f.c0)},${String(f.w)},${String(f.h)}` : "none";
 }
 
-function rgbKey(rgb: RuntimeShapeOptions["gradientRGB"]) {
+function rgbKey(rgb: NonNullable<RuntimeShapeOptions["style"]>["gradientRGB"]) {
   return rgb ? `${String(rgb.r)},${String(rgb.g)},${String(rgb.b)}` : "none";
 }
 
-function lightKey(light: RuntimeShapeOptions["lightCtx"]) {
+function lightKey(light: NonNullable<RuntimeShapeOptions["style"]>["lightCtx"]) {
   return light
     ? `${rounded(light.sourceX)},${rounded(light.sourceY)},${rounded(light.sceneDiag)}`
     : "none";
 }
 
-function depthTintKey(sharedOptions: RuntimeShapeOptions) {
-  const color = sharedOptions.depthTintColor;
+function depthTintKey(opts: RuntimeShapeOptions) {
+  const pass = shapePass(opts);
+  const color = pass.depthTintColor;
   const colorPart = color ? `${String(color.r)},${String(color.g)},${String(color.b)}` : "none";
-  return `${colorPart}:${rounded(sharedOptions.depthTintK, 100)}`;
+  return `${colorPart}:${rounded(pass.depthTintK, 100)}`;
 }
 
 function liveAvgKey(liveAvg: number | undefined) {
@@ -69,13 +74,14 @@ function allowsFarShapeBitmapCache(item: EngineFieldItem, policy: FarShapeBitmap
   return !policy.alwaysLiveShapes.includes(item.shape);
 }
 
-function resolveShapeBounds(item: EngineFieldItem, rEff: number, sharedOptions: RuntimeShapeOptions): ShapeBitmapBounds | null {
-  const cell = finiteNumber(sharedOptions.cell, rEff);
-  const cellW = finiteNumber(sharedOptions.cellW, cell);
-  const cellH = finiteNumber(sharedOptions.cellH, cell);
+function resolveShapeBounds(item: EngineFieldItem, rEff: number, opts: RuntimeShapeOptions): ShapeBitmapBounds | null {
+  const projection = shapeProjection(opts);
+  const cell = finiteNumber(projection.cell, rEff);
+  const cellW = finiteNumber(projection.cellW, cell);
+  const cellH = finiteNumber(projection.cellH, cell);
 
   const rect = item.footprint
-    ? footprintToPx(item.footprint, sharedOptions)
+    ? footprintToPx(item.footprint, projection)
     : { x: item.x - rEff, y: item.y - rEff, w: rEff * 2, h: rEff * 2 };
   if (rect.w <= 0 || rect.h <= 0) return null;
 
@@ -92,28 +98,31 @@ function resolveShapeBounds(item: EngineFieldItem, rEff: number, sharedOptions: 
 function shapeBitmapCacheKey(args: {
   item: EngineFieldItem;
   rEff: number;
-  sharedOptions: RuntimeShapeOptions;
+  opts: RuntimeShapeOptions;
   bounds: ShapeBitmapBounds;
   dpr: number;
 }) {
-  const { item, rEff, sharedOptions, bounds, dpr } = args;
+  const { item, rEff, opts, bounds, dpr } = args;
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const identity = shapeIdentity(opts);
   return [
     item.id,
     item.shape,
     footprintKey(item),
     rounded(rEff),
-    rounded(sharedOptions.cell),
-    rounded(sharedOptions.cellW),
-    rounded(sharedOptions.cellH),
-    String(sharedOptions.shapeOccurrenceIndex ?? 0),
-    liveAvgKey(sharedOptions.liveAvg),
-    String(sharedOptions.darkMode ? 1 : 0),
-    rounded(sharedOptions.exposure),
-    rounded(sharedOptions.contrast),
-    rounded(sharedOptions.blend),
-    rgbKey(sharedOptions.gradientRGB),
-    depthTintKey(sharedOptions),
-    lightKey(sharedOptions.lightCtx),
+    rounded(projection.cell),
+    rounded(projection.cellW),
+    rounded(projection.cellH),
+    String(identity.shapeOccurrenceIndex ?? 0),
+    liveAvgKey(style.liveAvg),
+    String(style.darkMode ? 1 : 0),
+    rounded(style.exposure),
+    rounded(style.contrast),
+    rounded(style.blend),
+    rgbKey(style.gradientRGB),
+    depthTintKey(opts),
+    lightKey(style.lightCtx),
     rounded(bounds.x),
     rounded(bounds.y),
     rounded(bounds.w),
@@ -122,130 +131,99 @@ function shapeBitmapCacheKey(args: {
   ].join("|");
 }
 
-function bitmapPixelSize(bounds: ShapeBitmapBounds, dpr: number) {
-  return pixelSizeForBounds(bounds, dpr);
-}
-
-function maxShapeBitmapCachePixels(p: PLike, policy: FarShapeBitmapCachePolicy) {
-  return Math.max(1, Math.floor(p.canvas.width * p.canvas.height * policy.maxPixelsPerCanvasPixel));
-}
-
-function createCachedShapeBitmap(bounds: ShapeBitmapBounds, dpr: number): CachedShapeBitmap {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("2D canvas context not available");
-  const bitmapP = makeP(canvas, ctx);
-
-  const { pixelW, pixelH, pixels } = bitmapPixelSize(bounds, dpr);
-  canvas.width = pixelW;
-  canvas.height = pixelH;
-  setCanvasMeta(canvas, { dpr, cssW: bounds.w, cssH: bounds.h });
-
-  return { canvas, ctx, bitmapP, bounds, pixels };
-}
-
-function touchCacheEntry(cache: Map<string, CachedShapeBitmap>, key: string, entry: CachedShapeBitmap) {
-  cache.delete(key);
-  cache.set(key, entry);
-}
-
-function trimCache(args: {
-  cache: Map<string, CachedShapeBitmap>;
-  maxPixels: number;
-  currentPixels: number;
-}) {
-  const { cache, maxPixels } = args;
-  let currentPixels = args.currentPixels;
-  while (currentPixels > maxPixels) {
-    const oldest = cache.keys().next().value;
-    if (typeof oldest !== "string") return currentPixels;
-    const entry = cache.get(oldest);
-    currentPixels -= entry?.pixels ?? 0;
-    cache.delete(oldest);
-  }
-  return currentPixels;
-}
-
 export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCachePolicy) {
-  const cache = new Map<string, CachedShapeBitmap>();
-  const scratchOptions: RuntimeShapeOptions = {};
-  let cachePixels = 0;
+  const cache = createOffscreenCache<ShapeBitmapBounds>();
+  const bakeOpts: RuntimeShapeOptions = {};
+
+  function clearCache() {
+    cache.clear();
+  }
 
   function trimCacheToPolicy(p: PLike, policy: FarShapeBitmapCachePolicy) {
-    cachePixels = trimCache({
-      cache,
-      maxPixels: maxShapeBitmapCachePixels(p, policy),
-      currentPixels: cachePixels,
-    });
+    cache.trim(maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel));
   }
 
   function bakeShape(args: {
+    // Upstream params: cache-miss draw data from drawFarShapeBitmap.
     entry: CachedShapeBitmap;
     shapeRegistry: ShapeRegistry;
     item: EngineFieldItem;
     rEff: number;
-    sharedOptions: RuntimeShapeOptions;
+    opts: RuntimeShapeOptions;
     dpr: number;
+    // End params.
   }) {
-    const { entry, shapeRegistry, item, rEff, sharedOptions, dpr } = args;
-    const { canvas, ctx, bitmapP, bounds } = entry;
+    const { entry, shapeRegistry, item, rEff, opts, dpr } = args;
+    const { canvas, ctx, p: bitmapP, bounds } = entry;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    bitmapP.__tick(sharedOptions.timeMs ?? performance.now());
-    Object.assign(scratchOptions, sharedOptions);
-    scratchOptions.renderPass = "color";
-    scratchOptions.rootAppearK = 1;
-    scratchOptions.silhouetteColor = undefined;
-    scratchOptions.silhouetteAlpha = undefined;
+    bitmapP.__tick(shapeLifecycle(opts).timeMs ?? performance.now());
+    copyRuntimeShapeOptionsInto(bakeOpts, opts);
+    const lifecycle = bakeOpts.lifecycle ?? (bakeOpts.lifecycle = {});
+    const particles = bakeOpts.particles ?? (bakeOpts.particles = {});
+    const pass = bakeOpts.pass ?? (bakeOpts.pass = {});
+    lifecycle.rootAppearK = 1;
+    particles.particleStore = undefined;
+    pass.renderPass = "color";
+    pass.maskColor = undefined;
+    pass.maskAlpha = undefined;
+    pass.depthTintColor = undefined;
+    pass.depthTintK = undefined;
 
     bitmapP.push();
     bitmapP.translate(-bounds.x, -bounds.y);
-    drawItemFromRegistry(shapeRegistry, bitmapP, item, rEff, scratchOptions);
+    drawItemFromRegistry(shapeRegistry, bitmapP, item, rEff, bakeOpts);
     bitmapP.pop();
   }
 
-  return function drawFarShapeBitmap(args: {
+  const drawFarShapeBitmap = function drawFarShapeBitmap(args: {
+    // Upstream params: live item draw request from engine/loop.ts.
     p: PLike;
     shapeRegistry: ShapeRegistry;
     item: EngineFieldItem;
     rEff: number;
-    sharedOptions: RuntimeShapeOptions;
+    opts: RuntimeShapeOptions;
     gridMetrics?: GridMetrics;
+    // End params. Returns true when this cache handled the color pass.
   }): boolean {
-    const { p, shapeRegistry, item, rEff, sharedOptions, gridMetrics } = args;
+    const { p, shapeRegistry, item, rEff, opts, gridMetrics } = args;
     const policy = getPolicy();
     if (!policy.enabled) return false;
-    if ((sharedOptions.rootAppearK ?? 1) < 0.995) return false;
+    if ((shapeLifecycle(opts).rootAppearK ?? 1) < 0.995) return false;
     if (!allowsFarShapeBitmapCache(item, policy)) return false;
     if (!isFarCacheCandidate(item, gridMetrics, policy.farSizeK)) return false;
 
-    const dpr = getCanvasMeta(p.canvas).dpr ?? 1;
-    const roughBounds = resolveShapeBounds(item, rEff, sharedOptions);
+    const dpr = canvasDpr(p);
+    cache.syncRenderTarget(p, dpr);
+    const roughBounds = resolveShapeBounds(item, rEff, opts);
     if (!roughBounds) return false;
     const bounds = snapBoundsToDevicePixels(roughBounds, dpr);
 
     trimCacheToPolicy(p, policy);
-    const key = shapeBitmapCacheKey({ item, rEff, sharedOptions, bounds, dpr });
+    const key = shapeBitmapCacheKey({ item, rEff, opts, bounds, dpr });
     let entry = cache.get(key);
 
     if (!entry) {
-      const bitmapPixels = bitmapPixelSize(bounds, dpr).pixels;
-      const maxPixels = maxShapeBitmapCachePixels(p, policy);
+      const bitmapPixels = pixelSizeForBounds(bounds, dpr).pixels;
+      const maxPixels = maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel);
       if (bitmapPixels > maxPixels) return false;
 
-      entry = createCachedShapeBitmap(bounds, dpr);
-      cachePixels += entry.pixels;
-      bakeShape({ entry, shapeRegistry, item, rEff, sharedOptions, dpr });
+      entry = cache.createEntry(bounds, dpr);
+      bakeShape({ entry, shapeRegistry, item, rEff, opts, dpr });
       cache.set(key, entry);
-      cachePixels = trimCache({ cache, maxPixels, currentPixels: cachePixels });
+      cache.trim(maxPixels);
     } else {
-      touchCacheEntry(cache, key, entry);
+      cache.touch(key, entry);
     }
 
     p.drawingContext.drawImage(entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
     return true;
   };
+
+  return Object.assign(drawFarShapeBitmap, {
+    clear: clearCache,
+  });
 }

@@ -1,6 +1,6 @@
 // src/canvas-engine/validation/validateSceneProfile.ts
 
-import type { SceneProfile } from "../multi-canvas-setup/sceneProfile";
+import type { SceneProfile } from "../scene-rules/profile";
 import type { SceneLookupKey } from "../scene-state";
 import { invariant } from "./invariant";
 

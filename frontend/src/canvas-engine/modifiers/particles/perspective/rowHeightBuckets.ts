@@ -1,6 +1,8 @@
 // This is the object's occupied grid rectangle after layout has placed it.
 
-export interface PlacedGridRect { r0: number; c0: number; w: number; h: number }
+import type { GridFootprint } from "../../../shared/geometry";
+
+export type PlacedGridRect = GridFootprint;
 
 // Perspective only needs the row heights and fallback cell size, so keep this input small.
 export interface RowHeightBucketContext {

@@ -1,13 +1,9 @@
 // src/canvas-engine/grid-layout/coords.ts
 
+import type { CellSize as BaseCellSize } from "../shared/geometry";
 import type { GridMetrics } from "./gridMetrics";
 
-export type CellSize = {
-  cellW: number;
-  cellH: number;
-  ox?: number;
-  oy?: number;
-} & Partial<GridMetrics>;
+export type CellSize = BaseCellSize & Partial<GridMetrics>;
 
 function o(v?: number) { return typeof v === "number" && Number.isFinite(v) ? v : 0; }
 

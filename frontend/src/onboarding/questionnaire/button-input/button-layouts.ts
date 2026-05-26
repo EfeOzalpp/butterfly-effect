@@ -1,4 +1,4 @@
-import type { PlacementZone } from "../../../canvas-engine/adjustable-rules/placement-rules";
+import type { PlacementZone } from "../../../canvas-engine/scene-rules/placement-rules";
 import type { DeviceType } from "../../../canvas-engine/shared/responsiveness";
 
 export type QuestionButtonPlacement = Omit<PlacementZone, "count"> & {

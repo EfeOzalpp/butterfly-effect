@@ -1,4 +1,4 @@
-// src/canvas-engine/adjustable-rules/invariants.ts
+// src/canvas-engine/validation/invariant.ts
 
 export function invariant(
   condition: unknown,

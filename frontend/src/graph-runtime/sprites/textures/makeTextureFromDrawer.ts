@@ -88,28 +88,36 @@ export function makeTextureFromDrawer({
   // These options make the regular canvas-engine shape draw as a centered,
   // non-oscillating sprite texture.
   const baseOpts = {
-    alpha,
-    gradientRGB,
-    liveAvg,
-    blend,
-    fitToFootprint: true,
-    cell,
-    footprint: footprintForDrawer,
-    seedKey,
-    coreScaleMult: Math.max(1, pixelScaleBoost ?? 1),
-    pixelScale: Math.max(1, pixelScaleBoost ?? 1),
-    particlePixelScale: Math.max(1, pixelScaleBoost ?? 1),
+    projection: {
+      cell,
+      footprint: footprintForDrawer,
+    },
+    style: {
+      alpha,
+      gradientRGB,
+      liveAvg,
+      blend,
+      darkMode,
+      lightCtx,
+    },
+    identity: {
+      seedKey,
+    },
+    sprite: {
+      fitToFootprint: true,
+      coreScaleMult: Math.max(1, pixelScaleBoost ?? 1),
+      pixelScale: Math.max(1, pixelScaleBoost ?? 1),
+      particlePixelScale: Math.max(1, pixelScaleBoost ?? 1),
+    },
     oscAmp: 0,
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
     sizeOsc: { mode: 'none' },
-    darkMode,
-    lightCtx,
   };
 
   const r = Math.min(logicalW, logicalH) * 0.8;
 
-  const opts = { ...baseOpts, timeMs };
+  const opts = { ...baseOpts, lifecycle: { timeMs } };
 
   try {
     drawer(p, centerX, centerY, r, opts);

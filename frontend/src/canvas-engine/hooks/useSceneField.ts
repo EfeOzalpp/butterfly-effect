@@ -8,9 +8,9 @@ import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 import type { CanvasEngineControls } from "../runtime";
 
 import { resolveSceneState } from "../scene-state";
-import type { BaseMode, SceneLookupKey } from "../scene-state";
+import type { BaseMode, SceneLookupKey, SceneSignals } from "../scene-state";
 
-import { resolvePaddingSpec } from "../adjustable-rules/canvas-padding";
+import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
 
 import { getCanvasMeta } from "../runtime/p/canvasMeta";
 import { getViewportSize } from "../shared/responsiveness";
@@ -49,14 +49,10 @@ function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
 }
 
 
-export interface SceneSignals {
-  questionnaireOpen: boolean;
-}
-
 export function useSceneField(
   engine: Engine,
   hostId: HostId,
-  allocAvg: number | undefined,
+  liveAvg: number | undefined,
   signals: SceneSignals,
   reservedFootprints: Place[] | undefined,
   viewportKey?: number | string
@@ -129,26 +125,24 @@ export function useSceneField(
     const ruleWidthPx =
       hostId === "start" ? viewportW : w;
 
-    // inform runtime about the current lookup key (used by ticker/renderer)
-    engineControls.setSceneMode(sceneLookupKey);
-
     const result = composeField({
-      mode: sceneState.baseMode,
       padding: profile.padding,
       placements: profile.placements,
-      allocAvg,
+      liveAvg,
       reservedFootprints,
-      viewportKey,
       ruleWidthPx,
       canvas: { w, h },
     });
 
     // Let runtime compute forbidden/rows from the current profile padding
-    // and optionally override it (escape hatch)
+    // and receive the other resolved scene policies as one handoff.
     const spec = resolvePaddingSpec(ruleWidthPx, profile.padding);
-    engineControls.setPaddingSpec(spec);
-    engineControls.setBackgroundSpec(profile.background);
-    engineControls.setRenderCachePolicy(profile.renderCache);
+    engineControls.setSceneProfile({
+      lookupKey: sceneLookupKey,
+      paddingSpec: spec,
+      background: profile.background,
+      renderCache: profile.renderCache,
+    });
     engineControls.setFieldStyle({ darkMode });
 
     engineControls.setFieldItems(result.placed);
@@ -157,7 +151,7 @@ export function useSceneField(
     ready,
     controls,
     readyTick,
-    allocAvg,
+    liveAvg,
     questionnaireOpen,
     viewportKey,
     canvasResizeTick,

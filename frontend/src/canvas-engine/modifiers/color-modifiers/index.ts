@@ -16,14 +16,17 @@ export { blendRGB, blendRGBGamma, blendRGBSmart } from "./blend";
 
 export {
   applyExposureContrast,
+  applySrgbExposureContrast,
   clampBrightness,
   clampSaturation,
   driveBrightness,
   driveSaturation,
   oscillateBrightness,
   oscillateSaturation,
+  scaleRgb,
 } from "./effects";
 
+export { fillRgb, rgbaCss, strokeRgb } from "./canvas";
 export { fogifyPalette } from "./fog";
 export { gradientColor, rgbToCss } from "./gradient";
 export { VIVID_COLOR_STOPS } from "./stops";

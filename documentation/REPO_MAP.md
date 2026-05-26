@@ -28,9 +28,9 @@
   - `questionnaire/`: button-input and weight-input questionnaire variants.
 - `src/canvas-engine/`
   - 2D renderer and placement system.
-  - `adjustable-rules/`: padding, pools, placement, BACKGROUNDS_LIGHT.
+  - `scene-rules/`: authored scene policies for backgrounds, padding, placement, render caching, shape catalog, and rule profiles.
   - `hooks/`: engine lifecycle and scene recomposition hooks.
-  - `runtime/`: engine loop, lifecycle, render primitives.
+  - `runtime/`: engine loop, lifecycle, render primitives, render passes, and shape adapter.
   - `scene-logic/`: deterministic placement, constraints, and scoring.
 - `src/graph-runtime/`
   - 3D visualization + overlays.

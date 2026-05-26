@@ -1,11 +1,12 @@
 // src/canvas-engine/runtime/geometry/gridCache.ts
 
 import type { PLike } from "../p/makeP";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding";
+import type { CanvasPaddingSpec } from "../../scene-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../../grid-layout/buildGrid";
 import type { GridMetrics } from "../../grid-layout/gridMetrics";
 
 export type { GridMetrics };
+export { metricsDepth } from "../../grid-layout/gridMetrics";
 
 export interface GridCacheState {
   w: number;
@@ -20,6 +21,10 @@ export interface GridCacheState {
   usedRows: number;
   metrics: GridMetrics;
   specKey: string | null;
+}
+
+export interface RuntimeLayoutState {
+  gridCache: GridCacheState;
 }
 
 const EMPTY_METRICS: GridMetrics = {

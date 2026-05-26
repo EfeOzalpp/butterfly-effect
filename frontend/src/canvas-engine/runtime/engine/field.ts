@@ -1,4 +1,4 @@
-import type { GridFootprint } from "../../modifiers/index";
+import type { GridFootprint } from "../../shared/geometry";
 
 // Payload item consumed by the runtime renderer.
 // Keep this stable: it is part of the engine API.

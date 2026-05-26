@@ -1,25 +1,40 @@
 // src/canvas-engine/shapes/bus.ts
 
 import {
+  applySrgbExposureContrast,
   applyShapeMods,
+  beginFitScale,
   blendRGB,
   clampBrightness,
   clampSaturation,
   clamp01,
-  val,
+  endFitScale,
+  finiteNumber,
+  fitScaleToRectWidth,
+  resolveRangeValue,
   footprintToPx,
   sampleDirectionalLightRect,
   pickLightBandValue,
   mixRgb,
   paintPixelLightBands,
+  fillRgb,
+  pick,
+  pickByOccurrence,
+  seeded01,
+  shapeColorForRenderPass,
+  shapeHash32,
+  shouldDrawInRenderPass,
 } from "../modifiers/index";
 import type { LightClosenessBandMap, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
-import { applyExposureContrast, fillRgb } from "./shared/color";
-import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
-import { finiteNumber } from "./shared/numbers";
-import { pick, pickByOccurrence, seeded01, shapeHash32 } from "./shared/random";
-import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
+import {
+  shapeIdentity,
+  shapeLifecycle,
+  shapePass,
+  shapeProjection,
+  shapeSprite,
+  shapeStyle,
+} from "./options";
 
 interface BusPalette extends ShapePalette {
   grass: RGB[];
@@ -38,7 +53,14 @@ interface BusTuning {
 
 type BusDrawOptions = ShapeDrawOptions<BusPalette>;
 
-// light mode
+// Tunables.
+const BUS: BusTuning = {
+  grass: { colorBlend: [0.16, 0.30] },
+  body: { colorBlend: [0.06, 0.03] },
+  asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
+};
+
+// Palettes.
 const BUS_BASE_PALETTE: BusPalette = {
   grass: [
     { r: 110, g: 160, b: 90 },
@@ -63,7 +85,6 @@ const BUS_BASE_PALETTE: BusPalette = {
   wheel: { r: 40, g: 40, b: 40 },
 };
 
-// dark mode
 const BUS_DARK_PALETTE: BusPalette = {
   grass: [
     { r: 52, g: 96, b: 104 },
@@ -111,16 +132,9 @@ const BUS_DARK_PALETTE: BusPalette = {
   wheel: { r: 45, g: 48, b: 58 },
 };
 
-// parameters
-const BUS: BusTuning = {
-  grass: { colorBlend: [0.16, 0.30] },
-  body: { colorBlend: [0.06, 0.03] },
-  asphalt: { min: [0.25, 0.32], max: [0.52, 0.65] },
-};
-
 /**
  * Draws a bus that scales on small/mobile tiles.
- * Variety is driven by opts.seedKey or tile footprint so texture caching will
+ * Variety is driven by identity seed data or tile footprint so texture caching will
  * not collapse every bus into the same color.
  */
 export function drawBus(
@@ -130,23 +144,31 @@ export function drawBus(
   r: number,
   opts: BusDrawOptions = {}
 ): void {
-  const pal = opts.palette ?? (opts.darkMode ? BUS_DARK_PALETTE : BUS_BASE_PALETTE);
-  const ex = finiteNumber(opts.exposure, 1);
-  const ct = finiteNumber(opts.contrast, 1);
-  const alpha = finiteNumber(opts.alpha, 235);
-  const u = clamp01(opts.liveAvg ?? 0.5);
-  const renderPass = opts.renderPass ?? "color";
-  const silhouetteColor = opts.silhouetteColor;
-  const silhouetteAlpha =
-    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
-      ? opts.silhouetteAlpha
-      : alpha;
-  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
-  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
-  const massAlpha = renderPass === "silhouette" ? silhouetteAlpha : alpha;
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const identity = shapeIdentity(opts);
+  const sprite = shapeSprite(opts);
+  const pass = shapePass(opts);
 
-  const cell = opts.cell;
-  const f = opts.footprint;
+  const darkMode = style.darkMode === true;
+  const pal = style.palette ?? (darkMode ? BUS_DARK_PALETTE : BUS_BASE_PALETTE);
+  const ex = finiteNumber(style.exposure, 1);
+  const ct = finiteNumber(style.contrast, 1);
+  const alpha = finiteNumber(style.alpha, 235);
+  const u = clamp01(style.liveAvg ?? 0.5);
+  const renderPass = pass.renderPass ?? "color";
+  const maskColor = pass.maskColor;
+  const maskAlpha =
+    typeof pass.maskAlpha === "number" && Number.isFinite(pass.maskAlpha)
+      ? pass.maskAlpha
+      : alpha;
+  const shouldDrawMass = shouldDrawInRenderPass(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
+  const massAlpha = renderPass === "depthMask" ? maskAlpha : alpha;
+
+  const cell = projection.cell;
+  const f = projection.footprint;
   let tileX: number;
   let tileY: number;
   let tileW: number;
@@ -154,7 +176,7 @@ export function drawBus(
   let tileCx: number;
 
   if (cell && f) {
-    ({ x: tileX, y: tileY, w: tileW, h: tileH } = footprintToPx(f, opts));
+    ({ x: tileX, y: tileY, w: tileW, h: tileH } = footprintToPx(f, projection));
     tileCx = tileX + tileW / 2;
   } else {
     tileW = r * 6.4;
@@ -165,9 +187,9 @@ export function drawBus(
   }
 
   const seedKey =
-    (opts.seedKey ?? opts.seed)
+    (identity.seedKey ?? identity.seed)
     ?? (cell && f ? `bus|${String(f.r0)}:${String(f.c0)}|${String(f.w)}x${String(f.h)}` : `bus|${String(Math.round(cx))}|${String(Math.round(cy))}|${String(Math.round(r))}`);
-  const occurrenceIndex = finiteNumber(opts.shapeOccurrenceIndex, 0);
+  const occurrenceIndex = finiteNumber(identity.shapeOccurrenceIndex, 0);
 
   const r1 = seeded01(seedKey, "a");
   const r2 = seeded01(seedKey, "b");
@@ -178,11 +200,7 @@ export function drawBus(
     x: tileCx,
     y: baseY,
     r,
-    opts: { alpha, timeMs: opts.timeMs, liveAvg: opts.liveAvg, rootAppearK: opts.rootAppearK },
-    mods: {
-      appear: { scaleFrom: 0.0, alphaFrom: 0.0, anchor: "bottom-center", ease: "back", backOvershoot: 1.25 },
-      sizeOsc: { mode: "none" },
-    },
+    opts: { alpha, timeMs: lifecycle.timeMs, liveAvg: style.liveAvg, rootAppearK: lifecycle.rootAppearK },
   });
 
   p.push();
@@ -197,34 +215,34 @@ export function drawBus(
 
   const grassLight = sampleDirectionalLightRect(
     { x: tileX, y: grassY, w: tileW, h: grassH },
-    opts.lightCtx ?? null
+    style.lightCtx ?? null
   );
-  const grassPalette = opts.darkMode
+  const grassPalette = darkMode
     ? pickLightBandValue(pal.grass, pal.grassByLight, grassLight.closenessK)
     : pal.grass;
   const g1 = pick(grassPalette, r1);
   const g2 = pick(grassPalette, r2);
   let grassTint = blendRGB(g1, g2, 0.4 + 0.3 * u);
-  if (opts.gradientRGB) grassTint = blendRGB(grassTint, opts.gradientRGB, val(BUS.grass.colorBlend, u));
-  if (opts.darkMode) {
+  if (style.gradientRGB) grassTint = blendRGB(grassTint, style.gradientRGB, resolveRangeValue(BUS.grass.colorBlend, u));
+  if (darkMode) {
     grassTint = clampSaturation(grassTint, 0.0, 0.22, 1);
     grassTint = clampBrightness(grassTint, 0.28, 0.42);
   }
-  grassTint = applyExposureContrast(grassTint, ex, ct);
-  if (opts.darkMode) {
+  grassTint = applySrgbExposureContrast(grassTint, ex, ct);
+  if (darkMode) {
     const grassLightK = grassLight.overallK * (0.03 + 0.08 * grassLight.closenessK);
     grassTint = mixRgb(grassTint, grassLight.lightColor, grassLightK);
   }
 
   p.noStroke();
   if (shouldDrawMass) {
-    fillRgb(p, shapePartColor(renderPass, grassTint, silhouetteColor), massAlpha);
+    fillRgb(p, shapeColorForRenderPass(renderPass, grassTint, maskColor), massAlpha);
     p.rect(tileX, grassY, tileW, grassH, r * 0.18);
   }
 
   if (shouldDrawColorDetails) {
-    let aspColor = applyExposureContrast(pal.asphalt, ex, ct);
-    aspColor = clampBrightness(aspColor, val(BUS.asphalt.min, u), val(BUS.asphalt.max, u));
+    let aspColor = applySrgbExposureContrast(pal.asphalt, ex, ct);
+    aspColor = clampBrightness(aspColor, resolveRangeValue(BUS.asphalt.min, u), resolveRangeValue(BUS.asphalt.max, u));
     fillRgb(p, aspColor, alpha);
     p.rect(tileX, aspY, tileW, aspH, r * 0.14);
   }
@@ -232,14 +250,14 @@ export function drawBus(
   const wheelY = aspY + aspH * 0.25;
   const designW = r * 6.4;
   const sidePad = Math.max(2, tileW * 0.08);
-  const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: opts.allowUpscale === true });
+  const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: sprite.allowUpscale === true });
 
   const bodyOffset = shapeHash32(`${String(seedKey)}|body-offset`) % pal.body.length;
   let bodyTint = pickByOccurrence(pal.body, occurrenceIndex, bodyOffset);
-  if (opts.gradientRGB) bodyTint = blendRGB(bodyTint, opts.gradientRGB, val(BUS.body.colorBlend, u));
-  if (opts.darkMode) bodyTint = clampBrightness(bodyTint, 0.36, 0.66);
-  bodyTint = applyExposureContrast(bodyTint, ex, ct);
-  const winTint = applyExposureContrast(pal.window, ex, ct);
+  if (style.gradientRGB) bodyTint = blendRGB(bodyTint, style.gradientRGB, resolveRangeValue(BUS.body.colorBlend, u));
+  if (darkMode) bodyTint = clampBrightness(bodyTint, 0.36, 0.66);
+  bodyTint = applySrgbExposureContrast(bodyTint, ex, ct);
+  const winTint = applySrgbExposureContrast(pal.window, ex, ct);
 
   beginFitScale(p, { cx: tileCx, anchorY: wheelY, scale: s });
   {
@@ -249,7 +267,7 @@ export function drawBus(
     const bodyY = wheelY - bodyH * 1.00;
     const bodyLight = sampleDirectionalLightRect(
       { x: busX, y: bodyY, w, h: bodyH },
-      opts.lightCtx ?? null
+      style.lightCtx ?? null
     );
     const litBodyTint = mixRgb(bodyTint, bodyLight.lightColor, 0.26 * bodyLight.overallK);
     const busHighlight = mixRgb(litBodyTint, bodyLight.lightColor, 0.46);
@@ -264,7 +282,7 @@ export function drawBus(
     }
 
     if (shouldDrawMass) {
-      fillRgb(p, shapePartColor(renderPass, litBodyTint, silhouetteColor), renderPass === "silhouette" ? silhouetteAlpha : 255);
+      fillRgb(p, shapeColorForRenderPass(renderPass, litBodyTint, maskColor), renderPass === "depthMask" ? maskAlpha : 255);
       p.rect(busX, bodyY, w, bodyH, r * 0.22);
     }
     if (shouldDrawColorDetails) {

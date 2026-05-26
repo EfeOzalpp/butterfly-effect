@@ -4,18 +4,13 @@ import type {
   EngineControls,
   EngineFieldStyle,
   EngineInputsPayload,
+  EngineSceneSource,
+  EngineSceneProfile,
   StartCanvasEngineOpts,
 } from "./engine/types";
 import type { EngineFieldItem } from "./engine/field";
-import type { Ghost } from "./render/ghosts";
 
-import {
-  registerEngineInstance,
-  stopCanvasEngine,
-  isCanvasRunning,
-  stopAllCanvasEngines,
-} from "./engine/instanceRegistry";
-import { createEngineTicker } from "./engine/loop";
+import { createEngineTicker, type LoopDeps } from "./engine/loop";
 import { registerEngineFrame, unregisterEngineFrame } from "./engine/scheduler";
 import {
   reconcileLiveStatesOnFieldUpdate,
@@ -25,32 +20,36 @@ import {
   createEngineField,
   createEngineInputs,
   createEngineStyle,
+  type EngineEffectState,
+  type EngineRuntimeState,
 } from "./engine/state";
 
-import { ensureMount, applyCanvasStyle } from "./platform/mount";
-import { makeP } from "./p/makeP";
+import {
+  ensureMount,
+  applyCanvasStyle,
+  registerEngineInstance,
+  stopCanvasEngine,
+  isCanvasRunning,
+  stopAllCanvasEngines,
+} from "./platform/mount";
+import { makeP, type RuntimeSurface } from "./p/makeP";
 
 import { clamp01 } from "./util/easing";
 
-// Scene lookup key (BaseMode | SceneModifier) is used by runtime ticker to pick rules.
-import type { SceneLookupKey } from "../scene-state";
-
-import type { CanvasPaddingSpec } from "../adjustable-rules/canvas-padding";
-import type { BackgroundSpec } from "../adjustable-rules/backgrounds";
-import { DEFAULT_RENDER_CACHE_POLICY, type RenderCachePolicy } from "../adjustable-rules/render-cache";
+import { DEFAULT_RENDER_CACHE_POLICY } from "../scene-rules/render-cache";
 
 import { resolveBounds } from "./geometry/bounds";
-import { createGridCache, invalidateGridCache } from "./geometry/gridCache";
+import { createGridCache, invalidateGridCache, type RuntimeLayoutState } from "./geometry/gridCache";
 import { installResizeHandlers } from "./platform/resize";
 
-import { createPaletteCache } from "./render/passes/shape";
-import { createDefaultShapeRegistry, type ShapeRegistry } from "./shape-adapter/registry";
+import { createDefaultShapeRegistry, type RuntimeShapeServices, type ShapeRegistry } from "./shape-adapter/registry";
+import { createParticleStore } from "../modifiers/particles";
 
 
 export type { EngineControls as CanvasEngineControls } from "./engine/types";
 
-const FIELD_REFRESH_APPEAR_MS = 0;
-const FIELD_REFRESH_STAGGER_MS = 0;
+const FIELD_REFRESH_APPEAR_MS = 180;
+const FIELD_REFRESH_STAGGER_MS = 120;
 
 export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineControls {
   const { mount = "#canvas-root", onReady, dprMode = "fixed1", zIndex = 2, layout = "fixed", fpsCap, initialDarkMode } = opts;
@@ -63,14 +62,16 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
   let ENGINE_SEQ = 0;
 
-  // runtime policy inputs
-  let sceneLookupKey: SceneLookupKey = "start";
-  let paddingSpecOverride: CanvasPaddingSpec | null = null;
-  let backgroundSpecOverride: BackgroundSpec | null = null;
-  let renderCachePolicy: RenderCachePolicy = DEFAULT_RENDER_CACHE_POLICY;
+  let sceneProfile: EngineSceneProfile = {
+    lookupKey: "start",
+    paddingSpec: null,
+    background: null,
+    renderCache: DEFAULT_RENDER_CACHE_POLICY,
+  };
 
-  // live/ghost state storage (owned by runtime)
+  // Per-item appear state is owned by this engine instance.
   const liveStates = new Map<string, LiveState>();
+  const particleStore = createParticleStore();
 
   const canvasEl = document.createElement("canvas");
   applyCanvasStyle(canvasEl);
@@ -82,7 +83,6 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
   // layout + caches
   const gridCache = createGridCache();
-  const paletteCache = createPaletteCache();
   const cleanupResize = installResizeHandlers({
     parentEl,
     canvasEl,
@@ -97,26 +97,25 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // shapes: registry (overrideable)
   const shapeRegistry: ShapeRegistry = opts.shapeRegistry ?? createDefaultShapeRegistry();
 
-  // start loop
-  const ghostsRef = { current: [] as Ghost[] };
+  const surface: RuntimeSurface = { p };
+  const engineState: EngineRuntimeState = { field, style, inputs };
+  const sceneSource: EngineSceneSource = { getProfile: () => sceneProfile };
+  const layoutState: RuntimeLayoutState = { gridCache };
+  const effectState: EngineEffectState = { liveStates, particleStore };
+  const shapeServices: RuntimeShapeServices = { registry: shapeRegistry };
 
   const frameId = `${mount}::${String(++ENGINE_SEQ)}`;
 
-  const ticker = createEngineTicker({
-    p,
-    field,
-    style,
-    inputs,
-    getSceneLookup: () => sceneLookupKey,
-    getPaddingSpecOverride: () => paddingSpecOverride,
-    getBackgroundSpecOverride: () => backgroundSpecOverride,
-    getRenderCachePolicy: () => renderCachePolicy,
-    gridCache,
-    paletteCache,
-    liveStates,
-    ghostsRef,
-    shapeRegistry,
-  });
+  const loopDeps: LoopDeps = {
+    surface,
+    engineState,
+    sceneSource,
+    layout: layoutState,
+    effects: effectState,
+    shapes: shapeServices,
+  };
+
+  const ticker = createEngineTicker(loopDeps);
 
   // stop + global instance registry
 
@@ -137,6 +136,10 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
     try {
       ticker.stop();
+    } catch {}
+
+    try {
+      particleStore.clear();
     } catch {}
 
     try {
@@ -170,7 +173,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   }
 
   function setFieldStyle(args: EngineFieldStyle = {}) {
-    const { r, gradientRGBOverride, blend, perShapeScale, exposure, contrast, appearMs, appearStaggerMs, exitMs } = args;
+    const { r, gradientRGBOverride, blend, perShapeScale, exposure, contrast, appearMs, appearStaggerMs } = args;
 
     if (typeof r === "number" && Number.isFinite(r) && r > 0) style.r = r;
 
@@ -190,7 +193,6 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     if (typeof appearStaggerMs === "number" && Number.isFinite(appearStaggerMs) && appearStaggerMs >= 0) {
       style.appearStaggerMs = appearStaggerMs | 0;
     }
-    if (typeof exitMs === "number" && Number.isFinite(exitMs) && exitMs >= 0) style.exitMs = exitMs | 0;
     if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
     if (typeof args.fog === "boolean") style.fog = args.fog;
 
@@ -208,27 +210,19 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     canvasEl.style.opacity = v ? "1" : "0";
   }
 
-  /**
-   * Runtime "scene mode" is the *lookup key* used by ticker/rulesets.
-   * This is NOT the SceneState object. SceneState is resolved in app-layer and
-   * collapsed into a lookup key before reaching runtime.
-   */
-  function setSceneMode(next: SceneLookupKey) {
-    sceneLookupKey = next;
-    invalidateGridCache(gridCache);
-  }
+  function setSceneProfile(next: EngineSceneProfile) {
+    const shouldInvalidateGrid =
+      sceneProfile.lookupKey !== next.lookupKey ||
+      sceneProfile.paddingSpec !== next.paddingSpec;
 
-  function setPaddingSpec(spec: CanvasPaddingSpec | null) {
-    paddingSpecOverride = spec ?? null;
-    invalidateGridCache(gridCache);
-  }
+    sceneProfile = {
+      lookupKey: next.lookupKey,
+      paddingSpec: next.paddingSpec ?? null,
+      background: next.background ?? null,
+      renderCache: next.renderCache,
+    };
 
-  function setBackgroundSpec(spec: BackgroundSpec | null) {
-    backgroundSpecOverride = spec ?? null;
-  }
-
-  function setRenderCachePolicy(policy: RenderCachePolicy | null) {
-    renderCachePolicy = policy ?? DEFAULT_RENDER_CACHE_POLICY;
+    if (shouldInvalidateGrid) invalidateGridCache(gridCache);
   }
 
   const controls: EngineControls = {
@@ -237,10 +231,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     setFieldStyle,
     setFieldVisible,
     setVisible: setVisibleCanvas,
-    setSceneMode,
-    setPaddingSpec,
-    setBackgroundSpec,
-    setRenderCachePolicy,
+    setSceneProfile,
     stop,
     get canvas() {
       return canvasEl;

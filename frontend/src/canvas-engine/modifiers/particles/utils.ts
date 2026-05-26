@@ -1,16 +1,10 @@
+import { clamp01, lerpNumber, smoothstep01 } from "../../shared/math";
 import type { RandomSource } from "./types";
 
-export function clamp01(x: number) {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
-}
-
-export function smoothstep01(t: number) {
-  const k = clamp01(t);
-  return k * k * (3 - 2 * k);
-}
+export { clamp01, smoothstep01 };
 
 export function mix(a: number, b: number, t: number) {
-  return a + (b - a) * t;
+  return lerpNumber(a, b, t);
 }
 
 // Shared PRNG. Hashing stays local to each emitter because their seed contracts differ.

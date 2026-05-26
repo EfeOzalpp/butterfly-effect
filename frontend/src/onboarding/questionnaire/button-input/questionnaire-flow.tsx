@@ -41,7 +41,7 @@ export default function ButtonQuestionnaireFlow({
   onSubmit?: (answers: Record<string, number | null>) => void;
   submitting?: boolean;
 }) {
-  const { setLiveAvg, commitAllocAvg, setReservedFootprints } = useCanvasRuntime();
+  const { setLiveAvg, setReservedFootprints } = useCanvasRuntime();
   const {
     questionnaireAdvanceTick,
     setQuestionnaireNav,
@@ -122,8 +122,7 @@ export default function ButtonQuestionnaireFlow({
   useEffect(() => {
     const liveAvg = selected ?? DEFAULT_AVG;
     setLiveAvg(liveAvg);
-    commitAllocAvg(liveAvg);
-  }, [selected, setLiveAvg, commitAllocAvg]);
+  }, [selected, setLiveAvg]);
 
   useEffect(() => {
     setQuestionnaireNav({

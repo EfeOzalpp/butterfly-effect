@@ -1,4 +1,4 @@
-import type { GridFootprint } from "../../modifiers/index";
+import type { GridFootprint } from "../../shared/geometry";
 import type { EngineFieldItem } from "./field";
 
 export interface LiveState {

@@ -1,16 +1,23 @@
 // src/canvas-engine/shapes/sun.ts
 import {
+  applySrgbExposureContrast,
   clamp01,
-  val,
+  resolveRangeValue,
   blendRGB,
   oscillateSaturation,
   applyShapeMods,
   footprintToPx,
+  rgbaCss,
+  finiteNumber,
 } from "../modifiers/index";
 import type { NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
-import { applyExposureContrast } from "./shared/color";
-import { finiteNumber } from "./shared/numbers";
+import {
+  shapeLifecycle,
+  shapeProjection,
+  shapeSprite,
+  shapeStyle,
+} from "./options";
 
 type SunPaletteTheme = "warm" | "cool";
 
@@ -39,36 +46,7 @@ interface SunOptions extends ShapeDrawOptions<SunPalette> {
   rayCount?: number;
 }
 
-function rgba({ r, g, b }: RGB, alpha01: number): string {
-  return `rgba(${String(r)},${String(g)},${String(b)},${String(alpha01)})`;
-}
-
-// light mode
-const SUN_BASE_PALETTE: SunPalette = {
-  default: { r: 255, g: 196, b: 60 },
-  ray:     { r: 255, g: 140, b: 40 },
-};
-
-// dark mode
-const SUN_DARK_PALETTE: SunPalette = {
-  default: { r: 140, g: 124, b: 46 },
-  ray:     { r: 140, g: 88,  b: 31 },
-};
-
-const SUN_WARM_PALETTE: SunPalette = {
-  default: { r: 255, g: 188, b: 44  },
-  ray:     { r: 248, g: 118, b: 26  },
-};
-
-const SUN_COOL_PALETTE: SunPalette = {
-  default: { r: 255, g: 222, b: 128 },
-  ray:     { r: 248, g: 180, b: 80  },
-};
-
-const MOON_DARK_PALETTE: MoonPalette = {
-  default: { r: 195, g: 208, b: 228 }, // cool silver-blue
-};
-
+// Tunables.
 const SUN = {
   colorBlend: [0.30, 0.00],
   oscAmp:     [0.12, 0.06],
@@ -84,27 +62,32 @@ const SUN = {
   rayAnchorDiamK:  [0.46, 0.28],
 } satisfies Record<string, NumberRange>;
 
-/**
- * drawSun(p, x, y, r, opts)
- *
- * Important opts:
- * - alpha (0..255)
- * - exposure, contrast
- * - liveAvg (0..1)
- * - gradientRGB / sunGradientRGB / sunCss
- * - timeMs
- * - rootAppearK
- * - fitToFootprint + {cell, footprint}
- *
- * Fixed-gap ray control:
- * - rayGapPx         (number, pixels) — default ties to stroke
- * - rayLen           (number, pixels) — overrides computed length
- * - rayLenMult       (number)         — scales computed length
- * - rayThickness     (number, px)     — overrides stroke weight
- * - rayThicknessMult (number)         — scales computed stroke
- * - rayCount         (integer)
- * - coreScaleMult    (number)         — multiplies core base diameter (before osc)
- */
+// Palettes.
+const SUN_BASE_PALETTE: SunPalette = {
+  default: { r: 255, g: 196, b: 60 },
+  ray: { r: 255, g: 140, b: 40 },
+};
+
+const SUN_DARK_PALETTE: SunPalette = {
+  default: { r: 140, g: 124, b: 46 },
+  ray: { r: 140, g: 88, b: 31 },
+};
+
+const SUN_WARM_PALETTE: SunPalette = {
+  default: { r: 255, g: 188, b: 44 },
+  ray: { r: 248, g: 118, b: 26 },
+};
+
+const SUN_COOL_PALETTE: SunPalette = {
+  default: { r: 255, g: 222, b: 128 },
+  ray: { r: 248, g: 180, b: 80 },
+};
+
+const MOON_DARK_PALETTE: MoonPalette = {
+  default: { r: 195, g: 208, b: 228 },
+};
+
+// Helpers.
 function drawCrescentMoon(
   p: ShapeCanvas,
   x: number,
@@ -115,38 +98,42 @@ function drawCrescentMoon(
   ex: number,
   ct: number
 ): void {
-  const u = clamp01(opts.liveAvg ?? 0.5);
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const sprite = shapeSprite(opts);
+
+  const u = clamp01(style.liveAvg ?? 0.5);
 
   let moonTint = MOON_DARK_PALETTE.default;
-  if (opts.gradientRGB) moonTint = blendRGB(moonTint, opts.gradientRGB, 0.08);
-  moonTint = applyExposureContrast(moonTint, ex, ct);
+  if (style.gradientRGB) moonTint = blendRGB(moonTint, style.gradientRGB, 0.08);
+  moonTint = applySrgbExposureContrast(moonTint, ex, ct);
   const pulsed = oscillateSaturation(moonTint, t, {
-    amp:   val([0.12, 0.04], u),
-    speed: val([0.40, 0.06], u),
+    amp:   resolveRangeValue([0.12, 0.04], u),
+    speed: resolveRangeValue([0.40, 0.06], u),
     phase: 0,
   });
 
-  const coreBase = r * val(SUN.coreDiamK, u) * (opts.coreScaleMult ?? 5);
-  const desiredAbsOsc = r * val([0.05, 0.01], u);
+  const coreBase = r * resolveRangeValue(SUN.coreDiamK, u) * (sprite.coreScaleMult ?? 5);
+  const desiredAbsOsc = r * resolveRangeValue([0.05, 0.01], u);
 
   const m = applyShapeMods({
     p, x, y, r: coreBase,
     opts: {
-      alpha: finiteNumber(opts.alpha, 235),
-      timeMs: opts.timeMs,
-      liveAvg: opts.liveAvg,
-      rootAppearK: opts.rootAppearK,
+      alpha: finiteNumber(style.alpha, 235),
+      timeMs: lifecycle.timeMs,
+      liveAvg: style.liveAvg,
+      rootAppearK: lifecycle.rootAppearK,
     },
     mods: {
-      appear: { scaleFrom: 0.0, alphaFrom: 0.0, anchor: 'center', ease: 'back', backOvershoot: 1.6 },
+      appear: { anchor: 'center', ease: 'back', backOvershoot: 1.6 },
       sizeOsc: {
         mode:    'absolute',
         biasAbs: coreBase,
         ampAbs:  desiredAbsOsc,
-        speed:   val([8.0, 0.18], u),
+        speed:   resolveRangeValue([8.0, 0.18], u),
         anchor:  'center',
       },
-      opacityOsc: { amp: val([12, 5], u), speed: val([0.38, 0.10], u) },
+      opacityOsc: { amp: resolveRangeValue([12, 5], u), speed: resolveRangeValue([0.38, 0.10], u) },
       rotation: { speed: 0 },
     },
   });
@@ -174,13 +161,13 @@ function drawCrescentMoon(
   p.scale(m.scaleX, m.scaleY);
 
   ctx.save();
-  ctx.rotate(-Math.PI / 5); // ~36° tilt — classic "resting moon" angle
+  ctx.rotate(-Math.PI / 5); // About 36deg: classic resting moon angle.
 
   ctx.beginPath();
   ctx.arc(0, 0, R, moonTop, moonBot, true);   // outer limb: sweep left (lit) side
   ctx.arc(d, 0, R, shadBot, shadTop, false);  // inner limb: shadow boundary
   ctx.closePath();
-  ctx.fillStyle = rgba(pulsed, alpha / 255);
+  ctx.fillStyle = rgbaCss(pulsed, alpha / 255);
   ctx.fill();
 
   ctx.restore();
@@ -194,22 +181,28 @@ export function drawSun(
   rIn: number,
   opts: SunOptions = {}
 ): void {
-  const pal = opts.palette ?? (opts.darkMode ? SUN_DARK_PALETTE
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const sprite = shapeSprite(opts);
+
+  const darkMode = style.darkMode === true;
+  const pal = style.palette ?? (darkMode ? SUN_DARK_PALETTE
     : opts.paletteTheme === 'warm' ? SUN_WARM_PALETTE
     : opts.paletteTheme === 'cool' ? SUN_COOL_PALETTE
     : SUN_BASE_PALETTE);
-  const u = clamp01(opts.liveAvg ?? 0.5);
-  const t = ((typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000);
+  const u = clamp01(style.liveAvg ?? 0.5);
+  const t = ((typeof lifecycle.timeMs === 'number' ? lifecycle.timeMs : p.millis()) / 1000);
 
-  const ex = finiteNumber(opts.exposure, 1);
-  const ct = finiteNumber(opts.contrast, 1);
+  const ex = finiteNumber(style.exposure, 1);
+  const ct = finiteNumber(style.contrast, 1);
 
   // allow footprint fit (convenience for grid users)
   let x = xIn, y = yIn, r = rIn;
-  if (opts.fitToFootprint && opts.cell && opts.footprint) {
-    const { c0, w } = opts.footprint;
-    const cellW = opts.cellW ?? opts.cell;
-    const { y: fpY, h: fpH } = footprintToPx(opts.footprint, opts);
+  if (sprite.fitToFootprint && projection.cell && projection.footprint) {
+    const { c0, w } = projection.footprint;
+    const cellW = projection.cellW ?? projection.cell;
+    const { y: fpY, h: fpH } = footprintToPx(projection.footprint, projection);
     const cx = c0 * cellW + (w * cellW) / 2;
     const cy = fpY + fpH / 2;
     const diam = Math.min(w * cellW, fpH);
@@ -217,16 +210,16 @@ export function drawSun(
   }
 
   // Dark mode → crescent moon instead of sun
-  if (opts.darkMode) {
+  if (darkMode) {
     drawCrescentMoon(p, x, y, r, opts, t, ex, ct);
     return;
   }
 
   // color blending setup
-  const sunBlendDefault = val(SUN.colorBlend, u);
+  const sunBlendDefault = resolveRangeValue(SUN.colorBlend, u);
   const sunBlend = (typeof opts.sunBlend === 'number') ? clamp01(opts.sunBlend) : sunBlendDefault;
-  const oscAmp   = (typeof opts.oscAmp   === 'number') ? opts.oscAmp   : val(SUN.oscAmp,   u);
-  const oscSpeed = (typeof opts.oscSpeed === 'number') ? opts.oscSpeed : val(SUN.oscSpeed, u);
+  const oscAmp   = (typeof opts.oscAmp   === 'number') ? opts.oscAmp   : resolveRangeValue(SUN.oscAmp,   u);
+  const oscSpeed = (typeof opts.oscSpeed === 'number') ? opts.oscSpeed : resolveRangeValue(SUN.oscSpeed, u);
   const oscPhase = opts.oscPhase ?? 0;
 
   // core tint
@@ -236,29 +229,29 @@ export function drawSun(
     baseTint = { r: p.red(c), g: p.green(c), b: p.blue(c) };
   } else if (opts.sunGradientRGB) {
     baseTint = blendRGB(pal.default, opts.sunGradientRGB, sunBlend);
-  } else if (opts.gradientRGB) {
-    baseTint = blendRGB(pal.default, opts.gradientRGB, sunBlend);
+  } else if (style.gradientRGB) {
+    baseTint = blendRGB(pal.default, style.gradientRGB, sunBlend);
   }
   let pulsedCore = oscillateSaturation(baseTint, t, { amp: oscAmp, speed: oscSpeed, phase: oscPhase });
-  pulsedCore = applyExposureContrast(pulsedCore, ex, ct);
+  pulsedCore = applySrgbExposureContrast(pulsedCore, ex, ct);
 
   // ray tint
-  let rayTintBase = opts.gradientRGB ? blendRGB(pal.ray, opts.gradientRGB, sunBlend) : pal.ray;
-  rayTintBase = applyExposureContrast(rayTintBase, ex, ct);
+  let rayTintBase = style.gradientRGB ? blendRGB(pal.ray, style.gradientRGB, sunBlend) : pal.ray;
+  rayTintBase = applySrgbExposureContrast(rayTintBase, ex, ct);
   const pulsedRay = oscillateSaturation(rayTintBase, t, { amp: oscAmp, speed: oscSpeed, phase: oscPhase });
 
   // geometry knobs
-  const rayCount = Math.max(6, Math.floor(opts.rayCount ?? val(SUN.rayCount, u)));
+  const rayCount = Math.max(6, Math.floor(opts.rayCount ?? resolveRangeValue(SUN.rayCount, u)));
 
   // base sizes (core + anchor), with explicit override multiplier for the core
-  const coreBase = r * val(SUN.coreDiamK, u) * (opts.coreScaleMult ?? 5);
+  const coreBase = r * resolveRangeValue(SUN.coreDiamK, u) * (sprite.coreScaleMult ?? 5);
   // default derived sizes for rays
-  const rayLenBaseRaw = r * val(SUN.rayLenK, u);
+  const rayLenBaseRaw = r * resolveRangeValue(SUN.rayLenK, u);
   const rayLenBase = Math.max(0,
     (typeof opts.rayLen === 'number' ? opts.rayLen : rayLenBaseRaw) * (opts.rayLenMult ?? 1)
   );
 
-  const rayThickBaseRaw = Math.round(r * val(SUN.rayThickK, u));
+  const rayThickBaseRaw = Math.round(r * resolveRangeValue(SUN.rayThickK, u));
   const rayThickness = Math.max(1,
     (typeof opts.rayThickness === 'number'
       ? opts.rayThickness
@@ -266,32 +259,26 @@ export function drawSun(
   );
 
   // appear + core breathing (only the core's diameter uses sizeOsc; rays use stable gap to core edge)
-  const desiredAbsOsc = r * val([0.10, 0.02], u);
+  const desiredAbsOsc = r * resolveRangeValue([0.10, 0.02], u);
   const m = applyShapeMods({
     p, x, y, r: coreBase,
     opts: {
-      alpha: finiteNumber(opts.alpha, 235),
-      timeMs: opts.timeMs,
-      liveAvg: opts.liveAvg,
-      rootAppearK: opts.rootAppearK,
+      alpha: finiteNumber(style.alpha, 235),
+      timeMs: lifecycle.timeMs,
+      liveAvg: style.liveAvg,
+      rootAppearK: lifecycle.rootAppearK,
     },
     mods: {
-      appear: {
-        scaleFrom: 0.0,
-        alphaFrom: 0.0,
-        anchor: 'center',
-        ease: 'back',
-        backOvershoot: 1.6,
-      },
+      appear: { anchor: 'center', ease: 'back', backOvershoot: 1.6 },
       sizeOsc: {
         mode:   'absolute',
         biasAbs: coreBase,      // base core diameter
         ampAbs:  desiredAbsOsc, // breathing amplitude (in pixels)
-        speed:   val([10.5, 0.18], u),
+        speed:   resolveRangeValue([10.5, 0.18], u),
         anchor: 'center',
       },
-      opacityOsc: { amp: val([20, 40], u), speed: val([0.12, 0.25], u) },
-      rotation:   { speed: val([0.4, 0.1], u) },
+      opacityOsc: { amp: resolveRangeValue([20, 40], u), speed: resolveRangeValue([0.12, 0.25], u) },
+      rotation:   { speed: resolveRangeValue([0.4, 0.1], u) },
     }
   });
 
@@ -324,8 +311,8 @@ export function drawSun(
     const y2 = Math.sin(theta) * endR;
 
     const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-    grad.addColorStop(0, rgba(pulsedCore, a));
-    grad.addColorStop(1, rgba(pulsedRay, a));
+    grad.addColorStop(0, rgbaCss(pulsedCore, a));
+    grad.addColorStop(1, rgbaCss(pulsedRay, a));
 
     ctx.strokeStyle = grad;
     ctx.beginPath();

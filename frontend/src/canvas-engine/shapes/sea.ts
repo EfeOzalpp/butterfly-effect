@@ -1,7 +1,9 @@
+// src/canvas-engine/shapes/sea.ts
+
 import {
   clamp01,
-  val,
-  mix,
+  resolveRangeValue,
+  lerpNumber,
   blendRGB,
   blendRGBGamma,
   clampSaturation,
@@ -13,10 +15,21 @@ import {
   particleDepthAlpha,
   particleDepthSizeScale,
   particleRowBucket,
+  rgbaCss,
+  roundedRectPath,
+  shapeColorForRenderPass,
+  smoothstep01,
 } from "../modifiers/index";
 import type { NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
-import { shapePartColor } from "./shared/silhouette";
+import {
+  shapeLifecycle,
+  shapeParticles,
+  shapePass,
+  shapeProjection,
+  shapeSprite,
+  shapeStyle,
+} from "./options";
 
 interface SeaPalette extends ShapePalette {
   top: RGB;
@@ -25,33 +38,13 @@ interface SeaPalette extends ShapePalette {
 
 type SeaPaletteTheme = "warm" | "cool";
 
-// base palettes
-const SEA_BASE_PALETTE: SeaPalette = {
-  top:    { r: 138, g: 196, b: 234 },
-  bottom: { r:  25, g: 124, b: 179 },
-};
+interface SeaOptions extends ShapeDrawOptions<SeaPalette> {
+  paletteTheme?: SeaPaletteTheme;
+  oscHz?: number;
+  oscAmp?: number;
+}
 
-const SEA_DARK_PALETTE: SeaPalette = {
-  top:    { r: 76, g: 124, b: 179 },
-  bottom: { r: 14, g: 78,  b: 137 },
-};
-
-const SEA_WARM_PALETTE: SeaPalette = {
-  top:    { r: 148, g: 210, b: 218 },
-  bottom: { r:  48, g: 140, b: 168 },
-};
-
-const SEA_COOL_PALETTE: SeaPalette = {
-  top:    { r: 118, g: 182, b: 228 },
-  bottom: { r:  12, g:  98, b: 168 },
-};
-
-// grass for composite bowl
-const GRASS_BASE: RGB = { r: 150, g: 190, b: 150 };
-const GRASS_DARK: RGB  = { r: 72,  g: 102, b: 130 };
-
-// Sea drawing constants. Callers choose footprint and scene context; the shape
-// owns its water, bowl, foam, and spill art direction.
+// Tunables.
 const SEA_TUNING = {
   gradient: {
     gamma: true,
@@ -175,30 +168,31 @@ const SEA_TUNING = {
   },
 };
 
-interface SeaOptions extends ShapeDrawOptions<SeaPalette> {
-  paletteTheme?: SeaPaletteTheme;
-  oscHz?: number;
-  oscAmp?: number;
-}
+// Palettes.
+const SEA_BASE_PALETTE: SeaPalette = {
+  top: { r: 138, g: 196, b: 234 },
+  bottom: { r: 25, g: 124, b: 179 },
+};
 
-// helpers
-function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-  const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
-  ctx.moveTo(x + rr, y);
-  ctx.lineTo(x + w - rr, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-  ctx.lineTo(x + w, y + h - rr);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-  ctx.lineTo(x + rr, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-  ctx.lineTo(x, y + rr);
-  ctx.quadraticCurveTo(x, y, x + rr, y);
-}
+const SEA_DARK_PALETTE: SeaPalette = {
+  top: { r: 76, g: 124, b: 179 },
+  bottom: { r: 14, g: 78, b: 137 },
+};
 
-function cssRgba(r: number, g: number, b: number, a: number): string {
-  return `rgba(${String(r)},${String(g)},${String(b)},${String(a)})`;
-}
+const SEA_WARM_PALETTE: SeaPalette = {
+  top: { r: 148, g: 210, b: 218 },
+  bottom: { r: 48, g: 140, b: 168 },
+};
 
+const SEA_COOL_PALETTE: SeaPalette = {
+  top: { r: 118, g: 182, b: 228 },
+  bottom: { r: 12, g: 98, b: 168 },
+};
+
+const GRASS_BASE: RGB = { r: 150, g: 190, b: 150 };
+const GRASS_DARK: RGB = { r: 72, g: 102, b: 130 };
+
+// Helpers.
 // Map a world-space Y to the current water gradient color.
 function seaRGBAtY(y: number, topY: number, bottomY: number, topRGB: RGB, bottomRGB: RGB): RGB {
   const t = Math.max(0, Math.min(1, (y - topY) / Math.max(1e-6, (bottomY - topY))));
@@ -209,8 +203,6 @@ function seaRGBAtY(y: number, topY: number, bottomY: number, topRGB: RGB, bottom
   };
 }
 
-// soft gate helper
-function smoothstep01(t: number): number { const c = Math.max(0, Math.min(1, t)); return c * c * (3 - 2 * c); }
 function liveWindowK(u: number, a: number, b: number, s = 0): number {
   let lo = a, hi = b;
   if (lo > hi) { [lo, hi] = [hi, lo]; }
@@ -221,67 +213,75 @@ function liveWindowK(u: number, a: number, b: number, s = 0): number {
 }
 
 export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts: SeaOptions = {}): void {
-  const pal = opts.palette ?? (opts.darkMode ? SEA_DARK_PALETTE
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const sprite = shapeSprite(opts);
+  const particles = shapeParticles(opts);
+  const pass = shapePass(opts);
+
+  const darkMode = style.darkMode === true;
+  const pal = style.palette ?? (darkMode ? SEA_DARK_PALETTE
     : opts.paletteTheme === 'warm' ? SEA_WARM_PALETTE
     : opts.paletteTheme === 'cool' ? SEA_COOL_PALETTE
     : SEA_BASE_PALETTE);
-  const grassPal = opts.darkMode ? GRASS_DARK : GRASS_BASE;
-  const cell = opts.cell;
-  const cellW = opts.cellW ?? cell;
-  const cellH = opts.cellH ?? cell;
-  const f = opts.footprint;
+  const grassPal = darkMode ? GRASS_DARK : GRASS_BASE;
+  const cell = projection.cell;
+  const cellW = projection.cellW ?? cell;
+  const cellH = projection.cellH ?? cell;
+  const f = projection.footprint;
   if (!cell || !f) return;
-  const renderPass = opts.renderPass ?? "color";
-  const isSilhouettePass = renderPass === "silhouette";
-  const shouldDrawColorDetails = !isSilhouettePass;
-  const silhouetteColor = opts.silhouetteColor;
+  const renderPass = pass.renderPass ?? "color";
+  const isDepthMaskPass = renderPass === "depthMask";
+  const shouldDrawColorDetails = !isDepthMaskPass;
+  const maskColor = pass.maskColor;
 
   // Detect "sprite mode"
   // - auto when CanvasAnimatedTexture / Frozen path sets fitToFootprint: true
-  // - or explicitly via opts.spriteMode
-  const isSprite = (opts.fitToFootprint ?? false) || (opts.spriteMode ?? false);
-  const pxK = isSprite ? Math.max(1, opts.coreScaleMult ?? opts.pixelScale ?? 1) : 1;
+  // - or explicitly via sprite.spriteMode
+  const isSprite = (sprite.fitToFootprint ?? false) || (sprite.spriteMode ?? false);
+  const pxK = isSprite ? Math.max(1, sprite.coreScaleMult ?? sprite.pixelScale ?? 1) : 1;
 
   const T = SEA_TUNING;
 
-  const tSec = (typeof opts.timeMs === 'number' ? opts.timeMs : p.millis()) / 1000;
-  const u = clamp01(opts.liveAvg ?? 0.5);
+  const tSec = (typeof lifecycle.timeMs === 'number' ? lifecycle.timeMs : p.millis()) / 1000;
+  const u = clamp01(style.liveAvg ?? 0.5);
 
-  const baseAlpha = typeof opts.alpha === 'number' ? opts.alpha : 235;
+  const baseAlpha = typeof style.alpha === 'number' ? style.alpha : 235;
   const alphaMulGlobal = clamp01(T.opacity.mul);
-  const requestedSilhouetteAlpha =
-    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
-      ? opts.silhouetteAlpha
+  const requestedMaskAlpha =
+    typeof pass.maskAlpha === "number" && Number.isFinite(pass.maskAlpha)
+      ? pass.maskAlpha
       : baseAlpha;
 
   const spanTilesX = f.w;
-  const rowBucket = particleRowBucket(f, opts);
+  const rowBucket = particleRowBucket(f, projection);
   const particleDepthA = particleDepthAlpha(rowBucket);
   const particleSizeK = particleDepthSizeScale(rowBucket);
 
   // tile rect
   const x0 = f.c0 * (cellW ?? 0);
-  const { y: y0, h } = footprintToPx(f, opts);
+  const { y: y0, h } = footprintToPx(f, projection);
   const w  = spanTilesX * (cellW ?? 0);
 
   const cx = x0 + w / 2;
   const bottomY = y0 + h;
 
   // WATER Y-scale
-  const baseScaleY = val(T.scale.baseYRange, u);
-  const oscHz  = Math.max(0, opts.oscHz  ?? val(T.scale.oscHzRange,  u));
-  const oscAmp = Math.max(0, opts.oscAmp ?? val(T.scale.oscAmpRange, u));
+  const baseScaleY = resolveRangeValue(T.scale.baseYRange, u);
+  const oscHz  = Math.max(0, opts.oscHz  ?? resolveRangeValue(T.scale.oscHzRange,  u));
+  const oscAmp = Math.max(0, opts.oscAmp ?? resolveRangeValue(T.scale.oscAmpRange, u));
   const oscT   = 0.5 + 0.5 * Math.sin(tSec * (oscHz * 2 * Math.PI));
-  const oscScaleY = mix(1 - oscAmp, 1 + oscAmp, oscT);
+  const oscScaleY = lerpNumber(1 - oscAmp, 1 + oscAmp, oscT);
   const waterScaleY = Math.max(0, Math.min(1.25, baseScaleY * oscScaleY));
 
   // WATER colors (gamma + clamp)
   const useGamma = T.gradient.gamma;
-  const blendTopK    = clamp01(val(T.gradient.blendTop,    u));
-  const blendBottomK = clamp01(val(T.gradient.blendBottom, u));
+  const blendTopK    = clamp01(resolveRangeValue(T.gradient.blendTop,    u));
+  const blendBottomK = clamp01(resolveRangeValue(T.gradient.blendBottom, u));
   const blender = useGamma ? blendRGBGamma : blendRGB;
-  let topRGB    = opts.gradientRGB ? blender(pal.top,    opts.gradientRGB, blendTopK)    : pal.top;
-  let bottomRGB = opts.gradientRGB ? blender(pal.bottom, opts.gradientRGB, blendBottomK) : pal.bottom;
+  let topRGB    = style.gradientRGB ? blender(pal.top,    style.gradientRGB, blendTopK)    : pal.top;
+  let bottomRGB = style.gradientRGB ? blender(pal.bottom, style.gradientRGB, blendBottomK) : pal.bottom;
 
   const clampStrength = clamp01(T.colorClamp.strength);
   if (clampStrength > 0) {
@@ -312,8 +312,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     x: cx,
     y: bottomY,
     r: Math.min(w, h),
-    opts: { alpha: baseAlpha * alphaMulGlobal, timeMs: opts.timeMs, liveAvg: u, rootAppearK: opts.rootAppearK },
-    mods: { appear: { scaleFrom: 0.0, alphaFrom: 0.0, anchor: 'bottom-center', ease: (T.appear.easing === 'linear') ? 'linear' : 'cubic' }, sizeOsc: { mode: 'none' } }
+    opts: { alpha: baseAlpha * alphaMulGlobal, timeMs: lifecycle.timeMs, liveAvg: u, rootAppearK: lifecycle.rootAppearK },
+    mods: { appear: { ease: (T.appear.easing === 'linear') ? 'linear' : 'cubic' } }
   });
 
   const drawAlpha = (typeof env.alpha === 'number') ? env.alpha : (baseAlpha * alphaMulGlobal);
@@ -321,8 +321,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   const appearAlphaK = (baseAlpha * alphaMulGlobal) > 0
     ? clamp01(drawAlpha / (baseAlpha * alphaMulGlobal))
     : 1;
-  const silhouetteFactor = clamp01((requestedSilhouetteAlpha * appearAlphaK) / 255);
-  const silhouetteRGB = shapePartColor(renderPass, topRGB, silhouetteColor);
+  const depthMaskFactor = clamp01((requestedMaskAlpha * appearAlphaK) / 255);
+  const depthMaskRGB = shapeColorForRenderPass(renderPass, topRGB, maskColor);
 
   // Begin group transform; clip the tile
   p.push();
@@ -344,17 +344,17 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const x = L0, y = Ttop0, ww = W0, hh = H0;
     ctx.save();
     ctx.beginPath();
-    roundedRect(ctx, x, y, ww, hh, rTop);
+    roundedRectPath(ctx, x, y, ww, hh, rTop);
     ctx.clip();
     const OVER = 4;
     const gy0 = y - OVER;
     const gy1 = y + hh + OVER;
-    if (isSilhouettePass) {
-      ctx.fillStyle = cssRgba(silhouetteRGB.r, silhouetteRGB.g, silhouetteRGB.b, silhouetteFactor);
+    if (isDepthMaskPass) {
+      ctx.fillStyle = rgbaCss(depthMaskRGB, depthMaskFactor);
     } else {
       const g = ctx.createLinearGradient(0, gy0, 0, gy1);
-      g.addColorStop(0, cssRgba(topRGB.r,    topRGB.g,    topRGB.b,    aFactor));
-      g.addColorStop(1, cssRgba(bottomRGB.r, bottomRGB.g, bottomRGB.b, aFactor));
+      g.addColorStop(0, rgbaCss(topRGB, aFactor));
+      g.addColorStop(1, rgbaCss(bottomRGB, aFactor));
       ctx.fillStyle = g;
     }
     ctx.fillRect(x - 2, gy0, ww + 4, (gy1 - gy0));
@@ -365,7 +365,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   if (T.foam.enable && shouldDrawColorDetails) {
     const bandH   = Math.max(1, T.foam.band.heightPx);
     const bandOff = Math.max(0, T.foam.band.offsetTopPx);
-    const foamHz  = val(T.foam.band.oscHzRange, u);
+    const foamHz  = resolveRangeValue(T.foam.band.oscHzRange, u);
     const yOsc    = Math.sin(tSec * foamHz * 2 * Math.PI) * (T.foam.band.oscAmpPx || 0);
 
     const rect = { x: L0, y: Ttop0 - bandOff + yOsc, w: W0, h: bandH };
@@ -389,11 +389,12 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     };
 
     const dtSec =
-      (typeof opts.dtSec === 'number' && opts.dtSec > 0)
-        ? opts.dtSec
+      (typeof lifecycle.dtSec === 'number' && lifecycle.dtSec > 0)
+        ? lifecycle.dtSec
         : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
     stepAndDrawPuffs(p, {
+      store: particles.particleStore,
       key: `seafoam:${String(f.r0)}:${String(f.c0)}:${String(spanTilesX)}x${String(f.h)}${isSprite ? ':spr' : ''}`,
       rect,
       dir: T.foam.motion.dir,
@@ -433,8 +434,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
     const sm = T.capRect.scaleMap;
     const uClamped = Math.max(0, Math.min(1, (u - sm.uMin) / Math.max(1e-6, (sm.uMax - sm.uMin))));
-    const sx = mix(sm.xMin, sm.xMax, uClamped);
-    const sy = mix(sm.yMin, sm.yMax, uClamped);
+    const sx = lerpNumber(sm.xMin, sm.xMax, uClamped);
+    const sy = lerpNumber(sm.yMin, sm.yMax, uClamped);
 
     ctx.save();
     ctx.translate(cx, surfaceY + followOffset);
@@ -443,12 +444,12 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const left = -rectW / 2;
     const top  = -rectH;
 
-    const rectAlpha = isSilhouettePass
-      ? silhouetteFactor
+    const rectAlpha = isDepthMaskPass
+      ? depthMaskFactor
       : aFactor * T.capRect.alphaMul;
 
-    if (isSilhouettePass) {
-      ctx.fillStyle = cssRgba(silhouetteRGB.r, silhouetteRGB.g, silhouetteRGB.b, rectAlpha);
+    if (isDepthMaskPass) {
+      ctx.fillStyle = rgbaCss(depthMaskRGB, rectAlpha);
     } else {
       const baseTop = T.capRect.color.top;
       const baseBot = T.capRect.color.bottom;
@@ -457,13 +458,13 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
       const botCol = oscillateSaturation(baseBot, tSec, { amp: satOsc.amp, speed: satOsc.speed, phase: satOsc.phase + Math.PI / 4 });
 
       const grad = ctx.createLinearGradient(0, top, 0, 0);
-      grad.addColorStop(0, cssRgba(topCol.r, topCol.g, topCol.b, rectAlpha));
-      grad.addColorStop(1, cssRgba(botCol.r, botCol.g, botCol.b, rectAlpha));
+      grad.addColorStop(0, rgbaCss(topCol, rectAlpha));
+      grad.addColorStop(1, rgbaCss(botCol, rectAlpha));
       ctx.fillStyle = grad;
     }
 
     ctx.beginPath();
-    roundedRect(ctx, left, top, rectW, rectH, radius);
+    roundedRectPath(ctx, left, top, rectW, rectH, radius);
     ctx.fill();
     ctx.restore();
 
@@ -482,8 +483,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
     if (spillK > 0.01) {
       const dtSec =
-        (typeof opts.dtSec === 'number' && opts.dtSec > 0)
-          ? opts.dtSec
+        (typeof lifecycle.dtSec === 'number' && lifecycle.dtSec > 0)
+          ? lifecycle.dtSec
           : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
       // sprite-mode adjustments: keep inside tile + remove global shift/nudges
@@ -562,6 +563,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
         if (gatedCount < 1) return;
 
         stepAndDrawPuffs(p, {
+          store: particles.particleStore,
           key: `spill:${String(f.r0)}:${String(f.c0)}:${String(spanTilesX)}x${String(f.h)}:${side}${keySuffix}`,
           rect: rectSim,
           dir,
@@ -637,20 +639,20 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const rightX = cx + L0 + W0 - colW;
 
     const gb = T.bowl.grassBlend;
-    const blendK = clamp01(val(gb.colorBlend, u));
+    const blendK = clamp01(resolveRangeValue(gb.colorBlend, u));
     const [satLo, satHi] = gb.satRange;
     const [briLo, briHi] = gb.brightRange;
 
     let bowlRGB = grassPal;
-    if (opts.gradientRGB) bowlRGB = blendRGB(bowlRGB, opts.gradientRGB, blendK);
+    if (style.gradientRGB) bowlRGB = blendRGB(bowlRGB, style.gradientRGB, blendK);
     bowlRGB = clampSaturation(bowlRGB, satLo, satHi, 1);
     bowlRGB = clampBrightness(bowlRGB, briLo, briHi, 1);
 
-    const bowlFill = shapePartColor(renderPass, bowlRGB, silhouetteColor);
-    const aBowl = isSilhouettePass
-      ? Math.round(255 * silhouetteFactor)
+    const bowlFill = shapeColorForRenderPass(renderPass, bowlRGB, maskColor);
+    const aBowl = isDepthMaskPass
+      ? Math.round(255 * depthMaskFactor)
       : Math.round(255 * clamp01(T.bowl.alphaMul) * aFactor);
-    ctx.fillStyle = cssRgba(bowlFill.r, bowlFill.g, bowlFill.b, aBowl / 255);
+    ctx.fillStyle = rgbaCss(bowlFill, aBowl / 255);
 
     const rCorner = Math.round(cell * kCorner);
     {
@@ -668,8 +670,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     }
 
     ctx.beginPath();
-    roundedRect(ctx, leftX,  postsTopY, colW, postDrawH, postR);
-    roundedRect(ctx, rightX, postsTopY, colW, postDrawH, postR);
+    roundedRectPath(ctx, leftX,  postsTopY, colW, postDrawH, postR);
+    roundedRectPath(ctx, rightX, postsTopY, colW, postDrawH, postR);
     ctx.fill();
   }
 

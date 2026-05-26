@@ -1,10 +1,9 @@
 // src/canvas-engine/validation/defineRuleSet.ts
 
-import type { SceneProfile, SceneProfileContext } from "../multi-canvas-setup/sceneProfile";
 import type { SceneState, SceneLookupKey } from "../scene-state";
 import { isQuestionnaire } from "../scene-state";
+import type { SceneProfile, SceneProfileContext, SceneRuleSet } from "../scene-rules/profile";
 import { validateSceneProfile } from "./validateSceneProfile";
-import type { SceneRuleSet } from "../multi-canvas-setup/types";
 
 function lookupKeyFromState(state: SceneState): SceneLookupKey {
   return isQuestionnaire(state) ? "questionnaire" : state.baseMode;

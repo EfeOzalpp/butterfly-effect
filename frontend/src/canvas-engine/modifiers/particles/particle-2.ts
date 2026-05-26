@@ -16,10 +16,15 @@ import type {
   RGBA,
 } from "./types";
 import { clamp01, hzLerp, makePRNG, mix, randRange, smoothstep01 } from "./utils";
+import {
+  getPuffEmitterMap,
+  type ParticleStore,
+} from "./store";
 
 export type PuffDir = "none" | "up" | "down" | "left" | "right";
 
 export interface PuffEmitterOpts {
+  store?: ParticleStore;
   key: string;
   rect: ParticleRect;
 
@@ -97,11 +102,10 @@ function dirToAngleSpan(dir: PuffDir, spread: number): { min: number; max: numbe
   return { min: base - spread, max: base + spread };
 }
 
-const EMITTERS_2 = new Map<string, EmitterState>();
-
-function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
+function ensureEmitter(store: ParticleStore, opts: PuffEmitterOpts): EmitterState {
   const key = opts.key;
-  let st = EMITTERS_2.get(key);
+  const emitters = getPuffEmitterMap<EmitterState>(store);
+  let st = emitters.get(key);
 
   const wantCount = Math.max(1, Math.floor(opts.count ?? 32));
   const seed = hashPuffKey(key);
@@ -123,7 +127,7 @@ function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
 
   if (!st) {
     st = mk();
-    EMITTERS_2.set(key, st);
+    emitters.set(key, st);
   } else if (st.particles.length !== wantCount) {
     if (st.particles.length < wantCount) {
       const rnd = st.rnd;
@@ -148,7 +152,9 @@ function ensureEmitter(opts: PuffEmitterOpts): EmitterState {
 }
 
 export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec: number) {
-  const state = ensureEmitter(opts);
+  if (!opts.store) return;
+
+  const state = ensureEmitter(opts.store, opts);
   const rect = opts.rect;
 
   const spawnMode = opts.spawnMode ?? "stratified";

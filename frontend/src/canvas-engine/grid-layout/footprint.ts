@@ -1,17 +1,10 @@
 // src/canvas-engine/grid-layout/footprint.ts
 
-import type { Anchor } from "../modifiers/shape-modifiers";
+import type { Anchor, CellSize, GridFootprint } from "../shared/geometry";
 
-export interface CellSize { cellW: number; cellH: number; ox?: number; oy?: number }
+export type Footprint = GridFootprint;
 
 function o(v?: number) { return typeof v === "number" && Number.isFinite(v) ? v : 0; }
-
-export interface Footprint {
-  r0: number; // row origin
-  c0: number; // col origin
-  w: number;  // width in cells
-  h: number;  // height in cells
-}
 
 export interface PlaceOpts {
   // Pixel offset applied to the final point

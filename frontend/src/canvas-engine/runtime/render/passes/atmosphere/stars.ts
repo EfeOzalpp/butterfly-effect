@@ -1,4 +1,4 @@
-import type { BackgroundSpec } from "../../../../adjustable-rules/backgrounds";
+import type { BackgroundSpec } from "../../../../scene-rules/backgrounds";
 import type { PLike } from "../../../p/makeP";
 import { clamp01 } from "../../../../shared/math";
 import { mix } from "../shared/color";
@@ -70,7 +70,7 @@ export function createStarGeometryCache() {
   let lastKey = "";
   const stars: StarParticle[] = [];
 
-  return function getStars(args: {
+  const getStars = function getStars(args: {
     width: number;
     height: number;
     spec: NonNullable<BackgroundSpec["stars"]>;
@@ -118,6 +118,13 @@ export function createStarGeometryCache() {
     lastKey = key;
     return stars;
   };
+
+  return Object.assign(getStars, {
+    clear() {
+      lastKey = "";
+      stars.length = 0;
+    },
+  });
 }
 
 export function drawStars(

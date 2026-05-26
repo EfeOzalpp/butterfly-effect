@@ -1,6 +1,6 @@
 # Graph Runtime — Data Visualization
 
-WebGL-based 3D dot graph. Entirely independent of the canvas engine — no liveAvg or allocAvg. Driven purely by Sanity survey data.
+WebGL-based 3D dot graph. Entirely independent of the canvas engine and `liveAvg`. Driven purely by Sanity survey data.
 
 ```mermaid
 flowchart TD

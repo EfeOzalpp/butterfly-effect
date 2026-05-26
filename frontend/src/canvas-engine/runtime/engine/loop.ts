@@ -1,15 +1,9 @@
 // src/canvas-engine/runtime/engine/loop.ts
 
-import type { PLike } from "../p/makeP";
 import { normalizeDprTransform, reassertDprTransformIfMutated } from "../util/transform";
 
-import type { SceneLookupKey } from "../../scene-state";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
-import type { BackgroundSpec } from "../../adjustable-rules/backgrounds";
-import type { RenderCachePolicy } from "../../adjustable-rules/render-cache";
-
 import { getPaddingSpecForState } from "../geometry/padding";
-import { computeGridCached, type GridCacheState, type GridMetrics } from "../geometry/gridCache";
+import { computeGridCached, type GridMetrics, type RuntimeLayoutState } from "../geometry/gridCache";
 
 import {
   createBackgroundAnchorContext,
@@ -22,105 +16,79 @@ import {
   drawBackgroundStarsOnly,
 } from "../render/passes/atmosphere";
 import { createRowLightCache } from "../render/passes/light";
-import { drawGridOverlay, type DebugFlags } from "../debug";
-import { drawGhosts, type Ghost } from "../render/ghosts";
+import { drawGridOverlay } from "../debug";
 import {
-  createFarShapeBitmapRenderer,
-  createShapeDepthOverlayRenderer,
+  createPaletteCache,
+  createShapeRenderCache,
   drawItems,
   getGradientRGB,
   resolveShapeDepthTint,
   sortItemsForRenderInto,
-  type PaletteCache,
 } from "../render/passes/shape";
 import { createSceneLightContext } from "../../modifiers/index";
 
 import { drawItemFromRegistry } from "../shape-adapter/draw";
-import type { ShapeRegistry } from "../shape-adapter/registry";
+import type { RuntimeShapeServices } from "../shape-adapter/registry";
 import type { RuntimeShapeOptions } from "../shape-adapter/types";
+import type { RuntimeSurface } from "../p/makeP";
 
 import type { EngineFieldItem } from "./field";
-import type { LiveState } from "./itemLifecycle";
+import type { EngineEffectState, EngineRuntimeState } from "./state";
+import type { EngineSceneSource } from "./types";
 
 export interface LoopDeps {
-  p: PLike;
+  // runtime/p: live canvas draw facade and timing surface created by runtime/index.
+  surface: RuntimeSurface;
 
-  // state
-  field: { items: EngineFieldItem[]; visible: boolean };
+  // engine/state: mutable field/style/input objects updated by EngineControls.
+  engineState: EngineRuntimeState;
 
-  style: {
-    r: number;
-    perShapeScale: Record<string, number>;
-    gradientRGBOverride: null | { r: number; g: number; b: number };
-    blend: number;
-    exposure: number;
-    contrast: number;
-    appearMs: number;
-    appearStaggerMs: number;
-    exitMs: number;
-    darkMode: boolean;
-    fog: boolean;
-    debug: DebugFlags;
-  };
+  // engine/types: app-resolved scene profile source; runtime/index owns the current value.
+  sceneSource: EngineSceneSource;
 
-  inputs: { liveAvg: number };
+  // geometry/gridCache: per-engine layout cache, invalidated by resize/profile changes.
+  layout: RuntimeLayoutState;
 
-  // policy getters (so loop doesn't own policy vars)
-  getSceneLookup: () => SceneLookupKey;
-  getPaddingSpecOverride: () => CanvasPaddingSpec | null;
-  getBackgroundSpecOverride: () => BackgroundSpec | null;
-  getRenderCachePolicy: () => RenderCachePolicy;
+  // engine/state: per-engine visual effect state that persists across frames.
+  effects: EngineEffectState;
 
-  // caches
-  gridCache: GridCacheState;
-  paletteCache: PaletteCache;
-  // lifecycle state
-  liveStates: Map<string, LiveState>;
-  ghostsRef: { current: Ghost[] };
-
-  // shapes
-  shapeRegistry: ShapeRegistry;
+  // shape-adapter/registry: runtime bridge from item shape names to draw functions.
+  shapes: RuntimeShapeServices;
 }
 
 export function createEngineTicker(deps: LoopDeps) {
-  const {
-    p,
-    field,
-    style,
-    inputs,
-    getSceneLookup,
-    getPaddingSpecOverride,
-    getBackgroundSpecOverride,
-    getRenderCachePolicy,
-    gridCache,
-    paletteCache,
-
-    liveStates,
-    ghostsRef,
-    shapeRegistry,
-  } = deps;
+  const surface = deps.surface;
+  const engine = deps.engineState;
+  const sceneSource = deps.sceneSource;
+  const layout = deps.layout;
+  const effects = deps.effects;
+  const shapes = deps.shapes;
 
   let running = true;
 
-  // Offscreen caches — redrawn only when inputs change, blitted each frame
+  // Offscreen caches - redrawn only when inputs change, blitted each frame
   const bgCache = createBgCache();
   const rowLightCache = createRowLightCache();
   const fogLayerCache = createFogLayerCache();
   const fogStateCache = createFogStateCache();
   const starGeometryCache = createStarGeometryCache();
-  const drawFarShapeBitmap = createFarShapeBitmapRenderer(
-    () => getRenderCachePolicy().farShapeBitmap
-  );
-  const drawShapeDepthOverlay = createShapeDepthOverlayRenderer(
-    () => getRenderCachePolicy().shapeDepthMask
-  );
+  const paletteCache = createPaletteCache();
+  const shapeRenderCache = createShapeRenderCache(() => sceneSource.getProfile().renderCache);
 
   const sortedItemsScratch: EngineFieldItem[] = [];
-  const sharedScratch: RuntimeShapeOptions = {};
+  const optsScratch: RuntimeShapeOptions = {};
   const shapeOccurrenceScratch = new Map<string, number>();
 
   let sortedItemsSource: EngineFieldItem[] | null = null;
   let sortedItemsMetrics: GridMetrics | null = null;
+
+  function clearRenderCaches() {
+    bgCache.clear();
+    rowLightCache.clear();
+    fogLayerCache.clear();
+    starGeometryCache.clear();
+    shapeRenderCache.clear();
+  }
 
   function sortedItemsForFrame(items: EngineFieldItem[], metrics: GridMetrics): EngineFieldItem[] {
     if (items !== sortedItemsSource || metrics !== sortedItemsMetrics) {
@@ -131,212 +99,277 @@ export function createEngineTicker(deps: LoopDeps) {
     return sortedItemsScratch;
   }
 
+  function findLightItem(items: EngineFieldItem[]): EngineFieldItem | null {
+    for (const item of items) {
+      if (item.shape === "sun") return item;
+    }
+    return null;
+  }
+
   function renderOneSandboxed(
+    // Upstream params: one prepared item draw from drawItems.
     it: EngineFieldItem,
     rEff: number,
-    sharedOpts: RuntimeShapeOptions,
+    opts: RuntimeShapeOptions,
     rootAppearK: number
   ) {
-    p.push();
+    // End params. This function now owns final opts sync and draw routing.
+    surface.p.push();
     try {
+      const projection = opts.projection ?? (opts.projection = {});
+      const styleOpts = opts.style ?? (opts.style = {});
+      const lifecycle = opts.lifecycle ?? (opts.lifecycle = {});
+      const pass = opts.pass ?? (opts.pass = {});
+
       // Keep all shape rendering synchronized to one global liveAvg signal.
       // This avoids per-condition color divergence (mixed red/green at the same moment).
-      const itemAvg = inputs.liveAvg;
-      const itemGradient = sharedOpts.gradientRGB;
+      const itemAvg = engine.inputs.liveAvg;
+      const itemGradient = styleOpts.gradientRGB;
 
-      sharedOpts.liveAvg = itemAvg;
-      sharedOpts.gradientRGB = itemGradient;
-      sharedOpts.rootAppearK = rootAppearK;
-      sharedOpts.usedRows = gridCache.usedRows;
+      styleOpts.liveAvg = itemAvg;
+      styleOpts.gradientRGB = itemGradient;
+      lifecycle.rootAppearK = rootAppearK;
+      projection.usedRows = layout.gridCache.usedRows;
       const depthTint = resolveShapeDepthTint({
-        p,
+        p: surface.p,
         item: it,
-        gridMetrics: gridCache.metrics,
-        shapeAlpha: sharedOpts.alpha,
-        darkMode: sharedOpts.darkMode,
+        gridMetrics: layout.gridCache.metrics,
+        shapeAlpha: styleOpts.alpha,
+        darkMode: styleOpts.darkMode,
       });
-      sharedOpts.depthTintColor = depthTint?.color;
-      sharedOpts.depthTintK = depthTint?.blend;
+      pass.depthTintColor = depthTint?.color;
+      pass.depthTintK = depthTint?.blend;
 
       // Override cell/cellW/cellH with the actual tile size for this item's row.
-      // baseShared carries the horizon reference (smallest tile); shapes that use
+      // baseOpts carries the horizon reference (smallest tile); shapes that use
       // cell * fraction would otherwise size themselves relative to the horizon
       // regardless of where they sit on screen.
       const fp = it.footprint;
-      const m = gridCache.metrics;
+      const m = layout.gridCache.metrics;
       if (fp != null && m.rowHeights.length > 0) {
         // Use the footprint's bottom row for the whole local tile contract.
         // footprintToPx/cellAnchorToPx2 use the same row, so the color pass and
         // baked depth mask do not drift on multi-row perspective shapes.
         const r0 = fp.r0;
         const bottomRow = r0 + fp.h - 1;
-        sharedOpts.cell  = m.rowHeights[bottomRow]  ?? gridCache.cellH;
-        sharedOpts.cellH = m.rowHeights[bottomRow]  ?? gridCache.cellH;
-        sharedOpts.cellW = m.cellWPerRow[bottomRow] ?? gridCache.cellW;
+        projection.cell  = m.rowHeights[bottomRow]  ?? layout.gridCache.cellH;
+        projection.cellH = m.rowHeights[bottomRow]  ?? layout.gridCache.cellH;
+        projection.cellW = m.cellWPerRow[bottomRow] ?? layout.gridCache.cellW;
 
       }
 
-      const drewCachedShape = drawFarShapeBitmap({
-        p,
-        shapeRegistry,
+      // Downstream draw path: far bitmap cache first, live draw fallback, then depth overlay.
+      const drewCachedShape = shapeRenderCache.drawFarShapeBitmap({
+        p: surface.p,
+        shapeRegistry: shapes.registry,
         item: it,
         rEff,
-        sharedOptions: sharedOpts,
-        gridMetrics: gridCache.metrics,
+        opts,
+        gridMetrics: layout.gridCache.metrics,
       });
       if (!drewCachedShape) {
-        drawItemFromRegistry(shapeRegistry, p, it, rEff, sharedOpts);
+        drawItemFromRegistry(shapes.registry, surface.p, it, rEff, opts);
       }
 
-      drawShapeDepthOverlay({
-        p,
-        shapeRegistry,
+      shapeRenderCache.drawShapeDepthOverlay({
+        p: surface.p,
+        shapeRegistry: shapes.registry,
         item: it,
         rEff,
-        sharedOptions: sharedOpts,
+        opts,
         shapeWasDrawnLive: !drewCachedShape,
       });
     } finally {
-      p.pop();
-      reassertDprTransformIfMutated(p);
+      surface.p.pop();
+      reassertDprTransformIfMutated(surface.p);
     }
+  }
+
+  function prepareSceneFrame(now: number) {
+    // advance frame timing (deltaTime etc.)
+    surface.p.__tick(now);
+
+    normalizeDprTransform(surface.p);
+    const sceneProfile = sceneSource.getProfile();
+    const liveAvgSignal = engine.inputs.liveAvg;
+    const spec = getPaddingSpecForState(
+      surface.p.width,
+      sceneProfile.lookupKey,
+      sceneProfile.paddingSpec
+    );
+
+    const grid = computeGridCached(layout.gridCache, surface.p, spec);
+    const backgroundAnchors = createBackgroundAnchorContext({
+      p: surface.p,
+      padding: spec,
+      metrics: grid.metrics,
+    });
+    const fog = engine.style.fog ? fogStateCache({
+      p: surface.p,
+      metrics: grid.metrics,
+      darkMode: engine.style.darkMode,
+    }) : null;
+
+    return {
+      sceneProfile,
+      liveAvgSignal,
+      spec,
+      grid,
+      backgroundAnchors,
+      fog,
+    };
+  }
+
+  type SceneFrameContext = ReturnType<typeof prepareSceneFrame>;
+
+  function renderBackgroundPass(frame: SceneFrameContext) {
+    bgCache(
+      surface.p,
+      frame.sceneProfile.lookupKey,
+      frame.sceneProfile.background,
+      frame.liveAvgSignal,
+      frame.backgroundAnchors
+    );
+  }
+
+  function renderAtmospherePass(frame: SceneFrameContext) {
+    drawBackgroundStarsOnly(
+      surface.p,
+      frame.sceneProfile.lookupKey,
+      frame.sceneProfile.background,
+      1,
+      frame.liveAvgSignal,
+      starGeometryCache
+    );
+    fogLayerCache(surface.p, frame.fog);
+  }
+
+  function renderDebugPass(frame: SceneFrameContext) {
+    drawGridOverlay(
+      surface.p,
+      {
+        cellW: frame.grid.cellW,
+        cellH: frame.grid.cellH,
+        ox: frame.grid.ox,
+        oy: frame.grid.oy,
+        rows: frame.grid.rows,
+        cols: frame.grid.cols,
+        usedRows: frame.grid.usedRows,
+        metrics: frame.grid.metrics,
+      },
+      frame.spec,
+      {
+        enabled: engine.style.debug.grid,
+        gridAlpha: engine.style.debug.gridAlpha,
+      }
+    );
+  }
+
+  function prepareShapeFrame(sceneFrame: SceneFrameContext) {
+    // time model used by shapes / particles
+    const tMs = surface.p.millis();
+    const gradientRGB = getGradientRGB({
+      liveAvg: sceneFrame.liveAvgSignal,
+      override: engine.style.gradientRGBOverride,
+      cache: paletteCache,
+    });
+
+    const sortedItems = sortedItemsForFrame(engine.field.items, sceneFrame.grid.metrics);
+    const lightItem = findLightItem(sortedItems);
+
+    const sceneLight = createSceneLightContext({
+      lightItem,
+      darkMode: engine.style.darkMode,
+      canvasW: surface.p.width,
+      canvasH: surface.p.height,
+      cell: sceneFrame.grid.cell,
+      cellW: sceneFrame.grid.cellW,
+      cellH: sceneFrame.grid.cellH,
+      ...sceneFrame.grid.metrics,
+    });
+
+    const baseOpts: RuntimeShapeOptions = {
+      projection: {
+        cell: sceneFrame.grid.cell,
+        cellW: sceneFrame.grid.cellW,
+        cellH: sceneFrame.grid.cellH,
+        ...sceneFrame.grid.metrics,
+      },
+      style: {
+        gradientRGB,
+        blend: engine.style.blend,
+        liveAvg: sceneFrame.liveAvgSignal,
+        alpha: 235,
+        exposure: engine.style.exposure,
+        contrast: engine.style.contrast,
+        darkMode: engine.style.darkMode,
+        lightCtx: sceneLight,
+      },
+      lifecycle: {
+        timeMs: tMs,
+      },
+      particles: {
+        particleStore: effects.particleStore,
+      },
+    };
+
+    return {
+      ...sceneFrame,
+      tMs,
+      sortedItems,
+      sceneLight,
+      baseOpts,
+    };
+  }
+
+  type ShapeFrameContext = ReturnType<typeof prepareShapeFrame>;
+
+  function renderLightingPass(frame: ShapeFrameContext) {
+    rowLightCache({
+      p: surface.p,
+      metrics: frame.grid.metrics,
+      light: frame.sceneLight,
+      alpha: engine.style.darkMode ? 0.18 : 0.11,
+      minRow: 0,
+    });
+  }
+
+  function renderItemPass(frame: ShapeFrameContext) {
+    drawItems({
+      items: frame.sortedItems,
+      visible: engine.field.visible,
+      nowMs: frame.tMs,
+      appearMs: engine.style.appearMs,
+      appearStaggerMs: engine.style.appearStaggerMs,
+      liveStates: effects.liveStates,
+      perShapeScale: engine.style.perShapeScale,
+      baseR: engine.style.r,
+      baseOpts: frame.baseOpts,
+      optsScratch,
+      shapeOccurrenceScratch,
+      renderOne: (it, rEff, opts, rootAppearK) =>
+        { renderOneSandboxed(it, rEff, opts, rootAppearK); },
+    });
   }
 
   function tick(now: number) {
     if (!running) return;
 
-    // advance frame timing (deltaTime etc.)
-    p.__tick(now);
+    const sceneFrame = prepareSceneFrame(now);
+    renderBackgroundPass(sceneFrame);
+    renderAtmospherePass(sceneFrame);
+    renderDebugPass(sceneFrame);
 
-    normalizeDprTransform(p);
-    const currentBgSpec = getBackgroundSpecOverride();
-    const sceneLookup = getSceneLookup();
-    const liveAvgSignal = inputs.liveAvg;
-    const spec = getPaddingSpecForState(
-      p.width,
-      getSceneLookup(),
-      getPaddingSpecOverride()
-    );
-
-    const grid = computeGridCached(gridCache, p, spec);
-    const backgroundAnchors = createBackgroundAnchorContext({
-      p,
-      padding: spec,
-      metrics: grid.metrics,
-    });
-    const fog = style.fog ? fogStateCache({
-      p,
-      metrics: grid.metrics,
-      darkMode: style.darkMode,
-    }) : null;
-
-    bgCache(p, sceneLookup, currentBgSpec, liveAvgSignal, backgroundAnchors);
-    drawBackgroundStarsOnly(p, sceneLookup, currentBgSpec, 1, liveAvgSignal, starGeometryCache);
-    fogLayerCache(p, fog);
-
-    drawGridOverlay(
-      p,
-      {
-        cellW: grid.cellW,
-        cellH: grid.cellH,
-        ox: grid.ox,
-        oy: grid.oy,
-        rows: grid.rows,
-        cols: grid.cols,
-        usedRows: grid.usedRows,
-        metrics: grid.metrics,
-      },
-      spec,
-      {
-        enabled: style.debug.grid,
-        gridAlpha: style.debug.gridAlpha,
-      }
-    );
-
-    // time model used by shapes / particles
-    const tMs = p.millis();
-    const gradientRGB = getGradientRGB({
-      liveAvg: liveAvgSignal,
-      override: style.gradientRGBOverride,
-      cache: paletteCache,
-    });
-
-    const sortedItems = sortedItemsForFrame(field.items, grid.metrics);
-    let lightItem: EngineFieldItem | null = null;
-    for (const item of sortedItems) {
-      if (item.shape === "sun") {
-        lightItem = item;
-        break;
-      }
-    }
-
-    const sceneLight = createSceneLightContext({
-      lightItem,
-      darkMode: style.darkMode,
-      canvasW: p.width,
-      canvasH: p.height,
-      cell: grid.cell,
-      cellW: grid.cellW,
-      cellH: grid.cellH,
-      ...grid.metrics,
-    });
-
-    const baseShared: RuntimeShapeOptions = {
-      cell: grid.cell,
-      cellW: grid.cellW,
-      cellH: grid.cellH,
-      ...grid.metrics,
-      gradientRGB,
-      blend: style.blend,
-      liveAvg: liveAvgSignal,
-      alpha: 235,
-      timeMs: tMs,
-      exposure: style.exposure,
-      contrast: style.contrast,
-      darkMode: style.darkMode,
-      lightCtx: sceneLight,
-    };
-
-    ghostsRef.current = drawGhosts({
-      nowMs: tMs,
-      ghosts: ghostsRef.current,
-      exitMs: style.exitMs,
-      baseShared,
-      perShapeScale: style.perShapeScale,
-      baseR: style.r,
-      renderOne: (it, rEff, shared, rootAppearK) =>
-        { renderOneSandboxed(it, rEff, shared, rootAppearK); },
-    });
-
-    rowLightCache({
-      p,
-      metrics: grid.metrics,
-      light: sceneLight,
-      alpha: style.darkMode ? 0.18 : 0.11,
-      minRow: 0,
-    });
-
-    drawItems({
-      items: sortedItems,
-      visible: field.visible,
-      nowMs: tMs,
-      appearMs: style.appearMs,
-      appearStaggerMs: style.appearStaggerMs,
-      liveStates,
-      perShapeScale: style.perShapeScale,
-      baseR: style.r,
-      baseShared,
-      sharedScratch,
-      shapeOccurrenceScratch,
-      renderOne: (it, rEff, shared, rootAppearK) =>
-        { renderOneSandboxed(it, rEff, shared, rootAppearK); },
-    });
+    const shapeFrame = prepareShapeFrame(sceneFrame);
+    renderLightingPass(shapeFrame);
+    renderItemPass(shapeFrame);
   }
 
   return {
     tick,
     stop() {
       running = false;
+      clearRenderCaches();
     },
   };
 }

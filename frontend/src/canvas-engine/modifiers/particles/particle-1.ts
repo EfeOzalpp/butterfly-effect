@@ -16,10 +16,15 @@ import type {
   RGBA,
 } from "./types";
 import { clamp01, hzLerp, makePRNG, mix, randRange, smoothstep01 } from "./utils";
+import {
+  getParticleEmitterMap,
+  type ParticleStore,
+} from "./store";
 
 export type ParticleMode = "dot" | "line";
 
 export interface ParticleEmitterOpts {
+  store?: ParticleStore;
   key: string; // stable key to persist particles (e.g. `${r0}:${c0}:${w}x${h}:rain`)
   rect: ParticleRect; // pixels
   mode?: ParticleMode;
@@ -124,9 +129,10 @@ function spawnOne(
   return { x, y, vx, vy, age, life, size, len, uSlot };
 }
 
-function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
+function ensureEmitter(store: ParticleStore, opts: ParticleEmitterOpts): EmitterState {
   const key = opts.key;
-  let st = EMITTERS.get(key);
+  const emitters = getParticleEmitterMap<EmitterState>(store);
+  let st = emitters.get(key);
 
   const wantCount = Math.max(1, Math.floor(opts.count ?? 32));
   const seed = hashParticleKey(key);
@@ -193,7 +199,7 @@ function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
     });
 
     st = { particles, seed, rnd };
-    EMITTERS.set(key, st);
+    emitters.set(key, st);
     return st;
   }
 
@@ -263,10 +269,10 @@ function ensureEmitter(opts: ParticleEmitterOpts): EmitterState {
   return st;
 }
 
-const EMITTERS = new Map<string, EmitterState>();
-
 export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpts, dtSec: number) {
-  const state = ensureEmitter(opts);
+  if (!opts.store) return;
+
+  const state = ensureEmitter(opts.store, opts);
   const rect = opts.rect;
 
   const mode: ParticleMode = opts.mode ?? "dot";

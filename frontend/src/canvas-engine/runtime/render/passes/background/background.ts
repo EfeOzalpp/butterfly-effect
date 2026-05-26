@@ -4,9 +4,14 @@ import {
   type BackgroundSpec,
   type LinearGradientSpec,
   type RadialGradientSpec,
-} from "../../../../adjustable-rules/backgrounds";
+} from "../../../../scene-rules/backgrounds";
 import type { SceneLookupKey } from "../../../../scene-state";
 import type { PLike } from "../../../p/makeP";
+import {
+  clearOffscreenEntry,
+  createOffscreenCache,
+  getOrCreateCanvasLayer,
+} from "../../cache/offscreenCache";
 import { backgroundAnchorCacheKey, resolveStopK } from "./anchors";
 import { resolveStopColor } from "../shared/color";
 import { createStarGeometryCache, drawStars } from "../atmosphere/stars";
@@ -136,11 +141,11 @@ export function drawBackgroundStarsOnly(
 
 // Offscreen cache for background base + overlay; stars stay live because they animate.
 export function createBgCache() {
-  let offscreen: HTMLCanvasElement | null = null;
+  const cache = createOffscreenCache();
   let cacheKey = "";
   let lastOverride: BackgroundSpec | null | undefined = undefined;
 
-  return function drawBgCached(
+  const drawBgCached = function drawBgCached(
     p: PLike,
     sceneLookup: SceneLookupKey,
     override: BackgroundSpec | null,
@@ -149,6 +154,9 @@ export function createBgCache() {
   ) {
     const w = p.width;
     const h = p.height;
+    const { entry, targetChanged } = getOrCreateCanvasLayer(cache, p);
+    if (targetChanged) cacheKey = "";
+
     const liveAvgQ = Math.round(liveAvg * 100);
     const key = [
       String(w),
@@ -158,25 +166,17 @@ export function createBgCache() {
       backgroundAnchorCacheKey(anchors),
     ].join("|");
 
-    if (offscreen?.width !== w || offscreen.height !== h) {
-      offscreen ??= document.createElement("canvas");
-      offscreen.width = w;
-      offscreen.height = h;
-      cacheKey = "";
-    }
-
     if (key !== cacheKey || override !== lastOverride) {
-      const offCtx = offscreen.getContext("2d");
-      if (!offCtx) throw new Error("2D canvas context not available");
-      offCtx.clearRect(0, 0, w, h);
+      const offCtx = entry.ctx;
+      clearOffscreenEntry(entry);
       const fakeP = {
         drawingContext: offCtx,
-        width: w,
-        height: h,
+        width: entry.bounds.w,
+        height: entry.bounds.h,
         millis: () => 0,
         background: (color: string) => {
           offCtx.fillStyle = color;
-          offCtx.fillRect(0, 0, w, h);
+          offCtx.fillRect(0, 0, entry.bounds.w, entry.bounds.h);
         },
       } as unknown as PLike;
       drawBackground(fakeP, sceneLookup, override, 1, liveAvg, true, anchors);
@@ -185,6 +185,14 @@ export function createBgCache() {
     }
 
     const ctx = p.drawingContext;
-    ctx.drawImage(offscreen, 0, 0);
+    ctx.drawImage(entry.canvas, 0, 0);
   };
+
+  return Object.assign(drawBgCached, {
+    clear() {
+      cache.clear();
+      cacheKey = "";
+      lastOverride = undefined;
+    },
+  });
 }

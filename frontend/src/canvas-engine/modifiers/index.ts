@@ -1,31 +1,55 @@
 // Public modifier surface for the canvas engine.
 
+// Shared math/color primitives.
+export { clamp01, lerpNumber, mixRgb } from "../shared/math";
+
 // Color helpers.
-export { clamp01 } from "./color-modifiers";
 export { rgbToHsl, hslToRgb } from "./color-modifiers";
 export { blendRGB, blendRGBGamma } from "./color-modifiers";
 export { fogifyPalette } from "./color-modifiers";
 export { cssToRgbViaCanvas } from "./color-modifiers";
 export {
+  applySrgbExposureContrast,
   oscillateSaturation,
   oscillateBrightness,
   clampBrightness,
   clampSaturation,
   driveSaturation,
+  scaleRgb,
 } from "./color-modifiers";
+export { fillRgb, rgbaCss, strokeRgb } from "./color-modifiers";
 export { gradientColor } from "./color-modifiers";
 export { VIVID_COLOR_STOPS } from "./color-modifiers";
 export type { RGB, Stop } from "./color-modifiers";
 
 // Shape geometry and transform helpers.
-export { displacementOsc, makeArchLobes } from "./shape-modifiers";
-// The legacy surface expects clamp01/val/mix to come from modifiers.
-// clamp01 would collide with color clamp01, so keep the old names:
-// - clamp01 from color
-// - val/mix from shape range helpers
+export {
+  beginFitScale,
+  displacementOsc,
+  endFitScale,
+  fitScaleToRectWidth,
+  makeArchLobes,
+  roundedRectPath,
+  pick,
+  pickByOccurrence,
+  seeded01,
+  seededTag01,
+  seededUnit,
+  shapeHash32,
+} from "./shape-modifiers";
+export { resolveRangeValue } from "./shape-modifiers";
+// Legacy aliases kept for older callers; new shape code should prefer
+// resolveRangeValue() and lerpNumber().
 export { val, mix } from "./shape-modifiers";
 export { applyShapeMods } from "./shape-modifiers";
 export type { Anchor, ShapeMods, ApplyShapeModsOpts, NumberRange } from "./shape-modifiers";
+export { clampMinMax, finiteNumber, smoothstep01 } from "../shared/math";
+export {
+  applyDepthTint,
+  shapeColorForRenderPass,
+  shouldDrawInRenderPass,
+} from "./render-pass";
+export type { ShapeRenderPass, ShapeRenderPassOptions } from "./render-pass";
 
 // Particle emitters and particle-specific perspective helpers.
 export {
@@ -33,9 +57,11 @@ export {
   particleDepthAlpha,
   particleDepthSizeScale,
   particleRowBucket,
+  createParticleStore,
   stepAndDrawParticles,
   stepAndDrawPuffs,
 } from "./particles";
+export type { ParticleStore } from "./particles";
 
 // Scene lighting and light painting helpers.
 export {
@@ -43,7 +69,6 @@ export {
   lightClosenessBand,
   pickLightBandValue,
   sampleDirectionalLightRect,
-  mixRgb,
   paintEdgeGradientRect,
   paintDirectionalTriangleBands,
   paintPixelLightBands,

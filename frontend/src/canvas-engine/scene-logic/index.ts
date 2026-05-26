@@ -5,7 +5,6 @@ export type {
   PlacedItem,
   FootRect,
   ComposeOpts,
-  ComposeMeta,
   ComposeResult,
 } from './types';
 

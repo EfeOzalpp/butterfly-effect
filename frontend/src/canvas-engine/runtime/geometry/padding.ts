@@ -1,9 +1,9 @@
 // src/canvas-engine/runtime/geometry/padding.ts
 
-import { CANVAS_PADDING } from "../../adjustable-rules/canvas-padding/index";
-import type { CanvasPaddingSpec } from "../../adjustable-rules/canvas-padding/index";
+import { CANVAS_PADDING } from "../../scene-rules/canvas-padding/index";
+import type { CanvasPaddingSpec } from "../../scene-rules/canvas-padding/index";
 import type { SceneLookupKey } from "../../scene-state";
-import { resolvePaddingSpec } from "../../adjustable-rules/canvas-padding";
+import { resolvePaddingSpec } from "../../scene-rules/canvas-padding";
 
 /**
  * Runtime padding policy.

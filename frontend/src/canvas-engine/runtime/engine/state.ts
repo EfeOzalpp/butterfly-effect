@@ -2,9 +2,11 @@
 // This file should not draw anything or reach into DOM setup.
 // It only says what state the engine starts with.
 
-import type { RGB } from "../../modifiers/index";
+import type { RGB } from "../../shared/math";
+import type { ParticleStore } from "../../modifiers/particles";
 import { DEBUG_DEFAULT, type DebugFlags } from "../debug";
 import type { EngineFieldItem } from "./field";
+import type { LiveState } from "./itemLifecycle";
 
 export interface EngineStyle {
   // Base visual knobs. These are changed through controls.setFieldStyle().
@@ -15,10 +17,9 @@ export interface EngineStyle {
   exposure: number;
   contrast: number;
 
-  // Timing knobs for item enter/exit behavior.
+  // Timing knobs for item enter behavior.
   appearMs: number;
   appearStaggerMs: number;
-  exitMs: number;
 
   // Environment switches passed down into render/fog/shape behavior.
   darkMode: boolean;
@@ -35,6 +36,19 @@ export interface EngineInputs { liveAvg: number }
 // Field is the current payload of things the canvas should draw.
 export interface EngineField { items: EngineFieldItem[]; visible: boolean }
 
+export interface EngineRuntimeState {
+  field: EngineField;
+  style: EngineStyle;
+  inputs: EngineInputs;
+}
+
+// Frame-persistent visual effect state owned by one engine instance.
+// This is not app data: clearing it resets appear/particle behavior.
+export interface EngineEffectState {
+  liveStates: Map<string, LiveState>;
+  particleStore: ParticleStore;
+}
+
 // Baseline style. Factories below clone nested objects so engine instances
 // do not accidentally share mutable defaults.
 export const ENGINE_STYLE_DEFAULT: EngineStyle = {
@@ -48,7 +62,6 @@ export const ENGINE_STYLE_DEFAULT: EngineStyle = {
   contrast: 1.03,
   appearMs: 300,
   appearStaggerMs: 520,
-  exitMs: 300,
   darkMode: false,
   fog: true,
   debug: { ...DEBUG_DEFAULT },

@@ -2,7 +2,7 @@
 
 ## High-Level Flow
 1. User interacts with survey buttons (sliders are unmounted) and section/role pickers.
-2. Survey logic computes live values (`liveAvg`, `condAvgs`) and commit values (`allocAvg`).
+2. Survey logic computes the live canvas value (`liveAvg`).
 3. `AppProvider` composes app-level contexts from `src/app/store.tsx` and publishes these values globally.
 4. Canvas host entries mount the onboarding/city canvases and feed scene signals into the canvas engine.
 5. Canvas engine composes a field layout from rulesets and renders 2D shapes.
@@ -18,7 +18,7 @@
   - React host entrypoints that mount the onboarding and city canvases.
 - `frontend/src/canvas-engine`
   - Deterministic 2D placement/render pipeline.
-  - Rulesets in `adjustable-rules/`.
+  - Rulesets in `scene-rules/`.
   - Lifecycle/runtime loop in `runtime/`.
 - `frontend/src/graph-runtime`
   - Dot graph + bar graph + gamification overlays.
@@ -31,9 +31,7 @@
   - Edge functions for save/submit flows outside the frontend bundle.
 
 ## State Contracts (Important)
-- `liveAvg`: continuous signal for visual response.
-- `allocAvg`: commit-only signal for placement transitions.
-- `condAvgs`: per-condition visual signal map.
+- `liveAvg`: continuous signal for visual response and placement quotas.
 - `questionnaireOpen` / `sectionOpen`: scene modifiers used by rulesets.
 
 ## Technical Notes

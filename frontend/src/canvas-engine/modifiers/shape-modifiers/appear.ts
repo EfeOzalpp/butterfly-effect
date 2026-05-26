@@ -1,25 +1,19 @@
-// Helper for adding the shared entry animation envelope to a shape modifier config.
-import type { ShapeMods, Anchor } from "./types";
+// Shared entry animation envelope for root shape draws.
+import type { ShapeMods, AppearMod } from "./types";
 
-type Ease = 'linear' | 'cubic' | 'back';
+export const ROOT_APPEAR_DEFAULT: Required<AppearMod> = {
+  scaleFrom: 0,
+  alphaFrom: 0,
+  anchor: "bottom-center",
+  ease: "back",
+  backOvershoot: 1.25,
+};
 
-export interface AppearParams {
-  scaleFrom?: number;     // default 0
-  alphaFrom?: number;     // default 0
-  anchor?: Anchor;        // default 'bottom-center'
-  ease?: Ease;            // default 'cubic'
-  backOvershoot?: number; // default 1.6
-}
-
-// Merge an appear envelope onto existing mods without forcing every shape to repeat defaults.
-export function withAppear(mods: ShapeMods | undefined, params?: AppearParams): ShapeMods {
-  const appear = {
-    scaleFrom: 0,
-    alphaFrom: 0,
-    anchor: 'bottom-center' as Anchor,
-    ease: 'cubic' as Ease,
-    backOvershoot: 1.6,
-    ...(params ?? {}),
-  };
-  return { ...(mods ?? {}), appear };
+export function resolveAppear(
+  appear: ShapeMods["appear"],
+  rootAppearEnabled: boolean
+): Required<AppearMod> | undefined {
+  if (appear === false) return undefined;
+  if (!rootAppearEnabled && !appear) return undefined;
+  return { ...ROOT_APPEAR_DEFAULT, ...(appear ?? {}) };
 }

@@ -1,20 +1,9 @@
 // Grid projection turns placement footprints into the pixels shapes draw.
 
 import type { GridMetrics } from "../../grid-layout/gridMetrics";
+import type { GridFootprint, PixelRect } from "../../shared/geometry";
 
-export interface GridFootprint {
-  r0: number;
-  c0: number;
-  w: number;
-  h: number;
-}
-
-export interface PixelRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type { GridFootprint, PixelRect } from "../../shared/geometry";
 
 export interface ProjectionContext extends Partial<GridMetrics> {
   cell?: number;

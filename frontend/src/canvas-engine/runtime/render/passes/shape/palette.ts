@@ -1,7 +1,7 @@
 // src/canvas-engine/runtime/render/passes/shape/palette.ts
 
 import { gradientColor, VIVID_COLOR_STOPS } from "../../../../modifiers/index";
-import type { RGB } from "../../../../modifiers/index";
+import type { RGB } from "../../../../shared/math";
 
 export interface PaletteCache {
   lastU: number;

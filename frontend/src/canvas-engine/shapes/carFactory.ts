@@ -1,7 +1,10 @@
 // src/canvas-engine/shapes/carFactory.ts
+
 import {
+  applySrgbExposureContrast,
+  beginFitScale,
   clamp01,
-  val,
+  resolveRangeValue,
   blendRGB,
   clampBrightness,
   clampSaturation,
@@ -13,17 +16,30 @@ import {
   particleRowBucket,
   particleSizePerspectiveScale,
   particleMotionPerspectiveScale,
+  rgbaCss,
+  endFitScale,
+  finiteNumber,
+  fitScaleToRectWidth,
+  roundedRectPath,
+  seeded01,
+  shapeColorForRenderPass,
+  shouldDrawInRenderPass,
+  smoothstep01,
 } from "../modifiers/index";
 import type { NumberRange, RGB } from "../modifiers/index";
 
 import { drawCarAsset } from "./car";
 import type { CarVariant } from "./car";
-import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapePuffOverrides, ShapeSeed } from "./types";
-import { applyExposureContrast } from "./shared/color";
-import { beginFitScale, endFitScale, fitScaleToRectWidth } from "./shared/fit";
-import { finiteNumber } from "./shared/numbers";
-import { seeded01 } from "./shared/random";
-import { shapePartColor, shouldDrawShapePart } from "./shared/silhouette";
+import type { ShapeCanvas, ShapeDrawOptions, ShapePalette, ShapeSeed } from "./types";
+import {
+  shapeIdentity,
+  shapeLifecycle,
+  shapeParticles,
+  shapePass,
+  shapeProjection,
+  shapeSprite,
+  shapeStyle,
+} from "./options";
 
 interface CarFactoryPalette extends ShapePalette {
   grass: RGB;
@@ -36,7 +52,6 @@ interface CarFactoryPalette extends ShapePalette {
 }
 
 interface CarFactoryOptions extends ShapeDrawOptions<CarFactoryPalette> {
-  smokeOverrides?: ShapePuffOverrides;
   carVariantList?: readonly CarVariant[];
   carVariantCycleMs?: number;
   carVariantFadeMs?: number;
@@ -116,44 +131,9 @@ interface CarFactoryTuning {
   carVariantFadeMs: number;
 }
 
-// light mode
-const CAR_FACTORY_BASE_PALETTE: CarFactoryPalette = {
-  grass: { r: 120, g: 180, b: 110 },
-  building: { r: 208, g: 210, b: 214 },
-  frame:    { r: 180, g: 182, b: 188 },
-  window:   { r: 220, g: 226, b: 236 },
-  chimney:  { r: 172, g: 174, b: 180 },
-  roof:     { r: 160, g: 162, b: 168 },
-  solarPanel:{ r: 180, g: 205, b: 235 },
-};
-
-// dark mode
-const CAR_FACTORY_DARK_PALETTE: CarFactoryPalette = {
-  grass: { r: 80, g: 100, b: 126 },
-  building:  { r: 114, g: 133, b: 164 },
-  frame:     { r: 99,  g: 115, b: 144 },
-  window:    { r: 120, g: 143, b: 181 },
-  chimney:   { r: 94,  g: 110, b: 138 },
-  roof:      { r: 88,  g: 102, b: 129 },
-  solarPanel:{ r: 99,  g: 129, b: 180 },
-};
-
-/** Clamp a val() result even if the range is decreasing (hi < lo). */
-function clampLerped(range: NumberRange, u: number): number {
-  const lo = Math.min(range[0], range[1]);
-  const hi = Math.max(range[0], range[1]);
-  const v  = val(range, u);
-  return Math.max(lo, Math.min(hi, v));
-}
-
-// small easing for crossfade/scale
-function smoothstep01(t: number): number {
-  const x = Math.max(0, Math.min(1, t));
-  return x * x * (3 - 2 * x);
-}
-
+// Tunables.
 const CF: CarFactoryTuning = {
-  // General (non-grass) gradient blend strength (used with opts.gradientRGB)
+  // General (non-grass) gradient blend strength.
   blendK: [0.3, 0.02],
 
   // Grass: match villa behavior (colorBlend + sat clamp)
@@ -266,25 +246,33 @@ const CF: CarFactoryTuning = {
   carVariantFadeMs: 300,    // 0.3s fade-out and 0.3s fade-in
 };
 
-function rgba({ r, g, b }: RGB, a = 255): string {
-  return `rgba(${String(r)},${String(g)},${String(b)},${String(a / 255)})`;
-}
+// Palettes.
+const CAR_FACTORY_BASE_PALETTE: CarFactoryPalette = {
+  grass: { r: 120, g: 180, b: 110 },
+  building: { r: 208, g: 210, b: 214 },
+  frame: { r: 180, g: 182, b: 188 },
+  window: { r: 220, g: 226, b: 236 },
+  chimney: { r: 172, g: 174, b: 180 },
+  roof: { r: 160, g: 162, b: 168 },
+  solarPanel: { r: 180, g: 205, b: 235 },
+};
 
-function roundedRectPath(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-): void {
-  const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y,     x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x,     y + h, rr);
-  ctx.arcTo(x,     y + h, x,     y,     rr);
-  ctx.arcTo(x,     y,     x + w, y,     rr);
-  ctx.closePath();
+const CAR_FACTORY_DARK_PALETTE: CarFactoryPalette = {
+  grass: { r: 80, g: 100, b: 126 },
+  building: { r: 114, g: 133, b: 164 },
+  frame: { r: 99, g: 115, b: 144 },
+  window: { r: 120, g: 143, b: 181 },
+  chimney: { r: 94, g: 110, b: 138 },
+  roof: { r: 88, g: 102, b: 129 },
+  solarPanel: { r: 99, g: 129, b: 180 },
+};
+
+// Local helpers.
+function clampLerped(range: NumberRange, u: number): number {
+  const lo = Math.min(range[0], range[1]);
+  const hi = Math.max(range[0], range[1]);
+  const v = resolveRangeValue(range, u);
+  return Math.max(lo, Math.min(hi, v));
 }
 
 export function drawCarFactory(
@@ -294,33 +282,42 @@ export function drawCarFactory(
   _r: number,
   opts: CarFactoryOptions = {}
 ): void {
-  const pal = opts.palette ?? (opts.darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE);
-  const cell = opts.cell, f = opts.footprint;
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const lifecycle = shapeLifecycle(opts);
+  const identity = shapeIdentity(opts);
+  const sprite = shapeSprite(opts);
+  const particles = shapeParticles(opts);
+  const pass = shapePass(opts);
+  const darkMode = style.darkMode === true;
+
+  const pal = style.palette ?? (darkMode ? CAR_FACTORY_DARK_PALETTE : CAR_FACTORY_BASE_PALETTE);
+  const cell = projection.cell, f = projection.footprint;
   if (!cell || !f) return;
-  const seedKey: ShapeSeed = (opts.seedKey ?? opts.seed) ?? `carFactory|${String(f.r0)}:${String(f.c0)}|${String(f.w)}x${String(f.h)}`;
+  const seedKey: ShapeSeed = (identity.seedKey ?? identity.seed) ?? `carFactory|${String(f.r0)}:${String(f.c0)}|${String(f.w)}x${String(f.h)}`;
 
   // Sprite mode: auto when fitToFootprint (texture path) or explicit override.
-  const isSprite = !!opts.fitToFootprint || !!opts.spriteMode;
+  const isSprite = !!sprite.fitToFootprint || !!sprite.spriteMode;
 
-  const u   = clamp01(opts.liveAvg ?? 0.5);
-  const a   = finiteNumber(opts.alpha, 235);
-  const ex  = finiteNumber(opts.exposure, 1);
-  const ct  = finiteNumber(opts.contrast, 1);
-  const tMs = typeof opts.timeMs === 'number' ? opts.timeMs : p.millis();
-  const renderPass = opts.renderPass ?? "color";
-  const silhouetteColor = opts.silhouetteColor;
-  const requestedSilhouetteAlpha =
-    typeof opts.silhouetteAlpha === "number" && Number.isFinite(opts.silhouetteAlpha)
-      ? opts.silhouetteAlpha
+  const u   = clamp01(style.liveAvg ?? 0.5);
+  const a   = finiteNumber(style.alpha, 235);
+  const ex  = finiteNumber(style.exposure, 1);
+  const ct  = finiteNumber(style.contrast, 1);
+  const tMs = typeof lifecycle.timeMs === 'number' ? lifecycle.timeMs : p.millis();
+  const renderPass = pass.renderPass ?? "color";
+  const maskColor = pass.maskColor;
+  const requestedMaskAlpha =
+    typeof pass.maskAlpha === "number" && Number.isFinite(pass.maskAlpha)
+      ? pass.maskAlpha
       : a;
-  const isSilhouettePass = renderPass === "silhouette";
-  const shouldDrawMass = shouldDrawShapePart(renderPass, true);
-  const shouldDrawColorDetails = shouldDrawShapePart(renderPass, false);
-  const rowBucket = particleRowBucket(f, opts);
-  const particleScale = particleSizePerspectiveScale(f, opts) * particleDepthSizeScale(rowBucket);
-  const motionScale = particleMotionPerspectiveScale(f, opts);
+  const isDepthMaskPass = renderPass === "depthMask";
+  const shouldDrawMass = shouldDrawInRenderPass(renderPass, true);
+  const shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
+  const rowBucket = particleRowBucket(f, projection);
+  const particleScale = particleSizePerspectiveScale(f, projection) * particleDepthSizeScale(rowBucket);
+  const motionScale = particleMotionPerspectiveScale(f, projection);
 
-  const { x: x0, y: y0, w: W, h: H } = footprintToPx(f, opts);
+  const { x: x0, y: y0, w: W, h: H } = footprintToPx(f, projection);
   const localTileW = W / Math.max(1, f.w);
   const localTileH = H / Math.max(1, f.h);
   const localTile = Math.max(1, Math.min(localTileW, localTileH));
@@ -330,36 +327,32 @@ export function drawCarFactory(
   const anchorY = y0 + H;
   const env = applyShapeMods({
     p, x: anchorX, y: anchorY, r: Math.min(W, H),
-    opts: { alpha: a, timeMs: tMs, liveAvg: u, rootAppearK: opts.rootAppearK },
-    mods: {
-      appear:  { scaleFrom: 0.0, alphaFrom: 0.0, anchor: 'bottom-center', ease: 'back', backOvershoot: 1.25 },
-      sizeOsc: { mode: 'none' },
-    },
+    opts: { alpha: a, timeMs: tMs, liveAvg: u, rootAppearK: lifecycle.rootAppearK },
   });
   const alpha = (typeof env.alpha === 'number') ? env.alpha : a;
   const appearAlphaK = a > 0 ? clamp01(alpha / a) : 1;
-  const silhouetteAlpha = isSilhouettePass
-    ? Math.round(requestedSilhouetteAlpha * appearAlphaK)
+  const maskAlpha = isDepthMaskPass
+    ? Math.round(requestedMaskAlpha * appearAlphaK)
     : alpha;
-  const massAlpha = isSilhouettePass ? silhouetteAlpha : alpha;
+  const massAlpha = isDepthMaskPass ? maskAlpha : alpha;
 
   // ---- color helpers ----
-  const kBlendGeneral = val(CF.blendK, u);
+  const kBlendGeneral = resolveRangeValue(CF.blendK, u);
 
   // General tint (applies global gradient to non-grass shapes)
   const tintGeneral = (base: RGB): RGB => {
-    const mixed = opts.gradientRGB ? blendRGB(base, opts.gradientRGB, kBlendGeneral) : base;
-    return applyExposureContrast(mixed, ex, ct);
+    const mixed = style.gradientRGB ? blendRGB(base, style.gradientRGB, kBlendGeneral) : base;
+    return applySrgbExposureContrast(mixed, ex, ct);
   };
 
   // Grass tint: same logic as villa (use gradientRGB + clamp saturation)
   let grass = pal.grass;
-  if (opts.gradientRGB) {
-    grass = blendRGB(grass, opts.gradientRGB, val(CF.grass.colorBlend, u));
+  if (style.gradientRGB) {
+    grass = blendRGB(grass, style.gradientRGB, resolveRangeValue(CF.grass.colorBlend, u));
   }
   grass = clampSaturation(grass, CF.grass.satRange[0], CF.grass.satRange[1], 1);
-  if (opts.darkMode) grass = clampBrightness(grass, 0.36, 0.54);
-  grass = applyExposureContrast(grass, ex, ct);
+  if (darkMode) grass = clampBrightness(grass, 0.36, 0.54);
+  grass = applySrgbExposureContrast(grass, ex, ct);
 
   // Non-grass colors still use general gradient
   const wall       = tintGeneral(pal.building);
@@ -372,7 +365,7 @@ export function drawCarFactory(
   const blue = { r: 120, g: 170, b: 220 };
   const glass = clampBrightness(blendRGB(glassBase, blue, 0.42), 0.80, 1.10);
 
-  const backdrop = applyExposureContrast(
+  const backdrop = applySrgbExposureContrast(
     {
       r: Math.round(pal.building.r * 0.88),
       g: Math.round(pal.building.g * 0.88),
@@ -463,9 +456,9 @@ export function drawCarFactory(
   // If you *really* want a clip, prefer the full canvas bounds (when available):
   // if (isSprite && p.width && p.height) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, p.width, p.height); ctx.clip(); }
 
-  // The silhouette pass keeps only stable factory mass: grass, chimney, wall, roof, and panels.
+  // The depth mask pass keeps only stable factory mass: grass, chimney, wall, roof, and panels.
   if (shouldDrawMass) {
-    const grassFill = shapePartColor(renderPass, grass, silhouetteColor);
+    const grassFill = shapeColorForRenderPass(renderPass, grass, maskColor);
     p.noStroke();
     p.fill(grassFill.r, grassFill.g, grassFill.b, massAlpha);
     p.rect(x0, grassY, W, grassH, rGrassTop, rGrassTop, 0, 0);
@@ -488,20 +481,20 @@ export function drawCarFactory(
     const smokeY = chimneyTopY - Math.round(cell * (isSprite ? 1.35 : 1.45));
 
     // base knobs
-    let count    = Math.max(4, Math.floor(val(CF.smoke.count, u)));
-    let sizeMin  = val(CF.smoke.sizeMin, u) * particleScale;
-    let sizeMax  = Math.max(sizeMin, val(CF.smoke.sizeMax, u) * particleScale);
-    let lifeMin  = Math.max(0.05, val(CF.smoke.lifeMin, u) * motionScale);
-    let lifeMax  = Math.max(lifeMin, val(CF.smoke.lifeMax, u) * motionScale);
-    let sAlpha   = Math.max(90, Math.min(255, Math.round(val(CF.smoke.alpha, u))));
-    let speedMin = val(CF.smoke.speedMin, u) * motionScale;
-    let speedMax = Math.max(speedMin, val(CF.smoke.speedMax, u) * motionScale);
-    let gravity  = val(CF.smoke.gravity, u) * motionScale;
-    let drag     = val(CF.smoke.drag, u);
-    let jPos     = val(CF.smoke.jitterPos, u) * particleScale;
-    const jAng   = val(CF.smoke.jitterAngle, u);
-    let spread   = val(CF.smoke.spreadAngle, u);
-    const blendK = val(CF.smoke.blendK, u);
+    const count  = Math.max(4, Math.floor(resolveRangeValue(CF.smoke.count, u)));
+    let sizeMin  = resolveRangeValue(CF.smoke.sizeMin, u) * particleScale;
+    let sizeMax  = Math.max(sizeMin, resolveRangeValue(CF.smoke.sizeMax, u) * particleScale);
+    let lifeMin  = Math.max(0.05, resolveRangeValue(CF.smoke.lifeMin, u) * motionScale);
+    let lifeMax  = Math.max(lifeMin, resolveRangeValue(CF.smoke.lifeMax, u) * motionScale);
+    let sAlpha   = Math.max(90, Math.min(255, Math.round(resolveRangeValue(CF.smoke.alpha, u))));
+    let speedMin = resolveRangeValue(CF.smoke.speedMin, u) * motionScale;
+    let speedMax = Math.max(speedMin, resolveRangeValue(CF.smoke.speedMax, u) * motionScale);
+    let gravity  = resolveRangeValue(CF.smoke.gravity, u) * motionScale;
+    const drag   = resolveRangeValue(CF.smoke.drag, u);
+    let jPos     = resolveRangeValue(CF.smoke.jitterPos, u) * particleScale;
+    const jAng   = resolveRangeValue(CF.smoke.jitterAngle, u);
+    const spread = resolveRangeValue(CF.smoke.spreadAngle, u);
+    const blendK = resolveRangeValue(CF.smoke.blendK, u);
 
     // Sprite path boosts (bigger/faster/longer-lived so it rises visibly)
     if (isSprite) {
@@ -519,37 +512,22 @@ export function drawCarFactory(
       sAlpha = Math.min(255, Math.round(sAlpha * 1.05));
     }
 
-    // Optional external tweaks
-    if (opts.smokeOverrides) {
-      const o = opts.smokeOverrides;
-      if (o.count != null) count = o.count;
-      if (o.sizeMin != null) sizeMin = o.sizeMin;
-      if (o.sizeMax != null) sizeMax = Math.max(sizeMin, o.sizeMax);
-      if (o.lifeMin != null) lifeMin = o.lifeMin;
-      if (o.lifeMax != null) lifeMax = Math.max(lifeMin, o.lifeMax);
-      if (o.speedMin != null) speedMin = o.speedMin;
-      if (o.speedMax != null) speedMax = Math.max(speedMin, o.speedMax);
-      if (o.gravity != null) gravity = o.gravity;
-      if (o.drag != null) drag = o.drag;
-      if (o.spreadAngle != null) spread = o.spreadAngle;
-      if (o.alpha != null) sAlpha = o.alpha;
-    }
-
-    const baseSmoke = opts.gradientRGB
-      ? blendRGB(CF.smoke.base, opts.gradientRGB, blendK)
+    const baseSmoke = style.gradientRGB
+      ? blendRGB(CF.smoke.base, style.gradientRGB, blendK)
       : CF.smoke.base;
 
-    const smoked = applyExposureContrast(
+    const smoked = applySrgbExposureContrast(
       clampBrightness(baseSmoke, CF.smoke.brightnessRange[0], CF.smoke.brightnessRange[1]),
       ex, ct
     );
 
     const dt =
-      (typeof opts.dtSec === 'number' && opts.dtSec > 0)
-        ? opts.dtSec
+      (typeof lifecycle.dtSec === 'number' && lifecycle.dtSec > 0)
+        ? lifecycle.dtSec
         : (p.deltaTime ? Math.max(1/120, p.deltaTime / 1000) : 1/60);
 
     stepAndDrawPuffs(p, {
+      store: particles.particleStore,
       key: `factory-smoke:${String(seedKey)}${isSprite ? ':spr' : ''}`,
       rect: { x: smokeX, y: smokeY, w: colW, h: colH },
       dir: 'up',
@@ -584,8 +562,8 @@ export function drawCarFactory(
   // 2) CHIMNEY (single shape, no seam) + CAP
   if (shouldDrawMass) {
     p.noStroke();
-    const chimneyFill = shapePartColor(renderPass, chimneyRGB, silhouetteColor);
-    p.fill(chimneyFill.r, chimneyFill.g, chimneyFill.b, isSilhouettePass ? silhouetteAlpha : 255);
+    const chimneyFill = shapeColorForRenderPass(renderPass, chimneyRGB, maskColor);
+    p.fill(chimneyFill.r, chimneyFill.g, chimneyFill.b, isDepthMaskPass ? maskAlpha : 255);
 
     // Y-only scaling, anchored at bottom-center
     p.push();
@@ -616,8 +594,8 @@ export function drawCarFactory(
       b: Math.round(chimneyRGB.b * CF.chimCap.shadeK),
     };
 
-    const capFill = shapePartColor(renderPass, capRGB, silhouetteColor);
-    p.fill(capFill.r, capFill.g, capFill.b, isSilhouettePass ? silhouetteAlpha : 255);
+    const capFill = shapeColorForRenderPass(renderPass, capRGB, maskColor);
+    p.fill(capFill.r, capFill.g, capFill.b, isDepthMaskPass ? maskAlpha : 255);
     p.rect(capX, capY, capW, capTh, capRad, capRad, capRad, capRad);
 
     if (CF.chimCap.lipPx > 0 && shouldDrawColorDetails) {
@@ -641,12 +619,12 @@ export function drawCarFactory(
     p.scale(bodyScaleX, 1);
     p.translate(-bodyAnchorX, 0);
 
-    const wallFill = shapePartColor(renderPass, wall, silhouetteColor);
+    const wallFill = shapeColorForRenderPass(renderPass, wall, maskColor);
     p.noStroke();
     p.fill(wallFill.r, wallFill.g, wallFill.b, massAlpha);
     p.rect(bodyX, slabY, factoryW, slabH, Math.round(cell * 0.08));
 
-    const roofFill = shapePartColor(renderPass, roofRGB, silhouetteColor);
+    const roofFill = shapeColorForRenderPass(renderPass, roofRGB, maskColor);
     p.noStroke();
     p.fill(roofFill.r, roofFill.g, roofFill.b, massAlpha);
     p.rect(roofRx, roofRy, roofRw, roofH, CF.roofRadiusPx, CF.roofRadiusPx, 0, 0);
@@ -709,15 +687,19 @@ export function drawCarFactory(
 
         beginFitScale(p, { cx, anchorY: wheelBaselineY, scale: fitS });
         drawCarAsset(p, cx, wheelBaselineY, rBase, {
-          alpha: env2.alpha,
-          exposure: ex,
-          contrast: ct,
-          darkMode: !!opts.darkMode,
-          gradientRGB: opts.gradientRGB,
-          liveAvg: u,
+          style: {
+            alpha: env2.alpha,
+            exposure: ex,
+            contrast: ct,
+            darkMode,
+            gradientRGB: style.gradientRGB,
+            liveAvg: u,
+          },
+          identity: {
+            seedKey: variantSeedKey,
+          },
           useAppear: false,
           variant,
-          seedKey: variantSeedKey,
         });
         endFitScale(p);
         p.pop();
@@ -745,7 +727,7 @@ export function drawCarFactory(
       ctx2.beginPath();
       roundedRectPath(ctx2, frameX, frameY, frameW, frameH, CF.frameRadiusPx);
       roundedRectPath(ctx2, winX,   winY,   winW,   winH,   CF.windowRadiusPx);
-      ctx2.fillStyle = rgba(frameRGB, alpha);
+      ctx2.fillStyle = rgbaCss(frameRGB, alpha / 255);
       ctx2.fill('evenodd');
       ctx2.restore();
     }
@@ -769,7 +751,7 @@ export function drawCarFactory(
   {
     const sPanels = clamp01(u); // 0 → hidden, 1 → full
     if (sPanels > 0.001) {
-      const panelTint0 = applyExposureContrast(pal.solarPanel, ex, ct);
+      const panelTint0 = applySrgbExposureContrast(pal.solarPanel, ex, ct);
       const count = CF.panels.count;
 
       const minPanelW = Math.max(1, Math.round(Math.min(8, localTile * 0.25)));
@@ -812,7 +794,7 @@ export function drawCarFactory(
         p.scale(sPanels, sPanels);
         p.rotate(tilt);
 
-        const panelFill = shapePartColor(renderPass, panelTint0, silhouetteColor);
+        const panelFill = shapeColorForRenderPass(renderPass, panelTint0, maskColor);
         p.fill(panelFill.r, panelFill.g, panelFill.b, massAlpha);
         p.rect(-pW / 2, -pH, pW, pH, corner);
 

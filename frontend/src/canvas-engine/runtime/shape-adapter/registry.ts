@@ -3,7 +3,7 @@
 import type { PLike } from "../p/makeP";
 import type { EngineFieldItem } from "../engine/field";
 import type { RuntimeShapeOptions } from "./types";
-import type { ShapeRenderPass } from "../../shapes/types";
+import type { ShapeRenderPass } from "../../modifiers/index";
 import { deviceType } from "../../shared/responsiveness";
 
 import {
@@ -51,6 +51,10 @@ export function createRegistry(entries: Record<string, DrawFn>) {
 
 export type ShapeRegistry = ReturnType<typeof createRegistry>;
 
+export interface RuntimeShapeServices {
+  registry: ShapeRegistry;
+}
+
 export function createDefaultShapeRegistry(): ShapeRegistry {
   return createRegistry({
     snow: withCatalogPasses("snow", (p2, it, rEff, opts) => {
@@ -61,7 +65,7 @@ export function createDefaultShapeRegistry(): ShapeRegistry {
 
       drawSnow(p2, it.x, it.y, rEff, {
         ...opts,
-        footprint: it.footprint,
+        projection: { ...opts.projection, footprint: it.footprint },
         hideGroundAboveFrac: hideFrac,
         hideGroundBelowBucketT: hideBucketT,
         showGround: true,

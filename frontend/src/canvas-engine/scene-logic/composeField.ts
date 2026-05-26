@@ -1,19 +1,19 @@
 // src/canvas-engine/scene-logic/composeField.ts
 
 import { deviceType } from "../shared/responsiveness";
-import { resolvePaddingSpec } from "../adjustable-rules/canvas-padding";
+import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
-import { SHAPES, SHAPE_TO_COND } from "../adjustable-rules/shapeCatalog";
-import { footprintForShape } from "../adjustable-rules/conditionFootprints";
-import { stableItemId, interpolatePct } from "../adjustable-rules/placement-rules/index";
+import { SHAPES } from "../scene-rules/shapeCatalog";
+import { footprintForShape } from "../scene-rules/conditionFootprints";
+import { stableItemId, interpolatePct } from "../scene-rules/placement-rules/index";
 
 import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
 import { clamp01, usedRowsFromSpec } from "./math";
 import { placePoolItems } from "./place";
 
 function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
-  const { placements, allocAvg } = opts;
-  const t = clamp01(allocAvg);
+  const { placements, liveAvg } = opts;
+  const t = clamp01(liveAvg);
   const items: PoolItem[] = [];
 
   for (const shape of SHAPES) {
@@ -22,7 +22,6 @@ function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): Po
 
     const pct = interpolatePct(rule.quota, t);
     const size = footprintForShape(shape);
-    const cond = SHAPE_TO_COND[shape];
 
     rule.zones.forEach((zone, zoneIdx) => {
       const baseCount = zone.count[device] ?? zone.count.tablet ?? zone.count.mobile ?? 0;
@@ -34,7 +33,6 @@ function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): Po
           shape,
           zoneIndex: zoneIdx,
           size,
-          cond,
         });
       }
     });
@@ -60,10 +58,9 @@ export function composeField(opts: ComposeOpts): ComposeResult {
   });
 
   const usedRows = usedRowsFromSpec(rows, spec.useTopRatio);
-  const meta = { device, mode: opts.mode, spec, rows, cols, cell, usedRows };
 
   if (!rows || !cols || !cell) {
-    return { placed: [], meta };
+    return { placed: [] };
   }
 
   const salt =
@@ -91,5 +88,5 @@ export function composeField(opts: ComposeOpts): ComposeResult {
     reservedFootprints: opts.reservedFootprints,
   });
 
-  return { placed, meta };
+  return { placed };
 }
