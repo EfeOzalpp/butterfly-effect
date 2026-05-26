@@ -23,7 +23,6 @@ import "../styles/ui-system.css";
 const CanvasEntry = React.lazy(() => import("../canvas-instances/OnboardingEntry"));
 const CityOverlay = React.lazy(() => import("../canvas-instances/CityEntry"));
 const GraphBGDark = React.lazy(() => import("../navigation/right/system-color"));
-
 const AppInner: React.FC = () => {
   const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
 

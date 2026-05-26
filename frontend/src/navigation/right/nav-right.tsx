@@ -23,7 +23,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
 
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
-  const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View";
+  const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View now";
   const pickerStyle: PickerOffsetStyle = {
     "--picker-offset": `${String(pickerOffset)}px`,
     transition: "transform 0.2s ease",

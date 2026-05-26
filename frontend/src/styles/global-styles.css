@@ -272,7 +272,7 @@
   }
   :root[data-theme="dark"] {
     --ui-questionnaire-title: linear-gradient(150deg, rgb(240, 240, 240), rgba(255, 255, 255, 0.71));
-    --ui-text-title: linear-gradient(150deg, rgb(240, 240, 240), rgba(255, 255, 255, 0.532));
+    --ui-text-title: linear-gradient(150deg, rgb(245, 245, 245), rgba(255, 255, 255, 0.676));
   }
 }
 

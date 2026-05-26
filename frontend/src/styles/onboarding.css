@@ -424,7 +424,7 @@ button.city-button,
 /* Theme wiring: survey */
 .welcome-text, .section-title { color: var(--ui-title); }
 .q-count, .q-title, .section-label, .email-tag { color: var(--ui-text); }
-.q-step-indicator { color: var(--ui-text-secondary); }
+.q-step-indicator { color: var(--ui-text-secondary); font-size: var(--type-h4-size); line-height: var(--type-h4-line); }
 
 /* Questionnaire slider track + thumb */
 .q-slider { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; outline: none; background: var(--ui-border); }

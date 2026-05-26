@@ -96,7 +96,8 @@
 
 /* questionnaire navigation */
 .questionnaire-nav-stack { display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
-.questionnaire-nav-progress { margin: 0; text-align: right; }
+.questionnaire-nav-progress { margin: 0; text-align: right; text-shadow: 0 1px 10px rgba(255,255,255,0.7), 0 0 20px rgba(255,255,255,0.45); }
+:root[data-theme="dark"] .questionnaire-nav-progress { text-shadow: 0 1px 10px rgba(0,0,0,0.85), 0 0 22px rgba(0,0,0,0.6); }
 .questionnaire-nav-stack .questionnaire { pointer-events: auto; }
 .questionnaire-nav-action { position: relative; pointer-events: auto; }
 .questionnaire-nav-hint {
