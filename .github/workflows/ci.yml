@@ -31,6 +31,9 @@ jobs:
       - name: Lint cleaned modules
         run: npm run lint:ci
 
+      - name: Test
+        run: npm test -- --no-coverage
+
       - name: Type check
         run: npm run typecheck
 
