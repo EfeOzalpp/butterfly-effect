@@ -101,6 +101,11 @@ internal/
   Runtime policy, scheduling, debug flags, and the low-level sprite component.
 ```
 
+Sprites may reuse canvas-engine shape drawers and the supported
+`canvas-engine/offscreen-shape-surface` bridge to draw those shapes into
+caller-owned canvases. They should not import the mounted canvas runtime,
+scene-rules, scene-logic, or render-pass cache internals.
+
 ## External Contracts
 
 The graph runtime receives normalized survey rows through `GraphDataProvider`. It should not know how Sanity fetches, retries, or falls back to mock data.

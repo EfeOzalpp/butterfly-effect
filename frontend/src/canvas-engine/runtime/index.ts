@@ -250,18 +250,6 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   return controls;
 }
 
-// Build a p-like facade on an existing canvas (no animation / no DOM attach).
-export function makePFromCanvas(canvas: HTMLCanvasElement, { dpr = 1 } = {}) {
-  const ctx = canvas.getContext("2d", { alpha: true });
-  if (!ctx) throw new Error("2D canvas context not available");
-  const p = makeP(canvas, ctx);
-  const cssW = canvas.style.width ? parseFloat(canvas.style.width) : canvas.width / dpr;
-  const cssH = canvas.style.height ? parseFloat(canvas.style.height) : canvas.height / dpr;
-  p.pixelDensity(Math.max(1, dpr || 1));
-  p.resizeCanvas(cssW, cssH);
-  return p;
-}
-
 export { stopCanvasEngine, isCanvasRunning, stopAllCanvasEngines };
 
 export default startCanvasEngine;

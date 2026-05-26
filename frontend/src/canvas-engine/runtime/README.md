@@ -15,6 +15,8 @@ index.ts
 Type ownership:
 
 ```txt
+../offscreen-shape-surface.ts
+                        alternate caller-owned canvas surface for drawing shapes
 engine/types.ts         public controls and start options
 engine/field.ts         item payload contract
 engine/state.ts         runtime-owned defaults and mutable state shape
@@ -23,6 +25,11 @@ shape-adapter/types.ts  runtime-safe shape options
 render/cache/*          shared offscreen cache mechanics
 render/passes/*         render-pass params local to each render helper
 ```
+
+`offscreen-shape-surface.ts` is not a render-pass cache and does not mount or
+schedule an engine. It exists for alternate render paths, such as graph sprite
+texture generation, that need a p-like shape drawing surface on a caller-owned
+canvas.
 
 `EngineControls.setSceneProfile()` is the app-to-runtime scene handoff. The app
 resolves scene state into a lookup key, padding spec, background spec, and render
