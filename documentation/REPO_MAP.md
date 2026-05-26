@@ -4,7 +4,6 @@
 - `frontend/`: React app (UI, survey, canvas engine, graph runtime).
 - `sanity/`: CMS content schema and backend project setup.
 - `supabase/`: edge functions and local Supabase project config.
-- `screenshots+gifs/`: portfolio/demo visuals.
 - `documentation/`: architecture and engineering docs.
 
 ## Frontend Source Map
@@ -12,7 +11,7 @@
   - frontend entrypoint.
 - `src/app/`
   - `main.tsx`: app shell, zoom policy, high-level mounting.
-  - `store.tsx`: top-level provider composition.
+  - `app-provider.tsx`: top-level provider composition.
   - `session.ts` / `types.ts`: persistence helpers and shared app types.
   - `state/`: canvas, UI, identity, preferences, and survey data contexts/state hooks.
 - `src/assets/`

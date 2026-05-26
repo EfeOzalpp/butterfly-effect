@@ -5,7 +5,7 @@ Six context slices composed in `AppProvider` and available to the entire compone
 ```mermaid
 flowchart TD
 
-    subgraph Provider ["AppProvider (store.tsx)"]
+    subgraph Provider ["AppProvider (app-provider.tsx)"]
 
         subgraph Identity ["Identity Context"]
             IC["Who the user is\nmySection · myRole · myEntryId"]
@@ -46,7 +46,7 @@ flowchart TD
     PC <-->|"read on init\nwrite on preference change"| Session
 
     ResetToStart["resetToStart()\nClears all slices + sessionStorage atomically"]
-    ResetToStart_note["(app/store.tsx)"]
+    ResetToStart_note["(app/app-provider.tsx)"]
 
     UC --> ResetToStart
     IC --> ResetToStart

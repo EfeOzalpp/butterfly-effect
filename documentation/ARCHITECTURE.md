@@ -3,7 +3,7 @@
 ## High-Level Flow
 1. User interacts with survey buttons (sliders are unmounted) and section/role pickers.
 2. Survey logic computes the live canvas value (`liveAvg`).
-3. `AppProvider` composes app-level contexts from `src/app/store.tsx` and publishes these values globally.
+3. `AppProvider` composes app-level contexts from `src/app/app-provider.tsx` and publishes these values globally.
 4. Canvas host entries mount the onboarding/city canvases and feed scene signals into the canvas engine.
 5. Canvas engine composes a field layout from rulesets and renders 2D shapes.
 6. Graph runtime renders interactive 3D visualization using generated/queued textures.
