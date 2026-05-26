@@ -1,4 +1,4 @@
-// graph-runtime/sprites/cache/particleLRU.ts
+// graph-runtime/sprites/textures/cache/particleLRU.ts
 import * as THREE from 'three';
 
 interface Entry {

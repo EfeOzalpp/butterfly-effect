@@ -14,7 +14,7 @@ import { houseHasChimney } from '../../../canvas-engine/shapes/house';
 import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES, resolveParticleScaleBoost } from '../selection/footprints';
 import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
-import { textureRegistry } from '../textures/registry';
+import { textureRegistry } from '../textures/cache/registry';
 import { makeTextureFromDrawer } from '../textures/makeTextureFromDrawer';
 
 import {
@@ -40,7 +40,7 @@ const PLACEHOLDER_MATERIAL = new THREE.SpriteMaterial({
   toneMapped: false,
 });
 
-import { trackTexture } from '../textures/textureTracker';
+import { trackTexture } from '../textures/cache/textureTracker';
 const track = trackTexture;
 
 // Epoch textures are one-off refresh textures, so they should not enter the

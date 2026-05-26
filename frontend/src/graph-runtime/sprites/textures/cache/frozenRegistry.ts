@@ -1,4 +1,4 @@
-// graph-runtime/sprites/cache/frozenRegistry.ts
+// graph-runtime/sprites/textures/cache/frozenRegistry.ts
 import * as THREE from 'three';
 import {
   particleCacheGet,
@@ -6,7 +6,7 @@ import {
   particleCacheClear,
   particleCacheSize,
 } from './particleLRU';
-import { spriteCachingDisabled } from '../internal/debug-flags';
+import { spriteCachingDisabled } from '../../internal/debug-flags';
 
 // Frozen textures are particle-heavy outputs. Failed/in-flight sets keep the
 // runtime from retrying expensive work every render.

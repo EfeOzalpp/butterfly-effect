@@ -14,7 +14,7 @@ import {
 import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
 import { makeFrozenTextureFromDrawer } from '../textures/frozenTexture';
-import { textureRegistry, type MakeArgs } from '../textures/registry';
+import { textureRegistry, type MakeArgs } from '../textures/cache/registry';
 import { enqueueTexture } from '../textures/queue';
 
 import {
@@ -27,7 +27,7 @@ import {
   frozenIsInflight,
   frozenClearAll,
   frozenSize,
-} from '../cache/frozenRegistry';
+} from '../textures/cache/frozenRegistry';
 
 import {
   chooseShape,
@@ -38,7 +38,7 @@ import {
   resolveDpr,
 } from './spritePolicy';
 
-import { trackTexture, disposeAllTrackedTextures } from '../textures/textureTracker';
+import { trackTexture, disposeAllTrackedTextures } from '../textures/cache/textureTracker';
 
 const track = trackTexture;
 const noop = () => undefined;

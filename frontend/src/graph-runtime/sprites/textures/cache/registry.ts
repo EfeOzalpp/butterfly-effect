@@ -1,14 +1,14 @@
-// graph-runtime/sprites/textures/registry.ts
+// graph-runtime/sprites/textures/cache/registry.ts
 import * as THREE from 'three';
-import { makeTextureFromDrawer } from './makeTextureFromDrawer';
-import type { DrawerFn } from '../selection/drawers';
+import { makeTextureFromDrawer } from '../makeTextureFromDrawer';
+import type { DrawerFn } from '../../selection/drawers';
 
 const isMobileDevice =
   typeof window !== 'undefined' &&
   (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
 
-import { enqueueTexture } from './queue';
-import { spriteCachingDisabled } from '../internal/debug-flags';
+import { enqueueTexture } from '../queue';
+import { spriteCachingDisabled } from '../../internal/debug-flags';
 
 export interface MakeArgs {
   key: string;
