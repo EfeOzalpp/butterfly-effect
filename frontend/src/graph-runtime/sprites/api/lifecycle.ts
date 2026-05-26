@@ -6,5 +6,10 @@ export {
 } from "../textures/queue";
 
 export {
+  pauseQueue as pauseSpriteTextureQueue,
+  resumeQueue as resumeSpriteTextureQueue,
+} from "../textures/queue";
+
+export {
   disposeStaticTextures,
 } from "../textures/registry";

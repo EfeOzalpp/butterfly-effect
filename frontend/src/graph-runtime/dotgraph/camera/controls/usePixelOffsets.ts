@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { RefObject } from 'react';
 import type { Camera, Group } from 'three';
-import { pauseQueue, resumeQueue } from '../../../sprites/textures/queue';
+import { pauseSpriteTextureQueue, resumeSpriteTextureQueue } from '../../../sprites/entry';
 
 interface PerspectiveCameraLike extends Camera {
   aspect: number;
@@ -47,7 +47,7 @@ export default function usePixelOffsets({
   useEffect(() => {
     return () => {
       if (queuePausedRef.current) {
-        resumeQueue();
+        resumeSpriteTextureQueue();
         queuePausedRef.current = false;
       }
     };
@@ -65,10 +65,10 @@ export default function usePixelOffsets({
     const moving = dx * dx + dy * dy > 0.25; // >0.5px total distance
 
     if (moving && !queuePausedRef.current) {
-      pauseQueue();
+      pauseSpriteTextureQueue();
       queuePausedRef.current = true;
     } else if (!moving && queuePausedRef.current) {
-      resumeQueue();
+      resumeSpriteTextureQueue();
       queuePausedRef.current = false;
     }
 
