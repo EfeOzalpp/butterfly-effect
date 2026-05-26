@@ -146,7 +146,7 @@ export function resumeQueue() {
   }
 }
 
-export function cancelAllJobs() {
+function cancelAllJobs() {
   Q = [];
   backgroundPendingCount = 0;
   pumping = false;
@@ -163,8 +163,6 @@ export function bumpGeneration() {
   GEN++;
   cancelAllJobs();
 }
-
-export function getGeneration() { return GEN; }
 
 export function subscribeQueue(listener: () => void) {
   listeners.add(listener);

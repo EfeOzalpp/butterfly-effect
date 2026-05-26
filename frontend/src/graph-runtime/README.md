@@ -85,7 +85,7 @@ Sprite internals are split like this:
 ```txt
 api/
   Public sprite operations: shape component, prewarm, lifecycle, visual policy,
-  theme, and disposal.
+  theme invalidation, and disposal.
 
 selection/
   Maps data values to sprite shape choices and footprint policy.

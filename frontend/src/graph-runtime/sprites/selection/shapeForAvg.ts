@@ -119,7 +119,7 @@ function buildWeightedSequence(
   return sequence;
 }
 
-export function shapeForAvg(
+function shapeForAvg(
   avgIn: number,
   seed?: string | number,
   orderIndex?: number
@@ -177,5 +177,3 @@ export function sampleShapeForAvg(
 
   return pool[pool.length - 1]?.shape ?? FALLBACK_SHAPE;
 }
-
-export type { ShapeKey, ShapeProbSpec };

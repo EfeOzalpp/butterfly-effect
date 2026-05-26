@@ -4,19 +4,19 @@ function readWindowFlag(name: keyof Window) {
   return window[name] === true;
 }
 
-export function shouldDisableSpriteCaching() {
+function shouldDisableSpriteCaching() {
   return readWindowFlag("__GP_DISABLE_SPRITE_CACHE");
 }
 
-export function shouldDisableSpriteQuantization() {
+function shouldDisableSpriteQuantization() {
   return readWindowFlag("__GP_DISABLE_SPRITE_QUANTIZATION");
 }
 
-export function shouldDisableSpriteOptimizations() {
+function shouldDisableSpriteOptimizations() {
   return readWindowFlag("__GP_DISABLE_SPRITE_OPTIMIZATIONS");
 }
 
-export function shouldDisableSpriteMaterialCaching() {
+function shouldDisableSpriteMaterialCaching() {
   return readWindowFlag("__GP_DISABLE_SPRITE_MATERIAL_CACHE");
 }
 

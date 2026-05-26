@@ -106,7 +106,3 @@ class TextureRegistry {
 }
 
 export const textureRegistry = new TextureRegistry();
-
-export function disposeStaticTextures() {
-  textureRegistry.clear();
-}

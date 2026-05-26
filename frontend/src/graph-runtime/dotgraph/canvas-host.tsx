@@ -126,7 +126,6 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
             event.preventDefault();
           } catch {}
           window.__GP_CTX_LOST = true;
-          // eslint-disable-next-line no-console
           console.warn('WebGL context lost');
         };
 
@@ -134,7 +133,6 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
           try {
             window.__GP_CTX_LOST = false;
           } catch {}
-          // eslint-disable-next-line no-console
           console.warn('WebGL context restored');
         };
 

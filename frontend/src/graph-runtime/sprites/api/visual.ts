@@ -35,7 +35,7 @@ function normalizeBleed(bleed?: SpriteBleed): Required<SpriteBleed> {
   };
 }
 
-export function getOrAssignSprite(args: {
+function getOrAssignSprite(args: {
   entryId?: string | null;
   sectionKey: string;
   avg: number;
@@ -57,7 +57,7 @@ export function getOrAssignSprite(args: {
   );
 }
 
-export function resolveSpriteShape(args: {
+function resolveSpriteShape(args: {
   avg: number;
   seed: string | number;
   orderIndex: number;
@@ -66,7 +66,7 @@ export function resolveSpriteShape(args: {
   return args.assignment?.shape ?? chooseShape(args);
 }
 
-export function resolveSpriteVisualLayout(args: {
+function resolveSpriteVisualLayout(args: {
   shape: ShapeKey;
   baseScale: number;
   bleed?: SpriteBleed;

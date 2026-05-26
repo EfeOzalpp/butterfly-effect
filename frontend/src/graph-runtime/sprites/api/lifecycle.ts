@@ -1,5 +1,5 @@
-// Public lifecycle controls for the sprite system. Callers can reset/dispose
-// intentfully without knowing how queues and registries are implemented.
+// Public lifecycle controls for the sprite texture queue. Callers can reset or
+// pause texture work without knowing how queue scheduling is implemented.
 export {
   bumpGeneration,
   resetQueue,
@@ -9,7 +9,3 @@ export {
   pauseQueue as pauseSpriteTextureQueue,
   resumeQueue as resumeSpriteTextureQueue,
 } from "../textures/queue";
-
-export {
-  disposeStaticTextures,
-} from "../textures/registry";

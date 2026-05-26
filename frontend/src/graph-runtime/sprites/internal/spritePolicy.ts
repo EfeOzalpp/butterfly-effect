@@ -1,5 +1,6 @@
 // graph-runtime/sprites/internal/spritePolicy.ts
-import { sampleShapeForAvg, type ShapeKey } from '../selection/shapeForAvg';
+import { sampleShapeForAvg } from '../selection/shapeForAvg';
+import type { ShapeKey } from '../selection/types';
 import { spriteQuantizationDisabled } from './debug-flags';
 
 // Sprite policy turns score data into stable cacheable sprite identity:
