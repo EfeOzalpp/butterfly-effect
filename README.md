@@ -1,26 +1,36 @@
 # Butterfly Effect
 
-A sustainability platform where questionnaire responses shape individual and shared visualizations.
+A production React/TypeScript platform where sustainability survey responses shape a live Canvas 2D scene and a shared WebGL results view.
 
-[Live site](https://butterflyeff3ct.online/) | [Canvas engine docs](./documentation/CANVAS_ENGINE.md) | [Data flow](./documentation/DATA_FLOW.md) | [App state](./documentation/APP_STATE.md)
-
-Built with React, TypeScript, Vite, Canvas 2D, Three.js/WebGL, Sanity, Supabase Edge Functions, Sentry, and PostHog.
+[Live site](https://butterflyeff3ct.online/)
 
 ## What This Is
 
-Butterfly Effect is a React/TypeScript app that turns sustainability survey input into a live visual system. During onboarding, responses drive a custom Canvas 2D scene. After submission, the app moves into a shared results view powered by Sanity data and a WebGL visualization layer.
+Butterfly Effect turns survey input into two connected visual systems:
 
-The project is built as an application first, but its canvas runtime is structured like an engine: scene rules, responsive grid placement, shape drawers, particles, fog, lighting, runtime controls, and render-loop scheduling live behind a dedicated `canvas-engine` boundary.
+- an onboarding canvas scene where answers change the environment in real time
+- a shared results view powered by Sanity data and a WebGL graph runtime
+
+The app is product-facing and runtime-heavy. The Canvas 2D layer is structured as an engine with scene rules, responsive grid placement, shape drawers, render caches, particles, fog, lighting, lifecycle controls, and a dedicated render loop.
+
+## Stack
+
+| Area | Tools |
+| --- | --- |
+| App | React, TypeScript, Vite |
+| Rendering | Canvas 2D, Three.js/WebGL |
+| Data and backend | Sanity, Supabase Edge Functions, PostgreSQL |
+| Production tooling | Sentry, PostHog, GitHub Actions, ESLint |
 
 ## Architecture
 
 | Area | Responsibility |
 | --- | --- |
-| `src/app` | App state, session persistence, UI mode, survey data, and shared context providers |
-| `src/canvas-engine` | Canvas scene runtime, layout rules, placement, shape drawing, modifiers, particles, and animation loop |
-| `src/onboarding` | Role/section selection and questionnaire flow |
-| `src/services/sanity` | Sanity reads, live subscription, polling fallback, and mock-data fallback |
-| `src/graph-runtime` | Shared results visualization, scoring, sprite textures, WebGL scene, and interaction |
+| `frontend/src/app` | App state, session persistence, UI mode, survey data, and shared context providers |
+| `frontend/src/canvas-engine` | Canvas scene runtime, layout rules, placement, shape drawing, modifiers, particles, and animation loop |
+| `frontend/src/onboarding` | Role/section selection and questionnaire flow |
+| `frontend/src/services/sanity` | Sanity reads, live subscription, polling fallback, and mock-data fallback |
+| `frontend/src/graph-runtime` | Shared results visualization, scoring, sprite textures, WebGL scene, and interaction |
 | `supabase/functions` | Backend write boundary for saving responses without exposing the Sanity write token |
 
 ## Engineering Notes
@@ -32,9 +42,9 @@ The project is built as an application first, but its canvas runtime is structur
 - Sanity integration uses live updates with polling and mock-data fallbacks.
 - Supabase Edge Function keeps the Sanity write token out of the browser and validates submitted payloads.
 - Sentry and PostHog provide production error reporting and product analytics.
-- The app is being migrated toward stricter TypeScript, linting, and test coverage.
+- TypeScript, ESLint, and Vite production builds are part of the local verification flow.
 
-## Key Entry Points
+## Useful Paths
 
 - [App provider](./frontend/src/app/app-provider.tsx)
 - [Canvas host bridge](./frontend/src/canvas-engine/EngineHost.tsx)
@@ -43,6 +53,13 @@ The project is built as an application first, but its canvas runtime is structur
 - [Scene composition](./frontend/src/canvas-engine/scene-logic)
 - [Graph runtime](./frontend/src/graph-runtime)
 - [Sanity service layer](./frontend/src/services/sanity)
+- [Supabase save function](./supabase/functions/save-user-response/index.ts)
+
+## Reference Docs
+
+- [Canvas engine](./documentation/CANVAS_ENGINE.md)
+- [Graph runtime](./documentation/GRAPH_RUNTIME.md)
+- [App state](./documentation/APP_STATE.md)
 
 ## Run Locally
 
@@ -52,13 +69,10 @@ npm install
 npm run dev
 ```
 
-Current checks for the cleaned app/canvas-engine path:
+## Verify
 
 ```bash
+npm run typecheck
+npm run lint
 npm run build
-npm run lint -- src/app src/canvas-engine
 ```
-
-## Project Status
-
-This is an active app and engine cleanup. The canvas-engine and app layers have been through a stricter TypeScript/ESLint pass; the wider repository is still being tightened, especially around tests and remaining strict TypeScript work outside the canvas-engine boundary.
