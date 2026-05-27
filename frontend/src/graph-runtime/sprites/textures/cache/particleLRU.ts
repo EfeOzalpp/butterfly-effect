@@ -1,17 +1,17 @@
 // graph-runtime/sprites/textures/cache/particleLRU.ts
-import * as THREE from 'three';
+import type { CanvasTexture, Texture } from 'three';
 
 interface Entry {
   key: string;
-  tex: THREE.CanvasTexture;
+  tex: CanvasTexture;
 }
 // Frozen particle textures are bigger than static sprites, so cap the cache.
 const MAX_CAP = 48;
-type SpriteTextureWindow = Window & { __GP_TEX_REGISTRY: Set<THREE.Texture> };
+type SpriteTextureWindow = Window & { __GP_TEX_REGISTRY: Set<Texture> };
 
 // DevTools/debug registry so texture pressure is visible while tuning.
 const getGlobals = (): SpriteTextureWindow => {
-  window.__GP_TEX_REGISTRY ??= new Set<THREE.Texture>();
+  window.__GP_TEX_REGISTRY ??= new Set<Texture>();
   return window as SpriteTextureWindow;
 };
 
@@ -30,7 +30,7 @@ class ParticleLRU {
     return e.tex;
   }
 
-  set(key: string, tex: THREE.CanvasTexture) {
+  set(key: string, tex: CanvasTexture) {
     const g = getGlobals();
     try { g.__GP_TEX_REGISTRY.add(tex); } catch {}
     if (this.map.has(key)) {
@@ -86,6 +86,6 @@ class ParticleLRU {
 
 const _LRU = new ParticleLRU();
 export function particleCacheGet(key: string) { return _LRU.get(key); }
-export function particleCacheSet(key: string, tex: THREE.CanvasTexture) { _LRU.set(key, tex); }
+export function particleCacheSet(key: string, tex: CanvasTexture) { _LRU.set(key, tex); }
 export function particleCacheClear() { _LRU.clear(); }
 export function particleCacheSize() { return _LRU.size; }

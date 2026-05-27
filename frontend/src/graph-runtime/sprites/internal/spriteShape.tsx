@@ -1,7 +1,14 @@
 // graph-runtime/sprites/internal/spriteShape.tsx
 /* eslint-disable react-hooks/refs, react-hooks/immutability, react-hooks/set-state-in-effect */
 import * as React from 'react';
-import * as THREE from 'three';
+import {
+  Frustum,
+  Matrix4,
+  SpriteMaterial,
+  Vector3,
+  type CanvasTexture,
+  type Sprite,
+} from 'three';
 import { useFrame } from '@react-three/fiber';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
@@ -16,6 +23,10 @@ import { deviceType, getViewportSize } from '../../../canvas-engine/shared/respo
 
 import { textureRegistry } from '../textures/cache/registry';
 import { makeTextureFromDrawer } from '../textures/makeTextureFromDrawer';
+import {
+  createParticleStore,
+  type ParticleStore,
+} from '../../../canvas-engine/modifiers/particles';
 
 import {
   getStaticTexture,
@@ -31,7 +42,7 @@ function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
 
-const PLACEHOLDER_MATERIAL = new THREE.SpriteMaterial({
+const PLACEHOLDER_MATERIAL = new SpriteMaterial({
   transparent: true,
   opacity: 0.24,
   color: '#a6a6a6',
@@ -45,7 +56,7 @@ const track = trackTexture;
 
 // Epoch textures are one-off refresh textures, so they should not enter the
 // global tracker. Zeroing the canvas releases the 2D backing store too.
-function releaseEpochTex(tex: THREE.CanvasTexture | null) {
+function releaseEpochTex(tex: CanvasTexture | null) {
   if (!tex) return;
   try {
     if (tex.image instanceof HTMLCanvasElement) {
@@ -57,7 +68,7 @@ function releaseEpochTex(tex: THREE.CanvasTexture | null) {
 }
 
 interface SharedMaterialEntry {
-  material: THREE.SpriteMaterial;
+  material: SpriteMaterial;
   refs: number;
 }
 
@@ -65,7 +76,7 @@ const __SHARED_SPRITE_MATERIALS = new Map<string, SharedMaterialEntry>();
 
 // Many sprites share the same texture/opacity. Sharing materials avoids a large
 // pile of identical Three SpriteMaterial instances.
-function makeSpriteMaterialKey(tex: THREE.CanvasTexture, opacity: number) {
+function makeSpriteMaterialKey(tex: CanvasTexture, opacity: number) {
   return [
     tex.uuid,
     opacity,
@@ -76,7 +87,7 @@ function makeSpriteMaterialKey(tex: THREE.CanvasTexture, opacity: number) {
   ].join('|');
 }
 
-function acquireSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
+function acquireSpriteMaterial(tex: CanvasTexture, opacity: number) {
   const key = makeSpriteMaterialKey(tex, opacity);
   const hit = __SHARED_SPRITE_MATERIALS.get(key);
   if (hit) {
@@ -84,7 +95,7 @@ function acquireSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
     return hit.material;
   }
 
-  const material = new THREE.SpriteMaterial({
+  const material = new SpriteMaterial({
     map: tex,
     transparent: true,
     depthWrite: false,
@@ -98,7 +109,7 @@ function acquireSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
   return material;
 }
 
-function releaseSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
+function releaseSpriteMaterial(tex: CanvasTexture, opacity: number) {
   const key = makeSpriteMaterialKey(tex, opacity);
   const hit = __SHARED_SPRITE_MATERIALS.get(key);
   if (!hit) return;
@@ -108,8 +119,8 @@ function releaseSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
   __SHARED_SPRITE_MATERIALS.delete(key);
 }
 
-function makeUnsharedSpriteMaterial(tex: THREE.CanvasTexture, opacity: number) {
-  const material = new THREE.SpriteMaterial({
+function makeUnsharedSpriteMaterial(tex: CanvasTexture, opacity: number) {
+  const material = new SpriteMaterial({
     map: tex,
     transparent: true,
     depthWrite: false,
@@ -218,12 +229,12 @@ export function SpriteShape({
       : staticBase;
   }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, localDarkMode, refreshEpoch, dev]);
 
-  const [texState, setTexState] = React.useState<{ key: string; tex: THREE.CanvasTexture | null }>(() => {
+  const [texState, setTexState] = React.useState<{ key: string; tex: CanvasTexture | null }>(() => {
     const tex = wantsFrozen ? (getFrozenTexture(key) ?? null) : (getStaticTexture(key) ?? null);
     return { key, tex };
   });
   const tex = texState.key === key ? texState.tex : null;
-  const prevTexRef = React.useRef<THREE.CanvasTexture | null>(null);
+  const prevTexRef = React.useRef<CanvasTexture | null>(null);
   const prevTexShapeRef = React.useRef<ShapeKey | null>(null);
   React.useEffect(() => {
     if (tex) {
@@ -261,7 +272,7 @@ export function SpriteShape({
     let off: (() => void) | undefined;
     let watchdog: ReturnType<typeof setTimeout> | undefined;
 
-    const setIfAlive = (t: THREE.CanvasTexture | null) => {
+    const setIfAlive = (t: CanvasTexture | null) => {
       if (!cancelled && t) {
         setTexState({ key, tex: track(t) });
       }
@@ -378,6 +389,31 @@ export function SpriteShape({
     if (refreshEpoch > 0) {
       const prevEpochTex = epochTexRef.current;
       try {
+        const nowMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const particleStoreKey = [
+          shape,
+          stableSeedKey,
+          bucketId,
+          variant,
+          localDarkMode ? 1 : 0,
+          TILE,
+          dpr,
+          alphaUse,
+          resolveParticleScaleBoost(shape, dev) ?? 1,
+        ].join('|');
+
+        if (isParticleShape && epochParticleKeyRef.current !== particleStoreKey) {
+          epochParticleStoreRef.current?.clear();
+          epochParticleStoreRef.current = createParticleStore();
+          epochParticleKeyRef.current = particleStoreKey;
+          epochParticleTimeRef.current = null;
+        }
+
+        const lastParticlePaintMs = epochParticleTimeRef.current;
+        const dtSec = lastParticlePaintMs == null
+          ? 1 / 60
+          : (nowMs - lastParticlePaintMs) / 1000;
+
         const newTex = makeTextureFromDrawer({
           drawer,
           tileSize: TILE,
@@ -391,7 +427,11 @@ export function SpriteShape({
           seedKey: common.seedKey,
           darkMode: localDarkMode,
           pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
+          timeMs: nowMs,
+          dtSec,
+          particleStore: isParticleShape ? epochParticleStoreRef.current ?? undefined : undefined,
         });
+        if (isParticleShape) epochParticleTimeRef.current = nowMs;
         epochTexRef.current = newTex;
         // Bypass track() — set state directly so this texture is NOT pinned in __GLOBAL_TEX
         setTexState({ key, tex: newTex });
@@ -444,6 +484,7 @@ export function SpriteShape({
     vs.rgb,
     refreshEpoch,
     stableSeedKey,
+    isParticleShape,
     dev,
   ]);
 
@@ -465,18 +506,24 @@ export function SpriteShape({
     };
   }, [displayTex, opacity, material, materialCacheDisabled]);
 
-  const materialRef = React.useRef<THREE.SpriteMaterial | null>(null);
+  const materialRef = React.useRef<SpriteMaterial | null>(null);
   React.useEffect(() => { materialRef.current = material; }, [material]);
-  const spriteRef = React.useRef<THREE.Sprite | null>(null);
-  const _wp = React.useRef(new THREE.Vector3());
-  const _frustum = React.useRef(new THREE.Frustum());
-  const _projScreenMatrix = React.useRef(new THREE.Matrix4());
+  const spriteRef = React.useRef<Sprite | null>(null);
+  const _wp = React.useRef(new Vector3());
+  const _frustum = React.useRef(new Frustum());
+  const _projScreenMatrix = React.useRef(new Matrix4());
   const fogOpacityRef = React.useRef(1);
   const smoothZoomFadeRef = React.useRef(0);
   const smoothFogTRef = React.useRef(0);
-  const epochTexRef = React.useRef<THREE.CanvasTexture | null>(null);
+  const epochTexRef = React.useRef<CanvasTexture | null>(null);
+  const epochParticleStoreRef = React.useRef<ParticleStore | null>(null);
+  const epochParticleKeyRef = React.useRef<string | null>(null);
+  const epochParticleTimeRef = React.useRef<number | null>(null);
   React.useEffect(() => {
-    return () => { releaseEpochTex(epochTexRef.current); };
+    return () => {
+      releaseEpochTex(epochTexRef.current);
+      epochParticleStoreRef.current?.clear();
+    };
   }, []);
 
   useFrame(({ camera }) => {

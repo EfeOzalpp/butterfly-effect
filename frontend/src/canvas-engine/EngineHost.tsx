@@ -15,14 +15,12 @@ export function EngineHost({
   open = true,
   visible = true,
   liveAvg = 0.5,
-  questionnaireOpen = false,
   reservedFootprints,
 }: {
   id: HostId;
   open?: boolean;
   visible?: boolean;
   liveAvg?: number;
-  questionnaireOpen?: boolean;
   reservedFootprints?: Place[];
 }) {
   const hostDef = React.useMemo<HostDef>(() => HOST_DEFS[id], [id]);
@@ -33,12 +31,8 @@ export function EngineHost({
   }, [hostDef]);
 
   const resolvedBounds = React.useMemo<CanvasBounds | undefined>(() => {
-    const dims = hostDef.canvasDimensions;
-    if (typeof dims === "function") {
-      return dims({ questionnaireOpen });
-    }
-    return dims;
-  }, [hostDef, questionnaireOpen]);
+    return hostDef.canvasDimensions;
+  }, [hostDef]);
 
 
   React.useEffect(() => {
@@ -68,7 +62,6 @@ export function EngineHost({
     engine,
     id,
     liveAvg,
-    { questionnaireOpen },
     reservedFootprints,
     viewportKey
   );

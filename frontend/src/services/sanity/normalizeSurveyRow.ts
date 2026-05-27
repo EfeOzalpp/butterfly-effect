@@ -1,7 +1,6 @@
 // src/services/sanity/normalizeSurveyRow.ts
 
-import type { SurveyRow } from "../../app/types";
-import type { RawSurveyRow } from "./types";
+import type { RawSurveyRow, SurveyRow } from "./types";
 
 const round3 = (v?: number) =>
   typeof v === 'number' ? Math.round(v * 1000) / 1000 : undefined;
@@ -24,6 +23,8 @@ export function normalizeSurveyRow(row: RawSurveyRow): SurveyRow {
     q4,
     q5,
     avgWeight,
+    soloMessage: row.soloMessage,
+    soloMessageUpdatedAt: row.soloMessageUpdatedAt,
     submittedAt: row.submittedAt,
     _createdAt: row._createdAt ?? fallbackDate,
     weights: {

@@ -38,28 +38,7 @@ export default function useDotGraphSceneState({
   const graphNavOffsetPx =
     windowWidth > 1024 ? (ui?.logsOpen ? 130 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0;
 
-  const {
-    groupRef,
-    radius,
-    isPinchingRef,
-    isTouchRotatingRef,
-    minRadius,
-    maxRadius,
-    tooltipOffsetPx,
-  } = useOrbitController({
-    layout: {
-      useDesktopLayout,
-      isSmallScreen,
-      isTabletLike,
-      xOffset: 0,
-      yOffset: 0,
-      xOffsetPx: (wantsSkew ? -112 : 0) + graphNavOffsetPx,
-      yOffsetPx: wantsSkew ? 12 : 0,
-    },
-    bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },
-    dataCount: safeData.length,
-  });
-
+  // Compute dot positions before orbit controller so they can drive rotation sensitivity.
   const spread = useMemo(() => {
     const n = safeData.length;
     const MIN_SPREAD = 28;
@@ -91,6 +70,31 @@ export default function useDotGraphSceneState({
   );
 
   const shapes = useDotPoints(safeData, dotPointOptions);
+  const dotPositions = useMemo(() => shapes.map(s => s.position), [shapes]);
+
+  const {
+    groupRef,
+    radius,
+    isPinchingRef,
+    isTouchRotatingRef,
+    minRadius,
+    maxRadius,
+    tooltipOffsetPx,
+  } = useOrbitController({
+    layout: {
+      useDesktopLayout,
+      isSmallScreen,
+      isTabletLike,
+      xOffset: 0,
+      yOffset: 0,
+      xOffsetPx: (wantsSkew ? -112 : 0) + graphNavOffsetPx,
+      yOffsetPx: wantsSkew ? 12 : 0,
+    },
+    bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },
+    dataCount: safeData.length,
+    dotPositions,
+  });
+
   const bagSeed = 'dotgraph-bag-v1';
 
   const particleFrames = isRealMobile ? 60 : 219;

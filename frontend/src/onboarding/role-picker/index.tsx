@@ -91,9 +91,9 @@ export default function RolePicker({
           onClick={() => { onChange("visitor"); }}
           onKeyDown={handleKeyDown("visitor")}
         >
-          <span className="role-indicator-spacer" />
-          <h4>Exploring...</h4>
           <SelectionIndicator selected={value === "visitor"} />
+          <h4>Exploring...</h4>
+          <span className="role-indicator-spacer" />
         </div>
 
         {/* MassArt roles share one visual island with a center divider. */}
@@ -112,9 +112,9 @@ export default function RolePicker({
                 onClick={() => { onChange(opt.val); }}
                 onKeyDown={handleKeyDown(opt.val)}
               >
-                <span className="role-indicator-spacer" />
-                <h4>{opt.label}</h4>
                 <SelectionIndicator selected={checked} />
+                <h4>{opt.label}</h4>
+                <span className="role-indicator-spacer" />
               </div>
             );
           })}

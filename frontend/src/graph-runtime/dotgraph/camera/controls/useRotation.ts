@@ -2,13 +2,17 @@
 import { useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { RefObject } from 'react';
-import { Quaternion, Vector3 } from 'three';
+import { Quaternion, Vector3, Frustum, Matrix4 } from 'three';
 import type { Group } from 'three';
+import type { Vec3 } from '../../types';
 
 // Scratch objects reused every frame to avoid GC pressure.
 const _rotQ = new Quaternion();
 const _axisX = new Vector3(1, 0, 0);
 const _axisY = new Vector3(0, 1, 0);
+const _dotWorld = new Vector3();
+const _frustum = new Frustum();
+const _projScreen = new Matrix4();
 
 const ROT_RELEASE_TAU = 0.38;
 const ROT_IDLE_RELEASE_TAU = 0.18;
@@ -50,22 +54,27 @@ const getDragTuning = ({
   maxRadius,
   isTouch,
   isTabletLike,
+  closestDist,
 }: {
   radius: number;
   minRadius: number;
   maxRadius: number;
   isTouch: boolean;
   isTabletLike: boolean;
+  closestDist: number;
 }) => {
   const zoomRatio = Math.pow(getZoomRatio(radius, minRadius, maxRadius), 0.85);
+  // Desktop sensitivity scales with how close the nearest dot is to the camera.
+  // Near dot → low sensitivity (precision); far dots → full speed.
+  const distRatio = clamp01(closestDist / maxRadius);
 
   return {
     // Close zooms need less angular travel, but also less deadzone so the motion
     // still starts promptly instead of feeling sticky before it suddenly jumps.
-    deadzoneMul: isTouch ? lerp(0.72, 1, zoomRatio) : lerp(0.9, 1, zoomRatio),
+    deadzoneMul: isTouch ? lerp(0.72, 1, distRatio) : lerp(0.55, 1.1, distRatio),
     sensitivityMul: isTouch
-      ? lerp(isTabletLike ? 0.66 : 0.6, 1, zoomRatio)
-      : lerp(0.9, 1, zoomRatio),
+      ? lerp(isTabletLike ? 0.55 : 0.5, 1.0, distRatio)
+      : lerp(0.25, 1.2, distRatio),
   };
 };
 
@@ -90,7 +99,7 @@ export interface UseRotationParams {
   radius: number;
   markActivity?: () => void;
   gestureRef?: RefObject<GestureState>;
-
+  dotPositions?: readonly Vec3[];
 }
 
 export interface UseRotationReturn {
@@ -110,8 +119,9 @@ export default function useRotation({
   radius,
   markActivity,
   gestureRef,
+  dotPositions,
 }: UseRotationParams): UseRotationReturn {
-  const { gl } = useThree(); // canvas element lives here
+  const { gl, camera } = useThree();
 
   const isPinchingRef = useRef(false);
   const isTouchRotatingRef = useRef(false);
@@ -206,10 +216,16 @@ export default function useRotation({
 
   const isDraggingRef = useRef(false);
   const zoomMetricsRef = useRef({ radius, minRadius, maxRadius });
+  const closestDistRef = useRef<number>(Infinity);
+  const dotPositionsRef = useRef<readonly Vec3[]>(dotPositions ?? []);
 
   useEffect(() => {
     zoomMetricsRef.current = { radius, minRadius, maxRadius };
   }, [radius, minRadius, maxRadius]);
+
+  useEffect(() => {
+    dotPositionsRef.current = dotPositions ?? [];
+  }, [dotPositions]);
 
   useEffect(() => {
     const dpr = window.devicePixelRatio;
@@ -282,6 +298,7 @@ export default function useRotation({
         maxRadius,
         isTouch: false,
         isTabletLike,
+        closestDist: closestDistRef.current,
       });
       const dx = mapResponsiveDelta(rawDx, DESKTOP_DEADZONE_PX * deadzoneMul);
       const dy = mapResponsiveDelta(rawDy, DESKTOP_DEADZONE_PX * deadzoneMul);
@@ -429,6 +446,7 @@ export default function useRotation({
           maxRadius,
           isTouch: true,
           isTabletLike,
+          closestDist: closestDistRef.current,
         });
         const dx = mapResponsiveDelta(rawDx, TOUCH_DEADZONE_PX * deadzoneMul);
         const dy = mapResponsiveDelta(rawDy, TOUCH_DEADZONE_PX * deadzoneMul);
@@ -528,8 +546,8 @@ export default function useRotation({
     if (isDraggingRef.current) return;
 
     const zf = Math.max(0, Math.min(1, (radius - minRadius) / (maxRadius - minRadius) || 0));
-    const zoomMul = 0.9 + 0.8 * zf;
-    const tabletMul = isTabletLike ? 1.6 : 1.25;
+    const zoomMul = lerp(0.55, 1.8, zf);
+    const tabletMul = isTabletLike ? 1.6 : 1.0;
     const motionMul =
       !useDesktopLayout && isMovingRef.current ? 0.10 + (0.30 - 0.10) * zf : 1.0;
     const idleMul = idleActive ? 0.42 : 1.0;
@@ -549,9 +567,27 @@ export default function useRotation({
     g.quaternion.premultiply(_rotQ);
   }
 
-  // keep your optional debug frame hook (no behavior change)
+  // Compute closest dot-to-camera distance each frame for sensitivity scaling.
   useFrame(() => {
     void appActiveRef.current;
+    const g = groupRef.current;
+    const pts = dotPositionsRef.current;
+    if (!g || !pts.length) {
+      closestDistRef.current = Infinity;
+      return;
+    }
+    g.updateWorldMatrix(true, false);
+    _projScreen.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    _frustum.setFromProjectionMatrix(_projScreen);
+    let minDist = Infinity;
+    for (const pos of pts) {
+      _dotWorld.set(pos[0], pos[1], pos[2]);
+      _dotWorld.applyMatrix4(g.matrixWorld);
+      if (!_frustum.containsPoint(_dotWorld)) continue;
+      const d = camera.position.distanceTo(_dotWorld);
+      if (d < minDist) minDist = d;
+    }
+    closestDistRef.current = minDist;
   });
 
   return {

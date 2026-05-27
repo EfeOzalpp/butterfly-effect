@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 
 import { useUiFlow } from "../../app/state/ui-context";
-import type { Mode } from "../../app/types";
+import type { Mode } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useIdentity } from "../../app/state/identity-context";
 import { avgWeightOf } from "../../lib/hooks/useRelativeScore";

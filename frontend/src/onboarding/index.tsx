@@ -1,5 +1,5 @@
 // src/onboarding/index.tsx
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
@@ -11,9 +11,14 @@ import type { RoleSection, SectionItem, SectionOption } from "./section-picker/s
 import type { RoleValue } from "./role-picker";
 import { ButtonQuestionnaireFlow, BUTTON_QUESTIONS } from "./questionnaire";
 
-import { saveUserResponse } from "../services/sanity/saveUserResponse";
+import {
+  createOptimisticUserResponse,
+  ensureUserResponseEditToken,
+  persistUserResponseSession,
+  saveUserResponse,
+} from "../services/sanity/saveUserResponse";
 import { track } from "../lib/posthog";
-import { setSessionItem } from "../app/session";
+import { removeSessionItems, setSessionItem } from "../app/session";
 
 type Audience = RoleValue | '';
 
@@ -35,13 +40,14 @@ export default function Survey({
   const [submitting, setSubmitting] = useState(false);
   const [fadeState, setFadeState] = useState<'fade-in' | 'fade-out'>('fade-in');
   const [introActive, setIntroActive] = useState(true);
+  const [questionnaireHintShown, setQuestionnaireHintShown] = useState(false);
   const shouldScrollToSectionRef = useRef(false);
 
   // latches
   const [finished, setFinished] = useState(false); // hide questionnaire immediately after submit
   const prevCompletedRef = useRef(false);
 
-  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey } = useUiFlow();
+  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
 
@@ -97,6 +103,7 @@ export default function Survey({
       setError('');
       setSubmitting(false);
       setFinished(false);
+      setQuestionnaireHintShown(false);
       setFadeState('fade-in');
       setQuestionnaireOpen(false);
       setSectionOpen(false);
@@ -121,6 +128,7 @@ export default function Survey({
     setError('');
     setSubmitting(false);
     setFinished(false);
+    setQuestionnaireHintShown(false);
     setFadeState('fade-in');
     setQuestionnaireOpen(false);
     setSectionOpen(false);
@@ -135,6 +143,10 @@ export default function Survey({
       setFadeState('fade-in');
     }, 70);
   };
+
+  const handleQuestionnaireHintShown = useCallback(() => {
+    setQuestionnaireHintShown(true);
+  }, []);
 
   // Normalize role sections into the picker contract and add headers for staff mode.
   const availableSections = useMemo<SectionItem[]>(() => {
@@ -216,31 +228,53 @@ export default function Survey({
     setFinished(true);
     setQuestionnaireOpen(false);
 
-    try {
-      const weights = answersToWeights(answers);
-      const created = await saveUserResponse(surveySection, weights);
-      const id = created._id;
+    const weights = answersToWeights(answers);
+    ensureUserResponseEditToken();
+    const optimistic = createOptimisticUserResponse(surveySection, weights);
 
-      track({ name: 'Survey Completed', props: { section: surveySection, role: audience } });
+    persistUserResponseSession(optimistic, surveySection);
+    setSection(surveySection);
+    setMySection(surveySection);
+    setMyEntryId(optimistic._id);
+    setMyRole(audience || null);
+    setHasCompletedSurvey(true);
+    openGraph();
+    setSurveyActive(false);
+    setAnimationVisible(true);
+    if (audience) setSessionItem('be.myRole', audience);
+
+    try {
+      const created = await saveUserResponse(surveySection, weights);
+
       setSection(surveySection);
       setMySection(surveySection);
-      setMyEntryId(id);
+      setMyEntryId(created._id);
       setMyRole(audience || null);
-      setHasCompletedSurvey(true);
-      openGraph();
-      setSurveyActive(false);
-      setAnimationVisible(true);
 
-      if (audience) setSessionItem('be.myRole', audience);
+      track({ name: 'Survey Completed', props: { section: surveySection, role: audience } });
 
     } catch (err) {
       console.error('[Survey] submit error:', err);
       // If saving failed, allow returning to questions
+      removeSessionItems([
+        'be.myEntryId',
+        'be.mySection',
+        'be.myRole',
+        'be.myEditToken',
+        'be.justSubmitted',
+        'be.myDoc',
+        'be.openPersonalOnNext',
+      ]);
       setFinished(false);
-      setQuestionnaireOpen(true);
+      closeGraph();
+      setMyEntryId(null);
+      setMySection(null);
+      setMyRole(null);
       setHasCompletedSurvey(false);
       setSurveyActive(true);
+      setQuestionnaireOpen(true);
       setAnimationVisible(false);
+      setError('We could not save your response. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -294,6 +328,8 @@ export default function Survey({
             <ButtonQuestionnaireFlow
               onAnswersUpdate={onAnswersUpdate}
               onSubmit={(answers) => { void handleSubmitFromQuestions(answers); }}
+              showIntroHint={!questionnaireHintShown}
+              onIntroHintShown={handleQuestionnaireHintShown}
               submitting={submitting}
             />
           )}

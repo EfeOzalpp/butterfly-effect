@@ -1,7 +1,7 @@
 // src/app/state/survey-data-utils.ts
 // Pure survey row transforms. Keeping these here makes useSurveyDataState about flow.
 
-import type { SurveyRow } from '../types';
+import type { SurveyRow } from '../../services/sanity/types';
 import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from '../../services/sanity/sections';
 
 export function deriveSectionCounts(allRows: SurveyRow[]): Record<string, number> {

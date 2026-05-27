@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { getSessionItem } from '../../../app/session';
 import useViewerScope from '../scope/useViewerScope';
 import type { DotGraphEntry } from '../types';
 
@@ -22,8 +23,7 @@ export default function usePersonalizationGate({
   observerMode,
   isSmallScreen,
 }: UsePersonalizationGateParams) {
-  const personalizedEntryId: string | null =
-    myEntryId ?? (typeof window !== 'undefined' ? sessionStorage.getItem('be.myEntryId') : null);
+  const personalizedEntryId: string | null = myEntryId ?? getSessionItem('be.myEntryId');
 
   const [personalOpen, setPersonalOpen] = useState(true);
 

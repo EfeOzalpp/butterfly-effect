@@ -16,6 +16,7 @@ import {
   reconcileLiveStatesOnFieldUpdate,
   type LiveState,
 } from "./engine/itemLifecycle";
+import { createSceneSurfaceLifecycleState } from "./engine/sceneSurfaceLifecycle";
 import {
   createEngineField,
   createEngineInputs,
@@ -72,6 +73,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   // Per-item appear state is owned by this engine instance.
   const liveStates = new Map<string, LiveState>();
   const particleStore = createParticleStore();
+  const sceneSurface = createSceneSurfaceLifecycleState();
 
   const canvasEl = document.createElement("canvas");
   applyCanvasStyle(canvasEl);
@@ -101,7 +103,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   const engineState: EngineRuntimeState = { field, style, inputs };
   const sceneSource: EngineSceneSource = { getProfile: () => sceneProfile };
   const layoutState: RuntimeLayoutState = { gridCache };
-  const effectState: EngineEffectState = { liveStates, particleStore };
+  const effectState: EngineEffectState = { liveStates, particleStore, sceneSurface };
   const shapeServices: RuntimeShapeServices = { registry: shapeRegistry };
 
   const frameId = `${mount}::${String(++ENGINE_SEQ)}`;
@@ -211,16 +213,18 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
   }
 
   function setSceneProfile(next: EngineSceneProfile) {
-    const shouldInvalidateGrid =
-      sceneProfile.lookupKey !== next.lookupKey ||
-      sceneProfile.paddingSpec !== next.paddingSpec;
-
-    sceneProfile = {
+    const nextProfile: EngineSceneProfile = {
       lookupKey: next.lookupKey,
       paddingSpec: next.paddingSpec ?? null,
       background: next.background ?? null,
       renderCache: next.renderCache,
     };
+
+    const shouldInvalidateGrid =
+      sceneProfile.lookupKey !== nextProfile.lookupKey ||
+      sceneProfile.paddingSpec !== nextProfile.paddingSpec;
+
+    sceneProfile = nextProfile;
 
     if (shouldInvalidateGrid) invalidateGridCache(gridCache);
   }

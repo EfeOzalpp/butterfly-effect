@@ -13,10 +13,30 @@ frontend
   -> Supabase Edge Function
   -> payload validation
   -> rate limiting
-  -> Sanity create
+  -> Sanity create / patch
 ```
 
-The frontend sends only survey answers. The edge function decides whether that request is allowed to become a Sanity document.
+The frontend sends survey answers and, for later solo-message edits, a browser-held edit token. Edge functions decide whether a request is allowed to create or patch a Sanity document.
+
+## Browser ownership tokens
+
+Solo-message edits use a browser-held capability token. This is intentionally lighter than account auth, but stronger than trusting a response id from the client.
+
+The flow is:
+
+```text
+frontend creates random edit token
+  -> save-user-response sends token with survey payload
+  -> edge function stores sha256("edit-token:" + token) on the Sanity document
+  -> raw token remains in browser storage only
+  -> save-solo-message sends response id + raw token + message
+  -> edge function hashes the raw token and compares it with editTokenHash
+  -> Sanity patch is allowed only when the hashes match
+```
+
+This means the frontend can remember ownership for the response it just created without exposing the Sanity write token or allowing arbitrary document patches. If the browser loses local storage, it loses edit capability for that response.
+
+This is not identity. A copied local token would still be edit capability, so the model depends on HTTPS, normal browser storage boundaries, and keeping script injection risk low.
 
 ## Edge functions
 
@@ -42,6 +62,31 @@ It checks:
 - IP/client/request rate limits before writing to Sanity
 
 The response is intentionally small. It returns only the saved fields the app needs, not the full Sanity document.
+
+The function also stores a hash of the browser-held edit token on the Sanity document. The raw token stays in the user's browser and is required for later edits.
+
+### `save-solo-message`
+
+Located at:
+
+```text
+functions/save-solo-message/index.ts
+```
+
+This function lets the original browser instance add, update, or clear the optional solo-message field on its own `userResponseV4` document.
+
+It checks:
+
+- request method and JSON content type
+- small body size
+- strict request shape
+- honeypot field
+- origin allowlist when `ALLOWED_ORIGINS` is set
+- publishable API key header
+- response id and edit token format
+- message length, currently 160 characters
+- stored edit-token hash before patching Sanity
+- IP/client/response rate limits before writing to Sanity
 
 ## Rate limiting
 
@@ -71,9 +116,9 @@ GitHub Actions deploys the edge function when Supabase function code changes on 
 The workflow:
 
 - checks out the repo
-- runs `deno check` against `save-user-response`
+- runs `deno check` against both edge functions
 - installs the Supabase CLI
-- deploys `save-user-response` to the configured Supabase project
+- deploys both edge functions to the configured Supabase project
 
 Required GitHub repository secrets:
 
@@ -99,7 +144,7 @@ RATE_LIMIT_SALT
 ALLOWED_ORIGINS
 ```
 
-`SANITY_TOKEN` should be least-privilege and only allow creating the survey response document type.
+`SANITY_TOKEN` should be least-privilege and only allow creating and patching the survey response document type.
 
 `ALLOWED_ORIGINS` is comma-separated:
 
@@ -134,12 +179,14 @@ Supabase Edge Functions run on Deno. The function has its own Deno config:
 
 ```text
 functions/save-user-response/deno.json
+functions/save-solo-message/deno.json
 ```
 
 Check the function locally from the repo root:
 
 ```powershell
 deno check --config supabase/functions/save-user-response/deno.json supabase/functions/save-user-response/index.ts
+deno check --config supabase/functions/save-solo-message/deno.json supabase/functions/save-solo-message/index.ts
 ```
 
 On this Windows setup, the full path version may be needed:

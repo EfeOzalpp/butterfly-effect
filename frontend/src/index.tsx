@@ -1,10 +1,6 @@
 import { createRoot } from 'react-dom/client';
-import { initSentry } from './lib/sentry';
-import { initPostHog } from './lib/posthog';
 import AppShell from './app/main';
-
-initSentry();
-initPostHog();
+import { initPostHog } from './lib/posthog';
 
 const container = document.getElementById('butterfly-effect');
 if (!container) {
@@ -12,3 +8,11 @@ if (!container) {
 }
 
 createRoot(container).render(<AppShell />);
+
+void import('./lib/sentry').then(({ initSentry }) => {
+  initSentry();
+}).catch((error: unknown) => {
+  console.warn('[sentry] init import failed:', error);
+});
+
+void initPostHog();

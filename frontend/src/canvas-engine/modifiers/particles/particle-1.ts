@@ -124,9 +124,28 @@ function spawnOne(
   const size = randRange(rnd, rMin, rMax);
   const len = randRange(rnd, lMin, lMax);
 
-  const age = rnd() * life;
+  const age = 0;
 
   return { x, y, vx, vy, age, life, size, len, uSlot };
+}
+
+function advanceParticle(pr: Particle, dtSec: number, accX: number, accY: number) {
+  pr.x += pr.vx * dtSec + 0.5 * accX * dtSec * dtSec;
+  pr.y += pr.vy * dtSec + 0.5 * accY * dtSec * dtSec;
+  pr.vx += accX * dtSec;
+  pr.vy += accY * dtSec;
+  pr.age += dtSec;
+}
+
+function prewarmParticle(pr: Particle, rect: ParticleRect, rnd: RandomSource, accX: number, accY: number) {
+  const travelX = Math.abs(pr.vx) > 1 ? rect.w / Math.abs(pr.vx) : Infinity;
+  const travelY = Math.abs(pr.vy) > 1 ? rect.h / Math.abs(pr.vy) : Infinity;
+  const travelSec = Math.min(travelX, travelY);
+  const maxAge = Number.isFinite(travelSec)
+    ? Math.min(pr.life * 0.85, travelSec * 0.95)
+    : pr.life * 0.5;
+
+  advanceParticle(pr, rnd() * Math.max(0, maxAge), accX, accY);
 }
 
 function ensureEmitter(store: ParticleStore, opts: ParticleEmitterOpts): EmitterState {
@@ -172,10 +191,12 @@ function ensureEmitter(store: ParticleStore, opts: ParticleEmitterOpts): Emitter
     const lifeMax = Math.max(lifeMin, life.max ?? 1.8);
 
     const spawnMode = opts.spawnMode ?? "stratified";
+    const accX = opts.accel?.x ?? 0;
+    const accY = (opts.accel?.y ?? 0) + (opts.gravity ?? 0);
 
     const particles = Array.from({ length: wantCount }, (_, i) => {
       const lane = spawnMode === "stratified" ? (i + rnd()) / wantCount : rnd();
-      return spawnOne(
+      const particle = spawnOne(
         rnd,
         rect,
         jPos,
@@ -196,6 +217,8 @@ function ensureEmitter(store: ParticleStore, opts: ParticleEmitterOpts): Emitter
         lifeMax,
         lane
       );
+      prewarmParticle(particle, rect, rnd, accX, accY);
+      return particle;
     });
 
     st = { particles, seed, rnd };
@@ -233,34 +256,36 @@ function ensureEmitter(store: ParticleStore, opts: ParticleEmitterOpts): Emitter
   const lifeMax = Math.max(lifeMin, opts.lifetime?.max ?? 1.8);
 
   const spawnMode = opts.spawnMode ?? "stratified";
+  const accX = opts.accel?.x ?? 0;
+  const accY = (opts.accel?.y ?? 0) + (opts.gravity ?? 0);
 
   const cur = st.particles.length;
   if (cur < wantCount) {
     for (let i = cur; i < wantCount; i++) {
       const lane = spawnMode === "stratified" ? (i + rnd()) / wantCount : rnd();
-      st.particles.push(
-        spawnOne(
-          rnd,
-          rect,
-          jPos,
-          sx0,
-          sx1,
-          sy0,
-          sy1,
-          spMin,
-          spMax,
-          angMin,
-          angMax,
-          jAng,
-          rMin,
-          rMax,
-          lMin,
-          lMax,
-          lifeMin,
-          lifeMax,
-          lane
-        )
+      const particle = spawnOne(
+        rnd,
+        rect,
+        jPos,
+        sx0,
+        sx1,
+        sy0,
+        sy1,
+        spMin,
+        spMax,
+        angMin,
+        angMax,
+        jAng,
+        rMin,
+        rMax,
+        lMin,
+        lMax,
+        lifeMin,
+        lifeMax,
+        lane
       );
+      prewarmParticle(particle, rect, rnd, accX, accY);
+      st.particles.push(particle);
     }
   } else if (cur > wantCount) {
     st.particles.length = wantCount;
@@ -349,7 +374,7 @@ export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpt
     pr.vy = Math.sin(ang) * sp;
 
     pr.life = randRange(rnd, lifeMin, lifeMax);
-    pr.age = rnd() * pr.life;
+    pr.age = 0;
 
     pr.size = randRange(rnd, rMin, rMax);
     pr.len = randRange(rnd, lMin, lMax);
@@ -357,11 +382,7 @@ export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpt
 
   for (const [i, pr] of state.particles.entries()) {
 
-    pr.vx += accX * dtSec;
-    pr.vy += accY * dtSec;
-    pr.x += pr.vx * dtSec;
-    pr.y += pr.vy * dtSec;
-    pr.age += dtSec;
+    advanceParticle(pr, dtSec, accX, accY);
 
     if (wantSizeFollow) {
       pr.size = hzLerp(pr.size, laneTargetSize(pr.uSlot), sizeHz, dtSec);

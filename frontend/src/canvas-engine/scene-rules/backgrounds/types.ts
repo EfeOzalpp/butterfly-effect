@@ -66,6 +66,7 @@ export interface BackgroundSpec {
 // background lookups are keyed by the scene key the runtime is currently using.
 export type BackgroundsByMode = Record<SceneLookupKey, BackgroundSpec>;
 
-// start-host backgrounds only need start/questionnaire. city has its own host.
-export type StartBackgroundLookupKey = Exclude<SceneLookupKey, "city">;
-export type StartBackgroundsByMode = Record<StartBackgroundLookupKey, BackgroundSpec>;
+// Intro backgrounds cover the start and questionnaire scene keys. City owns a separate table.
+export type IntroBackgroundLookupKey = Exclude<SceneLookupKey, "city">;
+export type IntroBackgroundsByMode = Record<IntroBackgroundLookupKey, BackgroundSpec>;
+export type CityBackgroundsByMode = Record<Extract<SceneLookupKey, "city">, BackgroundSpec>;

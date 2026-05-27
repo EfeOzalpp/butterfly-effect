@@ -21,6 +21,7 @@ import "../styles/global-styles.css";
 import "../styles/ui-system.css";
 
 const CanvasEntry = React.lazy(() => import("../canvas-instances/OnboardingEntry"));
+const QuestionnaireEntry = React.lazy(() => import("../canvas-instances/QuestionnaireEntry"));
 const CityOverlay = React.lazy(() => import("../canvas-instances/CityEntry"));
 const GraphBGDark = React.lazy(() => import("../navigation/right/system-color"));
 const AppInner: React.FC = () => {
@@ -46,10 +47,18 @@ const AppInner: React.FC = () => {
         </div>
       )}
 
-      {!vizVisible && !animationVisible && !cityPanelOpen && (
+      {!vizVisible && !animationVisible && !cityPanelOpen && !questionnaireOpen && (
         <ErrorBoundary name="CanvasEntry">
           <Suspense fallback={null}>
             <CanvasEntry visible={true} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {!vizVisible && !animationVisible && !cityPanelOpen && questionnaireOpen && (
+        <ErrorBoundary name="QuestionnaireEntry">
+          <Suspense fallback={null}>
+            <QuestionnaireEntry visible={true} />
           </Suspense>
         </ErrorBoundary>
       )}

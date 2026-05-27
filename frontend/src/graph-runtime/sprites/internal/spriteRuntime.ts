@@ -1,5 +1,9 @@
 // graph-runtime/sprites/internal/spriteRuntime.ts
-import * as THREE from 'three';
+import {
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  type CanvasTexture,
+} from 'three';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
@@ -168,8 +172,8 @@ export function prewarmSpriteTextures(
               stepMs: particleStepMs,
               generateMipmaps: true,
               anisotropy: 1,
-              minFilter: THREE.LinearMipmapLinearFilter,
-              magFilter: THREE.LinearFilter,
+              minFilter: LinearMipmapLinearFilter,
+              magFilter: LinearFilter,
             });
             frozenSet(key, track(texture));
           } catch (err) {
@@ -260,7 +264,7 @@ export function getFrozenTexture(key: string) {
   return frozenGet(key);
 }
 
-export function requestStaticTexture(args: MakeArgs, onReady: (tex: THREE.CanvasTexture) => void) {
+export function requestStaticTexture(args: MakeArgs, onReady: (tex: CanvasTexture) => void) {
   const existing = textureRegistry.get(args.key);
   if (existing) {
     onReady(existing);
@@ -294,7 +298,7 @@ export function requestFrozenTexture(args: {
   darkMode?: boolean;
   background?: boolean;
   pixelScaleBoost?: number;
-  onReady: (tex: THREE.CanvasTexture) => void;
+  onReady: (tex: CanvasTexture) => void;
   onFail: () => void;
 }) {
   // Frozen textures simulate particles once and cache the result. That is much
@@ -330,8 +334,8 @@ export function requestFrozenTexture(args: {
           stepMs: args.stepMs,
           generateMipmaps: true,
           anisotropy: 1,
-          minFilter: THREE.LinearMipmapLinearFilter,
-          magFilter: THREE.LinearFilter,
+          minFilter: LinearMipmapLinearFilter,
+          magFilter: LinearFilter,
         });
         frozenSet(args.key, track(texture));
         args.onReady(texture);

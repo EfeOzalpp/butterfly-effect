@@ -14,6 +14,8 @@ export interface MockRow {
   q4: number;
   q5: number;
   avgWeight: number;
+  soloMessage?: string;
+  soloMessageUpdatedAt?: string;
   submittedAt: string;
 }
 
@@ -273,6 +275,40 @@ export function createMockUserResponse(section: string, weights: SurveyWeights) 
   writeStoredRows(nextRows);
   notifyAllSubscribers();
   return created;
+}
+
+export function updateMockSoloMessage(responseId: string, message: string) {
+  const rows = readStoredRows();
+  const index = rows.findIndex((row) => row._id === responseId);
+  if (index < 0) throw new Error('Mock response not found');
+
+  const trimmed = message.trim().replace(/\s+/g, ' ');
+  const updatedAt = new Date().toISOString();
+  const current = rows[index];
+  const withoutMessage = { ...current };
+  delete withoutMessage.soloMessage;
+  delete withoutMessage.soloMessageUpdatedAt;
+  const updated: MockRow = trimmed
+    ? {
+      ...current,
+      soloMessage: trimmed,
+      soloMessageUpdatedAt: updatedAt,
+      _updatedAt: updatedAt,
+    }
+    : {
+      ...withoutMessage,
+      _updatedAt: updatedAt,
+    };
+
+  rows[index] = updated;
+  writeStoredRows(rows.sort(sortNewestFirst));
+  notifyAllSubscribers();
+
+  return {
+    _id: updated._id,
+    soloMessage: updated.soloMessage,
+    soloMessageUpdatedAt: updated.soloMessageUpdatedAt,
+  };
 }
 
 export function clearMockSurveyState() {

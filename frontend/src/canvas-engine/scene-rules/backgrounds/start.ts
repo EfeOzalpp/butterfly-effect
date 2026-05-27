@@ -1,6 +1,6 @@
 // src/canvas-engine/scene-rules/backgrounds/start.ts
 
-import type { BackgroundSpec, StartBackgroundsByMode } from "./types";
+import type { BackgroundSpec, IntroBackgroundsByMode } from "./types";
 
 // light scene
 const START_BACKGROUND: BackgroundSpec = {
@@ -30,7 +30,6 @@ const START_BACKGROUND: BackgroundSpec = {
   },
 } as const;
 
-  // questionnaire signal
 const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
   base: "rgb(158, 222, 248)",
   overlay: {
@@ -49,7 +48,7 @@ const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_LIGHT: StartBackgroundsByMode = {
+export const BACKGROUNDS_LIGHT: IntroBackgroundsByMode = {
   start: START_BACKGROUND,
   questionnaire: QUESTIONNAIRE_BACKGROUND,
 } as const;
@@ -86,7 +85,6 @@ const START_BACKGROUND_DARK: BackgroundSpec = {
   },
 } as const;
 
-  // questionnaire signal
 const QUESTIONNAIRE_BACKGROUND_DARK: BackgroundSpec = {
   base: "rgb(18, 26, 62)",
   overlay: {
@@ -117,7 +115,7 @@ const QUESTIONNAIRE_BACKGROUND_DARK: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_START_DARK: StartBackgroundsByMode = {
+export const BACKGROUNDS_START_DARK: IntroBackgroundsByMode = {
   start: START_BACKGROUND_DARK,
   questionnaire: QUESTIONNAIRE_BACKGROUND_DARK,
 } as const;

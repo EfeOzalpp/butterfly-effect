@@ -10,6 +10,7 @@ import type { PLike } from "../../../p/makeP";
 import {
   clearOffscreenEntry,
   createOffscreenCache,
+  drawCanvasLayer,
   getOrCreateCanvasLayer,
 } from "../../cache/offscreenCache";
 import { backgroundAnchorCacheKey, resolveStopK } from "./anchors";
@@ -150,7 +151,8 @@ export function createBgCache() {
     sceneLookup: SceneLookupKey,
     override: BackgroundSpec | null,
     liveAvg: number,
-    anchors?: BackgroundAnchorContext
+    anchors?: BackgroundAnchorContext,
+    compositeAlpha = 1
   ) {
     const w = p.width;
     const h = p.height;
@@ -184,8 +186,7 @@ export function createBgCache() {
       lastOverride = override;
     }
 
-    const ctx = p.drawingContext;
-    ctx.drawImage(entry.canvas, 0, 0);
+    drawCanvasLayer(p, entry, compositeAlpha);
   };
 
   return Object.assign(drawBgCached, {

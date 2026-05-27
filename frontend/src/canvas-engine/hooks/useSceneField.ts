@@ -7,8 +7,7 @@ import type { HostId } from "../multi-canvas-setup/hostDefs";
 import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 import type { CanvasEngineControls } from "../runtime";
 
-import { resolveSceneState } from "../scene-state";
-import type { BaseMode, SceneLookupKey, SceneSignals } from "../scene-state";
+import type { SceneLookupKey, SceneState } from "../scene-state";
 
 import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
 
@@ -53,7 +52,6 @@ export function useSceneField(
   engine: Engine,
   hostId: HostId,
   liveAvg: number | undefined,
-  signals: SceneSignals,
   reservedFootprints: Place[] | undefined,
   viewportKey?: number | string
 ) {
@@ -64,9 +62,7 @@ export function useSceneField(
   const { darkMode } = usePreferences();
 
   const ruleset = hostDef.scene.ruleset;
-
-  const baseMode: BaseMode = hostDef.scene.baseMode;
-  const { questionnaireOpen } = signals;
+  const sceneLookupKey: SceneLookupKey = hostDef.scene.lookupKey;
 
   // Recompose field when the actual canvas size changes, even if viewport size does not.
   useEffect(() => {
@@ -111,19 +107,14 @@ export function useSceneField(
     const engineControls = controls.current;
     if (!engineControls) return;
 
-    // Resolve this inside the effect so a fresh profile object does not become a dependency.
-    const sceneState = resolveSceneState(
-      { questionnaireOpen },
-      { baseMode }
-    );
-    const sceneLookupKey: SceneLookupKey = questionnaireOpen ? "questionnaire" : sceneState.baseMode;
+    const sceneState: SceneState = { lookupKey: sceneLookupKey };
     const profile = ruleset.getProfile(sceneState, { darkMode });
 
     const canvas = engineControls.canvas;
     const { w, h } = getCanvasLogicalSize(canvas);
     const viewportW = getViewportSize().w;
     const ruleWidthPx =
-      hostId === "start" ? viewportW : w;
+      hostId === "start" || hostId === "questionnaire" ? viewportW : w;
 
     const result = composeField({
       padding: profile.padding,
@@ -152,11 +143,10 @@ export function useSceneField(
     controls,
     readyTick,
     liveAvg,
-    questionnaireOpen,
     viewportKey,
     canvasResizeTick,
     hostId,
-    baseMode,
+    sceneLookupKey,
     ruleset,
     reservedFootprints,
     darkMode,

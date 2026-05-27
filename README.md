@@ -53,13 +53,15 @@ The app is product-facing and runtime-heavy. The Canvas 2D layer is structured a
 - [Scene composition](./frontend/src/canvas-engine/scene-logic)
 - [Graph runtime](./frontend/src/graph-runtime)
 - [Sanity service layer](./frontend/src/services/sanity)
-- [Supabase save function](./supabase/functions/save-user-response/index.ts)
+- [Supabase write functions](./supabase)
 
 ## Reference Docs
 
 - [Canvas engine](./documentation/CANVAS_ENGINE.md)
 - [Graph runtime](./documentation/GRAPH_RUNTIME.md)
 - [App state](./documentation/APP_STATE.md)
+- [Data flow](./documentation/DATA_FLOW.md)
+- [User flow](./documentation/USER_FLOW.md)
 
 ## Run Locally
 

@@ -107,6 +107,22 @@ export default {
     // Rollups
     { name: 'avgWeight', type: 'number', title: 'Average Weight (0..1)', validation: (r: Rule) => r.min(0).max(1) },
 
+    {
+      name: 'soloMessage',
+      type: 'text',
+      title: 'Solo Message',
+      rows: 3,
+      validation: (r: Rule) => r.max(160),
+    },
+    { name: 'soloMessageUpdatedAt', type: 'datetime', title: 'Solo Message Updated At' },
+    {
+      name: 'editTokenHash',
+      type: 'string',
+      title: 'Edit Token Hash',
+      hidden: true,
+      readOnly: true,
+    },
+
     { name: 'submittedAt', type: 'datetime', title: 'Submitted At' },
   ],
 };

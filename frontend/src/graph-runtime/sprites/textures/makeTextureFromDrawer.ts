@@ -1,8 +1,18 @@
 // graph-runtime/sprites/textures/makeTextureFromDrawer.ts
-import * as THREE from 'three';
+import {
+  CanvasTexture,
+  ClampToEdgeWrapping,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  SRGBColorSpace,
+} from 'three';
 import { makeCanvasFacade } from './canvasFacade';
 import { makeSpritePaletteLightContext } from './spriteLight';
 import type { DrawerFn } from '../selection/drawers';
+import {
+  createParticleStore,
+  type ParticleStore,
+} from '../../../canvas-engine/modifiers/particles';
 
 // Static bridge: run a canvas-engine drawer into an offscreen canvas, then hand
 // that canvas to Three as a CanvasTexture.
@@ -24,9 +34,11 @@ export function makeTextureFromDrawer({
   footprint = { w: 1, h: 1 },
   bleed = {},
   timeMs = (typeof performance !== 'undefined' ? performance.now() : 0),
+  dtSec = 1 / 60,
   seedKey,
   darkMode = false,
   pixelScaleBoost,
+  particleStore,
 }: {
   drawer: Drawer;
   tileSize?: number;
@@ -38,10 +50,12 @@ export function makeTextureFromDrawer({
   footprint?: Footprint;
   bleed?: BleedFrac;
   timeMs?: number;
+  dtSec?: number;
   seedKey?: string | number;
   darkMode?: boolean;
   pixelScaleBoost?: number;
-}): THREE.CanvasTexture {
+  particleStore?: ParticleStore;
+}): CanvasTexture {
   // Footprint + bleed decide canvas size before drawing, so texture swaps do not
   // resize sprites later in Three.
   const wTiles = Math.max(1e-6, footprint.w || 1);
@@ -76,6 +90,7 @@ export function makeTextureFromDrawer({
   const centerY = logicalH / 2;
 
   const cell = tileSize;
+  const drawParticleStore = particleStore ?? createParticleStore();
 
   const footprintForDrawer = {
     r0: bTop,
@@ -109,6 +124,9 @@ export function makeTextureFromDrawer({
       pixelScale: Math.max(1, pixelScaleBoost ?? 1),
       particlePixelScale: Math.max(1, pixelScaleBoost ?? 1),
     },
+    particles: {
+      particleStore: drawParticleStore,
+    },
     oscAmp: 0,
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
@@ -116,8 +134,11 @@ export function makeTextureFromDrawer({
   };
 
   const r = Math.min(logicalW, logicalH) * 0.8;
+  const safeDtSec = Math.max(1 / 120, Math.min(0.35, dtSec));
 
-  const opts = { ...baseOpts, lifecycle: { timeMs } };
+  p.__tick(timeMs - safeDtSec * 1000);
+  p.__tick(timeMs);
+  const opts = { ...baseOpts, lifecycle: { timeMs, dtSec: safeDtSec } };
 
   try {
     drawer(p, centerX, centerY, r, opts);
@@ -129,13 +150,13 @@ export function makeTextureFromDrawer({
     throw err;
   }
 
-  const tex = new THREE.CanvasTexture(cnv);
-  tex.colorSpace = THREE.SRGBColorSpace;
+  const tex = new CanvasTexture(cnv);
+  tex.colorSpace = SRGBColorSpace;
   tex.generateMipmaps = true;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.magFilter = THREE.LinearFilter;
-  tex.wrapS = THREE.ClampToEdgeWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.minFilter = LinearMipmapLinearFilter;
+  tex.magFilter = LinearFilter;
+  tex.wrapS = ClampToEdgeWrapping;
+  tex.wrapT = ClampToEdgeWrapping;
   tex.anisotropy = 8;
   tex.needsUpdate = true;
 

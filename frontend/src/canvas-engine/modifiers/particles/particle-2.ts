@@ -75,6 +75,19 @@ interface EmitterState {
   rnd: RandomSource;
 }
 
+function makeDormantParticle(uSlot: number): Particle {
+  return {
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    age: 0,
+    life: 0,
+    size: 1,
+    uSlot,
+  };
+}
+
 function hashPuffKey(s: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) {
@@ -112,16 +125,9 @@ function ensureEmitter(store: ParticleStore, opts: PuffEmitterOpts): EmitterStat
 
   const mk = () => {
     const rnd = makePRNG(seed);
-    const particles = Array.from({ length: wantCount }, (_, i): Particle => ({
-      x: 0,
-      y: 0,
-      vx: 0,
-      vy: 0,
-      age: 0,
-      life: 1,
-      size: 1,
-      uSlot: (i + rnd()) / wantCount,
-    }));
+    const particles = Array.from({ length: wantCount }, (_, i) =>
+      makeDormantParticle((i + rnd()) / wantCount)
+    );
     return { particles, rnd };
   };
 
@@ -132,16 +138,7 @@ function ensureEmitter(store: ParticleStore, opts: PuffEmitterOpts): EmitterStat
     if (st.particles.length < wantCount) {
       const rnd = st.rnd;
       for (let i = st.particles.length; i < wantCount; i++) {
-        st.particles.push({
-          x: 0,
-          y: 0,
-          vx: 0,
-          vy: 0,
-          age: 0,
-          life: 1,
-          size: 1,
-          uSlot: (i + rnd()) / wantCount,
-        });
+        st.particles.push(makeDormantParticle((i + rnd()) / wantCount));
       }
     } else {
       st.particles.length = wantCount;
@@ -222,7 +219,32 @@ export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec
     return rMin + (rMax - rMin) * uSlot;
   }
 
-  function respawnParticle(pr: Particle, idx: number, total: number) {
+  function advanceParticle(pr: Particle, stepSec: number) {
+    if (drag > 0 && stepSec > 0) {
+      const k = Math.exp(-drag * stepSec);
+      pr.vx *= k;
+      pr.vy *= k;
+    }
+
+    pr.vx += accX * stepSec;
+    pr.vy += accY * stepSec;
+    pr.x += pr.vx * stepSec;
+    pr.y += pr.vy * stepSec;
+    pr.age += stepSec;
+  }
+
+  function prewarmParticle(pr: Particle) {
+    const travelX = Math.abs(pr.vx) > 1 ? rect.w / Math.abs(pr.vx) : Infinity;
+    const travelY = Math.abs(pr.vy) > 1 ? rect.h / Math.abs(pr.vy) : Infinity;
+    const travelSec = Math.min(travelX, travelY);
+    const maxAge = Number.isFinite(travelSec)
+      ? Math.min(pr.life * 0.85, travelSec * 0.95)
+      : pr.life * 0.5;
+
+    advanceParticle(pr, rnd() * Math.max(0, maxAge));
+  }
+
+  function respawnParticle(pr: Particle, idx: number, total: number, prewarm = false) {
     if (!(spawnMode === "stratified" && keepLane)) {
       pr.uSlot = spawnMode === "stratified" ? (idx + rnd()) / Math.max(1, total) : rnd();
     }
@@ -239,28 +261,20 @@ export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec
     pr.vy = Math.sin(ang) * sp;
 
     pr.life = randRange(rnd, lifeMin, lifeMax);
-    pr.age = rnd() * pr.life;
+    pr.age = 0;
 
     pr.size = randRange(rnd, rMin, rMax);
+
+    if (prewarm) prewarmParticle(pr);
   }
 
   for (const [i, pr] of state.particles.entries()) {
-    if (pr.life <= 0) respawnParticle(pr, i, state.particles.length);
+    if (pr.life <= 0) respawnParticle(pr, i, state.particles.length, true);
   }
 
   for (const [i, pr] of state.particles.entries()) {
 
-    if (drag > 0 && dtSec > 0) {
-      const k = Math.exp(-drag * dtSec);
-      pr.vx *= k;
-      pr.vy *= k;
-    }
-
-    pr.vx += accX * dtSec;
-    pr.vy += accY * dtSec;
-    pr.x += pr.vx * dtSec;
-    pr.y += pr.vy * dtSec;
-    pr.age += dtSec;
+    advanceParticle(pr, dtSec);
 
     if (wantSizeFollow) {
       pr.size = hzLerp(pr.size, laneTargetSize(pr.uSlot), sizeHz, dtSec);

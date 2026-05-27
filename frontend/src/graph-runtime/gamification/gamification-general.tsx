@@ -6,7 +6,7 @@ import '../../styles/gamification.css';
 
 import { useGeneralPools } from "../../lib/hooks/useGamificationPools";
 import { useOptionalPreferences } from "../../app/state/preferences-context";
-import type { Mode } from "../../app/types";
+import type { Mode } from "../../app/state/ui-context";
 
 interface GamificationGeneralProps {
   dotId: string;
@@ -122,7 +122,7 @@ export default function GamificationGeneral({
     return chosen
       ? { title: chosen.title, description: chosen.secondary || '' }
       : { title: 'Eco Participant', description: '' };
-  }, [dotId, percentage, safePct, pick, loaded]);
+  }, [dotId, safePct, pick, loaded]);
 
   if (!dotId) return null;
 

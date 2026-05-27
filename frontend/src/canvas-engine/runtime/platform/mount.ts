@@ -37,6 +37,7 @@ export function ensureMount(mount: string, zIndex?: number, layout: EngineLayout
 
   el.style.pointerEvents = "none";
   el.style.userSelect = "none";
+  el.style.background = "var(--ui-bg-page)";
   el.style.setProperty("-webkit-tap-highlight-color", "transparent");
   el.classList.add("be-canvas-layer");
 
@@ -49,6 +50,7 @@ export function applyCanvasStyle(el: HTMLCanvasElement) {
   el.style.zIndex = "0";
   el.style.pointerEvents = "none";
   el.style.userSelect = "none";
+  el.style.background = "var(--ui-bg-page)";
   el.style.transform = "translateZ(0)";
   el.style.imageRendering = "auto";
   el.setAttribute("tabindex", "-1");

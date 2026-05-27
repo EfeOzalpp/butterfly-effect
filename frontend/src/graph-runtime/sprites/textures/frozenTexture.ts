@@ -1,8 +1,17 @@
 // graph-runtime/sprites/textures/frozenTexture.ts
-import * as THREE from 'three';
+import {
+  CanvasTexture,
+  ClampToEdgeWrapping,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  SRGBColorSpace,
+  type MagnificationTextureFilter,
+  type TextureFilter,
+} from 'three';
 import { makeCanvasFacade } from './canvasFacade';
 import { makeSpritePaletteLightContext } from './spriteLight';
 import type { DrawerFn } from '../selection/drawers';
+import { createParticleStore } from '../../../canvas-engine/modifiers/particles';
 
 // Particle bridge: run a drawer through time before turning it into a texture.
 // Used for sprite art where a single static frame would look empty or clipped.
@@ -25,9 +34,9 @@ export interface FrozenTextureParams {
 
   generateMipmaps?: boolean;
   anisotropy?: number;
-  minFilter?: THREE.TextureFilter;
+  minFilter?: TextureFilter;
   // IMPORTANT: magFilter must be a MagnificationTextureFilter (Linear/Nearest only)
-  magFilter?: THREE.MagnificationTextureFilter;
+  magFilter?: MagnificationTextureFilter;
 }
 
 function resolveCanvasSize(
@@ -91,6 +100,7 @@ function makePainter(
 
   const pixelScale = Math.max(1, tileSize / 128) * Math.max(1, pixelScaleBoost ?? 1);
   const lightCtx = makeSpritePaletteLightContext(cnv.width / dpr, cnv.height / dpr, darkMode ?? false);
+  const particleStore = createParticleStore();
 
   const baseOpts = {
     projection: {
@@ -114,6 +124,9 @@ function makePainter(
       pixelScale,
       particlePixelScale: pixelScale,
     },
+    particles: {
+      particleStore,
+    },
     oscAmp: 0,
     oscSpeed: 0,
     opacityOsc: { amp: 0 },
@@ -132,6 +145,7 @@ function makePainter(
   function paint(nowMs: number) {
     const dtMs = Math.max(0, nowMs - lastPaintMs);
     lastPaintMs = nowMs;
+    p.__tick(nowMs);
     clear();
     drawer(p, centerX, centerY, r, {
       ...baseOpts,
@@ -155,17 +169,17 @@ function makeCanvasTexture(
   }: {
     generateMipmaps: boolean;
     anisotropy: number;
-    minFilter: THREE.TextureFilter;
-    magFilter: THREE.MagnificationTextureFilter;
+    minFilter: TextureFilter;
+    magFilter: MagnificationTextureFilter;
   }
 ) {
-  const tex = new THREE.CanvasTexture(cnv);
-  tex.colorSpace = THREE.SRGBColorSpace;
+  const tex = new CanvasTexture(cnv);
+  tex.colorSpace = SRGBColorSpace;
   tex.generateMipmaps = generateMipmaps;
   tex.minFilter = minFilter;
   tex.magFilter = magFilter;
-  tex.wrapS = THREE.ClampToEdgeWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.wrapS = ClampToEdgeWrapping;
+  tex.wrapT = ClampToEdgeWrapping;
   tex.anisotropy = anisotropy;
   tex.needsUpdate = true;
   return tex;
@@ -188,8 +202,8 @@ export function makeFrozenTextureFromDrawer({
   stepMs = 33,
   generateMipmaps = false,
   anisotropy = 2,
-  minFilter = THREE.LinearMipmapLinearFilter,
-  magFilter = THREE.LinearFilter,
+  minFilter = LinearMipmapLinearFilter,
+  magFilter = LinearFilter,
 }: FrozenTextureParams & { simulateMs?: number; stepMs?: number }) {
   const { logicalW, logicalH, wTiles, hTiles, bTop, bLeft } = resolveCanvasSize(
     tileSize,

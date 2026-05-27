@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Sentry } from "../lib/sentry";
 
 interface Props {
   children: ReactNode;
@@ -18,10 +17,16 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(`[ErrorBoundary${this.props.name ? ` "${this.props.name}"` : ""}] Uncaught error:`, error, info.componentStack);
-    Sentry.captureException(error, {
-      contexts: { react: { componentStack: info.componentStack ?? "" } },
-      tags: { boundary: this.props.name ?? "unknown" },
-    });
+    void import("../lib/sentry")
+      .then(({ Sentry }) => {
+        Sentry.captureException(error, {
+          contexts: { react: { componentStack: info.componentStack ?? "" } },
+          tags: { boundary: this.props.name ?? "unknown" },
+        });
+      })
+      .catch((err: unknown) => {
+        console.warn("[ErrorBoundary] Sentry capture failed:", err);
+      });
   }
 
   render() {

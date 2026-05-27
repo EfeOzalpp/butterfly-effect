@@ -11,6 +11,8 @@ state.ts            engine-owned default state factories
 loop.ts             per-frame orchestration
 scheduler.ts        shared frame scheduling
 itemLifecycle.ts    appear/replay lifecycle for field items
+sceneSurfaceLifecycle.ts
+                    first-ready appear lifecycle for the canvas surface
 ```
 
 Rule of thumb:

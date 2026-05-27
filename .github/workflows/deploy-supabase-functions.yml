@@ -30,6 +30,9 @@ jobs:
       - name: Check save-user-response function
         run: deno check --config supabase/functions/save-user-response/deno.json supabase/functions/save-user-response/index.ts
 
+      - name: Check save-solo-message function
+        run: deno check --config supabase/functions/save-solo-message/deno.json supabase/functions/save-solo-message/index.ts
+
       - name: Check deployment secrets
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN" || (echo "Missing SUPABASE_ACCESS_TOKEN" && exit 1)
@@ -41,3 +44,6 @@ jobs:
 
       - name: Deploy save-user-response
         run: supabase functions deploy save-user-response --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy save-solo-message
+        run: supabase functions deploy save-solo-message --project-ref "$SUPABASE_PROJECT_REF"

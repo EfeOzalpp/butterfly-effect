@@ -8,6 +8,8 @@ export interface SurveyResponseLike {
   _id?: string;
   avgWeight?: number;
   weights?: Record<string, number>;
+  soloMessage?: string;
+  soloMessageUpdatedAt?: string;
 }
 
 export interface DotPoint {

@@ -2,6 +2,7 @@
 import { useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
+import type { Vec3 } from '../types';
 
 import useActivity from './controls/useActivity';
 import useZoom from './controls/useZoom';
@@ -67,6 +68,8 @@ export interface OrbitParams {
 
   minRadius?: number;
   maxRadius?: number;
+
+  dotPositions?: readonly Vec3[];
 }
 
 export interface OrbitReturn {
@@ -103,6 +106,8 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
 
     idle = {},
     thresholds = { mobile: 50, tablet: 65, desktop: 90 },
+
+    dotPositions,
   } = params;
 
   const {
@@ -177,6 +182,7 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
     radius,
     markActivity,
     gestureRef,
+    dotPositions,
   });
 
   const {

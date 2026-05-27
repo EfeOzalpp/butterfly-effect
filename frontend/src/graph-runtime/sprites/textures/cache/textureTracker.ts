@@ -1,9 +1,9 @@
-import * as THREE from 'three';
+import type { CanvasTexture } from 'three';
 
 // Global tracker for shared textures that need one route-level cleanup pass.
-const __GLOBAL_TEX = new Set<THREE.CanvasTexture>();
+const __GLOBAL_TEX = new Set<CanvasTexture>();
 
-export function trackTexture(tex: THREE.CanvasTexture): THREE.CanvasTexture {
+export function trackTexture(tex: CanvasTexture): CanvasTexture {
   __GLOBAL_TEX.add(tex);
   return tex;
 }

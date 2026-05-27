@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
 import { classifyPosition, getTieStats } from '../../gamification/rankLogic';
 import { useOptionalUiFlow } from '../../../app/state/ui-context';
+import { getSessionItem, removeSessionItems } from '../../../app/session';
 import type {
   DotGraphEntry,
   DotGraphPositionClass,
@@ -26,6 +27,7 @@ interface UsePersonalizationStateParams {
   fullData: DotGraphEntry[];
   shouldShowPersonalized: boolean;
   hasPersonalizedInDataset: boolean;
+  statsLoading: boolean;
 }
 
 export default function usePersonalizationState({
@@ -41,6 +43,7 @@ export default function usePersonalizationState({
   fullData,
   shouldShowPersonalized,
   hasPersonalizedInDataset,
+  statsLoading,
 }: UsePersonalizationStateParams) {
   const myShape = useMemo(
     () => shapes.find((shape) => shape._id === personalizedEntryId),
@@ -55,9 +58,9 @@ export default function usePersonalizationState({
   const ui = useOptionalUiFlow();
 
   const mySnapshot = useMemo(() => {
-    if (myEntry || typeof window === 'undefined') return null;
+    if (myEntry) return null;
     try {
-      const raw = sessionStorage.getItem('be.myDoc');
+      const raw = getSessionItem('be.myDoc');
       return raw ? (JSON.parse(raw) as DotGraphEntry) : null;
     } catch {
       return null;
@@ -112,14 +115,16 @@ export default function usePersonalizationState({
   const shouldRenderPersonalUI =
     showCompleteUI && shouldShowPersonalized && !!effectiveMyShape && !!effectiveMyEntry;
 
+  const shouldShowStatsLoading =
+    shouldRenderPersonalUI && (statsLoading || !myEntry?._id);
+
   const shouldRenderExtraPersonalSprite = shouldRenderPersonalUI && !hasPersonalizedInDataset;
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const wantOpen = sessionStorage.getItem('be.openPersonalOnNext') === '1';
+    const wantOpen = getSessionItem('be.openPersonalOnNext') === '1';
     if (!wantOpen) return;
     if (!shouldRenderPersonalUI) return;
-    sessionStorage.removeItem('be.openPersonalOnNext');
+    removeSessionItems(['be.openPersonalOnNext']);
     ui?.setOpenPersonalized(true);
   }, [shouldRenderPersonalUI, ui]);
 
@@ -130,6 +135,7 @@ export default function usePersonalizationState({
     myDisplayValue,
     myStats,
     myClass,
+    shouldShowStatsLoading,
     shouldRenderPersonalUI,
     shouldRenderExtraPersonalSprite,
   };

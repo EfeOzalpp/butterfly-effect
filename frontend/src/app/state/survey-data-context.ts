@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { SurveyRow } from "../types";
+import type { SurveyRow } from "../../services/sanity/types";
 
 export interface SurveyDataState {
   // Active section filter — e.g. 'all', 'all-students', 'fine-arts'

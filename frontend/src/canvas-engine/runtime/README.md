@@ -21,6 +21,8 @@ engine/types.ts         public controls and start options
 engine/field.ts         item payload contract
 engine/state.ts         runtime-owned defaults and mutable state shape
 engine/itemLifecycle.ts per-item appear/replay lifecycle state
+engine/sceneSurfaceLifecycle.ts
+                        first-ready canvas surface appear state
 shape-adapter/types.ts  runtime-safe shape options
 render/cache/*          shared offscreen cache mechanics
 render/passes/*         render-pass params local to each render helper
@@ -31,11 +33,11 @@ schedule an engine. It exists for alternate render paths, such as graph sprite
 texture generation, that need a p-like shape drawing surface on a caller-owned
 canvas.
 
-`EngineControls.setSceneProfile()` is the app-to-runtime scene handoff. The app
-resolves scene state into a lookup key, padding spec, background spec, and render
-cache policy before runtime receives it. The frame loop receives that same
-profile through `getProfile()` instead of separate scene/padding/background
-cache getters.
+`EngineControls.setSceneProfile()` is the host-to-runtime scene handoff. A
+canvas host resolves its explicit scene lookup key into a padding spec,
+background spec, and render cache policy before runtime receives it. The frame
+loop receives that same profile through `getProfile()` instead of separate
+scene/padding/background cache getters.
 
 Folder map:
 
@@ -83,7 +85,7 @@ The frame loop should receive prepared state and draw it. It should not rediscov
 That means expensive or stable work should usually happen before the loop, or be cached inside runtime helpers:
 
 ```txt
-scene rules -> resolved lookup key
+host definition -> scene lookup key -> scene rules
 grid-layout -> runtime/geometry/gridCache -> cached grid metrics
 field items -> prepared render order
 shape drawing -> registry lookup

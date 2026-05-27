@@ -1,8 +1,22 @@
 /* Navigation shell, logo, left panel, auto-adjust, mode-toggle, city, bottom */
 
-:root { --logo-wrap-w-desktop: 2.6rem; --logo-wrap-h-desktop: 2.6rem; --logo-w-desktop: 3.2rem; --logo-h-desktop: 3.2rem; --nav-control-h-desktop: 40px;
---logo-wrap-w-tablet: 2.6rem; --logo-wrap-h-tablet: 2.6rem; --logo-h-tablet: 3.2rem; --nav-control-h-tablet: 40px; 
-  --logo-wrap-w-mobile: 2.6rem; --logo-wrap-h-mobile: 2.6rem; --logo-h-mobile: 3.2rem; --nav-control-h-mobile: 40px; }
+:root {
+  --logo-wrap-w-desktop: 2.6rem;
+  --logo-wrap-h-desktop: 2.6rem;
+  --logo-w-desktop: 3.2rem;
+  --logo-h-desktop: 3.2rem;
+  --nav-control-h-desktop: 40px;
+  --logo-wrap-w-tablet: 2.6rem;
+  --logo-wrap-h-tablet: 2.6rem;
+  --logo-w-tablet: 3.2rem;
+  --logo-h-tablet: 3.2rem;
+  --nav-control-h-tablet: 40px;
+  --logo-wrap-w-mobile: 2.6rem;
+  --logo-wrap-h-mobile: 2.6rem;
+  --logo-w-mobile: 3.2rem;
+  --logo-h-mobile: 3.2rem;
+  --nav-control-h-mobile: 40px;
+}
 
 .navigation { position: absolute; inset: 0 0 auto 0; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; pointer-events: none; z-index: 202; gap: 0.2rem; }
 
@@ -58,7 +72,7 @@
 /* Bottom mode toggle — lives inside .bottom */
 .mode-toggle-wrap { display: flex; align-items: center; pointer-events: all; user-select: none; }
 
-.mode-toggle-switch { display: flex; gap: var(--space-sm); align-items: stretch; height: 48px; outline: none; }
+.mode-toggle-switch { display: flex; gap: var(--space-sm); align-items: stretch; outline: none; }
 
 .mode-toggle-label { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); padding: 0 0.9rem; text-align: center; color: var(--ui-text); font-size: var(--type-h4-size); line-height: var(--type-tight-line); font-family: var(--font-title); font-optical-sizing: auto; font-variation-settings: "wdth" 112.5, "GRAD" 0; background: var(--inactive-accent-color); border-radius: var(--btn-radius); border: none; cursor: pointer; pointer-events: all; transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease; }
 .mode-toggle-label:first-child { border-radius: var(--btn-radius) calc(var(--btn-radius) * 0.3) calc(var(--btn-radius) * 0.3) var(--btn-radius); }
@@ -152,7 +166,7 @@
   .bottom-right { right: 1.2rem; }
   .bottom { bottom: 1rem; }
   .nav-toggle, .system-color { height: var(--nav-control-h-mobile); }
-
+  .mode-toggle-switch { height: 40px; }
   .city-button-boundary { transform: translate(-50%, -7%); }
   .city-button:hover { transform: translateY(3%); }
   .city-chevron { width: 22px; height: 22px; }
@@ -188,6 +202,7 @@
 /* 1024px and above */
 @media (min-width: 1024px) {
   .bottom { bottom: 1rem; }
+  .mode-toggle-switch { height: 48px; }
 }
 
 /* 768 and above */
@@ -205,7 +220,7 @@
   .left { height: var(--logo-wrap-w-desktop, 76px); width: var(--logo-wrap-h-desktop, 76px); }
   .bottom-left { left: 1.8rem; }
 
-  .nav-toggle, .system-color { height: var(--nav-control-h); }
+  .nav-toggle, .system-color { height: var(--nav-control-h-desktop); }
 
   .city-button-boundary { transform: translate(-50%, -7%); }
   .city-button:hover { transform: translateY(3%); }

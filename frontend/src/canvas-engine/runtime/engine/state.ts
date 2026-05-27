@@ -7,6 +7,7 @@ import type { ParticleStore } from "../../modifiers/particles";
 import { DEBUG_DEFAULT, type DebugFlags } from "../debug";
 import type { EngineFieldItem } from "./field";
 import type { LiveState } from "./itemLifecycle";
+import type { SceneSurfaceLifecycleState } from "./sceneSurfaceLifecycle";
 
 export interface EngineStyle {
   // Base visual knobs. These are changed through controls.setFieldStyle().
@@ -47,6 +48,7 @@ export interface EngineRuntimeState {
 export interface EngineEffectState {
   liveStates: Map<string, LiveState>;
   particleStore: ParticleStore;
+  sceneSurface: SceneSurfaceLifecycleState;
 }
 
 // Baseline style. Factories below clone nested objects so engine instances

@@ -35,10 +35,14 @@ function reserveSingleTile(footprint: Place): Place {
 export default function ButtonQuestionnaireFlow({
   onAnswersUpdate,
   onSubmit,
+  showIntroHint = true,
+  onIntroHintShown,
   submitting,
 }: {
   onAnswersUpdate?: (answers: Record<string, number | null>) => void;
   onSubmit?: (answers: Record<string, number | null>) => void;
+  showIntroHint?: boolean;
+  onIntroHintShown?: () => void;
   submitting?: boolean;
 }) {
   const { setLiveAvg, setReservedFootprints } = useCanvasRuntime();
@@ -50,6 +54,7 @@ export default function ButtonQuestionnaireFlow({
   const [step, setStep] = useState(0);
   const [activeOptionsByQuestion, setActiveOptionsByQuestion] = useState<Record<string, string[]>>({});
   const [showQuestionHint, setShowQuestionHint] = useState(false);
+  const [shouldShowIntroHint] = useState(showIntroHint);
   const lastConsumedAdvanceTickRef = useRef(0);
   const {
     ready: gridReady,
@@ -141,8 +146,11 @@ export default function ButtonQuestionnaireFlow({
   ]);
 
   useEffect(() => {
+    if (!shouldShowIntroHint) return;
+
     const showTimer = window.setTimeout(() => {
       setShowQuestionHint(true);
+      onIntroHintShown?.();
     }, QUESTIONNAIRE_HINT_DELAY_MS);
 
     const hideTimer = window.setTimeout(() => {
@@ -153,7 +161,7 @@ export default function ButtonQuestionnaireFlow({
       window.clearTimeout(showTimer);
       window.clearTimeout(hideTimer);
     };
-  }, []);
+  }, [onIntroHintShown, shouldShowIntroHint]);
 
   useEffect(() => {
     if (!gridReady || !layout) {

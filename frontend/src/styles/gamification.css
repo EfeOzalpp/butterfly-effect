@@ -48,10 +48,67 @@
 .gam-inline-lines > span {
   display: block;
 }
+.solo-message-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+.solo-message-label {
+  align-self: flex-start;
+  color: var(--ui-text-muted);
+  font-size: var(--type-label-size);
+}
+.solo-message-input {
+  width: 100%;
+  min-height: 3.2rem;
+  resize: vertical;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-md);
+  background: var(--ui-bg-page);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: var(--type-label-size);
+  line-height: 1.3;
+  padding: 0.45rem 0.55rem;
+}
+.solo-message-input:focus {
+  outline: 2px solid var(--btn-primary-bg);
+  outline-offset: 2px;
+}
+.solo-message-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.solo-message-count,
+.solo-message-state {
+  color: var(--ui-text-muted);
+  font-size: var(--type-label-size);
+  margin: 0;
+}
+.solo-message-state.is-error {
+  color: var(--ui-danger, #b23b3b);
+}
+.solo-message-save {
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.4rem 0.65rem;
+}
+.solo-message-save:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
 .gam-general, .gam-general.is-team {
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
-  border-radius: var(--radius-hero);
+  border-radius: var(--radius-lg);
   padding: 0 var(--space-md) var(--space-md) var(--space-md);
   height: fit-content;
 }
@@ -111,7 +168,7 @@
   flex-direction: column;
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
-  border-radius: var(--radius-hero);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 .personalized-result .gam-general {

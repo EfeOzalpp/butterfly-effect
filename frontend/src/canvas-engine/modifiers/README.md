@@ -36,7 +36,8 @@ NumberRange       -> shape tunables resolved with resolveRangeValue()
 ```
 
 The engine does not import shape palettes. Runtime creates grouped draw options
-with scene state, then each shape resolves its own palette and tunables:
+from the resolved scene profile, then each shape resolves its own palette and
+tunables:
 
 ```txt
 runtime opts -> shape option groups -> shape tunables/palettes -> modifier helpers -> drawing

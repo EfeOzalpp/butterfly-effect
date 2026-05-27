@@ -1,11 +1,10 @@
 // src/app/state/useUiState.ts
 // Keeps UI-only state together so app-provider can focus on wiring contexts.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSessionItem, readStoredMode, setSessionItem } from '../session';
 
-import type { QuestionnaireNavState, SpotlightRequest } from './ui-context';
-import type { Mode } from '../types';
+import type { Mode, QuestionnaireNavState, SpotlightRequest } from './ui-context';
 
 const DEFAULT_QUESTIONNAIRE_NAV: QuestionnaireNavState = {
   step: 0,
@@ -23,13 +22,17 @@ function sameQuestionnaireNav(a: QuestionnaireNavState, b: QuestionnaireNavState
   );
 }
 
+function hasStoredSurveySession() {
+  return !!(getSessionItem('be.mySection') && getSessionItem('be.myEntryId'));
+}
+
 export default function useUiState() {
   const [isSurveyActive, setSurveyActive] = useState<boolean>(false);
-  const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(
-    () => !!(getSessionItem('be.mySection') && getSessionItem('be.myEntryId'))
-  );
+  const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(hasStoredSurveySession);
 
   const [questionnaireOpen, _setQuestionnaireOpen] = useState<boolean>(false);
+  const questionnaireOpenRef = useRef(false);
+  const graphOpenedFromQuestionnaireRef = useRef(false);
   const [sectionOpen, setSectionOpen] = useState<boolean>(false);
   const [cityPanelOpen, setCityPanelOpen] = useState<boolean>(false);
   const [questionnaireNav, _setQuestionnaireNav] = useState<QuestionnaireNavState>(
@@ -54,6 +57,7 @@ export default function useUiState() {
   }, []);
 
   const setQuestionnaireOpen = useCallback((v: boolean) => {
+    questionnaireOpenRef.current = v;
     _setQuestionnaireOpen(v);
     if (!v) {
       setCityPanelOpen(false);
@@ -62,15 +66,31 @@ export default function useUiState() {
   }, [resetQuestionnaireNav]);
 
   const [observerMode, setObserverMode] = useState<boolean>(false);
-  const [vizVisible, setVizVisible] = useState<boolean>(false);
+  const [vizVisible, _setVizVisible] = useState<boolean>(hasStoredSurveySession);
+  const vizVisibleRef = useRef(hasStoredSurveySession());
+  const setVizVisible = useCallback((v: boolean) => {
+    if (!v) graphOpenedFromQuestionnaireRef.current = false;
+    vizVisibleRef.current = v;
+    _setVizVisible(v);
+  }, []);
   const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [widgetsOpen, setWidgetsOpen] = useState<boolean>(false);
-  const openGraph = useCallback(() => { setVizVisible(true); }, []);
+  const openGraph = useCallback(() => {
+    if (!vizVisibleRef.current) {
+      graphOpenedFromQuestionnaireRef.current = questionnaireOpenRef.current;
+    }
+    setVizVisible(true);
+  }, [setVizVisible]);
   const closeGraph = useCallback(() => {
+    const shouldRestoreQuestionnaire = graphOpenedFromQuestionnaireRef.current;
+    if (shouldRestoreQuestionnaire) {
+      questionnaireOpenRef.current = true;
+      _setQuestionnaireOpen(true);
+    }
     setVizVisible(false);
     setLogsOpen(false);
     setWidgetsOpen(false);
-  }, []);
+  }, [setVizVisible]);
 
   const [surveyResetKey, setSurveyResetKey] = useState(0);
   const incrementSurveyResetKey = useCallback(() => { setSurveyResetKey((k) => k + 1); }, []);

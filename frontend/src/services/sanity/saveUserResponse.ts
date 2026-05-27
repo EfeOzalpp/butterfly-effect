@@ -1,6 +1,14 @@
 import { USE_MOCK_SANITY, enableMockSanityReadFallback, shouldUseMockSanityReads } from './config';
 import { createMockUserResponse } from './mockData';
 import type { SurveyWeights } from './types';
+import { getSessionItem, setSessionItem } from '../../app/session';
+import {
+  EdgeFunctionError,
+  getClientId,
+  getSupabaseEdgeConfig,
+  makeEdgeFunctionError,
+  makeRandomId,
+} from './edgeFunction';
 
 export interface SavedUserResponse {
   _id: string;
@@ -11,6 +19,8 @@ export interface SavedUserResponse {
   q4?: number;
   q5?: number;
   avgWeight?: number;
+  soloMessage?: string;
+  soloMessageUpdatedAt?: string;
   submittedAt?: string;
 }
 
@@ -19,27 +29,8 @@ interface EdgeSavePayload {
   weights: SurveyWeights;
   clientId: string;
   clientRequestId: string;
+  editToken?: string;
   website: string;
-}
-
-interface EdgeErrorBody {
-  error?: string;
-  code?: string;
-  resetAt?: string;
-}
-
-class EdgeSaveError extends Error {
-  readonly code?: string;
-  readonly status: number;
-  readonly resetAt?: string;
-
-  constructor(message: string, status: number, code?: string, resetAt?: string) {
-    super(message);
-    this.name = 'EdgeSaveError';
-    this.status = status;
-    this.code = code;
-    this.resetAt = resetAt;
-  }
 }
 
 const clamp01 = (v?: number) =>
@@ -48,19 +39,21 @@ const clamp01 = (v?: number) =>
 const round3 = (v?: number) =>
   typeof v === 'number' ? Math.round(v * 1000) / 1000 : undefined;
 
-function readErrorMessage(value: unknown): string | null {
-  if (!value || typeof value !== 'object') return null;
-  const record = value as Record<string, unknown>;
-  return typeof record.error === 'string' ? record.error : null;
-}
+const computeAvg = (weights: SurveyWeights) => {
+  const vals = [weights.q1, weights.q2, weights.q3, weights.q4, weights.q5].filter(
+    (x): x is number => Number.isFinite(x)
+  );
+  if (!vals.length) return undefined;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+};
 
-function readEdgeErrorBody(value: unknown): EdgeErrorBody {
-  if (!value || typeof value !== 'object') return {};
-  const record = value as Record<string, unknown>;
+function normalizeWeights(weights: SurveyWeights): SurveyWeights {
   return {
-    error: typeof record.error === 'string' ? record.error : undefined,
-    code: typeof record.code === 'string' ? record.code : undefined,
-    resetAt: typeof record.resetAt === 'string' ? record.resetAt : undefined,
+    q1: round3(clamp01(weights.q1)),
+    q2: round3(clamp01(weights.q2)),
+    q3: round3(clamp01(weights.q3)),
+    q4: round3(clamp01(weights.q4)),
+    q5: round3(clamp01(weights.q5)),
   };
 }
 
@@ -70,41 +63,79 @@ function isSavedUserResponse(value: unknown): value is SavedUserResponse {
   return typeof record._id === 'string';
 }
 
-function makeRandomId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
+export function ensureUserResponseEditToken(): string {
+  const existing = getSessionItem('be.myEditToken');
+  if (existing) return existing;
 
-function getClientId(): string {
-  if (typeof window === 'undefined') return makeRandomId();
-
-  const key = 'be.clientId';
-  try {
-    const existing = window.localStorage.getItem(key);
-    if (existing) return existing;
-
-    const next = makeRandomId();
-    window.localStorage.setItem(key, next);
-    return next;
-  } catch {
-    return makeRandomId();
-  }
+  const next = makeRandomId();
+  setSessionItem('be.myEditToken', next);
+  return next;
 }
 
 function shouldFallbackToMockWrite(error: unknown) {
-  return error instanceof EdgeSaveError && error.code === 'SANITY_WRITE_UNAVAILABLE';
+  return error instanceof EdgeFunctionError && error.code === 'SANITY_WRITE_UNAVAILABLE';
+}
+
+function shouldRetryWithoutEditToken(error: unknown) {
+  return (
+    error instanceof EdgeFunctionError &&
+    error.functionName === 'save-user-response' &&
+    error.status === 400 &&
+    /unexpected payload|edit token/i.test(error.message)
+  );
+}
+
+export function createOptimisticUserResponse(section: string, weights: SurveyWeights): SavedUserResponse {
+  const clamped = normalizeWeights(weights);
+  const submittedAt = new Date().toISOString();
+  const avgWeight = round3(computeAvg(clamped)) ?? 0.5;
+
+  return {
+    _id: `pending-${makeRandomId()}`,
+    section,
+    q1: clamped.q1 ?? 0.5,
+    q2: clamped.q2 ?? 0.5,
+    q3: clamped.q3 ?? 0.5,
+    q4: clamped.q4 ?? 0.5,
+    q5: clamped.q5 ?? 0.5,
+    avgWeight,
+    submittedAt,
+  };
+}
+
+export function persistUserResponseSession(created: SavedUserResponse, section: string) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    setSessionItem('be.myEntryId', created._id);
+    setSessionItem('be.mySection', section);
+    setSessionItem('be.justSubmitted', '1');
+  } catch (err) {
+    console.warn('[saveUserResponse] Failed to persist identity to browser storage:', err);
+  }
+
+  try {
+    const snapshot = {
+      _id: created._id,
+      section,
+      q1: created.q1,
+      q2: created.q2,
+      q3: created.q3,
+      q4: created.q4,
+      q5: created.q5,
+      avgWeight: created.avgWeight,
+      soloMessage: created.soloMessage,
+      soloMessageUpdatedAt: created.soloMessageUpdatedAt,
+      submittedAt: created.submittedAt,
+    };
+    setSessionItem('be.myDoc', JSON.stringify(snapshot));
+  } catch (err) {
+    console.warn('[saveUserResponse] Failed to persist snapshot to browser storage:', err);
+  }
 }
 
 export async function saveUserResponse(section: string, weights: SurveyWeights): Promise<SavedUserResponse> {
-  const clamped: SurveyWeights = {
-    q1: round3(clamp01(weights.q1)),
-    q2: round3(clamp01(weights.q2)),
-    q3: round3(clamp01(weights.q3)),
-    q4: round3(clamp01(weights.q4)),
-    q5: round3(clamp01(weights.q5)),
-  };
+  const clamped = normalizeWeights(weights);
 
   let created: SavedUserResponse;
   if (USE_MOCK_SANITY || shouldUseMockSanityReads()) {
@@ -120,61 +151,51 @@ export async function saveUserResponse(section: string, weights: SurveyWeights):
     }
   }
 
-  if (typeof window !== 'undefined') {
-    try {
-      sessionStorage.setItem('be.myEntryId', created._id);
-      sessionStorage.setItem('be.mySection', section);
-      sessionStorage.setItem('be.justSubmitted', '1');
-    } catch (err) {
-      console.warn('[saveUserResponse] Failed to persist identity to sessionStorage:', err);
-    }
-
-    try {
-      const snapshot = {
-        _id: created._id,
-        section,
-        q1: created.q1,
-        q2: created.q2,
-        q3: created.q3,
-        q4: created.q4,
-        q5: created.q5,
-        avgWeight: created.avgWeight,
-        submittedAt: created.submittedAt,
-      };
-      sessionStorage.setItem('be.myDoc', JSON.stringify(snapshot));
-    } catch (err) {
-      console.warn('[saveUserResponse] Failed to persist snapshot to sessionStorage:', err);
-    }
-  }
+  persistUserResponseSession(created, section);
 
   return created;
 }
 
 async function saveUserResponseViaEdge(section: string, weights: SurveyWeights): Promise<SavedUserResponse> {
-  const supabaseUrl: unknown = import.meta.env.VITE_SUPABASE_URL;
-  const supabasePublishableKey: unknown =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  if (typeof supabaseUrl !== 'string' || supabaseUrl.length === 0) {
-    throw new Error('Missing VITE_SUPABASE_URL');
-  }
-  if (typeof supabasePublishableKey !== 'string' || supabasePublishableKey.length === 0) {
-    throw new Error('Missing VITE_SUPABASE_PUBLISHABLE_KEY');
-  }
-
-  const payload: EdgeSavePayload = {
+  const edge = getSupabaseEdgeConfig();
+  const basePayload = {
     section,
     weights,
     clientId: getClientId(),
-    clientRequestId: makeRandomId(),
     // Quiet bot trap. The UI never fills this, so the edge function can reject it if it appears.
     website: '',
   };
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/save-user-response`, {
+  const payload: EdgeSavePayload = {
+    ...basePayload,
+    clientRequestId: makeRandomId(),
+    editToken: ensureUserResponseEditToken(),
+  };
+
+  try {
+    return await postSaveUserResponse(edge, payload);
+  } catch (error) {
+    if (!shouldRetryWithoutEditToken(error)) throw error;
+
+    console.warn(
+      '[saveUserResponse] save-user-response edge function does not accept editToken yet; retrying legacy payload.'
+    );
+    return await postSaveUserResponse(edge, {
+      ...basePayload,
+      clientRequestId: makeRandomId(),
+    });
+  }
+}
+
+async function postSaveUserResponse(
+  edge: ReturnType<typeof getSupabaseEdgeConfig>,
+  payload: EdgeSavePayload
+): Promise<SavedUserResponse> {
+  const res = await fetch(`${edge.url}/functions/v1/save-user-response`, {
     method: 'POST',
+    keepalive: true,
     headers: {
-      apikey: supabasePublishableKey,
+      apikey: edge.publishableKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
@@ -182,9 +203,12 @@ async function saveUserResponseViaEdge(section: string, weights: SurveyWeights):
 
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const edgeError = readEdgeErrorBody(json);
-    const message = readErrorMessage(json) ?? `Edge function request failed with status ${String(res.status)}`;
-    throw new EdgeSaveError(message, res.status, edgeError.code, edgeError.resetAt);
+    throw makeEdgeFunctionError(
+      'save-user-response',
+      res.status,
+      json,
+      `Edge function request failed with status ${String(res.status)}`
+    );
   }
 
   if (!isSavedUserResponse(json)) {

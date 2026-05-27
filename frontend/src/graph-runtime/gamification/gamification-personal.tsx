@@ -13,11 +13,13 @@ import {
 import { usePersonalizedPools } from "../../lib/hooks/useGamificationPools";
 import { useOptionalPreferences } from "../../app/state/preferences-context";
 import { useOptionalUiFlow } from "../../app/state/ui-context";
+import { saveSoloMessage } from "../../services/sanity/saveSoloMessage";
 
 const FADE_MS = 200;
 const PROX_THRESHOLD = 0.02;
 const CLOSE_GRACE_MS = 1000;
 const NEUTRAL = 'rgba(255,255,255,0.95)';
+type MessageStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 interface InlineLinesProps {
   children: React.ReactNode;
@@ -66,7 +68,7 @@ function classifyBand({ below: b, equal: e, above: a }: { below: number; equal: 
 }
 
 interface GamificationPersonalizedProps {
-  userData: { _id?: string } | null | undefined;
+  userData: { _id?: string; soloMessage?: string } | null | undefined;
   percentage: number | undefined;
   color: string;
   mode?: 'relative' | 'absolute';
@@ -77,6 +79,7 @@ interface GamificationPersonalizedProps {
   positionClass?: string;
   tieContext?: string;
   selectedSectionId?: string;
+  statsLoading?: boolean;
 }
 
 export default function GamificationPersonalized({
@@ -93,6 +96,7 @@ export default function GamificationPersonalized({
   tieContext: _tieContext,
 
   selectedSectionId: _selectedSectionId,
+  statsLoading = false,
 }: GamificationPersonalizedProps) {
   const darkMode = !!useOptionalPreferences()?.darkMode;
   const ui = useOptionalUiFlow();
@@ -101,6 +105,20 @@ export default function GamificationPersonalized({
 
   // Title stays in the CMS contract, but this panel only renders the secondary line.
   const [open, setOpen] = useState(true);
+  const [savedMessageOverride, setSavedMessageOverride] = useState<{
+    entryId: string;
+    value: string;
+  } | null>(null);
+  const [draftState, setDraftState] = useState<{
+    entryId: string;
+    value: string;
+    dirty: boolean;
+  } | null>(null);
+  const [messageStatus, setMessageStatus] = useState<{
+    entryId: string;
+    state: MessageStatus;
+    error: string;
+  } | null>(null);
 
   const [closingGrace, setClosingGrace] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,6 +134,25 @@ export default function GamificationPersonalized({
   const knobSample = useGradientColor(knobPct, DEFAULT_COLOR_OPTS);
   const { pick } = usePersonalizedPools();
   const knobColor = mode === 'absolute' ? knobSample.css : NEUTRAL;
+  const entryId = userData?._id ?? 'me';
+  const sourceSoloMessage = typeof userData?.soloMessage === 'string' ? userData.soloMessage : '';
+  const savedSoloMessage =
+    savedMessageOverride?.entryId === entryId ? savedMessageOverride.value : sourceSoloMessage;
+  const draftForEntry = draftState?.entryId === entryId ? draftState : null;
+  const messageDraft = draftForEntry?.dirty ? draftForEntry.value : savedSoloMessage;
+  const currentMessageStatus = messageStatus?.entryId === entryId ? messageStatus.state : 'idle';
+  const messageError = messageStatus?.entryId === entryId ? messageStatus.error : '';
+  const normalizedDraft = messageDraft.trim().replace(/\s+/g, ' ');
+  const normalizedSavedMessage = savedSoloMessage.trim().replace(/\s+/g, ' ');
+  const canSaveSoloMessage = Boolean(
+    mode === 'absolute' &&
+    userData?._id &&
+    !userData._id.startsWith('pending-')
+  );
+  const saveMessageDisabled =
+    currentMessageStatus === 'saving' ||
+    !canSaveSoloMessage ||
+    normalizedDraft === normalizedSavedMessage;
 
   const secondaryText = useMemo(() => {
     if (percentage === undefined || !userData) return '';
@@ -131,6 +168,31 @@ export default function GamificationPersonalized({
     const chosen = pick(safePct, 'gp', userData._id ?? 'me', fallbackBuckets);
     return mode === 'absolute' ? (chosen?.secondary ?? '') : '';
   }, [percentage, userData, safePct, pick, mode]);
+
+  const visibleSecondaryText = normalizedSavedMessage || secondaryText;
+
+  const handleSoloMessageSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (saveMessageDisabled) return;
+
+    setMessageStatus({ entryId, state: 'saving', error: '' });
+    try {
+      const updated = await saveSoloMessage(messageDraft);
+      const next = updated.soloMessage ?? '';
+      const nextEntryId = updated._id || entryId;
+      setSavedMessageOverride({ entryId: nextEntryId, value: next });
+      setDraftState({ entryId: nextEntryId, value: next, dirty: false });
+      setMessageStatus({ entryId: nextEntryId, state: 'saved', error: '' });
+    } catch (error) {
+      console.error('[GamificationPersonalized] save solo message failed:', error);
+      setMessageStatus({
+        entryId,
+        state: 'error',
+        error: error instanceof Error ? error.message : 'Message could not be saved.',
+      });
+    }
+  };
 
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
 
@@ -234,7 +296,9 @@ export default function GamificationPersonalized({
 
   // --- Personalized relative line (highlight only Top / Middle / Bottom words; numbers stay neutral) ---
   let relativeLine = null;
-  if (mode === 'relative') {
+  if (mode === 'relative' && statsLoading) {
+    relativeLine = <>Loading stats</>;
+  } else if (mode === 'relative') {
     const { band, tie, b: bb, e: ee, a: aa } = bandInfo;
 
     switch (band) {
@@ -328,8 +392,8 @@ export default function GamificationPersonalized({
             <CloseIcon className="ui-close" />
           </button>
           <div className={`gam-general${mode === 'relative' ? ' is-team' : ''}`}>
-            {mode === 'absolute' && secondaryText ? (
-              <h4 className="gam-subline">{secondaryText}</h4>
+            {mode === 'absolute' && visibleSecondaryText ? (
+              <h4 className="gam-subline">{visibleSecondaryText}</h4>
             ) : null}
             {mode === 'relative' ? (
               <p className="gam-general-copy">{line}</p>
@@ -341,6 +405,37 @@ export default function GamificationPersonalized({
                 /100
               </p>
             )}
+            {mode === 'absolute' ? (
+              <form className="solo-message-form" onSubmit={(event) => { void handleSoloMessageSubmit(event); }}>
+                <label className="solo-message-label" htmlFor={`${panelId}-message`}>Message</label>
+                <textarea
+                  id={`${panelId}-message`}
+                  className="solo-message-input"
+                  value={messageDraft}
+                  maxLength={160}
+                  rows={2}
+                  placeholder="Type a message..."
+                  disabled={currentMessageStatus === 'saving'}
+                  onClick={(event) => { event.stopPropagation(); }}
+                  onChange={(event) => {
+                    setDraftState({ entryId, value: event.currentTarget.value, dirty: true });
+                    setMessageStatus({ entryId, state: 'idle', error: '' });
+                  }}
+                />
+                <div className="solo-message-actions">
+                  <span className="solo-message-count">{160 - messageDraft.length}</span>
+                  <button
+                    type="submit"
+                    className="solo-message-save"
+                    disabled={saveMessageDisabled}
+                  >
+                    {currentMessageStatus === 'saving' ? 'Saving' : 'Save'}
+                  </button>
+                </div>
+                {currentMessageStatus === 'saved' ? <p className="solo-message-state">Saved</p> : null}
+                {messageError ? <p className="solo-message-state is-error">{messageError}</p> : null}
+              </form>
+            ) : null}
           </div>
         </div>
       )}

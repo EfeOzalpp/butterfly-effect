@@ -2,7 +2,7 @@
 
 import { SCENE_RULESETS } from "../scene-rules/registry";
 import type { SceneRuleSet } from "../scene-rules/profile";
-import type { BaseMode } from "../scene-state";
+import type { SceneLookupKey } from "../scene-state";
 import type { DprMode } from "../runtime/platform/viewport";
 
 // give the canvas the size you want
@@ -11,21 +11,17 @@ export type CanvasBounds =
   | { kind: "parent" }
   | { kind: "fixed"; w: number; h: number };
 
-export interface HostSignals {
-  questionnaireOpen?: boolean;
-}
-
 // Base shape
 interface HostDefBase {
   mount: string;
   zIndex: number;
   dprMode: DprMode;
   fpsCap?: number;
-  canvasDimensions?: CanvasBounds | ((signals: HostSignals) => CanvasBounds);
+  canvasDimensions?: CanvasBounds;
   stopOnOpen?: readonly string[];
   scene?: {
-    baseMode?: BaseMode;   // "start" | "city"
-    ruleset: SceneRuleSet; // getProfile(SceneState, SceneProfileContext)
+    lookupKey: SceneLookupKey;
+    ruleset: SceneRuleSet;
   };
 }
 
@@ -38,7 +34,17 @@ export const HOST_DEFS = defineHosts({
     dprMode: "cap1_5",
     fpsCap: 30,
     canvasDimensions: { kind: "parent" },
-    scene: { baseMode: "start", ruleset: SCENE_RULESETS.intro },
+    scene: { lookupKey: "start", ruleset: SCENE_RULESETS.intro },
+  },
+
+  questionnaire: {
+    mount: "#questionnaire-canvas-root",
+    zIndex: 2,
+    dprMode: "cap1_5",
+    fpsCap: 30,
+    stopOnOpen: ["start"],
+    canvasDimensions: { kind: "parent" },
+    scene: { lookupKey: "questionnaire", ruleset: SCENE_RULESETS.intro },
   },
 
   city: {
@@ -46,9 +52,9 @@ export const HOST_DEFS = defineHosts({
     zIndex: 60,
     dprMode: "fixed1",
     fpsCap: 60,
-    stopOnOpen: ["start"],
+    stopOnOpen: ["start", "questionnaire"],
     canvasDimensions: { kind: "viewport" },
-    scene: { baseMode: "city", ruleset: SCENE_RULESETS.city },
+    scene: { lookupKey: "city", ruleset: SCENE_RULESETS.city },
   },
 } as const);
 

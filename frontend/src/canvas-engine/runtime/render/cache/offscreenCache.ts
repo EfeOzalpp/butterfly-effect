@@ -88,6 +88,26 @@ export function clearOffscreenEntry(entry: OffscreenCacheEntry) {
   entry.ctx.clearRect(0, 0, entry.canvas.width, entry.canvas.height);
 }
 
+export function drawCanvasLayer(
+  p: PLike,
+  entry: OffscreenCacheEntry,
+  compositeAlpha = 1
+) {
+  const alpha = Math.max(0, Math.min(1, compositeAlpha));
+  if (alpha <= 0) return;
+
+  const ctx = p.drawingContext;
+  if (alpha >= 1) {
+    ctx.drawImage(entry.canvas, 0, 0);
+    return;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(entry.canvas, 0, 0);
+  ctx.restore();
+}
+
 export function getOrCreateCanvasLayer(
   cache: OffscreenCache,
   p: PLike,

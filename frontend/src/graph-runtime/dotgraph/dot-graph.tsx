@@ -27,7 +27,7 @@ export default function DotGraph() {
   const { darkMode } = usePreferences();
   const { observerMode, mode } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
-  const { section, data: fullSurveyData } = useSurveyData();
+  const { section, data: fullSurveyData, loading } = useSurveyData();
 
   const {
     safeData,
@@ -90,6 +90,7 @@ export default function DotGraph() {
     fullData: fullSurveyData,
     shouldShowPersonalized: personalizationGate.shouldShowPersonalized,
     hasPersonalizedInDataset: personalizationGate.hasPersonalizedInDataset,
+    statsLoading: loading,
   });
 
   const calcValueForAvg = useCallback(
@@ -166,6 +167,7 @@ export default function DotGraph() {
           section={section}
           myStats={personalization.myStats}
           myClass={personalization.myClass}
+          statsLoading={personalization.shouldShowStatsLoading}
           setPersonalOpen={personalizationGate.setPersonalOpen}
           darkMode={darkMode}
         />

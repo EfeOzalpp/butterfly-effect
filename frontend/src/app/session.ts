@@ -1,31 +1,59 @@
-import type { Mode } from "./types";
+import type { Mode } from "./state/ui-context";
 
-export function getSessionItem(key: string): string | null {
-  if (typeof window === "undefined") return null;
+const LOCAL_BACKED_KEYS = new Set([
+  "be.myEntryId",
+  "be.mySection",
+  "be.myRole",
+  "be.myDoc",
+  "be.myEditToken",
+  "be.justSubmitted",
+  "be.openPersonalOnNext",
+]);
+
+function readStorage(storage: Storage | undefined, key: string): string | null {
+  if (!storage) return null;
   try {
-    return sessionStorage.getItem(key);
+    return storage.getItem(key);
   } catch {
     return null;
   }
 }
 
-export function setSessionItem(key: string, value: string) {
-  if (typeof window === "undefined") return;
+function writeStorage(storage: Storage | undefined, key: string, value: string) {
+  if (!storage) return;
   try {
-    sessionStorage.setItem(key, value);
+    storage.setItem(key, value);
   } catch {
     return;
   }
 }
 
+function removeStorage(storage: Storage | undefined, key: string) {
+  if (!storage) return;
+  try {
+    storage.removeItem(key);
+  } catch {
+    return;
+  }
+}
+
+export function getSessionItem(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  return readStorage(window.sessionStorage, key) ??
+    (LOCAL_BACKED_KEYS.has(key) ? readStorage(window.localStorage, key) : null);
+}
+
+export function setSessionItem(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  writeStorage(window.sessionStorage, key, value);
+  if (LOCAL_BACKED_KEYS.has(key)) writeStorage(window.localStorage, key, value);
+}
+
 export function removeSessionItems(keys: string[]) {
   if (typeof window === "undefined") return;
   for (const key of keys) {
-    try {
-      sessionStorage.removeItem(key);
-    } catch {
-      continue;
-    }
+    removeStorage(window.sessionStorage, key);
+    if (LOCAL_BACKED_KEYS.has(key)) removeStorage(window.localStorage, key);
   }
 }
 

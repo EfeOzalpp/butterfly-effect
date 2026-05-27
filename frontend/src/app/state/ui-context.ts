@@ -2,7 +2,8 @@
 // App-level UI contract shared by navigation, onboarding, and graph views.
 
 import { createContext, useContext } from "react";
-import type { Mode } from "../types";
+
+export type Mode = "relative" | "absolute";
 
 export interface QuestionnaireNavState {
   step: number;
@@ -27,7 +28,7 @@ export interface UiState {
   // Onboarding shell state: role -> section -> questions.
   isSurveyActive: boolean;
   setSurveyActive: (v: boolean) => void;
-  // Persists across resetToStart so reloads can skip the survey.
+  // True after submit; reload bootstrap can restore it from saved response keys.
   hasCompletedSurvey: boolean;
   setHasCompletedSurvey: (v: boolean) => void;
   // Drives canvas resizing while the question UI is active.

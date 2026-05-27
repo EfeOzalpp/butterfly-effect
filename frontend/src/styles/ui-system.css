@@ -147,7 +147,6 @@ button.questionnaire:hover .questionnaire__inner,
 button.section-continue-button:hover .section-continue-button__inner {
   padding: var(--btn-primary-padding-hover);
   background: var(--btn-primary-hover-bg);
-  box-shadow: 0 0 24px var(--btn-box-shadow);
 }
 
 /* questionnaire disabled state */
@@ -174,7 +173,7 @@ button.questionnaire[aria-disabled="true"]:hover .questionnaire__inner {
 /* ── Secondary before / ghost (reserves hover width) ─────────────── */
 
 button.city-button::before {
-  content: "";
+  content: attr(data-label);
   grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
@@ -183,6 +182,8 @@ button.city-button::before {
   visibility: hidden;
   white-space: nowrap;
   padding: var(--btn-secondary-padding-hover);
+  font: inherit;
+  font-weight: inherit;
   line-height: 1;
 }
 

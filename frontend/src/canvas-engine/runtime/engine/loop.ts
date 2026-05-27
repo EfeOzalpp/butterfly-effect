@@ -31,6 +31,10 @@ import { drawItemFromRegistry } from "../shape-adapter/draw";
 import type { RuntimeShapeServices } from "../shape-adapter/registry";
 import type { RuntimeShapeOptions } from "../shape-adapter/types";
 import type { RuntimeSurface } from "../p/makeP";
+import {
+  clearSceneSurfaceToUnderpaint,
+  resolveSceneSurfaceFrame,
+} from "./sceneSurfaceLifecycle";
 
 import type { EngineFieldItem } from "./field";
 import type { EngineEffectState, EngineRuntimeState } from "./state";
@@ -191,6 +195,10 @@ export function createEngineTicker(deps: LoopDeps) {
 
     normalizeDprTransform(surface.p);
     const sceneProfile = sceneSource.getProfile();
+    const sceneSurface = resolveSceneSurfaceFrame(effects.sceneSurface, {
+      nowMs: now,
+      ready: sceneProfile.background != null,
+    });
     const liveAvgSignal = engine.inputs.liveAvg;
     const spec = getPaddingSpecForState(
       surface.p.width,
@@ -212,6 +220,7 @@ export function createEngineTicker(deps: LoopDeps) {
 
     return {
       sceneProfile,
+      sceneSurface,
       liveAvgSignal,
       spec,
       grid,
@@ -223,25 +232,28 @@ export function createEngineTicker(deps: LoopDeps) {
   type SceneFrameContext = ReturnType<typeof prepareSceneFrame>;
 
   function renderBackgroundPass(frame: SceneFrameContext) {
+    if (!frame.sceneSurface.ready) return;
     bgCache(
       surface.p,
       frame.sceneProfile.lookupKey,
       frame.sceneProfile.background,
       frame.liveAvgSignal,
-      frame.backgroundAnchors
+      frame.backgroundAnchors,
+      frame.sceneSurface.alpha
     );
   }
 
   function renderAtmospherePass(frame: SceneFrameContext) {
+    if (!frame.sceneSurface.ready) return;
     drawBackgroundStarsOnly(
       surface.p,
       frame.sceneProfile.lookupKey,
       frame.sceneProfile.background,
-      1,
+      frame.sceneSurface.alpha,
       frame.liveAvgSignal,
       starGeometryCache
     );
-    fogLayerCache(surface.p, frame.fog);
+    fogLayerCache(surface.p, frame.fog, frame.sceneSurface.alpha);
   }
 
   function renderDebugPass(frame: SceneFrameContext) {
@@ -307,6 +319,7 @@ export function createEngineTicker(deps: LoopDeps) {
       },
       lifecycle: {
         timeMs: tMs,
+        dtSec: surface.p.deltaTime / 1000,
       },
       particles: {
         particleStore: effects.particleStore,
@@ -330,6 +343,7 @@ export function createEngineTicker(deps: LoopDeps) {
       metrics: frame.grid.metrics,
       light: frame.sceneLight,
       alpha: engine.style.darkMode ? 0.18 : 0.11,
+      compositeAlpha: frame.sceneSurface.alpha,
       minRow: 0,
     });
   }
@@ -356,6 +370,7 @@ export function createEngineTicker(deps: LoopDeps) {
     if (!running) return;
 
     const sceneFrame = prepareSceneFrame(now);
+    if (sceneFrame.sceneSurface.appearing) clearSceneSurfaceToUnderpaint(surface.p);
     renderBackgroundPass(sceneFrame);
     renderAtmospherePass(sceneFrame);
     renderDebugPass(sceneFrame);

@@ -33,11 +33,12 @@ function findActiveGridHost(
     if (cityHost instanceof HTMLElement) return cityHost;
   }
 
+  const questionnaireCanvas = document.getElementById("questionnaire-canvas-root");
   const questionnaireHost = document.querySelector(".onboarding-canvas.questionnaire-active");
   const canvasRoot = document.getElementById("canvas-root");
 
   const onboardingHost = preferQuestionnaireHost
-    ? questionnaireHost ?? canvasRoot ?? document.querySelector(".onboarding-canvas")
+    ? questionnaireCanvas ?? questionnaireHost ?? canvasRoot ?? document.querySelector(".onboarding-canvas")
     : canvasRoot ?? questionnaireHost ?? document.querySelector(".onboarding-canvas");
 
   return onboardingHost instanceof HTMLElement ? onboardingHost : null;

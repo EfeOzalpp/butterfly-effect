@@ -8,7 +8,7 @@ import {
   readStoredDarkMode,
   setSessionItem,
 } from '../session';
-import { invalidateSpriteTexturesForThemeChange } from '../../graph-runtime/sprites/entry';
+import { invalidateSpriteTexturesForThemeChange } from '../../graph-runtime/sprites/theme';
 
 export default function usePreferencesState() {
   const [darkMode, setDarkMode] = useState<boolean>(() => readStoredDarkMode(true));

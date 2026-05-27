@@ -4,6 +4,7 @@ import type { PLike } from "../../../p/makeP";
 import {
   clearOffscreenEntry,
   createOffscreenCache,
+  drawCanvasLayer,
   getOrCreateCanvasLayer,
 } from "../../cache/offscreenCache";
 import { resolveHorizonRow } from "../shared/horizon";
@@ -302,7 +303,7 @@ export function createFogLayerCache() {
   const cache = createOffscreenCache();
   let cacheKey = "";
 
-  const drawFogLayerCached = function drawFogLayerCached(p: PLike, fog: FogState | null) {
+  const drawFogLayerCached = function drawFogLayerCached(p: PLike, fog: FogState | null, compositeAlpha = 1) {
     if (!fog) return;
 
     const w = p.width;
@@ -337,8 +338,7 @@ export function createFogLayerCache() {
       cacheKey = key;
     }
 
-    const ctx = p.drawingContext;
-    ctx.drawImage(entry.canvas, 0, 0);
+    drawCanvasLayer(p, entry, compositeAlpha);
   };
 
   return Object.assign(drawFogLayerCached, {

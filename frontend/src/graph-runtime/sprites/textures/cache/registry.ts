@@ -1,5 +1,9 @@
 // graph-runtime/sprites/textures/cache/registry.ts
-import * as THREE from 'three';
+import {
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  type CanvasTexture,
+} from 'three';
 import { makeTextureFromDrawer } from '../makeTextureFromDrawer';
 import type { DrawerFn } from '../../selection/drawers';
 
@@ -27,12 +31,12 @@ export interface MakeArgs {
   pixelScaleBoost?: number;
 }
 
-type Listener = (key: string, tex: THREE.CanvasTexture) => void;
+type Listener = (key: string, tex: CanvasTexture) => void;
 
 // Static texture cache with in-flight protection. Multiple sprites can ask for
 // the same key without building the same canvas twice.
 class TextureRegistry {
-  private cache = new Map<string, THREE.CanvasTexture>();
+  private cache = new Map<string, CanvasTexture>();
   private inFlight = new Set<string>();
   private listeners = new Set<Listener>();
 
@@ -55,7 +59,7 @@ class TextureRegistry {
     this.inFlight.add(key);
     // Actual canvas work is queued so creating textures does not block render.
     enqueueTexture(() => {
-      let tex: THREE.CanvasTexture | null = null;
+      let tex: CanvasTexture | null = null;
       try {
         tex = makeTextureFromDrawer({
           drawer: args.drawer,
@@ -73,8 +77,8 @@ class TextureRegistry {
         });
         tex.generateMipmaps = true;
         tex.anisotropy = isMobileDevice ? 4 : 8;
-        tex.minFilter = THREE.LinearMipmapLinearFilter;
-        tex.magFilter = THREE.LinearFilter;
+        tex.minFilter = LinearMipmapLinearFilter;
+        tex.magFilter = LinearFilter;
         tex.needsUpdate = true;
 
         if (!disableCache) this.cache.set(key, tex);

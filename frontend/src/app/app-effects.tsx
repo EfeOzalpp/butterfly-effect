@@ -1,11 +1,14 @@
 // src/app/app-effects.tsx
 // Browser-only app shell effects live here so main.tsx stays readable.
 
-import { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 
-import GamificationCopyPreloader from "../lib/hooks/useGamificationTextPreload";
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
 import { useMockBanner } from "./useMockBanner";
+
+const GamificationCopyPreloader = React.lazy(() =>
+  import("../lib/hooks/useGamificationTextPreload")
+);
 
 interface IdleWindow {
   requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -45,7 +48,11 @@ export function DeferredGamificationPreloader() {
     });
   }, []);
 
-  return start ? <GamificationCopyPreloader /> : null;
+  return start ? (
+    <Suspense fallback={null}>
+      <GamificationCopyPreloader />
+    </Suspense>
+  ) : null;
 }
 
 export function AppBrowserPolicies({
@@ -56,12 +63,14 @@ export function AppBrowserPolicies({
     ? [
         ".graph-container",
         ".dot-graph-container",
+        "#questionnaire-canvas-root",
         "#city-canvas-root",
       ]
     : [
         ".graph-container",
         ".dot-graph-container",
         "#canvas-root",
+        "#questionnaire-canvas-root",
         "#city-canvas-root",
       ];
 
@@ -74,6 +83,7 @@ export function AppBrowserPolicies({
     // When users leave the graph, the onboarding canvas is likely next.
     return scheduleIdle(() => {
       void import("../canvas-instances/OnboardingEntry");
+      void import("../canvas-instances/QuestionnaireEntry");
     });
   }, [vizVisible]);
 

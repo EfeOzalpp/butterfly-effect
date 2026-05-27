@@ -11,8 +11,9 @@ export type {
   SolidBackgroundSpec,
   BackgroundSpec,
   BackgroundsByMode,
-  StartBackgroundLookupKey,
-  StartBackgroundsByMode,
+  IntroBackgroundLookupKey,
+  IntroBackgroundsByMode,
+  CityBackgroundsByMode,
 } from "./types";
 
 export { BACKGROUNDS_LIGHT, BACKGROUNDS_START_DARK } from "./start";

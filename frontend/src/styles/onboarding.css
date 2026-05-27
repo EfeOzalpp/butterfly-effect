@@ -173,7 +173,7 @@
   font-optical-sizing: auto;
   font-variation-settings: "wdth" 112.5, "GRAD" 0;
   font-size: var(--type-h4-size);
-  line-height: var(--tyle-h4-line);
+  line-height: var(--type-h4-line);
   font-weight: 420;
   text-align: left;
 }

@@ -9,12 +9,21 @@ export interface RuntimeSurface {
   p: PLike;
 }
 
+const DEFAULT_FRAME_DELTA_MS = 1000 / 60;
+const MAX_FRAME_DELTA_MS = 100;
+
 function rgbaCss(r: number, g: number, b: number, a: number): string {
   return `rgba(${String(r)},${String(g)},${String(b)},${String(a)})`;
 }
 
+function frameDeltaMs(now: number, last: number): number {
+  const raw = now - last;
+  if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_FRAME_DELTA_MS;
+  return Math.min(raw, MAX_FRAME_DELTA_MS);
+}
+
 export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): PLike {
-  let _delta = 16,
+  let _delta = DEFAULT_FRAME_DELTA_MS,
     _last = performance.now();
   const state = { doFill: true, doStroke: false, lineWidth: 1 };
 
@@ -241,7 +250,7 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
     },
 
     __tick(now) {
-      _delta = now - _last;
+      _delta = frameDeltaMs(now, _last);
       _last = now;
     },
   };

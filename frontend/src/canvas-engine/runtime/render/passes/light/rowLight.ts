@@ -7,6 +7,7 @@ import type { PLike } from "../../../p/makeP";
 import {
   clearOffscreenEntry,
   createOffscreenCache,
+  drawCanvasLayer,
   getOrCreateCanvasLayer,
 } from "../../cache/offscreenCache";
 
@@ -19,8 +20,8 @@ export function createRowLightCache() {
   let cacheKey = "";
 
   const drawRowLightCached = function drawRowLightCached(args: Parameters<typeof drawRowTopLightOverlay>[0]) {
-    const { p, metrics, light, alpha = 1, minRow = 0, maxRowExclusive } = args;
-    if (!light || alpha <= 0) return;
+    const { p, metrics, light, alpha = 1, compositeAlpha = 1, minRow = 0, maxRowExclusive } = args;
+    if (!light || alpha <= 0 || compositeAlpha <= 0) return;
 
     const w = p.width;
     const h = p.height;
@@ -51,8 +52,7 @@ export function createRowLightCache() {
       cacheKey = key;
     }
 
-    const ctx = p.drawingContext;
-    ctx.drawImage(entry.canvas, 0, 0);
+    drawCanvasLayer(p, entry, compositeAlpha);
   };
 
   return Object.assign(drawRowLightCached, {
@@ -68,11 +68,12 @@ export function drawRowTopLightOverlay(args: {
   metrics: GridMetrics;
   light: SceneLightContext | null;
   alpha?: number;
+  compositeAlpha?: number;
   minRow?: number;
   maxRowExclusive?: number;
 }) {
-  const { p, metrics, light, alpha = 1, minRow = 0, maxRowExclusive } = args;
-  if (!light || alpha <= 0) return;
+  const { p, metrics, light, alpha = 1, compositeAlpha = 1, minRow = 0, maxRowExclusive } = args;
+  if (!light || alpha <= 0 || compositeAlpha <= 0) return;
   const { rowHeights, rowOffsetY } = metrics;
   if (rowHeights.length < 1 || rowOffsetY.length < 1) return;
 
@@ -81,7 +82,7 @@ export function drawRowTopLightOverlay(args: {
   const maxBandH = Math.max(4, Math.min(18, p.height * 0.022));
 
   ctx.save();
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha = alpha * compositeAlpha;
 
   const sourceKx = clamp01(light.sourceX / p.width);
 

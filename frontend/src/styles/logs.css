@@ -38,8 +38,9 @@
 
 .logs-table-wrap { overflow-y: auto; flex: 1 1 auto; background: var(--ui-bg-surface); min-height: 220px; }
 
+.logs-table-wrap { scrollbar-width: thin; scrollbar-color: var(--scroll-bar) transparent; }
 .logs-table-wrap::-webkit-scrollbar { width: 6px; }
-.logs-table-wrap::-webkit-scrollbar-track { background: var(--ui-bg-surface); border-top: 8px solid transparent; border-bottom: 8px solid transparent; background-clip: padding-box; }
+.logs-table-wrap::-webkit-scrollbar-track { background: var(--ui-border); border-top: 6px solid transparent; border-bottom: 6px solid transparent; background-clip: padding-box; }
 .logs-table-wrap::-webkit-scrollbar-thumb { background: var(--scroll-bar); border-radius: 4px; }
 .logs-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--ui-text-secondary); }
 

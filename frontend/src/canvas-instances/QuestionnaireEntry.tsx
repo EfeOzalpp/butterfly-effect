@@ -1,20 +1,20 @@
-// src/canvas-instances/OnboardingEntry.tsx
+// src/canvas-instances/QuestionnaireEntry.tsx
 
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
 import { EngineHost } from "../canvas-engine/EngineHost";
 
-export default function CanvasEntry({ visible = true }: { visible?: boolean }) {
+export default function QuestionnaireEntry({ visible = true }: { visible?: boolean }) {
   const { liveAvg, reservedFootprints } = useCanvasRuntime();
 
   return (
     <div
-      className="onboarding-canvas"
+      className="onboarding-canvas questionnaire-active"
       role="img"
-      aria-label="Animated sustainability visualization"
+      aria-label="Animated sustainability questionnaire visualization"
     >
-      <div id="canvas-root" style={{ width: "100%", height: "100%" }} />
+      <div id="questionnaire-canvas-root" style={{ width: "100%", height: "100%" }} />
       <EngineHost
-        id="start"
+        id="questionnaire"
         open
         visible={visible}
         liveAvg={liveAvg}

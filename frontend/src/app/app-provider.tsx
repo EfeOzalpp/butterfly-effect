@@ -5,8 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { unstable_batchedUpdates as batched } from "react-dom";
 
 import { getSessionItem, removeSessionItems } from "./session";
-import { USE_MOCK_SANITY, shouldUseMockSanityReads } from "../services/sanity/config";
-import { clearMockSurveyState } from "../services/sanity/mockData";
+import { USE_MOCK_SANITY } from "../services/sanity/config";
 
 import useCanvasRuntimeState from "./state/useCanvasRuntimeState";
 import useIdentityState from "./state/useIdentityState";
@@ -116,8 +115,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       incrementSurveyResetKey();
     });
 
-    removeSessionItems(["be.myEntryId", "be.mySection", "be.myRole", "be.myDoc"]);
-    if (USE_MOCK_SANITY || shouldUseMockSanityReads()) clearMockSurveyState();
+    removeSessionItems([
+      "be.justSubmitted",
+      "be.openPersonalOnNext",
+    ]);
   }, [
     resetCanvasRuntimeState,
     setHasCompletedSurvey,

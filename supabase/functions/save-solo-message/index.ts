@@ -2,15 +2,12 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient as createSanityClient } from "npm:@sanity/client@6";
 import { createClient as createSupabaseClient } from "npm:@supabase/supabase-js@2";
 
-type QuestionKey = "q1" | "q2" | "q3" | "q4" | "q5";
-type Weights = Record<QuestionKey, number>;
-
 interface ValidPayload {
-  section: string;
-  weights: Weights;
+  responseId: string;
+  editToken: string;
+  message: string;
   clientId: string | null;
   clientRequestId: string | null;
-  editToken: string | null;
 }
 
 interface RateRule {
@@ -24,52 +21,27 @@ interface RateResult {
   resetAt?: string;
 }
 
-const MAX_BODY_BYTES = 4096;
-const QUESTION_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
+interface StoredResponse {
+  _id: string;
+  editTokenHash?: string;
+}
+
+interface SavedMessageResponse {
+  _id: string;
+  soloMessage?: string;
+  soloMessageUpdatedAt?: string;
+}
+
+const MAX_BODY_BYTES = 2048;
+const MAX_MESSAGE_LENGTH = 160;
 const TOP_LEVEL_KEYS = new Set([
-  "section",
-  "weights",
+  "responseId",
+  "editToken",
+  "message",
   "clientId",
   "clientRequestId",
-  "editToken",
   "website",
-  "startedAt",
 ]);
-
-const STUDENT_IDS = [
-  "3d-arts", "animation", "architecture", "art-education", "ceramics",
-  "communication-design", "creative-writing", "design-innovation", "digital-media",
-  "dynamic-media-institute", "fashion-design", "fibers", "film-video", "fine-arts-2d",
-  "furniture-design", "glass", "history-of-art", "humanities", "illustration",
-  "industrial-design", "integrative-sciences", "jewelry-metalsmithing", "liberal-arts",
-  "mfa-low-residency", "mfa-low-residency-foundation", "mfa-studio-arts",
-  "painting", "photography", "printmaking", "sculpture", "studio-arts",
-  "studio-interrelated-media", "studio-foundation", "visual-storytelling",
-  "fine-arts", "design", "foundations",
-] as const;
-
-const STAFF_IDS = [
-  "academic-affairs", "academic-resource-center", "administration-finance",
-  "administrative-services", "admissions", "artward-bound", "bookstore", "bursar",
-  "career-development", "center-art-community", "community-health", "compass",
-  "conference-event-services", "counseling-center", "facilities", "fiscal-accounting",
-  "fiscal-budget", "graduate-programs", "health-office", "housing-residence-life",
-  "human-resources", "institutional-advancement", "institutional-research",
-  "international-education", "justice-equity", "library", "marketing-communications",
-  "maam", "foundation", "president-office", "pce", "public-safety", "registrar",
-  "student-development", "student-engagement", "student-financial-assistance",
-  "sustainability", "technology", "woodshop", "youth-programs",
-] as const;
-
-const ALLOWED_SECTIONS = new Set<string>(["visitor", ...STUDENT_IDS, ...STAFF_IDS]);
-
-const QUESTION_WEIGHTS: Record<QuestionKey, readonly number[]> = {
-  q1: [1, 0.85, 0.67, 0.45, 0.25],
-  q2: [1, 0.95, 0.8, 0.6, 0.3, 0.05],
-  q3: [0.9, 0.75, 0.7, 0.6, 0.5, 0.1, 0.95],
-  q4: [1, 0.8, 0.65, 0.5, 0.2, 0],
-  q5: [1, 0.75, 0.5, 0.25, 0],
-};
 
 const rateLimitMemory = new Map<string, { count: number; resetAtMs: number }>();
 
@@ -128,37 +100,6 @@ const rateLimitClient = supabaseUrl && supabaseSecretKey
   ? createSupabaseClient(supabaseUrl, supabaseSecretKey)
   : null;
 
-const round3 = (value: number) => Math.round(value * 1000) / 1000;
-const answerKey = (value: number) => round3(value).toFixed(3);
-
-function buildAllowedAnswerSet(values: readonly number[]) {
-  const allowed = new Set<string>();
-  const maxMask = 1 << values.length;
-
-  for (let mask = 1; mask < maxMask; mask += 1) {
-    let sum = 0;
-    let count = 0;
-
-    for (let i = 0; i < values.length; i += 1) {
-      if ((mask & (1 << i)) === 0) continue;
-      sum += values[i];
-      count += 1;
-    }
-
-    allowed.add(answerKey(sum / count));
-  }
-
-  return allowed;
-}
-
-const VALID_ANSWERS: Record<QuestionKey, Set<string>> = {
-  q1: buildAllowedAnswerSet(QUESTION_WEIGHTS.q1),
-  q2: buildAllowedAnswerSet(QUESTION_WEIGHTS.q2),
-  q3: buildAllowedAnswerSet(QUESTION_WEIGHTS.q3),
-  q4: buildAllowedAnswerSet(QUESTION_WEIGHTS.q4),
-  q5: buildAllowedAnswerSet(QUESTION_WEIGHTS.q5),
-};
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -205,10 +146,23 @@ function readOptionalId(value: unknown) {
   return /^[a-zA-Z0-9_-]{8,96}$/.test(trimmed) ? trimmed : null;
 }
 
+function readResponseId(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^[a-zA-Z0-9._-]{8,128}$/.test(trimmed) ? trimmed : null;
+}
+
 function readEditToken(value: unknown) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return /^[a-zA-Z0-9_-]{32,128}$/.test(trimmed) ? trimmed : null;
+}
+
+function readMessage(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  if (trimmed.length > MAX_MESSAGE_LENGTH) return null;
+  return trimmed;
 }
 
 function validatePayload(value: unknown): { ok: true; payload: ValidPayload } | { ok: false; error: string } {
@@ -221,42 +175,23 @@ function validatePayload(value: unknown): { ok: true; payload: ValidPayload } | 
     return { ok: false, error: "Invalid payload" };
   }
 
-  const section = typeof value.section === "string" ? value.section.trim() : "";
-  if (!ALLOWED_SECTIONS.has(section)) return { ok: false, error: "Invalid section" };
+  const responseId = readResponseId(value.responseId);
+  if (!responseId) return { ok: false, error: "Invalid response id" };
 
-  if (!isRecord(value.weights)) return { ok: false, error: "Invalid weights" };
-  const hasEditToken = value.editToken !== undefined && value.editToken !== null;
-  const editToken = hasEditToken ? readEditToken(value.editToken) : null;
-  if (hasEditToken && !editToken) return { ok: false, error: "Invalid edit token" };
+  const editToken = readEditToken(value.editToken);
+  if (!editToken) return { ok: false, error: "Invalid edit token" };
 
-  const unknownWeightKeys = Object.keys(value.weights).filter((key) =>
-    !QUESTION_KEYS.includes(key as QuestionKey)
-  );
-  if (unknownWeightKeys.length > 0) return { ok: false, error: "Unexpected weight fields" };
-
-  const weights = {} as Weights;
-  for (const key of QUESTION_KEYS) {
-    const raw = value.weights[key];
-    if (typeof raw !== "number" || !Number.isFinite(raw)) {
-      return { ok: false, error: `Invalid ${key}` };
-    }
-
-    const rounded = round3(raw);
-    if (rounded < 0 || rounded > 1 || !VALID_ANSWERS[key].has(answerKey(rounded))) {
-      return { ok: false, error: `Invalid ${key}` };
-    }
-
-    weights[key] = rounded;
-  }
+  const message = readMessage(value.message);
+  if (message === null) return { ok: false, error: "Invalid message" };
 
   return {
     ok: true,
     payload: {
-      section,
-      weights,
+      responseId,
+      editToken,
+      message,
       clientId: readOptionalId(value.clientId),
       clientRequestId: readOptionalId(value.clientRequestId),
-      editToken,
     },
   };
 }
@@ -282,24 +217,23 @@ async function editTokenHash(value: string) {
 }
 
 async function buildRateRules(req: Request, payload: ValidPayload): Promise<RateRule[]> {
-  const salt = Deno.env.get("RATE_LIMIT_SALT") ?? "butterfly-effect-save-user-response";
+  const salt = Deno.env.get("RATE_LIMIT_SALT") ?? "butterfly-effect-save-solo-message";
   const ipHash = await sha256(`${salt}:ip:${getClientAddress(req)}`);
+  const responseHash = await sha256(`${salt}:response:${payload.responseId}`);
   const rules: RateRule[] = [
-    { key: `save-user-response:ip:${ipHash}:10m`, max: 5, windowSeconds: 10 * 60 },
-    { key: `save-user-response:ip:${ipHash}:day`, max: 30, windowSeconds: 24 * 60 * 60 },
+    { key: `save-solo-message:ip:${ipHash}:10m`, max: 20, windowSeconds: 10 * 60 },
+    { key: `save-solo-message:ip:${ipHash}:day`, max: 80, windowSeconds: 24 * 60 * 60 },
+    { key: `save-solo-message:response:${responseHash}:10m`, max: 8, windowSeconds: 10 * 60 },
   ];
 
   if (payload.clientId) {
     const clientHash = await sha256(`${salt}:client:${payload.clientId}`);
-    rules.push(
-      { key: `save-user-response:client:${clientHash}:1m`, max: 2, windowSeconds: 60 },
-      { key: `save-user-response:client:${clientHash}:day`, max: 12, windowSeconds: 24 * 60 * 60 },
-    );
+    rules.push({ key: `save-solo-message:client:${clientHash}:10m`, max: 10, windowSeconds: 10 * 60 });
   }
 
   if (payload.clientId && payload.clientRequestId) {
     const requestHash = await sha256(`${salt}:request:${payload.clientId}:${payload.clientRequestId}`);
-    rules.push({ key: `save-user-response:request:${requestHash}`, max: 1, windowSeconds: 24 * 60 * 60 });
+    rules.push({ key: `save-solo-message:request:${requestHash}`, max: 1, windowSeconds: 24 * 60 * 60 });
   }
 
   return rules;
@@ -332,7 +266,7 @@ async function consumeRateLimit(rule: RateRule): Promise<RateResult> {
   });
 
   if (result.error) {
-    console.warn("[save-user-response] persistent rate limit unavailable:", result.error.message);
+    console.warn("[save-solo-message] persistent rate limit unavailable:", result.error.message);
     return consumeMemoryRateLimit(rule);
   }
 
@@ -352,11 +286,6 @@ async function enforceRateLimits(req: Request, payload: ValidPayload) {
   }
 
   return { allowed: true } satisfies RateResult;
-}
-
-function avgWeight(weights: Weights) {
-  const sum = QUESTION_KEYS.reduce((acc, key) => acc + weights[key], 0);
-  return round3(sum / QUESTION_KEYS.length);
 }
 
 Deno.serve(async (req) => {
@@ -401,51 +330,54 @@ Deno.serve(async (req) => {
 
     const validation = validatePayload(parsed);
     if (!validation.ok) {
-      return jsonResponse(req, 400, { error: validation.error, code: "INVALID_SURVEY_RESPONSE" });
+      return jsonResponse(req, 400, { error: validation.error, code: "INVALID_SOLO_MESSAGE" });
     }
 
     const rateLimit = await enforceRateLimits(req, validation.payload);
     if (!rateLimit.allowed) {
       return jsonResponse(req, 429, {
-        error: "Too many submissions",
+        error: "Too many message updates",
         code: "RATE_LIMITED",
         ...(rateLimit.resetAt ? { resetAt: rateLimit.resetAt } : {}),
       });
     }
 
-    const submittedAt = new Date().toISOString();
-    const tokenHash = validation.payload.editToken
-      ? await editTokenHash(validation.payload.editToken)
-      : null;
-    const doc = {
-      _type: "userResponseV4",
-      section: validation.payload.section,
-      ...validation.payload.weights,
-      avgWeight: avgWeight(validation.payload.weights),
-      ...(tokenHash ? { editTokenHash: tokenHash } : {}),
-      submittedAt,
-    };
+    const existing = await sanity.fetch<StoredResponse | null>(
+      `*[!(_id in path("drafts.**")) && _type == "userResponseV4" && _id == $id][0]{ _id, editTokenHash }`,
+      { id: validation.payload.responseId },
+    );
 
-    let created: { _id: string };
-    try {
-      created = await sanity.create(doc);
-    } catch (error) {
-      console.error("[save-user-response] Sanity write failed:", error);
-      return jsonResponse(req, 503, {
-        error: "Unable to save response",
-        code: "SANITY_WRITE_UNAVAILABLE",
-      });
+    if (!existing) {
+      return jsonResponse(req, 404, { error: "Response not found", code: "RESPONSE_NOT_FOUND" });
     }
 
+    const expectedHash = await editTokenHash(validation.payload.editToken);
+    if (!existing.editTokenHash || existing.editTokenHash !== expectedHash) {
+      return jsonResponse(req, 403, { error: "Not allowed to edit this response", code: "EDIT_TOKEN_MISMATCH" });
+    }
+
+    const patch = sanity.patch(existing._id);
+    if (validation.payload.message.length > 0) {
+      patch.set({
+        soloMessage: validation.payload.message,
+        soloMessageUpdatedAt: new Date().toISOString(),
+      });
+    } else {
+      patch.unset(["soloMessage", "soloMessageUpdatedAt"]);
+    }
+
+    const updated = await patch.commit<SavedMessageResponse>({
+      returnDocuments: true,
+      visibility: "sync",
+    });
+
     return jsonResponse(req, 200, {
-      _id: created._id,
-      section: doc.section,
-      ...validation.payload.weights,
-      avgWeight: doc.avgWeight,
-      submittedAt,
+      _id: updated._id,
+      ...(updated.soloMessage ? { soloMessage: updated.soloMessage } : {}),
+      ...(updated.soloMessageUpdatedAt ? { soloMessageUpdatedAt: updated.soloMessageUpdatedAt } : {}),
     });
   } catch (error) {
-    console.error("[save-user-response] failed:", error);
-    return jsonResponse(req, 500, { error: "Unable to save response", code: "EDGE_FUNCTION_ERROR" });
+    console.error("[save-solo-message] failed:", error);
+    return jsonResponse(req, 500, { error: "Unable to save message", code: "EDGE_FUNCTION_ERROR" });
   }
 });

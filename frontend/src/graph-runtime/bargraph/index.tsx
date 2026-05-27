@@ -160,7 +160,7 @@ export default function BarGraph() {
       <div className="empty-center">
         <div className={`empty-card ${darkMode ? 'is-dark' : 'is-light'}`}>
           <EmptyStateArt className="empty-icon floaty" />
-          <h3>Nothing Yet...</h3>
+          <h4>Nothing yet...</h4>
         </div>
       </div>
     );

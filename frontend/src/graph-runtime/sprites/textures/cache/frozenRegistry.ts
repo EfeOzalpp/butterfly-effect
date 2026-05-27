@@ -1,5 +1,5 @@
 // graph-runtime/sprites/textures/cache/frozenRegistry.ts
-import * as THREE from 'three';
+import type { CanvasTexture } from 'three';
 import {
   particleCacheGet,
   particleCacheSet,
@@ -18,7 +18,7 @@ export function frozenGet(key: string) {
   return particleCacheGet(key);
 }
 
-export function frozenSet(key: string, tex: THREE.CanvasTexture) {
+export function frozenSet(key: string, tex: CanvasTexture) {
   if (spriteCachingDisabled()) return;
   particleCacheSet(key, tex);
 }

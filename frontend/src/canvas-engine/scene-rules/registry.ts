@@ -12,6 +12,6 @@ export const SCENE_RULESETS = {
   ),
 
   city: defineRuleSet("city", (state: SceneState, context: SceneProfileContext) =>
-    resolveProfile({ ...state, baseMode: "city" }, context)
+    resolveProfile(state, context)
   ),
 } as const;

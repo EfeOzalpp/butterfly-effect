@@ -24,6 +24,7 @@ interface PersonalizedLayerProps {
   section: string;
   myStats: DotGraphTieStats;
   myClass: DotGraphPositionClass;
+  statsLoading: boolean;
   setPersonalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   viewportClass?: string;
   darkMode?: boolean;
@@ -42,6 +43,7 @@ export default function PersonalizedLayer({
   section,
   myStats,
   myClass,
+  statsLoading,
   setPersonalOpen,
   viewportClass,
   darkMode = false,
@@ -95,6 +97,7 @@ export default function PersonalizedLayer({
               aboveCountStrict={myStats.above}
               positionClass={myClass.position}
               tieContext={myClass.tieContext}
+              statsLoading={statsLoading}
               onOpenChange={setPersonalOpen}
             />
           </div>

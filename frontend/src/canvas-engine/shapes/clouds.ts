@@ -21,6 +21,7 @@ import {
   finiteNumber,
   rowHeightAt,
   rowWidthAt,
+  shapeHash32,
 } from "../modifiers/index";
 import type { NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
@@ -221,7 +222,10 @@ export function drawClouds(
   if (!cell || !f) return;
 
   const t = ((typeof lifecycle.timeMs === 'number' ? lifecycle.timeMs : p.millis()) / 1000);
-  const seed = Number(identity.seed ?? 0) | 0;
+  const seedKey =
+    (identity.seedKey ?? identity.seed)
+    ?? `clouds|${String(f.r0)}:${String(f.c0)}|${String(f.w)}x${String(f.h)}`;
+  const seed = shapeHash32(String(seedKey)) | 0;
   const u = clamp01(style.liveAvg ?? 0.5);
 
   // Prefer the explicit dt from painter; fall back to p.deltaTime.
@@ -371,7 +375,7 @@ export function drawClouds(
 
     stepAndDrawParticles(p, {
       store: particles.particleStore,
-      key: `${String(f.r0)}:${String(f.c0)}:${String(f.w)}x${String(f.h)}:${String(seed)}:rain`,
+      key: `cloud-rain:${String(seedKey)}`,
       rect,
       mode: 'line',
       color: rainColor,

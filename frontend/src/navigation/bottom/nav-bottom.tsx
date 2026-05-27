@@ -184,6 +184,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
           <button
             type="button"
             className="city-button city-close-btn"
+            data-label={cityPanelOpen ? "Back" : "My city"}
             onClick={() => { setCityPanelOpen(!cityPanelOpen); }}
             aria-label={cityPanelOpen ? "Back to questionnaire" : "Open city view"}
           >

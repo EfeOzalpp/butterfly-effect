@@ -4,7 +4,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { AdaptiveDpr, AdaptiveEvents, Preload } from '@react-three/drei';
-import * as THREE from 'three';
+import {
+  ACESFilmicToneMapping,
+  SRGBColorSpace,
+  type WebGLRenderer,
+} from 'three';
 
 import DotGraph from "./dot-graph";
 
@@ -47,7 +51,7 @@ interface WebGLCanvasProps {
 
 // Owns the actual R3F canvas and the browser WebGL context lifecycle.
 function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const rendererRef = useRef<WebGLRenderer | null>(null);
 
   // New generation cancels any stale queued texture jobs
   useEffect(() => {
@@ -109,8 +113,8 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
         depth: true,
         alpha: true,
         preserveDrawingBuffer: false,
-        toneMapping: THREE.ACESFilmicToneMapping,
-        outputColorSpace: THREE.SRGBColorSpace,
+        toneMapping: ACESFilmicToneMapping,
+        outputColorSpace: SRGBColorSpace,
         // If iPad still flakes, try forcing WebGL1 on iOS only:
         // context: (canvas) => canvas.getContext('webgl', { alpha: true, antialias: !lowFidelity }),
       }}
@@ -174,9 +178,13 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
 
 // App-level gate around Canvas mount/unmount so reopening the graph does not reuse stale GPU work.
 const DotGraphCanvasHost = () => {
-  const { vizVisible } = useUiFlow();
+  const { vizVisible, logsOpen, widgetsOpen } = useUiFlow();
   const { data: surveyData, loading, section } = useSurveyData();
   const isRealMobile = useRealMobileViewport();
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
+  const emptyStateOffset = windowWidth > 1024 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
+  const emptyStateTransform = `translateX(${String(emptyStateOffset)}px)`;
 
   const safeData = surveyData;
 
@@ -235,6 +243,20 @@ const DotGraphCanvasHost = () => {
     <div className="graph-container" style={{ height: '100svh', width: '100%' }}>
       {!section ? (
         <p className="graph-loading">Pick a section to begin.</p>
+      ) : loading ? (
+        <div
+          className="graph-loading"
+          aria-busy="true"
+          aria-live="polite"
+          style={{
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <h3 style={{ transform: emptyStateTransform, transition: 'transform 0.2s ease' }}>Loading stats</h3>
+        </div>
       ) : safeData.length === 0 ? (
         <div
           className="graph-loading"
@@ -245,10 +267,8 @@ const DotGraphCanvasHost = () => {
             justifyContent: 'center',
           }}
         >
-          <h3>Nothing yet...</h3>
+          <h3 style={{ transform: emptyStateTransform, transition: 'transform 0.2s ease' }}>Nothing yet...</h3>
         </div>
-      ) : loading ? (
-        <div className="graph-loading" aria-busy="true" />
       ) : vizVisible && canMount ? (
         <WebGLCanvas
           key={mountVersion}

@@ -4,47 +4,58 @@
 flowchart TD
     User(["User"]) --> Landing
 
-    subgraph Landing ["Landing State"]
-        Landing["App loads\nCanvas animation plays\n'Butterfly Effect' title visible"]
+    subgraph LandingState ["Landing State"]
+        Landing["App loads\nCanvas animation plays\nButterfly Effect title visible"]
     end
 
     Landing --> Choice{{"First action?"}}
 
-    Choice -->|"Click 'View Now'"| Observer
+    Choice -->|"Click View Now"| Observer
     Choice -->|"Start survey"| Role
 
     subgraph ObserverPath ["Observer Mode"]
-        Observer["Skip survey\nSection defaults to 'fine-arts'"]
+        Observer["Skip survey\nOpen shared results without personal response"]
         Observer --> Graph
     end
 
     subgraph SurveyPath ["Onboarding Survey"]
-        Role["Select Role\nStudent · Staff · Visitor"]
+        Role["Select role\nStudent, staff, or visitor"]
         Role --> Section
-        Section["Select Section\n37 student / 44 staff departments"]
+        Section["Select section\nStudent / staff departments"]
         Section --> Questions
-        Questions["Answer 5 Questions\nmulti-select buttons\nlive canvas updates during interaction"]
+        Questions["Answer 5 questions\nButton selections drive live canvas feedback"]
         Questions --> Finish["Click Finish"]
     end
 
     subgraph Submit ["Submit"]
-        Finish --> Transform["Compute weights\nq1–q5 averaged from selections"]
-        Transform --> EdgeFn["Supabase Edge Function\nPOST save-user-response"]
-        EdgeFn --> Sanity[("Sanity CMS\nuserResponseV4 document created")]
-        EdgeFn --> Session["sessionStorage\nbe.mySection · be.myEntryId\nbe.myRole · be.myDoc"]
+        Finish --> Transform["Compute weights\nq1-q5 averaged from selections"]
+        Transform --> Token["Create or reuse browser edit token"]
+        Token --> EdgeFn["Supabase Edge Function\nPOST save-user-response"]
+        EdgeFn --> Sanity[("Sanity CMS\nuserResponseV4 document created\neditTokenHash stored")]
+        EdgeFn --> Session["session/local storage\nentry id, section, role, doc snapshot, raw edit token"]
     end
 
     Sanity --> Graph
 
     subgraph GraphView ["Graph View"]
-        Graph["Data Visualization opens\n3D dot graph — all responses"]
-        Graph --> SectionSwitch["Switch section filter\nstudents · staff · all · specific dept"]
-        Graph --> ModeToggle["Toggle view mode\nAbsolute ↔ Relative"]
+        Graph["Shared visualization opens\n3D dot graph of responses"]
+        Graph --> SectionSwitch["Switch section filter\nstudents, staff, all, or department"]
+        Graph --> ModeToggle["Toggle view mode\nAbsolute / relative"]
         Graph --> DarkToggle["Toggle dark / light mode"]
-        Graph --> Personalized["Personalized entry highlighted\n(submitted users only)"]
+        Graph --> Personalized["Personalized entry highlighted\nsubmitted users only"]
+        Personalized --> SoloMessage["Optional solo message\npatches only this response when edit token matches"]
     end
 
-    Graph --> Back["Click 'Back'"]
-    Back --> Reset["Clear all state\nClear sessionStorage"]
+    SoloMessage -->|"empty message"| FallbackCopy["Use personalized Sanity copy\nthen local fallback copy"]
+
+    Graph --> Back["Click Back"]
+    Back --> Reset["Clear visible app state\nKeep local response ownership"]
     Reset --> Landing
 ```
+
+## Notes
+
+- Observer mode can view shared results but cannot edit a personal response because it has no response id or edit token.
+- Submitted users can edit the solo message only while the browser still has the matching raw edit token.
+- Clicking Back returns to the landing flow without deleting the saved response keys.
+- Clearing browser storage intentionally removes that edit capability.
