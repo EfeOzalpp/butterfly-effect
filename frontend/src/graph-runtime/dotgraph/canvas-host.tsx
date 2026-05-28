@@ -15,6 +15,8 @@ import DotGraph from "./dot-graph";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
+import { DEFAULT_VIEWPORT_WIDTH, isMobileWidth } from "../../lib/responsive/breakpoints";
+import { desktopGraphToolsOffsetPx } from "../../lib/responsive/graph-tools-offset";
 
 import {
   bumpGeneration,
@@ -103,7 +105,8 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
 
   return (
     <Canvas
-      camera={{ position: [0, 0, 25], fov: 40 }}
+      camera={{ position: [0, 0, 25], fov: 40, near: 0.5, far: 2000 }}
+      raycaster={{ near: 0.5 }}
       dpr={dpr}
       shadows={!lowFidelity && !isIOS}
       gl={{
@@ -169,7 +172,7 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
       <DotGraph />
 
       {/* Perf helpers */}
-      <AdaptiveDpr pixelated />
+      <AdaptiveDpr />
       <AdaptiveEvents />
       <Preload all />
     </Canvas>
@@ -181,21 +184,22 @@ const DotGraphCanvasHost = () => {
   const { vizVisible, logsOpen, widgetsOpen } = useUiFlow();
   const { data: surveyData, loading, section } = useSurveyData();
   const isRealMobile = useRealMobileViewport();
-  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : DEFAULT_VIEWPORT_WIDTH;
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const emptyStateOffset = windowWidth > 1024 ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio : 0;
+  const emptyStateOffset = desktopGraphToolsOffsetPx(windowWidth, logsOpen, widgetsOpen, aspectRatio);
   const emptyStateTransform = `translateX(${String(emptyStateOffset)}px)`;
 
   const safeData = surveyData;
 
-  const isNarrow = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  const isNarrow = isMobileWidth(windowWidth);
   const lowFidelity = isRealMobile || isNarrow;
 
   // DPR clamp allows higher density on phones while keeping desktop GPU load bounded.
   const dpr = useMemo(() => {
     const max = typeof window !== 'undefined' ? window.devicePixelRatio || 1.5 : 1.5;
     const hi = isRealMobile ? Math.min(3, max) : Math.min(2, max);
-    return [1, hi] as [number, number];
+    const lo = isRealMobile ? Math.min(1.5, hi) : 1;
+    return [lo, hi] as [number, number];
   }, [isRealMobile]);
 
   // Fresh Canvas per open (new WebGL context every time)
@@ -255,7 +259,9 @@ const DotGraphCanvasHost = () => {
             justifyContent: 'center',
           }}
         >
-          <h3 style={{ transform: emptyStateTransform, transition: 'transform 0.2s ease' }}>Loading stats</h3>
+          <h3 className="graph-loading-word" style={{ transform: emptyStateTransform, transition: 'transform 0.2s ease' }}>
+            Loading...
+          </h3>
         </div>
       ) : safeData.length === 0 ? (
         <div

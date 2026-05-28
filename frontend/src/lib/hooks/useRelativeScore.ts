@@ -1,14 +1,9 @@
 import { useMemo } from 'react';
+import { avgWeightOf, type WithWeights } from '../utils/score';
 
 // src/lib/hooks/useRelativeScore.ts
 
 export type TiePolicy = 'strict' | 'lte';
-
-interface WithWeights {
-  _id?: string;
-  weights?: Record<string, number>;
-  avgWeight?: number;
-}
 
 interface RelativeScoreOptions<TItem extends WithWeights> {
   accessor?: (item: TItem) => number;
@@ -16,14 +11,7 @@ interface RelativeScoreOptions<TItem extends WithWeights> {
   idOf?: (item: TItem) => string | undefined;
 }
 
-// Prefer server avgWeight; otherwise mean(weights); fallback 0.5.
-export const avgWeightOf = (item: WithWeights): number => {
-  if (typeof item.avgWeight === 'number' && Number.isFinite(item.avgWeight)) {
-    return item.avgWeight;
-  }
-  const vals = Object.values(item.weights ?? {});
-  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0.5;
-};
+const defaultIdOf = (item: WithWeights) => item._id;
 
 export function useRelativeScores<TItem extends WithWeights>(
   items: TItem[],
@@ -31,7 +19,7 @@ export function useRelativeScores<TItem extends WithWeights>(
 ) {
   const accessor = opts?.accessor ?? avgWeightOf;
   const tie = opts?.tie ?? 'strict';
-  const idOf = opts?.idOf ?? ((item: TItem) => item._id);
+  const idOf = opts?.idOf ?? defaultIdOf;
 
   // Precompute once per data change
   const { sorted, idToValue } = useMemo(() => {

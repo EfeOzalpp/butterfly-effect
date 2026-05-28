@@ -2,12 +2,18 @@
 // Global round-robin epoch scheduler. Allocates refresh ticks only to
 // visible shapes so the budget concentrates on what the camera sees.
 
-const TICK_MS = 60;        // scheduler fires every 60ms
+import { deviceType, getViewportSize } from "../../../canvas-engine/shared/responsiveness";
+import { isConstrainedSpriteDevice } from "./spriteQuality";
 
-function shapesPerTick() {
-  if (typeof window === 'undefined') return 3;
-  const w = window.innerWidth;
-  return w >= 768 && w <= 1024 ? 5 : 3;
+const TICK_MS = 120;        // scheduler fires every 120ms
+
+function schedulerBudget() {
+  if (typeof window === 'undefined') return { perTick: 2, cadence: 1 };
+  const dev = deviceType(getViewportSize().w);
+  if (dev === 'mobile') return { perTick: 1, cadence: 1.2 };
+  if (dev === 'tablet') return { perTick: 1, cadence: 1.25 };
+  if (isConstrainedSpriteDevice(dev)) return { perTick: 1, cadence: 1.15 };
+  return { perTick: 2, cadence: 1 };
 }
 
 interface EntryInput {
@@ -24,6 +30,7 @@ type Entry = EntryInput & {
 const entries = new Map<string, Entry>();
 let keys: string[] = [];
 let rrIdx = 0;
+let intervalHandle: ReturnType<typeof setInterval> | null = null;
 
 function schedulerTick() {
   if (typeof document !== 'undefined' && document.hidden) return;
@@ -35,7 +42,7 @@ function schedulerTick() {
   }
   if (!visible.length) return;
 
-  const perTick = shapesPerTick();
+  const { perTick, cadence } = schedulerBudget();
   const naturalTurnMs = Math.max(TICK_MS, Math.ceil(visible.length / Math.max(1, perTick)) * TICK_MS);
 
   for (let i = 0; i < perTick; i++) {
@@ -43,17 +50,24 @@ function schedulerTick() {
     const entry = entries.get(k);
     if (entry) {
       entry.tick();
-      // Respect the requested cadence when the visible set is dense, but
-      // don't make sparse desktop scenes wait the full interval when the
-      // old round-robin would naturally cycle sooner.
-      entry.nextAtMs = now + Math.min(Math.max(TICK_MS, entry.intervalMs), naturalTurnMs);
+      // Never refresh faster than the requested cadence; dense visible sets
+      // stretch naturally so rebakes stay below the frame budget.
+      entry.nextAtMs = now + Math.ceil(Math.max(entry.intervalMs, naturalTurnMs) * cadence);
     }
     rrIdx = (rrIdx + 1) % visible.length;
   }
 }
 
-if (typeof window !== 'undefined') {
-  setInterval(schedulerTick, TICK_MS);
+function startScheduler() {
+  if (intervalHandle !== null || typeof window === 'undefined') return;
+  intervalHandle = setInterval(schedulerTick, TICK_MS);
+}
+
+function stopScheduler() {
+  if (intervalHandle === null) return;
+  clearInterval(intervalHandle);
+  intervalHandle = null;
+  rrIdx = 0;
 }
 
 let idCounter = 0;
@@ -67,8 +81,10 @@ export function registerEpochShape(entry: EntryInput): () => void {
   const nextAtMs = now + (idCounter % spreadSteps) * TICK_MS;
   entries.set(id, { ...entry, intervalMs, nextAtMs });
   keys = Array.from(entries.keys());
+  startScheduler();
   return () => {
     entries.delete(id);
     keys = Array.from(entries.keys());
+    if (entries.size === 0) stopScheduler();
   };
 }

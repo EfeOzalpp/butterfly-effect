@@ -12,6 +12,8 @@ import { spriteCachingDisabled } from '../../internal/debug-flags';
 // runtime from retrying expensive work every render.
 const FAILED_KEYS = new Set<string>();
 const INFLIGHT = new Set<string>();
+type ReadyListener = (key: string, tex: CanvasTexture) => void;
+const READY_LISTENERS = new Set<ReadyListener>();
 
 export function frozenGet(key: string) {
   if (spriteCachingDisabled()) return null;
@@ -21,6 +23,14 @@ export function frozenGet(key: string) {
 export function frozenSet(key: string, tex: CanvasTexture) {
   if (spriteCachingDisabled()) return;
   particleCacheSet(key, tex);
+  for (const listener of READY_LISTENERS) listener(key, tex);
+}
+
+export function frozenOnReady(listener: ReadyListener) {
+  READY_LISTENERS.add(listener);
+  return () => {
+    READY_LISTENERS.delete(listener);
+  };
 }
 
 export function frozenMarkFailed(key: string) {
@@ -48,6 +58,7 @@ export function frozenIsInflight(key: string) {
 export function frozenClearAll() {
   FAILED_KEYS.clear();
   INFLIGHT.clear();
+  READY_LISTENERS.clear();
   particleCacheClear();
 }
 

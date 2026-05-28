@@ -1,5 +1,7 @@
 // src/graph-runtime/dotgraph/utils/hoverViewport.ts
 
+import { isMobileWidth } from "../../../lib/responsive/breakpoints";
+
 export interface HoverViewportParams {
   x: number;
   y: number;
@@ -15,7 +17,7 @@ export function computeHoverViewportClass({
   height,
   useDesktopLayout,
 }: HoverViewportParams): string {
-  const isSmallScreen = width < 768;
+  const isSmallScreen = isMobileWidth(width);
   let cls = '';
 
   if (isSmallScreen || !useDesktopLayout) {

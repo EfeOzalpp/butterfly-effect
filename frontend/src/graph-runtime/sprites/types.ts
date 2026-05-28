@@ -13,7 +13,9 @@ export interface SpriteFootprint {
   h: number;
 }
 
-export interface SpriteBleed {
+// Tile-relative hitbox padding. Positive values grow the interaction bounds;
+// negative values shrink them inward from the footprint.
+export interface SpriteBoundsPadding {
   top?: number;
   right?: number;
   bottom?: number;
@@ -22,9 +24,10 @@ export interface SpriteBleed {
 
 export interface SpriteVisualLayout {
   scale: [number, number, number];
+  offset: [number, number, number];
   aspect: number;
   footprint: SpriteFootprint;
-  bleed: Required<SpriteBleed>;
+  boundsPadding: Required<SpriteBoundsPadding>;
 }
 
 export interface SpriteVisual {

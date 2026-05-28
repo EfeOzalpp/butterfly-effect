@@ -7,7 +7,7 @@ import {
   shouldUseMockSanityReads,
   subscribeMockSanityReadMode,
 } from '../../services/sanity/config';
-import { storageKeyFor, safeSession, bucketForPercent } from '../utils/color-and-interpolation';
+import { storageKeyFor, safeSession, bucketForPercent } from '../utils/session-cache';
 
 interface CopyDoc {
   _id: string;

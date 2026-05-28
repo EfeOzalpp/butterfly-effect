@@ -102,8 +102,12 @@ export function makeFrozenKey(args: {
   bucketId: number;
   variant: number;
   darkMode?: boolean;
+  pixelScaleBoost?: number;
 }) {
-  const { shape, tileSize, dpr, alpha, simulateMs, stepMs, bucketId, variant, darkMode } = args;
+  const { shape, tileSize, dpr, alpha, simulateMs, stepMs, bucketId, variant, darkMode, pixelScaleBoost } = args;
+  const boostSuffix = pixelScaleBoost !== undefined && pixelScaleBoost !== 1
+    ? `|PX${String(pixelScaleBoost)}`
+    : '';
   return [
     'SPRITE',
     shape,
@@ -112,8 +116,17 @@ export function makeFrozenKey(args: {
     String(tileSize),
     String(dpr),
     String(alpha),
-    `FROZEN_NATIVE_${String(Math.round(simulateMs))}_${String(Math.round(stepMs))}${darkMode ? '|DK' : ''}`,
+    `FROZEN_NATIVE_${String(Math.round(simulateMs))}_${String(Math.round(stepMs))}${darkMode ? '|DK' : ''}${boostSuffix}`,
   ].join('|');
+}
+
+export function makeSpriteSeedKey(args: {
+  shape: ShapeKey;
+  bucketId: number;
+  variant: number;
+}) {
+  const { shape, bucketId, variant } = args;
+  return ['SPRITE_SEED', shape, `B${String(bucketId)}`, `V${String(variant)}`].join('|');
 }
 
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {

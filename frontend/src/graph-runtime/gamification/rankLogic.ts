@@ -1,6 +1,6 @@
 // src/graph-runtime/gamification/rankLogic.ts
 
-import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
+import { avgWeightOf } from "../../lib/utils/score";
 import type {
   DotGraphEntry,
   DotGraphPositionClass,

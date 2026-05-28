@@ -1,5 +1,5 @@
 // src/graph-runtime/dotgraph/camera/useOrbitController.ts
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import type { Vec3 } from '../types';
@@ -172,6 +172,14 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
 
   void zoomVelRef; // keep side-effect-free if lint complains about unused
 
+  // Re-target zoom when section changes (count-driven); skip mount since useState already set the initial position.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return; }
+    setZoomTarget(initialTargetComputed);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count]);
+
   // Rotation
   const rot = useRotation({
     groupRef,
@@ -244,6 +252,7 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
     minRadius,
     maxRadius,
     dynamicOffset,
+    useMobilePortraitCurve: isSmallScreen,
   });
 
   return {

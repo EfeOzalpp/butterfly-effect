@@ -1,11 +1,6 @@
 // src/lib/hooks/useAbsoluteScore.ts
 import { useMemo } from 'react';
-
-interface WithWeights {
-  _id?: string;
-  weights?: Record<string, number>;
-  avgWeight?: number;
-}
+import { avgWeightOf, toScore100, type WithWeights } from '../utils/score';
 
 export interface AbsoluteOpts<TItem extends WithWeights = WithWeights> {
   accessor?: (item: TItem) => number;
@@ -13,21 +8,7 @@ export interface AbsoluteOpts<TItem extends WithWeights = WithWeights> {
   decimals?: number;
 }
 
-// Prefer server avgWeight; otherwise mean(weights); fallback 0.5.
-const avgWeightOf = (item: WithWeights): number => {
-  if (typeof item.avgWeight === 'number' && Number.isFinite(item.avgWeight)) {
-    return item.avgWeight;
-  }
-  const vals = Object.values(item.weights ?? {});
-  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0.5;
-};
-
-const toScore100 = (v: number, decimals = 0) => {
-  const clamped = Math.max(0, Math.min(1, v));
-  const raw = clamped * 100;
-  const pow = Math.pow(10, decimals);
-  return Math.round(raw * pow) / pow;
-};
+const defaultIdOf = (item: WithWeights) => item._id;
 
 /**
  * Absolute score hook (no pool comparison).
@@ -38,7 +19,7 @@ export function useAbsoluteScore<TItem extends WithWeights>(
   opts?: AbsoluteOpts<TItem>
 ) {
   const accessor = opts?.accessor ?? avgWeightOf;
-  const idOf = opts?.idOf ?? ((item: TItem) => item._id);
+  const idOf = opts?.idOf ?? defaultIdOf;
   const decimals = opts?.decimals ?? 0;
 
   const idToValue = useMemo(() => {

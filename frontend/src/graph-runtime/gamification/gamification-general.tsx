@@ -17,7 +17,6 @@ interface GamificationGeneralProps {
   equalCount?: number;
   aboveCountStrict?: number;
   positionClass?: string;
-  tieContext?: string;
 }
 
 interface InlineTextProps {
@@ -45,7 +44,6 @@ export default function GamificationGeneral({
   equalCount,
   aboveCountStrict,
   positionClass,
-  tieContext: _tieContext,
 }: GamificationGeneralProps) {
   const preferences = useOptionalPreferences();
   const darkMode = preferences?.darkMode ?? false;
@@ -183,13 +181,13 @@ export default function GamificationGeneral({
 
   return (
     <div className="generalized-result">
-      <div className={`gam-general${mode === 'relative' ? ' is-team' : ''}`}>
+      <div className={`gam-panel${mode === 'relative' ? ' is-team' : ''}`}>
         {/* no title in either mode */}
         {mode === 'absolute' && description ? (
           <h4 className="gam-subline">{description}</h4>
         ) : null}
         {mode === 'relative' ? (
-          <p className="gam-general-copy">{relativeLine}</p>
+          <p className="gam-copy">{relativeLine}</p>
         ) : null}
       </div>
     </div>

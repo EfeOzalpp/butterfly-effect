@@ -5,8 +5,10 @@ import { useEffect, useMemo } from 'react';
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
 import { useRealMobileViewport } from '../../../lib/hooks/useRealMobileViewport';
 import { useWindowWidth } from '../../../lib/hooks/useWindowWidth';
+import { isMobileWidth, isTabletWidth } from '../../../lib/responsive/breakpoints';
+import { desktopGraphToolsOffsetPx, tabletGraphToolsYOffsetPx } from '../../../lib/responsive/graph-tools-offset';
 import { useOptionalUiFlow } from '../../../app/state/ui-context';
-import { prewarmSpriteTextures } from '../../sprites/entry';
+import { chooseCameraSpriteTileSize, prewarmSpriteTextures } from '../../sprites/entry';
 import { useOrbitController } from '../camera';
 import useDotPoints from './useDotPoints';
 import { nonlinearLerp } from '../utils/math';
@@ -18,7 +20,11 @@ interface UseDotGraphSceneStateParams {
   showPersonalized: boolean;
   darkMode: boolean;
   wantsSkew: boolean;
+  wantsSoloSkew: boolean;
 }
+
+const MOBILE_PANEL_X_OFFSET_PX = -112;
+const SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX = -112;
 
 export default function useDotGraphSceneState({
   safeData,
@@ -26,17 +32,21 @@ export default function useDotGraphSceneState({
   showPersonalized,
   darkMode,
   wantsSkew,
+  wantsSoloSkew,
 }: UseDotGraphSceneStateParams) {
-  const width = typeof window !== 'undefined' ? document.documentElement.clientWidth : 1024;
   const isRealMobile = useRealMobileViewport();
   const windowWidth = useWindowWidth();
   const ui = useOptionalUiFlow();
-  const isSmallScreen = width < 768;
-  const isTabletLike = width >= 768 && width <= 1024;
+  const isSmallScreen = isMobileWidth(windowWidth);
+  const isTabletLike = isTabletWidth(windowWidth);
   const useDesktopLayout = !(isSmallScreen || isRealMobile || isTabletLike);
 
-  const graphNavOffsetPx =
-    windowWidth > 1024 ? (ui?.logsOpen ? 130 : 0) + (ui?.widgetsOpen ? 50 : 0) : 0;
+  const logsOpen = Boolean(ui?.logsOpen);
+  const widgetsOpen = Boolean(ui?.widgetsOpen);
+  const graphNavOffsetPx = desktopGraphToolsOffsetPx(windowWidth, logsOpen, widgetsOpen);
+  const tabletNavYOffsetPx = tabletGraphToolsYOffsetPx(windowWidth, logsOpen, widgetsOpen);
+  const mobilePanelOffsetPx = wantsSkew ? MOBILE_PANEL_X_OFFSET_PX : 0;
+  const soloPanelOffsetPx = wantsSoloSkew ? SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX : 0;
 
   // Compute dot positions before orbit controller so they can drive rotation sensitivity.
   const spread = useMemo(() => {
@@ -54,20 +64,22 @@ export default function useDotGraphSceneState({
     []
   );
 
-  const dotPointOptions = useMemo<DotPointsOptions>(
-    () => ({
+  const dotPointOptions = useMemo<DotPointsOptions>(() => {
+    const n = safeData.length;
+    const chaosT = n <= 1 ? 0 : Math.min(1, (n - 1) / 299);
+    return {
       spreadOverride: spread,
       minDistance: 2.1,
       seed: 1337,
       relaxPasses: 1,
       relaxStrength: 0.25,
-      attractorStrength: 0.56,
+      // Loose at small counts, tighter clustering as cloud grows toward 300
+      attractorStrength: 0.25 + chaosT * 0.31,
       colorForAverage,
       personalizedEntryId,
       showPersonalized,
-    }),
-    [spread, colorForAverage, personalizedEntryId, showPersonalized]
-  );
+    };
+  }, [spread, colorForAverage, personalizedEntryId, showPersonalized, safeData.length]);
 
   const shapes = useDotPoints(safeData, dotPointOptions);
   const dotPositions = useMemo(() => shapes.map(s => s.position), [shapes]);
@@ -87,8 +99,8 @@ export default function useDotGraphSceneState({
       isTabletLike,
       xOffset: 0,
       yOffset: 0,
-      xOffsetPx: (wantsSkew ? -112 : 0) + graphNavOffsetPx,
-      yOffsetPx: wantsSkew ? 12 : 0,
+      xOffsetPx: mobilePanelOffsetPx + soloPanelOffsetPx + graphNavOffsetPx,
+      yOffsetPx: (wantsSkew ? 12 : 0) + tabletNavYOffsetPx,
     },
     bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },
     dataCount: safeData.length,
@@ -98,7 +110,13 @@ export default function useDotGraphSceneState({
   const bagSeed = 'dotgraph-bag-v1';
 
   const particleFrames = isRealMobile ? 60 : 219;
-  const tileSize = isRealMobile ? 64 : 128;
+  const tileSize = chooseCameraSpriteTileSize({
+    radius,
+    minRadius,
+    maxRadius,
+    isRealMobile,
+    isTabletLike,
+  });
   const prewarmLimit = isRealMobile ? 30 : shapes.length;
 
   const prewarmItems = useMemo(

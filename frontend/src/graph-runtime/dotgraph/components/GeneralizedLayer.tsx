@@ -3,7 +3,7 @@
 import React, { useMemo, type CSSProperties } from "react";
 import { Html } from "@react-three/drei";
 import GamificationGeneral from "../../gamification/gamification-general";
-import { avgWeightOf } from "../../../lib/hooks/useRelativeScore";
+import { avgWeightOf } from "../../../lib/utils/score";
 import { getTieStats, classifyPosition } from "../../gamification/rankLogic";
 import type {
   DotGraphEntry,
@@ -108,7 +108,6 @@ export default function HoveredLayer({
           equalCount={content.hoveredStats.equal}
           aboveCountStrict={content.hoveredStats.above}
           positionClass={content.hoveredClass.position}
-          tieContext={content.hoveredClass.tieContext}
         />
       </>
     </Html>

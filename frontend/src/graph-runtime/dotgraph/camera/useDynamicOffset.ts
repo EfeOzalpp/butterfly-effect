@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react';
 import { computeDynamicOffset } from '../utils/dynamicOffset';
 
 export const useDynamicOffset = (): number => {
-  const [dynamicOffset, setDynamicOffset] = useState<number>(10);
+  const [dynamicOffset, setDynamicOffset] = useState<number>(() => {
+    if (typeof window === 'undefined') return 10;
+    return computeDynamicOffset(window.innerWidth, window.innerHeight);
+  });
 
   useEffect(() => {
     const handleResize = () => {

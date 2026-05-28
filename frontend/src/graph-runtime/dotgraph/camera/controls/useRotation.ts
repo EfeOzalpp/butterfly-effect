@@ -73,8 +73,8 @@ const getDragTuning = ({
     // still starts promptly instead of feeling sticky before it suddenly jumps.
     deadzoneMul: isTouch ? lerp(0.72, 1, distRatio) : lerp(0.55, 1.1, distRatio),
     sensitivityMul: isTouch
-      ? lerp(isTabletLike ? 0.55 : 0.5, 1.0, distRatio)
-      : lerp(0.25, 1.2, distRatio),
+      ? lerp(isTabletLike ? 0.42 : 0.35, 1.0, distRatio)
+      : lerp(0.17, 1.2, distRatio),
   };
 };
 

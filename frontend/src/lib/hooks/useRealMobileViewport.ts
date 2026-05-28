@@ -1,5 +1,6 @@
 // src/lib/hooks/useRealMobileViewport.ts
 import { useEffect, useState } from 'react';
+import { VIEWPORT_BREAKPOINTS } from '../responsive/breakpoints';
 
 export function useRealMobileViewport() {
   const [isRealMobile, setIsRealMobile] = useState(false);
@@ -22,7 +23,7 @@ export function useRealMobileViewport() {
       // - Touch exists, and viewport is small, or
       // - Known mobile UA
       const realMobile =
-        (touch && width <= 1024) ||
+        (touch && width <= VIEWPORT_BREAKPOINTS.tabletMax) ||
         isIOS ||
         isAndroid ||
         coarse;

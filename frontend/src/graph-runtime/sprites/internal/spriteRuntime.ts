@@ -29,6 +29,7 @@ import {
   frozenBeginInflight,
   frozenEndInflight,
   frozenIsInflight,
+  frozenOnReady,
   frozenClearAll,
   frozenSize,
 } from '../textures/cache/frozenRegistry';
@@ -39,8 +40,10 @@ import {
   pickVariantSlot,
   makeStaticKey,
   makeFrozenKey,
+  makeSpriteSeedKey,
   resolveDpr,
 } from './spritePolicy';
+import { clampSpriteTileSize } from './spriteQuality';
 
 import { trackTexture, disposeAllTrackedTextures } from '../textures/cache/textureTracker';
 
@@ -75,9 +78,9 @@ export function prewarmSpriteTextures(
 ) {
   // Prewarming builds likely textures before sprites mount, reducing blank or
   // placeholder frames when the dot graph first appears.
-  const TILE = Math.min(tileSize, 128);
-  const simulateMs = Math.max(0, particleFrames * particleStepMs);
   const dev = deviceType(getViewportSize().w);
+  const TILE = clampSpriteTileSize(tileSize, dev);
+  const simulateMs = Math.max(0, particleFrames * particleStepMs);
 
   const seen = new Set<string>(); // (shape,bucketId,variant)
   const jobs: MakeArgs[] = [];
@@ -93,6 +96,7 @@ export function prewarmSpriteTextures(
     const variant = pickVariantSlot(
       `${shape}|B${String(bucketId)}|${String(it.seed ?? '')}|${String(it.orderIndex ?? 0)}`
     );
+    const seedKey = makeSpriteSeedKey({ shape, bucketId, variant });
     const seenKey = `${shape}:${String(bucketId)}:V${String(variant)}`;
     if (seen.has(seenKey)) continue;
     seen.add(seenKey);
@@ -132,7 +136,7 @@ export function prewarmSpriteTextures(
           blend: blendUse,
           footprint,
           bleed,
-          seedKey: `${sKeyEarly}|seed:${shape}|${String(variant)}`,
+          seedKey,
           prio: 1,
           darkMode,
           pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
@@ -149,6 +153,7 @@ export function prewarmSpriteTextures(
         bucketId,
         variant,
         darkMode,
+        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
       });
 
       if (!frozenGet(key) && !frozenIsFailed(key) && !frozenIsInflight(key)) {
@@ -166,7 +171,7 @@ export function prewarmSpriteTextures(
               blend: blendUse,
               footprint,
               bleed,
-              seedKey: `${key}|seed:${shape}|${String(variant)}`,
+              seedKey,
               darkMode,
               simulateMs,
               stepMs: particleStepMs,
@@ -204,7 +209,7 @@ export function prewarmSpriteTextures(
                 blend: blendUse,
                 footprint,
                 bleed,
-                seedKey: `${sKey}|seed:${shape}|${String(variant)}`,
+                seedKey,
                 prio: 0,
                 darkMode,
                 pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
@@ -238,7 +243,7 @@ export function prewarmSpriteTextures(
           blend: blendUse,
           footprint,
           bleed,
-          seedKey: `${key2}|seed:${shape}|${String(variant)}`,
+          seedKey,
           prio: 0,
           darkMode,
           pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
@@ -314,7 +319,13 @@ export function requestFrozenTexture(args: {
     return noop;
   }
 
-  if (!frozenIsInflight(args.key) && frozenBeginInflight(args.key)) {
+  if (frozenIsInflight(args.key)) {
+    return frozenOnReady((readyKey, readyTex) => {
+      if (readyKey === args.key) args.onReady(readyTex);
+    });
+  }
+
+  if (frozenBeginInflight(args.key)) {
     enqueueTexture(() => {
       try {
         const { texture } = makeFrozenTextureFromDrawer({

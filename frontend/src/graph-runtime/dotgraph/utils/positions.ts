@@ -171,7 +171,7 @@ export const generatePositions = (
   const dirs = sphericalFibonacci(n, { yaw, pitch, roll });
 
   // 2) Radii: uniform-in-ball when N is large; extra inward bias when N is small
-  const baseAlpha = 1 / 3; // uniform in ball exponent
+  const baseAlpha = 0.5; // inward-biased: more center fill than strict uniform-in-ball (1/3)
   const alpha = lerp(baseAlpha, tightMaxAlpha, tightT);
 
   const rand = mulberry32(seed);

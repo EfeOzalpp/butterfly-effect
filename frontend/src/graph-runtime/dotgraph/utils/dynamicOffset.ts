@@ -83,7 +83,7 @@ export function computeDynamicOffset(width: number, height: number): number {
     }
   } else {
     // Landscape mode: Use normalized width
-    offset = cubicBezier(landscapeNormalizedWidth, landscapeMinOffset, 80, 150, landscapeMaxOffset);
+    offset = cubicBezier(landscapeNormalizedWidth, landscapeMinOffset, 90, 150, landscapeMaxOffset);
   }
 
   return offset;

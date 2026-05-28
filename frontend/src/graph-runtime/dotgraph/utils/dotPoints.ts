@@ -107,9 +107,9 @@ const buildGalaxyCenters = (fieldRadius: number, seed: number): Record<0 | 1 | 2
       const s = seed + bucket * 1009 + i * 131;
       const dir = randomUnitVec(s);
       const radiusK =
-        bucket === 0 ? 0.56 + hashUnit(s + 11) * 0.28 :
-        bucket === 2 ? 0.62 + hashUnit(s + 11) * 0.28 :
-        0.4 + hashUnit(s + 11) * 0.24;
+        bucket === 0 ? 0.45 + hashUnit(s + 11) * 0.28 :
+        bucket === 2 ? 0.50 + hashUnit(s + 11) * 0.28 :
+        0.20 + hashUnit(s + 11) * 0.32;
       return [
         dir[0] * fieldRadius * radiusK,
         dir[1] * fieldRadius * radiusK * 0.86,
@@ -130,6 +130,7 @@ const galaxyPositionForAverage = (
   avg: number,
   seed: number,
   strength: number,
+  chaosT: number,
   centersByBucket: Record<0 | 1 | 2, Vec3[]>
 ): Vec3 => {
   const bucket = bucketForAverage(avg);
@@ -137,17 +138,19 @@ const galaxyPositionForAverage = (
   const clusterCount = clusterCountForBucket(bucket);
   const clusterIndex = Math.floor(hashUnit(regionSeed + 5) * clusterCount);
   const clusterSeed = regionSeed + clusterIndex * 101;
-  const isLoner = hashUnit(regionSeed + 71) < 0.16;
   const clusterCenter = centersByBucket[bucket][clusterIndex] ?? [0, 0, 0];
 
+  // Loner fraction scales from 0% (n=1, organized) to 16% (n=300, chaotic)
+  const isLoner = hashUnit(regionSeed + 71) < chaosT * 0.16;
+
   if (isLoner) {
-    const lonerT = 0.24 + strength * 0.08;
+    const lonerT = 0.20 + chaosT * 0.10;
     const lonerDir = normalizeVec([
       basePosition[0] + (hashUnit(clusterSeed + 11) - 0.5) * 8,
       basePosition[1] + (hashUnit(clusterSeed + 23) - 0.5) * 5,
       basePosition[2] + (hashUnit(clusterSeed + 37) - 0.5) * 8,
     ]);
-    const lonerRadius = Math.max(6, vecLength(basePosition) * (1.04 + hashUnit(clusterSeed + 53) * 0.18));
+    const lonerRadius = Math.max(6, vecLength(basePosition) * (1.0 + chaosT * 0.22));
     return addVec(
       scaleVec(basePosition, 1 - lonerT),
       scaleVec(lonerDir, lonerRadius * lonerT)
@@ -172,10 +175,12 @@ const galaxyPositionForAverage = (
   const armIndex = Math.floor(hashUnit(clusterSeed + 61) * armCount);
   const armPhase = (armIndex / armCount) * Math.PI * 2;
   const localT = hashUnit(seed + 79);
-  const armAngle = armPhase + localT * Math.PI * (1.25 + strength * 0.75);
+  // Arm sweep: tight and tidy at low count, wide and chaotic near 300
+  const armAngle = armPhase + localT * Math.PI * (0.5 + chaosT * 0.75);
+  // Swirl radius: compact at low count, grows with chaos
   const swirlRadius =
     (10 + baseRadius * 0.18) *
-    (0.3 + localT * 1.15) *
+    (0.15 + localT * (0.4 + chaosT * 0.75)) *
     (0.95 + hashUnit(seed + 83) * 0.35);
   const depthOffset = (hashUnit(seed + 97) - 0.5) * (5.5 + baseRadius * 0.06);
 
@@ -188,7 +193,7 @@ const galaxyPositionForAverage = (
   );
 
   const clusterPos = addVec(clusterCenter, localOffset);
-  const keepField = clamp01(0.18 - strength * 0.08);
+  const keepField = clamp01(0.30 - strength * 0.04);
   return addVec(scaleVec(basePosition, keepField), scaleVec(clusterPos, 1 - keepField));
 };
 
@@ -261,6 +266,8 @@ export function computeDotPoints(
     ...base.map((p) => vecLength(p))
   );
   const centersByBucket = buildGalaxyCenters(Math.max(18, fieldRadius), seed ?? 1337);
+  // 0 at n=1 (organized/steady), 1 at n=300 (chaotic with loners and wide arms)
+  const chaosT = n <= 1 ? 0 : Math.min(1, (n - 1) / 299);
 
   const pts: DotPoint[] = safe.map((response, i) => {
     const rawAvg =
@@ -280,6 +287,7 @@ export function computeDotPoints(
       avg,
       stableSeed,
       attractorStrength,
+      chaosT,
       centersByBucket
     );
 
@@ -297,6 +305,22 @@ export function computeDotPoints(
     if (mine) {
       mine.position = [0, 0, 0];
       mine.originalPosition = [0, 0, 0];
+
+      // Ensure no other shape spawns inside the clear zone around the
+      // personalized shape. Any shape closer than CLEAR_RADIUS is pushed
+      // radially outward to the boundary.
+      const CLEAR_RADIUS = 22;
+      for (const pt of pts) {
+        if (pt._id === personalizedEntryId) continue;
+        const [x, y, z] = pt.position;
+        const dist = Math.hypot(x, y, z);
+        if (dist < CLEAR_RADIUS) {
+          const scale = dist < 0.001 ? 1 : CLEAR_RADIUS / dist;
+          const pushed: Vec3 = [x * scale, y * scale, z * scale];
+          pt.position = pushed;
+          pt.originalPosition = pushed;
+        }
+      }
     }
   }
 

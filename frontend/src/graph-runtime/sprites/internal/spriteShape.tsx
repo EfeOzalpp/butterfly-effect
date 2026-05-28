@@ -14,7 +14,7 @@ import { useFrame } from '@react-three/fiber';
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
 import type { ShapeKey, SpriteShapeProps } from '../types';
-import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
+import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, makeSpriteSeedKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
 
 import { DRAWERS } from '../selection/drawers';
 import { houseHasChimney } from '../../../canvas-engine/shapes/house';
@@ -34,6 +34,13 @@ import {
   requestStaticTexture,
   requestFrozenTexture,
 } from '../internal/spriteRuntime';
+import {
+  chooseSpriteTileForScreenSize,
+  clampSpriteTileSize,
+  maxSpriteTileSize,
+  spriteQualityCheckFrameModulo,
+  spriteQualityUpgradeDelayMs,
+} from './spriteQuality';
 import { onceQueueIdle } from '../textures/queue';
 import { registerEpochShape } from './epochScheduler';
 import { spriteMaterialCachingDisabled } from './debug-flags';
@@ -167,9 +174,48 @@ export function SpriteShape({
     [assignment, tShape, seed, orderIndex]
   );
 
-  const TILE = Math.min(tileSize, 128);
-  const dpr = resolveDpr(1);
   const dev = deviceType(getViewportSize().w);
+  const baseTile = clampSpriteTileSize(tileSize, dev);
+  const [qualityTileSize, setQualityTileSize] = React.useState(baseTile);
+  const qualityUpgradeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingQualityTileRef = React.useRef<number | null>(null);
+  const qualityCheckModulo = spriteQualityCheckFrameModulo(dev);
+  const TILE = qualityTileSize;
+  const dpr = resolveDpr(1);
+
+  const clearPendingQualityUpgrade = React.useCallback(() => {
+    if (qualityUpgradeTimerRef.current) clearTimeout(qualityUpgradeTimerRef.current);
+    qualityUpgradeTimerRef.current = null;
+    pendingQualityTileRef.current = null;
+  }, []);
+
+  const scheduleQualityUpgrade = React.useCallback((nextTile: number) => {
+    if (pendingQualityTileRef.current === nextTile) return;
+    clearPendingQualityUpgrade();
+    pendingQualityTileRef.current = nextTile;
+    qualityUpgradeTimerRef.current = setTimeout(() => {
+      const target = pendingQualityTileRef.current;
+      qualityUpgradeTimerRef.current = null;
+      pendingQualityTileRef.current = null;
+      if (target) setQualityTileSize((prev) => Math.max(prev, target));
+    }, spriteQualityUpgradeDelayMs(dev, orderIndex ?? 0));
+  }, [clearPendingQualityUpgrade, dev, orderIndex, setQualityTileSize]);
+
+  React.useEffect(() => {
+    const maxTile = maxSpriteTileSize(dev);
+    if (qualityTileSize > maxTile) {
+      clearPendingQualityUpgrade();
+      setQualityTileSize(maxTile);
+      return;
+    }
+    if (baseTile > qualityTileSize) {
+      scheduleQualityUpgrade(baseTile);
+      return;
+    }
+    if (pendingQualityTileRef.current !== null && pendingQualityTileRef.current <= baseTile) {
+      clearPendingQualityUpgrade();
+    }
+  }, [baseTile, clearPendingQualityUpgrade, dev, qualityTileSize, scheduleQualityUpgrade]);
 
   const isParticleShape = PARTICLE_SHAPES.has(shape);
   const [animationReady, setAnimationReady] = React.useState(false);
@@ -197,9 +243,8 @@ export function SpriteShape({
   }, [darkMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stableSeedKey = React.useMemo(() => {
-    const base = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) });
-    return `${base}|seed:${shape}|${String(variant)}`;
-  }, [shape, TILE, dpr, alphaUse, bucketId, variant, localDarkMode, dev]);
+    return makeSpriteSeedKey({ shape, bucketId, variant });
+  }, [shape, bucketId, variant]);
 
   const wantsEpochRefresh = React.useMemo(() => {
     if (shape === 'house') return houseHasChimney(stableSeedKey);
@@ -225,7 +270,7 @@ export function SpriteShape({
     // Epoch refreshes always use cheap static textures — frozen rebuilds are too expensive
     if (refreshEpoch > 0) return `${staticBase}|e:${String(refreshEpoch)}`;
     return wantsFrozen
-      ? makeFrozenKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, simulateMs, stepMs: particleStepMs, bucketId, variant, darkMode: localDarkMode })
+      ? makeFrozenKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, simulateMs, stepMs: particleStepMs, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) })
       : staticBase;
   }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, localDarkMode, refreshEpoch, dev]);
 
@@ -328,7 +373,7 @@ export function SpriteShape({
           blend: vs.blend,
           footprint,
           bleed,
-          seedKey: `${sKey}|seed:${shape}|${String(variant)}`,
+          seedKey: stableSeedKey,
           prio: 0,
           darkMode: localDarkMode,
           pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
@@ -506,6 +551,18 @@ export function SpriteShape({
     };
   }, [displayTex, opacity, material, materialCacheDisabled]);
 
+  const shapeScaleK = VISUAL_SCALE[shape] ?? 1;
+  const finalScale = scale * shapeScaleK;
+
+  // Use footprint+bleed constants for stable scale — texture swaps never cause size jumps
+  const fp = FOOTPRINTS[shape];
+  const bl = BLEED[shape];
+  const totalW = fp.w + (bl?.left ?? 0) + (bl?.right ?? 0);
+  const totalH = fp.h + (bl?.top ?? 0) + (bl?.bottom ?? 0);
+  const maxSide = Math.max(totalW, totalH) || 1;
+  const sx = finalScale * (totalW / maxSide);
+  const sy = finalScale * (totalH / maxSide);
+
   const materialRef = React.useRef<SpriteMaterial | null>(null);
   React.useEffect(() => { materialRef.current = material; }, [material]);
   const spriteRef = React.useRef<Sprite | null>(null);
@@ -519,8 +576,11 @@ export function SpriteShape({
   const epochParticleStoreRef = React.useRef<ParticleStore | null>(null);
   const epochParticleKeyRef = React.useRef<string | null>(null);
   const epochParticleTimeRef = React.useRef<number | null>(null);
+  const qualityCheckFrameRef = React.useRef((orderIndex ?? 0) % qualityCheckModulo);
   React.useEffect(() => {
     return () => {
+      if (qualityUpgradeTimerRef.current) clearTimeout(qualityUpgradeTimerRef.current);
+      pendingQualityTileRef.current = null;
       releaseEpochTex(epochTexRef.current);
       epochParticleStoreRef.current?.clear();
     };
@@ -533,6 +593,25 @@ export function SpriteShape({
       _projScreenMatrix.current.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       _frustum.current.setFromProjectionMatrix(_projScreenMatrix.current);
       isVisibleRef.current = _frustum.current.containsPoint(_wp.current);
+    }
+
+    if (spr && isVisibleRef.current) {
+      qualityCheckFrameRef.current = (qualityCheckFrameRef.current + 1) % qualityCheckModulo;
+      if (qualityCheckFrameRef.current === 0) {
+        const distance = Math.max(0.001, camera.position.distanceTo(_wp.current));
+        const height = typeof window !== 'undefined' ? window.innerHeight || 1 : 1;
+        const fov = 'fov' in camera && typeof camera.fov === 'number' ? camera.fov : 50;
+        const fovRad = (fov * Math.PI) / 180;
+        const worldPerPxY = (2 * Math.tan(fovRad / 2) * distance) / height;
+        const screenPx = Math.max(sx, sy) / Math.max(1e-6, worldPerPxY);
+        const nextTile = chooseSpriteTileForScreenSize(screenPx, qualityTileSize, baseTile, dev);
+        if (nextTile < qualityTileSize) {
+          clearPendingQualityUpgrade();
+          setQualityTileSize(nextTile);
+        } else if (nextTile > qualityTileSize && pendingQualityTileRef.current !== nextTile) {
+          scheduleQualityUpgrade(nextTile);
+        }
+      }
     }
 
     const mat = materialRef.current;
@@ -564,18 +643,6 @@ export function SpriteShape({
   });
 
   if (!displayTex) return null;
-
-  const shapeScaleK = VISUAL_SCALE[shape] ?? 1;
-  const finalScale = scale * shapeScaleK;
-
-  // Use footprint+bleed constants for stable scale — texture swaps never cause size jumps
-  const fp = FOOTPRINTS[shape];
-  const bl = BLEED[shape];
-  const totalW = fp.w + (bl?.left ?? 0) + (bl?.right ?? 0);
-  const totalH = fp.h + (bl?.top ?? 0) + (bl?.bottom ?? 0);
-  const maxSide = Math.max(totalW, totalH) || 1;
-  const sx = finalScale * (totalW / maxSide);
-  const sy = finalScale * (totalH / maxSide);
 
   const biasY = ANCHOR_BIAS_Y[shape] ?? 0;
   const pos: [number, number, number] = Array.isArray(position)

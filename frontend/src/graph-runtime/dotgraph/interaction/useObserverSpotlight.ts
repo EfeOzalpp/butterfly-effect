@@ -2,6 +2,10 @@
 // Consumes a UI spotlight request and turns it into a synthetic hover event.
 
 import { useEffect, useRef } from "react";
+import { useThree } from "@react-three/fiber";
+import { Frustum, Matrix4, Vector3 } from "three";
+import type { Group } from "three";
+import type { RefObject } from "react";
 import { useOptionalUiFlow } from "../../../app/state/ui-context";
 import { hasDotId } from "../types";
 import type {
@@ -13,17 +17,28 @@ import type {
 
 const noop = () => undefined;
 
+const _frustum = new Frustum();
+const _projScreen = new Matrix4();
+const _dotWorld = new Vector3();
+
 interface UseObserverSpotlightArgs {
   points: DotPoint[];
   onHoverStart: DotGraphHoverStart;
   onHoverEnd: () => void;
+  groupRef: RefObject<Group | null>;
+  excludeId?: string | null;
 }
 
 export default function useObserverSpotlight({
   points,
   onHoverStart,
   onHoverEnd,
+  groupRef,
+  excludeId,
 }: UseObserverSpotlightArgs) {
+  const { camera } = useThree();
+  const cameraRef = useRef(camera);
+  useEffect(() => { cameraRef.current = camera; }, [camera]);
   const ui = useOptionalUiFlow();
   const spotlightRequest = ui?.spotlightRequest ?? null;
   const setSpotlightRequest = ui?.setSpotlightRequest;
@@ -57,10 +72,29 @@ export default function useObserverSpotlight({
     const pts = pointsRef.current;
     if (!pts.length) return;
 
+    // Build frustum from current camera state to restrict candidates to visible shapes.
+    const cam = cameraRef.current;
+    const group = groupRef.current;
+    const visiblePts: IdentifiedDotPoint[] = [];
+    if (group) {
+      group.updateWorldMatrix(true, false);
+      _projScreen.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+      _frustum.setFromProjectionMatrix(_projScreen);
+      for (const point of pts) {
+        if (!hasDotId(point)) continue;
+        if (excludeId && point._id === excludeId) continue;
+        _dotWorld.set(point.position[0], point.position[1], point.position[2]);
+        _dotWorld.applyMatrix4(group.matrixWorld);
+        if (_frustum.containsPoint(_dotWorld)) visiblePts.push(point);
+      }
+    }
+    const candidates = visiblePts.length > 0
+      ? visiblePts
+      : pts.filter((p): p is IdentifiedDotPoint => hasDotId(p) && p._id !== excludeId);
+
     let best: IdentifiedDotPoint | null = null;
     let bestD = Infinity;
-    for (const point of pts) {
-      if (!hasDotId(point)) continue;
+    for (const point of candidates) {
       const [x, y, z] = point.position;
       const d = x * x + y * y + z * z;
       if (d < bestD) {

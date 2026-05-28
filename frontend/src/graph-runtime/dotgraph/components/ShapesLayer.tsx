@@ -1,15 +1,12 @@
 // src/graph-runtime/dotgraph/components/ShapesLayer.tsx
 
-import React, { useMemo } from "react";
-import { Line, Billboard } from "@react-three/drei";
+import { useEffect, useMemo, useRef } from "react";
+import { useThree, useFrame } from "@react-three/fiber";
+import { Vector3 } from "three";
+import type { Sprite } from "three";
 import { SpriteShape, resolveSpriteVisual } from "../../sprites/entry";
 import { hasDotId } from "../types";
 import type { DotGraphHoverEvent, DotGraphHoverStart, DotPoint } from "../types";
-
-const CIRCLE_PTS: [number, number, number][] = Array.from({ length: 49 }, (_, i) => {
-  const a = (i / 48) * Math.PI * 2;
-  return [Math.cos(a), Math.sin(a), 0];
-});
 
 interface ShapesLayerProps {
   shapes: DotPoint[];
@@ -18,9 +15,6 @@ interface ShapesLayerProps {
   showCompleteUI: boolean;
   onHoverStart: DotGraphHoverStart;
   onHoverEnd: () => void;
-  tieKeyForId: (id: string) => number | null;
-  setSelectedTieKey: React.Dispatch<React.SetStateAction<number | null>>;
-  selectedTieKey: number | null;
   spriteScale: number;
   bagSeed: string;
   darkMode?: boolean;
@@ -28,6 +22,7 @@ interface ShapesLayerProps {
   particleFrames?: number;
   tileSize?: number;
   section?: string;
+  hitboxScale?: number;
 }
 
 export default function ShapesLayer({
@@ -37,9 +32,6 @@ export default function ShapesLayer({
   showCompleteUI,
   onHoverStart,
   onHoverEnd,
-  tieKeyForId,
-  setSelectedTieKey,
-  selectedTieKey,
   spriteScale,
   bagSeed,
   darkMode = false,
@@ -47,7 +39,39 @@ export default function ShapesLayer({
   particleFrames = 219,
   tileSize = 128,
   section = '',
+  hitboxScale = 1,
 }: ShapesLayerProps) {
+  const { camera, gl } = useThree();
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hitboxRefs = useRef<(Sprite | null)[]>([]);
+  const _tmpVec = useMemo(() => new Vector3(), []);
+
+  useFrame(() => {
+    const cullDist = camera.position.length() * 0.35;
+    for (let i = 0; i < shapeVisuals.length; i++) {
+      const sprite = hitboxRefs.current[i];
+      if (!sprite?.parent) continue;
+      sprite.getWorldPosition(_tmpVec);
+      const tooClose = camera.position.distanceTo(_tmpVec) < cullDist;
+      const { sx, sy } = shapeVisuals[i];
+      sprite.scale.set(
+        tooClose ? 0 : sx,
+        tooClose ? 0 : sy,
+        1
+      );
+    }
+  });
+
+  const clearHoverTimer = () => {
+    if (!hoverTimerRef.current) return;
+    clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = null;
+  };
+
+  useEffect(() => () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+  }, []);
+
   const setShapeCursor = (active: boolean, e?: DotGraphHoverEvent) => {
     const target = e?.nativeEvent?.target;
     if (!(target instanceof HTMLElement)) return;
@@ -65,6 +89,7 @@ export default function ShapesLayer({
           seed: bagSeed,
           orderIndex: i,
           baseScale: spriteScale,
+          hitboxScale,
         });
         return {
           shape,
@@ -72,15 +97,16 @@ export default function ShapesLayer({
           index: i,
           sx: sprite.layout.scale[0],
           sy: sprite.layout.scale[1],
+          offset: sprite.layout.offset,
           assignment: sprite.assignment,
         };
       }),
-    [shapes, bagSeed, spriteScale, section]
+    [shapes, bagSeed, spriteScale, section, hitboxScale]
   );
 
   return (
     <>
-      {shapeVisuals.map(({ shape, avg, index, sx, sy, assignment }) => {
+      {shapeVisuals.map(({ shape, avg, index, offset, assignment }, loopIdx) => {
         const suppressHover = !!(myEntry && shape._id === personalizedEntryId && showCompleteUI);
         const identifiedShape = hasDotId(shape) ? shape : null;
 
@@ -90,45 +116,42 @@ export default function ShapesLayer({
             position={shape.position}
           >
             <sprite
+              ref={(el: Sprite | null) => { hitboxRefs.current[loopIdx] = el; }}
               onPointerOver={(e) => {
                 e.stopPropagation();
                 if (!suppressHover && identifiedShape) {
                   setShapeCursor(true, e);
-                  onHoverStart(identifiedShape, e);
+                  const tgt = e.nativeEvent.target;
+                  const capturedShape = identifiedShape;
+                  const capturedPos = shape.position;
+                  clearHoverTimer();
+                  hoverTimerRef.current = setTimeout(() => {
+                    hoverTimerRef.current = null;
+                    const projected = new Vector3(...capturedPos).project(camera);
+                    const rect = gl.domElement.getBoundingClientRect();
+                    const sx = (projected.x * 0.5 + 0.5) * rect.width + rect.left;
+                    const sy = (-projected.y * 0.5 + 0.5) * rect.height + rect.top;
+                    onHoverStart(capturedShape, { nativeEvent: { clientX: sx, clientY: sy, target: tgt } });
+                  }, 80);
                 }
               }}
               onPointerOut={(e) => {
                 e.stopPropagation();
                 setShapeCursor(false, e);
-                if (!suppressHover && identifiedShape) onHoverEnd();
+                clearHoverTimer();
+                if (!suppressHover && identifiedShape) {
+                  onHoverEnd();
+                }
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 if (!identifiedShape) return;
                 if (!suppressHover) onHoverStart(identifiedShape, e);
-                const key = tieKeyForId(identifiedShape._id);
-                setSelectedTieKey((prev) => (prev === key ? null : (key ?? null)));
               }}
-              scale={[sx, sy, 1]}
-              frustumCulled={false}
+              position={offset}
             >
               <spriteMaterial transparent opacity={0} depthWrite={false} depthTest={false} />
             </sprite>
-
-            {selectedTieKey != null && identifiedShape && tieKeyForId(identifiedShape._id) === selectedTieKey && (
-              <Billboard>
-                <group scale={[Math.max(sx, sy) * 0.5, Math.max(sx, sy) * 0.5, 1]}>
-                  <Line
-                    points={CIRCLE_PTS}
-                    color={darkMode ? "#9ca3af" : "#6b7280"}
-                    lineWidth={1.5}
-                    toneMapped={false}
-                    transparent
-                    opacity={0.8}
-                  />
-                </group>
-              </Billboard>
-            )}
 
             <SpriteShape
               avg={avg}
@@ -150,7 +173,6 @@ export default function ShapesLayer({
           </group>
         );
       })}
-
     </>
   );
 }

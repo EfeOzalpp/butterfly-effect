@@ -3,12 +3,11 @@
 import { useEffect, useMemo } from 'react';
 
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
-import { classifyPosition, getTieStats } from '../../gamification/rankLogic';
+import { getTieStats } from '../../gamification/rankLogic';
 import { useOptionalUiFlow } from '../../../app/state/ui-context';
 import { getSessionItem, removeSessionItems } from '../../../app/session';
 import type {
   DotGraphEntry,
-  DotGraphPositionClass,
   DotGraphTieStats,
   DotPoint,
   PersonalizedDotShape,
@@ -110,8 +109,6 @@ export default function usePersonalizationState({
       ? getTieStats({ data: fullData, targetId: myEntry._id })
       : { below: 0, equal: 0, above: 0, totalOthers: 0 };
 
-  const myClass: DotGraphPositionClass = classifyPosition(myStats);
-
   const shouldRenderPersonalUI =
     showCompleteUI && shouldShowPersonalized && !!effectiveMyShape && !!effectiveMyEntry;
 
@@ -134,7 +131,6 @@ export default function usePersonalizationState({
     effectiveMyShape,
     myDisplayValue,
     myStats,
-    myClass,
     shouldShowStatsLoading,
     shouldRenderPersonalUI,
     shouldRenderExtraPersonalSprite,

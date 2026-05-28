@@ -2,11 +2,10 @@
 
 import React, { type CSSProperties } from "react";
 import { Html } from "@react-three/drei";
-import { SpriteShape } from "../../sprites/entry";
+import { PERSONALIZED_SPRITE_TILE_SIZE, SpriteShape } from "../../sprites/entry";
 import GamificationPersonalized from "../../gamification/gamification-personal";
 import type {
   DotGraphEntry,
-  DotGraphPositionClass,
   DotGraphTieStats,
   PersonalizedDotShape,
 } from "../types";
@@ -21,13 +20,13 @@ interface PersonalizedLayerProps {
   offsetPx: number;
   myDisplayValue: number;
   mode: "absolute" | "relative";
-  section: string;
   myStats: DotGraphTieStats;
-  myClass: DotGraphPositionClass;
   statsLoading: boolean;
   setPersonalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   viewportClass?: string;
   darkMode?: boolean;
+  zoomFraction?: number;
+  particleFrames?: number;
 }
 
 export default function PersonalizedLayer({
@@ -40,13 +39,13 @@ export default function PersonalizedLayer({
   offsetPx,
   myDisplayValue,
   mode,
-  section,
   myStats,
-  myClass,
   statsLoading,
   setPersonalOpen,
   viewportClass,
   darkMode = false,
+  zoomFraction,
+  particleFrames = 219,
 }: PersonalizedLayerProps) {
   if (!shouldRenderPersonalUI) return null;
   const htmlStyle: CSSProperties & { "--offset-px": string } = {
@@ -66,12 +65,13 @@ export default function PersonalizedLayer({
             }
             position={[0, 0, 0]}
             scale={spriteScale}
-            tileSize={128}
+            tileSize={PERSONALIZED_SPRITE_TILE_SIZE}
             seed={bagSeed}
             orderIndex={0}
             freezeParticles={true}
             particleStepMs={33}
-            particleFrames={219}
+            particleFrames={particleFrames}
+            occasionalRefreshMs={240}
             darkMode={darkMode}
           />
         </group>
@@ -91,14 +91,12 @@ export default function PersonalizedLayer({
               percentage={myDisplayValue}
               color={effectiveMyShape.color}
               mode={mode}
-              selectedSectionId={section}
               belowCountStrict={myStats.below}
               equalCount={myStats.equal}
               aboveCountStrict={myStats.above}
-              positionClass={myClass.position}
-              tieContext={myClass.tieContext}
               statsLoading={statsLoading}
               onOpenChange={setPersonalOpen}
+              zoomFraction={zoomFraction}
             />
           </div>
         </Html>

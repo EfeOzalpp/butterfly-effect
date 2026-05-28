@@ -8,7 +8,7 @@ export const FOOTPRINTS: Record<ShapeKey, { w: number; h: number }> = {
   clouds: { w: 2, h: 3 },
   bus: { w: 2, h: 1 },
   snow: { w: 1, h: 3 },
-  house:{ w: 1, h: 3 },
+  house:{ w: 1, h: 4 },
   power:{ w: 1, h: 3 },
   sun:  { w: 2, h: 2 },
   villa:{ w: 2, h: 2 },
@@ -43,10 +43,10 @@ export const PARTICLE_SHAPES = new Set<ShapeKey>(['snow', 'clouds', 'house', 'se
 
 // Extra pixelScale multiplier for particle-heavy shapes per device breakpoint.
 export const PARTICLE_SCALE_BOOST: Partial<Record<ShapeKey, Record<DeviceType, number>>> = {
-  snow:   { laptop: 1.2, tablet: 1.1, mobile: 0.7 },
-  clouds: { laptop: 2.5, tablet: 1.5, mobile: 1.2 },
-  sea:    { laptop: 1.6, tablet: 1.0, mobile: 0.8 },
-  house:  { laptop: 2.0, tablet: 1.5, mobile: 1.0 },
+  snow:   { laptop: 1.6, tablet: 1.6, mobile: 1.4 },
+  clouds: { laptop: 2, tablet: 1.5, mobile: 1.6 },
+  sea:    { laptop: 4.5, tablet: 3, mobile: 1.6 },
+  house:  { laptop: 2.0, tablet: 2.5, mobile: 2 },
 };
 
 export function resolveParticleScaleBoost(shape: ShapeKey, dev?: DeviceType): number | undefined {

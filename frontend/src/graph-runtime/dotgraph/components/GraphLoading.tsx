@@ -2,22 +2,19 @@
 
 import React from "react";
 import { Html } from "@react-three/drei";
+import HintBanner from "../../../app/ui/HintBanner";
 
 interface GraphOverlaysProps {
   isBusy: boolean;
 }
 
-export default function GraphOverlays({
-  isBusy,
-}: GraphOverlaysProps) {
+export default function GraphOverlays({ isBusy }: GraphOverlaysProps) {
   const [visible, setVisible] = React.useState(false);
   const hasLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!isBusy) {
       hasLoadedRef.current = true;
-      // Timer-backed visibility belongs to the overlay, so this reset is intentional.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(false);
       return;
     }
@@ -31,19 +28,10 @@ export default function GraphOverlays({
   }, [isBusy]);
 
   return (
-    <>
-      {visible && (
-        <Html center zIndexRange={[200, 250]} style={{ pointerEvents: "none" }}>
-          <div className="graph-loading-card loading-dots" role="status" aria-live="polite">
-            <span className="graph-loading-text">Community is loading</span>
-            <span className="graph-loading-ellipsis" aria-hidden="true">
-              <span className="graph-loading-dot">.</span>
-              <span className="graph-loading-dot">.</span>
-              <span className="graph-loading-dot">.</span>
-            </span>
-          </div>
-        </Html>
-      )}
-    </>
+    <Html center zIndexRange={[200, 250]} style={{ pointerEvents: "none" }}>
+      <HintBanner visible={visible}>
+        Community is loading
+      </HintBanner>
+    </Html>
   );
 }

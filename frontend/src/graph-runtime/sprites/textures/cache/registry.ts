@@ -25,7 +25,7 @@ export interface MakeArgs {
   blend: number;
   footprint: { w: number; h: number };
   bleed?: { top?: number; right?: number; bottom?: number; left?: number };
-  seedKey?: string;
+  seedKey: string;
   prio?: number;
   darkMode?: boolean;
   pixelScaleBoost?: number;
@@ -71,7 +71,7 @@ class TextureRegistry {
           blend: args.blend,
           footprint: args.footprint,
           bleed: args.bleed,
-          seedKey: args.seedKey ?? key,
+          seedKey: args.seedKey,
           darkMode: args.darkMode,
           pixelScaleBoost: args.pixelScaleBoost,
         });

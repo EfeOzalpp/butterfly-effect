@@ -1,4 +1,5 @@
 // src/graph-runtime/dotgraph/camera/compute/zoomTarget.ts
+
 export function computeInitialZoomTarget(params: {
   count: number;
   isSmallScreen: boolean;
@@ -7,33 +8,20 @@ export function computeInitialZoomTarget(params: {
   minRadius: number;
   maxRadius: number;
 }) {
-  const { count, isSmallScreen, isTabletLike, thresholds, minRadius, maxRadius } = params;
+  const { count, isSmallScreen, isTabletLike, minRadius, maxRadius } = params;
 
- const THRESH = isSmallScreen
-    ? thresholds.mobile
-    : isTabletLike
-      ? thresholds.tablet
-      : thresholds.desktop;
+  // Normalize count over the expected 1..300 range
+  const clampedCount = Math.max(1, Math.min(300, count));
+  const t = (clampedCount - 1) / 299;
 
-  const near = isSmallScreen ? 136 : 128;
-  const far = maxRadius;
+  // Front-loaded curve: going from 1→50 shapes triggers most of the pullback;
+  // 50→300 adds a gradual further zoom-out. Power < 1 makes the curve concave.
+  const curved = Math.pow(t, 0.4);
 
-  const K_RATIO = 0.6;
-  const K = Math.max(1, (THRESH || 70) * K_RATIO);
-  const BETA = 5.5;
-  const MIN_FILL = 0.08; // floor so small datasets don't collapse to near-minimum zoom
+  // Mobile stays noticeably closer throughout — tighter near + far bounds.
+  const near = isSmallScreen ? 80 : isTabletLike ? 92 : 108;
+  const far  = isSmallScreen ? 270 : isTabletLike ? 325 : 392;
 
-  const smooth = (s: number) => (s * s) * (3 - 2 * s);
-  const rawFill = count / (count + K);
-  const curved = Math.pow(rawFill, BETA);
-  const baseFill = Math.max(MIN_FILL, smooth(Math.min(1, Math.max(0, curved))));
-
-  // Large datasets should start a bit more zoomed in. In this camera model,
-  // that means reducing the orbit radius after count clears the device
-  // threshold, while keeping smaller graphs on the original curve.
-  const overflowRatio = Math.max(0, count - THRESH) / Math.max(1, THRESH);
-  const largeDataBoost = smooth(Math.min(1, overflowRatio / 1.6));
-  const fill = Math.max(MIN_FILL, baseFill * (1 - 0.3 * largeDataBoost));
-
-  return Math.max(minRadius, Math.min(far, near + (far - near) * fill));
+  const target = near + curved * (far - near);
+  return Math.max(minRadius, Math.min(maxRadius, target));
 }
