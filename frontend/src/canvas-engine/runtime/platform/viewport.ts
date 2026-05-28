@@ -1,6 +1,6 @@
 // canvas-engine/engine/viewport.ts
 
-export type DprMode = "fixed1" | "cap1_5" | "cap3" | "auto";
+export type DprMode = "fixed1" | "cap1_5" | "cap2" | "cap3" | "auto";
 
 export function resolvePixelDensity(mode: DprMode) {
   const dpr = window.devicePixelRatio || 1;
@@ -11,6 +11,8 @@ export function resolvePixelDensity(mode: DprMode) {
       return 1;
     case "cap1_5":
       return Math.min(1.5, dpr);
+    case "cap2":
+      return Math.min(2, dpr);
     case "cap3":
       return Math.min(3, dpr);
     case "auto":
