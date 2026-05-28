@@ -277,8 +277,35 @@ async function consumeRateLimit(rule: RateRule): Promise<RateResult> {
   };
 }
 
+async function consumeRateLimitsBatch(rules: RateRule[]): Promise<RateResult | null> {
+  if (!rateLimitClient) return null;
+
+  const result = await rateLimitClient.rpc("consume_edge_rate_limits", {
+    p_rules: rules.map((rule) => ({
+      bucket: rule.key,
+      max_count: rule.max,
+      window_seconds: rule.windowSeconds,
+    })),
+  });
+
+  if (result.error) {
+    console.warn("[save-solo-message] batch rate limit unavailable:", result.error.message);
+    return null;
+  }
+
+  const row = Array.isArray(result.data) ? result.data[0] : result.data;
+  if (typeof row?.allowed !== "boolean") return null;
+
+  return {
+    allowed: row.allowed,
+    resetAt: typeof row.reset_at === "string" ? row.reset_at : undefined,
+  };
+}
+
 async function enforceRateLimits(req: Request, payload: ValidPayload) {
   const rules = await buildRateRules(req, payload);
+  const batchResult = await consumeRateLimitsBatch(rules);
+  if (batchResult) return batchResult;
 
   for (const rule of rules) {
     const result = await consumeRateLimit(rule);
