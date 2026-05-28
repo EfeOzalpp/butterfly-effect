@@ -3,9 +3,6 @@
 .green-animation { animation: greenFluctuation 3.6s ease-in-out infinite; }
 .yellow-animation { animation: yellowFluctuation 3.6s ease-in-out infinite; }
 .red-animation { animation: redFluctuation 3.6s ease-in-out infinite; }
-.green-dot-animation { animation: greenDotPulse 3.2s ease-in-out infinite; }
-.yellow-dot-animation { animation: yellowDotPulse 3.2s ease-in-out infinite; }
-.red-dot-animation { animation: redDotPulse 3.2s ease-in-out infinite; }
 
 @keyframes greenFluctuation {
   0%,
@@ -21,21 +18,6 @@
   0%,
   100% { background-color: rgb(var(--graph-red-lo-rgb)); }
   50% { background-color: rgb(var(--graph-red-hi-rgb)); }
-}
-@keyframes greenDotPulse {
-  0%,
-  100% { background: radial-gradient(circle, rgba(var(--graph-green-hi-rgb), 0.92) 22%, rgba(var(--graph-green-lo-rgb), 0.50) 78%); }
-  50% { background: radial-gradient(circle, rgba(var(--graph-green-lo-rgb), 0.96) 22%, rgba(var(--graph-green-hi-rgb), 0.42) 78%); }
-}
-@keyframes yellowDotPulse {
-  0%,
-  100% { background: radial-gradient(circle, rgba(var(--graph-yellow-lo-rgb), 0.92) 22%, rgba(var(--graph-yellow-hi-rgb), 0.50) 78%); }
-  50% { background: radial-gradient(circle, rgba(var(--graph-yellow-hi-rgb), 0.96) 22%, rgba(var(--graph-yellow-lo-rgb), 0.42) 78%); }
-}
-@keyframes redDotPulse {
-  0%,
-  100% { background: radial-gradient(circle, rgba(var(--graph-red-hi-rgb), 0.92) 22%, rgba(var(--graph-red-lo-rgb), 0.50) 78%); }
-  50% { background: radial-gradient(circle, rgba(var(--graph-red-lo-rgb), 0.96) 22%, rgba(var(--graph-red-hi-rgb), 0.42) 78%); }
 }
 @keyframes floaty { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
 
@@ -66,10 +48,8 @@
 .graph-container,
 .bar-graph-divider,
 .bar-graph-container,
-.bar-graph-icons,
 .bar-graph-bar,
-.empty-card,
-.empty-card--canvas {
+.empty-card {
   display: flex;
 }
 
@@ -85,25 +65,10 @@
 .toggle-button:hover { transform: none; }
 
 .graph-container { position: relative; z-index: 4; }
-.graph-stars-canvas-host {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-.graph-stars-canvas-host canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  pointer-events: none;
-  cursor: default;
-}
 .bar-graph-divider { position: relative; width: 100%; height: 100%; justify-content: center; align-items: flex-end; overflow: visible; }
 .bar-graph-container { justify-content: center; align-items: flex-end; height: 100%; }
-.bar-graph-icons { justify-content: space-around; }
 .bar-graph-bar { position: relative; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.bar-graph-bar + .bar-graph-bar { border-left: 1px solid var(--ui-border); }
 .bar-graph-fill {
   width: 100%;
   height: 0;
@@ -111,59 +76,10 @@
   animation-duration: 3.6s;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   border: 0.2px solid var(--graph-bar-border);
 }
 
-.bar-graph-bar:first-child,
-.bar-graph-bar:nth-child(3) {
-  position: relative;
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
-}
-
-.bar-graph-bar:first-child::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: -1px;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 6%,
-    var(--graph-divider) 15%,
-    transparent 40%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
-.bar-graph-bar:nth-child(3)::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -1px;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 6%,
-    var(--graph-divider) 15%,
-    transparent 40%,
-    transparent 100%
-  );
-}
-
-/* ==========================================================================
-   JS-DRIVEN INDICATOR/POSITION CORE (keep)
-   ==========================================================================
-   Percentage indicator + divider alignment rules.
-   -------------------------------------------------------------------------- */
-.bar-icon { filter: brightness(1.4); }
-.bar-icon:nth-child(3) { filter: saturate(1); }
 
 .percentage-section,
 .percentage-indicator {
@@ -177,6 +93,16 @@
   bottom: 0;
   z-index: 2;
   overflow: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .percentage-section { transition: height 0.5s cubic-bezier(.22,.61,.36,1); }
+  .percentage-indicator { animation: indicatorFadeIn 0.3s ease 0.25s both; }
+}
+
+@keyframes indicatorFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .percentage-line {
@@ -196,34 +122,57 @@
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.06);
 }
 
+:root[data-theme="dark"] .percentage-line {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.28) 12%,
+    rgba(255, 255, 255, 0.12) 26%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-top: 1px solid color-mix(in srgb, var(--hint-text) 55%, transparent);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.14);
+}
+
 .percentage-indicator {
   top: 0;
   left: 50%;
   min-width: 86px;
   max-width: 112px;
   padding: 0.55rem 0.7rem;
-  border: 1px solid var(--hint-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-md);
   background: var(--hint-bg);
   color: var(--hint-text);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
   text-align: center;
   white-space: nowrap;
   transform: translate(-50%, calc(-100% - 12px));
 }
 
+.percentage-indicator::before {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 18px;
+  height: 9px;
+  background: var(--ui-border);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: translateX(-50%);
+}
+
 .percentage-indicator::after {
   content: "";
   position: absolute;
-  bottom: -6px;
+  bottom: -7px;
   left: 50%;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 8px;
   background: var(--hint-bg);
-  border: 1px solid var(--hint-border);
-  transform: translateX(-50%) rotate(45deg);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: translateX(-50%);
 }
 
 .percentage-indicator p {
@@ -250,15 +199,11 @@
   height: 100%;
 }
 .empty-card { justify-content: center; align-items: center; flex-direction: column; }
-.empty-card--canvas { width: 250%; margin-left: -75%; }
 
 @media (prefers-reduced-motion: reduce) {
   .green-animation,
   .yellow-animation,
   .red-animation,
-  .green-dot-animation,
-  .yellow-dot-animation,
-  .red-dot-animation,
   .floaty {
     animation: none !important;
   }
@@ -269,23 +214,20 @@
    ==========================================================================
    Preserve these dimensions/positions for stable JS indicator placement.
    -------------------------------------------------------------------------- */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 767px) {
   .bar-graph-container { width: 204px; }
-  .bar-graph-icons { width: 88%; }
   .bar-graph-bar { width: 24%; }
   .toggle-button { width: 36px; height: 36px; }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1024px) {
   .bar-graph-container { width: 302px; }
-  .bar-graph-icons { width: 85%; }
   .bar-graph-bar { width: 26%; }
   .toggle-button { width: 56px; height: 56px; }
 }
 
 @media screen and (min-width: 1025px) {
   .bar-graph-container { width: 265px; }
-  .bar-graph-icons { width: 94%; }
   .bar-graph-bar { width: 33%; }
   .toggle-button { width: 40px; height: 40px; }
 }
@@ -312,10 +254,6 @@
 
 .graph-container canvas {
   cursor: grab;
-}
-
-.graph-stars-canvas-host canvas {
-  cursor: default;
 }
 
 .graph-container canvas.hovering-shape {
@@ -346,6 +284,23 @@
 
 .graph-loading-card.loading-dots {
   color: var(--ui-text-secondary);
+}
+
+.graph-loading-word,
+.stats-loading-word {
+  animation: bePulse 1.6s ease-in-out infinite;
+}
+
+.graph-loading-word {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  color: var(--ui-text);
+}
+
+.stats-loading-word {
+  display: inline-block;
+  padding: 0.1rem 0.25rem;
+  color: inherit;
 }
 
 .graph-loading-text {

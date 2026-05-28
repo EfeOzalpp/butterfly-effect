@@ -6,7 +6,7 @@ import { useUiFlow } from "../../app/state/ui-context";
 import type { Mode } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useIdentity } from "../../app/state/identity-context";
-import { avgWeightOf } from "../../lib/hooks/useRelativeScore";
+import { avgWeightOf } from "../../lib/utils/score";
 import { useAbsoluteScore } from "../../lib/hooks/useAbsoluteScore";
 import CheckIcon from "../../assets/svg/check/CheckIcon";
 
@@ -19,7 +19,7 @@ function ToggleCheckIcon() {
 }
 
 export default function ModeToggle() {
-  const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest } = useUiFlow();
+  const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest, personalPanelOpen } = useUiFlow();
   const { data } = useSurveyData();
   const { myEntryId } = useIdentity();
 
@@ -60,7 +60,21 @@ export default function ModeToggle() {
     setMode(next);
 
     if (!observerMode) {
-      if (canPersonalize) setOpenPersonalized(true);
+      if (canPersonalize) {
+        if (personalPanelOpen) {
+          setOpenPersonalized(true);
+        } else {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setSpotlightRequest({
+                durationMs: 3000,
+                fakeMouseXRatio: 0.25,
+                fakeMouseYRatio: 0.5,
+              });
+            });
+          });
+        }
+      }
       return;
     }
 

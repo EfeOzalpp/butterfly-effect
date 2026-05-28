@@ -50,6 +50,9 @@ export interface UiState {
   // Auto-opens the submitted user's personalized dot after submit.
   openPersonalized: boolean;
   setOpenPersonalized: (v: boolean) => void;
+  // True while the personalized gamification panel is expanded (user hasn't pressed X).
+  personalPanelOpen: boolean;
+  setPersonalPanelOpen: (v: boolean) => void;
   resetToStart: () => void;
   // Incremented by resetToStart so the Survey can detect mid-flow resets.
   surveyResetKey: number;

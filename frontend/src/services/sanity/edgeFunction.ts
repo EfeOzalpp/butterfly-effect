@@ -32,6 +32,29 @@ export function makeRandomId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
+const EDIT_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{32,128}$/;
+
+export function isEdgeEditToken(value: string | null | undefined): value is string {
+  return typeof value === 'string' && EDIT_TOKEN_PATTERN.test(value.trim());
+}
+
+export function makeEdgeEditToken(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().replace(/-/g, '');
+  }
+
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  return [makeRandomId(), makeRandomId(), makeRandomId()]
+    .join('-')
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 128);
+}
+
 export function getClientId(): string {
   if (typeof window === 'undefined') return makeRandomId();
 

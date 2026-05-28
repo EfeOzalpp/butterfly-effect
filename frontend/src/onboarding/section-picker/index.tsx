@@ -231,17 +231,12 @@ export default function SectionPickerIntro({
   );
 
   const chooseIndex = useCallback(
-    (focusIdx: number, source: 'keyboard' | 'pointer' = 'keyboard') => {
+    (focusIdx: number) => {
       if (focusIdx < 0 || focusIdx >= renderedFocusable.length) return;
       const opt = renderedFocusable[focusIdx];
       onChange(opt.value);
-      if (source === 'pointer') {
-        setSearch('');
-        // Delay close so the selection animation can finish.
-        setTimeout(() => { closePicker(); }, 260);
-      } else {
-        closePicker();
-      }
+      setSearch('');
+      closePicker();
     },
     [renderedFocusable, onChange, closePicker]
   );
@@ -317,7 +312,7 @@ export default function SectionPickerIntro({
                 setActiveIndex(Math.max(0, renderedFocusable.length - 1));
               } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (open) chooseIndex(safeActiveIndex, 'keyboard');
+                if (open) chooseIndex(safeActiveIndex);
                 else openPicker();
               } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -360,7 +355,7 @@ export default function SectionPickerIntro({
                   setActiveIndex(Math.max(0, renderedFocusable.length - 1));
                 } else if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  chooseIndex(safeActiveIndex, 'keyboard');
+                  chooseIndex(safeActiveIndex);
                 } else if (e.key === 'Escape') {
                   e.preventDefault();
                   closePicker();
@@ -404,7 +399,7 @@ export default function SectionPickerIntro({
                     onMouseDown={(e) => { e.preventDefault(); }}
                     onClick={() => {
                       const focusIdx = renderedFocusable.findIndex((option) => option.__renderIndex === idx);
-                      if (focusIdx >= 0) chooseIndex(focusIdx, 'pointer');
+                      if (focusIdx >= 0) chooseIndex(focusIdx);
                     }}
                   >
                     <span className="section-label">{item.label}</span>

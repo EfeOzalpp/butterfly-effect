@@ -3,7 +3,7 @@
 .personalized-root { opacity: 0; transition: opacity 200ms ease; }
 .personalized-root.is-visible { opacity: 1; }
 
-.toggle { align-items: center; justify-content: center; }
+.toggle { display: inline-flex; align-items: center; justify-content: center; }
 .toggle-icon { position: relative; width: 18px; height: 18px; line-height: 0; }
 .toggle-icon svg { position: absolute; inset: 0; transition: transform 0.15s ease-out, opacity 0.15s ease-out; }
 .toggle-icon.is-closed .icon-plus { opacity: 1; transform: scale(1) rotate(0deg); }
@@ -26,8 +26,8 @@
 /* Toggle button anchor used by JS-expanded state */
 .toggle-button.toggle { position: absolute; z-index: 3; pointer-events: all; }
 
-/* generalized results general styles */
-.gam-general {
+/* Shared popup panel */
+.gam-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,10 +35,28 @@
   text-align: center;
 }
 .gam-subline,
-.gam-general-copy {
+.gam-copy {
   margin: 0.2rem 0;
 }
-.gam-copy-line { display: block; }
+.gam-score {
+  margin: 0.1rem 0;
+}
+.solo-message-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: left;
+}
+.solo-message-intro h4,
+.solo-message-intro p {
+  margin: 0;
+}
+.solo-message-intro p {
+  color: var(--ui-text-muted);
+  font-size: var(--type-label-size);
+  line-height: var(--type-body-line);
+}
 .gam-inline-lines {
   display: inline-flex;
   flex-direction: column;
@@ -54,18 +72,13 @@
   gap: 0.35rem;
   width: 100%;
 }
-.solo-message-label {
-  align-self: flex-start;
-  color: var(--ui-text-muted);
-  font-size: var(--type-label-size);
-}
 .solo-message-input {
   width: 100%;
-  min-height: 3.2rem;
+  min-height: 4.8rem;
   resize: vertical;
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-md);
-  background: var(--ui-bg-page);
+  background: var(--ui-bg-text-input);
   color: var(--ui-text);
   font: inherit;
   font-size: var(--type-label-size);
@@ -76,11 +89,13 @@
   outline: 2px solid var(--btn-primary-bg);
   outline-offset: 2px;
 }
+.solo-message-input:hover {
+  background: var(--ui-bg-text-input-hover);
+}
 .solo-message-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-sm);
 }
 .solo-message-count,
 .solo-message-state {
@@ -88,24 +103,11 @@
   font-size: var(--type-label-size);
   margin: 0;
 }
+.solo-message-save { position: relative; right: -0.45rem; }
 .solo-message-state.is-error {
-  color: var(--ui-danger, #b23b3b);
+  color: var(--ui-error);
 }
-.solo-message-save {
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-text);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 0.4rem 0.65rem;
-}
-.solo-message-save:disabled {
-  cursor: default;
-  opacity: 0.55;
-}
-.gam-general, .gam-general.is-team {
+.gam-panel, .gam-panel.is-team {
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
@@ -120,18 +122,18 @@
 .generalized-result { transform: translateX(var(--offset-px)); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-start; }
 
 /* container, MID + RIGHT + LEFT */
-.is-right .generalized-result .gam-general,
-.is-mid .generalized-result .gam-general,
-.is-left .generalized-result .gam-general { width: clamp(10rem, 28vw, 14rem); padding: 1.1rem 1rem; }
+.is-right .generalized-result .gam-panel,
+.is-mid .generalized-result .gam-panel,
+.is-left .generalized-result .gam-panel { width: clamp(10rem, 28vw, 14rem); padding: 1.1rem 1rem; }
 
 /* team mode width override */
-.is-right .generalized-result .gam-general.is-team,
-.is-mid .generalized-result .gam-general.is-team,
-.is-left .generalized-result .gam-general.is-team { width: clamp(8rem, 24vw, 10rem) !important; }
+.is-right .generalized-result .gam-panel.is-team,
+.is-mid .generalized-result .gam-panel.is-team,
+.is-left .generalized-result .gam-panel.is-team { width: clamp(8rem, 24vw, 10rem) !important; }
 
 /* container, TOP + BOTTOM */
-.is-top.is-left .generalized-result .gam-general,
-.is-bottom.is-left .generalized-result .gam-general  { 
+.is-top.is-left .generalized-result .gam-panel,
+.is-bottom.is-left .generalized-result .gam-panel {
   width: clamp(10rem, 28vw, 14rem); height: fit-content; padding: 1.1rem 1rem; }
 
 /* orientation box, TOP and BOTTOM (left-bottom+top, mid-bottom+top, right-bottom+top) */
@@ -161,17 +163,34 @@
 .is-left .generalized-result { transform: translateX(var(--offset-px)); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-start; }
 
 /* personalized results orientation */
-.personalized-anchor { transform: translateX(var(--offset-px)); }
+.personalized-anchor {
+  display: flex;
+  justify-content: flex-start;
+  min-width: 360px;
+  max-width: 360px;
+  transform: translateX(var(--offset-px));
+}
 .personalized-result {
+  position: relative;
   pointer-events: all;
   display: flex;
   flex-direction: column;
   background: var(--ui-bg-surface);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
 }
-.personalized-result .gam-general {
+.solo-message-save-toast {
+  position: absolute;
+  right: calc(var(--space-md) + 5.2rem);
+  bottom: calc(var(--space-md) + 0.2rem);
+  z-index: 3;
+  padding: 0.55rem 0.75rem;
+  white-space: nowrap;
+  --hint-banner-hidden-transform: translateY(6px) scale(0.98);
+  --hint-banner-visible-transform: translateY(0) scale(1);
+}
+.personalized-result .gam-panel {
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -202,8 +221,9 @@
   .is-right .generalized-result { left: -210px; }
 
   /* personalized results */
-  .personalized-result { min-width: 150px; max-width: 150px; left: -32px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: 110px; }
+  .personalized-result { min-width: 150px; max-width: 150px; left: 60px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: -2px; left: 56px;}
+  .personalized-result:not(:has(> .is-team)) {min-width: 260px; max-width: 260px; }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1024px) {
@@ -230,8 +250,9 @@
   .is-right .generalized-result { left: -220px; }
 
   /* personalized results */
-  .personalized-result { min-width: 200px; left: 32px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: 2px; right: 72px; }
+  .personalized-result { min-width: 160px; left: 112px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: 2px; right: -112px; }
+  .personalized-result:not(:has(> .is-team)) {min-width: 260px; max-width: 260px; }
 }
 
 @media screen and (min-width: 1025px) {
@@ -246,29 +267,29 @@
 
   /* ALL TOP */
   /* top + right */
-  .is-top.is-right .generalized-result { top: 65px; left: -225px; }
+  .is-top.is-right .generalized-result { top: 70px; left: -225px; }
   /* top + left */
-  .is-top.is-left .generalized-result { top: 65px; left: 190px; }
+  .is-top.is-left .generalized-result { top: 70px; left: 190px; }
   /* top + mid */
-  .is-top.is-mid .generalized-result { top: 80px; left: 0; }
+  .is-top.is-mid .generalized-result { top: 70px; left: 0; }
 
   /* CENTRAL BANDS */
   /* left + mid */
   .is-left .generalized-result { left: 170px; }
-  .is-mid .generalized-result { left: 170px; }
+  .is-mid .generalized-result { left: 160px; }
   /* right */
   .is-right .generalized-result { left: -260px; }
 
   /* personalized results */
-  .personalized-result { max-width: 200px; min-width: 200px; left: 16px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: 72px; }
+  .personalized-result { max-width: 160px; min-width: 160px; left: 96px; }
+  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: -88px; }
+  .personalized-result:not(:has(> .is-team)) {min-width: 260px; max-width: 260px; }
 }
 
-/* Personalized close button — top-right of result panel */
 .personal-close-btn {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   width: 100%;
   padding: 0.55rem 0.75rem;
   border: none;
@@ -289,9 +310,12 @@
 }
 /* Toggle button — separate interactive element */
 .toggle-button.toggle {
+  width: 32px;
+  height: 32px;
+  padding: 0;
   background: var(--btn-secondary-bg);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--btn-radius);
   color: var(--ui-text);
 }
 .toggle-button.toggle:hover {

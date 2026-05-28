@@ -1,11 +1,11 @@
 // src/app/state/useSurveyDataState.ts
 // Owns Sanity survey rows plus the active section filter used by graph views.
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { getSessionItem, removeSessionItems, setSessionItem } from '../session';
 import type { SurveyRow } from '../../services/sanity/types';
-import { deriveSectionCounts, filterRowsForSection } from './survey-data-utils';
+import { deriveSectionCounts, filterRowsForSection, upsertSurveyRow } from './survey-data-utils';
 
 interface UseSurveyDataStateParams {
   mySection: string | null;
@@ -22,6 +22,18 @@ export default function useSurveyDataState({
   const [section, setSection] = useState<string>(() => mySection ?? 'all');
   const [allRows, setAllRows] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const localRowsRef = useRef<SurveyRow[]>([]);
+
+  const mergeLocalRows = useCallback((rows: SurveyRow[]) => {
+    const localRows = localRowsRef.current;
+    if (!localRows.length) return rows;
+
+    const remoteIds = new Set(rows.map((row) => row._id));
+    return localRows.reduce(
+      (nextRows, row) => remoteIds.has(row._id) ? nextRows : upsertSurveyRow(nextRows, row),
+      rows
+    );
+  }, []);
 
   const applyPostSubmitRedirect = useCallback((nextCounts: Record<string, number>) => {
     const justSubmitted = getSessionItem('be.justSubmitted') === '1';
@@ -57,10 +69,11 @@ export default function useSurveyDataState({
           section: 'all',
           limit: ALL_ROWS_LIMIT,
           onData: (rows: SurveyRow[]) => {
-            setAllRows(rows);
+            const nextRows = mergeLocalRows(rows);
+            setAllRows(nextRows);
             setLoading(false);
             // Run redirect from fresh rows instead of waiting for a separate state effect.
-            applyPostSubmitRedirect(deriveSectionCounts(rows));
+            applyPostSubmitRedirect(deriveSectionCounts(nextRows));
           },
         });
       })
@@ -74,7 +87,12 @@ export default function useSurveyDataState({
       closed = true;
       unsub();
     };
-  }, [applyPostSubmitRedirect]);
+  }, [applyPostSubmitRedirect, mergeLocalRows]);
+
+  const upsertLocalSurveyRow = useCallback((row: SurveyRow, replaceId?: string) => {
+    localRowsRef.current = upsertSurveyRow(localRowsRef.current, row, replaceId);
+    setAllRows((rows) => upsertSurveyRow(rows, row, replaceId));
+  }, []);
 
   const counts = useMemo(
     () => deriveSectionCounts(allRows),
@@ -96,6 +114,7 @@ export default function useSurveyDataState({
     data,
     allFilteredRows: filteredRows,
     loading,
+    upsertLocalSurveyRow,
     subscribeToSurveyData,
   };
 }

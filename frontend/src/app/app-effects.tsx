@@ -4,6 +4,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
+import HintBanner from "./ui/HintBanner";
 import { useMockBanner } from "./useMockBanner";
 
 const GamificationCopyPreloader = React.lazy(() =>
@@ -113,35 +114,16 @@ export function AppBrowserPolicies({
 
 export function MockReadBanner() {
   const { visible, setDismissed, quotaResetMonth } = useMockBanner();
-  if (!visible) return null;
 
   return (
-    <div className="mock-read-banner" role="status" aria-live="polite">
-      <span>{`API quota exceeded. Demo data until ${quotaResetMonth} 1.`}</span>
-      <button
-        type="button"
-        className="mock-read-banner-close"
-        aria-label="Dismiss demo data notice"
-        onClick={() => { setDismissed(true); }}
-      >
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            d="M17 7L7 17M7 7L17 17"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
+    <HintBanner
+      visible={visible}
+      className="mock-read-banner"
+      closeClassName="mock-read-banner-close"
+      closeLabel="Dismiss demo data notice"
+      onDismiss={() => { setDismissed(true); }}
+    >
+      {`API quota exceeded. Demo data until ${quotaResetMonth} 1.`}
+    </HintBanner>
   );
 }

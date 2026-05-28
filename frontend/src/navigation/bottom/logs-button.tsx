@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Ref } from "react";
 import "../../styles/logs.css";
 import { useSurveyData } from "../../app/state/survey-data-context";
+import { useEscapeToClose } from "../../lib/hooks/useEscapeToClose";
+import { useFocusTrap } from "../../lib/hooks/useFocusTrap";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
 import SearchIcon from "../../assets/svg/search/SearchIcon";
 
@@ -22,49 +24,31 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export default function LogsButton({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+interface LogsPanelProps {
+  className?: string;
+  panelRef?: Ref<HTMLDivElement>;
+  showCloseButton?: boolean;
+  onClose: () => void;
+}
+
+export function LogsPanel({
+  className = "logs-popover",
+  panelRef,
+  showCloseButton = true,
+  onClose,
+}: LogsPanelProps) {
   const { allFilteredRows: data } = useSurveyData();
-  const setOpen = onOpenChange;
   const [page, setPage] = useState(0);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterFocused, setFilterFocused] = useState(false);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!searchOpen) return;
     filterInputRef.current?.focus();
   }, [searchOpen]);
 
-  useEffect(() => {
-    if (!open) return;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const sel = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-    const getFocusable = () => Array.from(dialog.querySelectorAll<HTMLElement>(sel));
-    getFocusable()[0]?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      const focusable = getFocusable();
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      triggerRef.current?.focus();
-    };
-  }, [open]);
-
-  // Sort ascending by submittedAt (earliest = #1)
   const sorted = useMemo(() => {
     return [...data].sort((a, b) => {
       const da = a.submittedAt ?? a._createdAt;
@@ -73,7 +57,6 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
     });
   }, [data]);
 
-  // Rank by avgWeight descending (rank 1 = highest avg)
   const rankById = useMemo(() => {
     const byAvg = [...sorted].sort((a, b) => (b.avgWeight ?? 0) - (a.avgWeight ?? 0));
     const map = new Map<string, number>();
@@ -124,15 +107,9 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
   }
 
   function closeLogs() {
-    setOpen(false);
     setFilterFocused(false);
     if (!query.trim()) setSearchOpen(false);
-  }
-
-  function toggle() {
-    if (open) closeLogs();
-    else setOpen(true);
-    setPage(0);
+    onClose();
   }
 
   function openSearch() {
@@ -145,92 +122,93 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
   }
 
   return (
-    <div className="logs-wrap">
-      <div className={`logs-popover-shell${open ? " is-open" : ""}`} aria-hidden={!open}>
-        <div className="logs-popover-clip">
-          <div ref={dialogRef} className="logs-popover" role="dialog" aria-label="Submission logs" aria-modal="true">
-          <div className="logs-header">
-            <span className="logs-title">Submission logs</span>
-            <div className="logs-header-tools">
-              {!searchOpen && <span className="logs-entry-count">{sorted.length} logs</span>}
+    <div ref={panelRef} className={className}>
+      <div className="logs-header">
+        <span className="logs-title">Logs</span>
+        <div className="logs-header-tools">
+          {!searchOpen && <span className="ui-label logs-entry-count">{sorted.length} logs</span>}
 
-              {searchOpen ? (
-                <label
-                  className={`logs-filter-field${filterFocused ? " is-focused" : ""}`}
-                  htmlFor="logs-filter-input"
-                  data-focused={filterFocused ? "true" : "false"}
-                >
-                  <SearchIcon className="ui-icon" />
-                  <input
-                    ref={filterInputRef}
-                    id="logs-filter-input"
-                    type="text"
-                    className="logs-filter-input"
-                    value={query}
-                    placeholder="search"
-                    aria-label={filterFocused ? "Filtering submission logs" : "Filter submission logs"}
-                    aria-expanded={searchOpen}
-                    onFocus={() => { setFilterFocused(true); }}
-                    onBlur={closeSearchIfEmpty}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Escape") return;
-                      if (query.trim()) {
-                        setQuery("");
-                        setPage(0);
-                        return;
-                      }
-                      setSearchOpen(false);
-                      setFilterFocused(false);
-                    }}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setPage(0);
-                    }}
-                  />
-                </label>
-              ) : (
-                <button
-                  type="button"
-                  className="logs-filter-trigger"
-                  aria-label="Open log search"
-                  onClick={openSearch}
-                >
-                  <SearchIcon className="ui-icon" />
-                </button>
-              )}
-            </div>
-          </div>
+          {searchOpen ? (
+            <label
+              className={`logs-filter-field${filterFocused ? " is-focused" : ""}`}
+              htmlFor="logs-filter-input"
+              data-focused={filterFocused ? "true" : "false"}
+            >
+              <SearchIcon className="ui-icon" />
+              <input
+                ref={filterInputRef}
+                id="logs-filter-input"
+                type="text"
+                className="logs-filter-input"
+                value={query}
+                placeholder="search"
+                aria-label={filterFocused ? "Filtering submission logs" : "Filter submission logs"}
+                aria-expanded={searchOpen}
+                onFocus={() => { setFilterFocused(true); }}
+                onBlur={closeSearchIfEmpty}
+                onKeyDown={(e) => {
+                  if (e.key !== "Escape") return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (query.trim()) {
+                    setQuery("");
+                    setPage(0);
+                    return;
+                  }
+                  setSearchOpen(false);
+                  setFilterFocused(false);
+                }}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(0);
+                }}
+              />
+            </label>
+          ) : (
+            <button
+              type="button"
+              className="logs-filter-trigger"
+              aria-label="Open log search"
+              onClick={openSearch}
+            >
+              <SearchIcon className="ui-icon" />
+            </button>
+          )}
+        </div>
+      </div>
 
-          <div className="logs-table-wrap" onWheel={(e) => { e.stopPropagation(); }}>
-            <table className="logs-table">
-              <thead>
-                <tr>
-                  <th className="logs-th logs-th--num">#</th>
-                  <th className="logs-th logs-th--section">Section</th>
-                  <th className="logs-th logs-th--qs">Q1–Q5</th>
-                  <th className="logs-th logs-th--avg">Avg</th>
-                  <th className="logs-th logs-th--rank">Rank</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.length === 0 ? (
-                  <tr className="logs-row logs-row--empty">
-                    <td className="logs-empty" colSpan={5}>couldn't find that one.</td>
-                  </tr>
-                ) : pageRows.map((row, i) => (
-                  <tr key={row._id} className="logs-row">
-                    <td className="logs-td logs-td--num">{renderHighlighted(String(startIndex + i + 1))}</td>
-                    <td className="logs-td logs-td--section">{renderHighlighted(formatSectionLabel(row.section))}</td>
-                    <td className="logs-td logs-td--qs">{renderHighlighted(fmtQs(row))}</td>
-                    <td className="logs-td logs-td--avg">{renderHighlighted(fmt(row.avgWeight))}</td>
-                    <td className="logs-td logs-td--rank">{renderHighlighted(String(rankById.get(row._id) ?? 0))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <div className="logs-table-wrap" onWheel={(e) => { e.stopPropagation(); }}>
+        <table className="logs-table">
+          <thead>
+            <tr>
+              <th className="logs-th logs-th--num">#</th>
+              <th className="logs-th logs-th--section">Section</th>
+              <th className="logs-th logs-th--qs">Q1-Q5</th>
+              <th className="logs-th logs-th--avg">Avg</th>
+              <th className="logs-th logs-th--rank">Rank</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.length === 0 ? (
+              <tr className="logs-row logs-row--empty">
+                <td className="logs-empty" colSpan={5}>couldn't find that one.</td>
+              </tr>
+            ) : pageRows.map((row, i) => (
+              <tr key={row._id} className="logs-row">
+                <td className="logs-td logs-td--num">{renderHighlighted(String(startIndex + i + 1))}</td>
+                <td className="logs-td logs-td--section">{renderHighlighted(formatSectionLabel(row.section))}</td>
+                <td className="logs-td logs-td--qs">{renderHighlighted(fmtQs(row))}</td>
+                <td className="logs-td logs-td--avg">{renderHighlighted(fmt(row.avgWeight))}</td>
+                <td className="logs-td logs-td--rank">{renderHighlighted(String(rankById.get(row._id) ?? 0))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-          <div className="logs-footer">
+      {(showCloseButton || totalPages > 1) && (
+        <div className="logs-footer">
+          {showCloseButton && (
             <button
               type="button"
               className="logs-close-btn"
@@ -238,59 +216,83 @@ export default function LogsButton({ open, onOpenChange }: { open: boolean; onOp
               onClick={closeLogs}
             >
               <CloseIcon className="ui-close" />
-              <span>Logs</span>
             </button>
+          )}
 
-            {totalPages > 1 && (
-              <div className="logs-pagination">
-                <button
-                  type="button"
-                  className="logs-page-arrow"
-                  style={safePage === 0 ? { visibility: 'hidden' } : undefined}
-                  tabIndex={safePage === 0 ? -1 : undefined}
-                  aria-hidden={safePage === 0}
-                  onClick={() => { setPage((p) => p - 1); }}
-                  aria-label="Previous page"
-                >
-                  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <span className="logs-page-label">
-                  {safePage + 1}<span className="logs-page-sep">/</span>{totalPages}
-                </span>
-                <button
-                  type="button"
-                  className="logs-page-arrow"
-                  style={safePage >= totalPages - 1 ? { visibility: 'hidden' } : undefined}
-                  tabIndex={safePage >= totalPages - 1 ? -1 : undefined}
-                  aria-hidden={safePage >= totalPages - 1}
-                  onClick={() => { setPage((p) => p + 1); }}
-                  aria-label="Next page"
-                >
-                  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                  <input
-                    id="logs-page-input"
-                    type="number"
-                    className="logs-page-input"
-                    min={1}
-                  max={totalPages}
-                  placeholder="page"
-                  aria-label="Go to page"
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                      setPage(val - 1);
-                    }
-                  }}
-                />
-              </div>
-            )}
+          {totalPages > 1 && (
+          <div className="logs-pagination">
+            <button
+              type="button"
+              className="logs-page-arrow"
+              style={safePage === 0 ? { visibility: "hidden" } : undefined}
+              tabIndex={safePage === 0 ? -1 : undefined}
+              aria-hidden={safePage === 0}
+              onClick={() => { setPage((p) => p - 1); }}
+              aria-label="Previous page"
+            >
+              <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <span className="logs-page-label">
+              {safePage + 1}<span className="logs-page-sep">/</span>{totalPages}
+            </span>
+            <button
+              type="button"
+              className="logs-page-arrow"
+              style={safePage >= totalPages - 1 ? { visibility: "hidden" } : undefined}
+              tabIndex={safePage >= totalPages - 1 ? -1 : undefined}
+              aria-hidden={safePage >= totalPages - 1}
+              onClick={() => { setPage((p) => p + 1); }}
+              aria-label="Next page"
+            >
+              <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <input
+              id="logs-page-input"
+              type="number"
+              className="logs-page-input"
+              min={1}
+              max={totalPages}
+              placeholder="page"
+              aria-label="Go to page"
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                  setPage(val - 1);
+                }
+              }}
+            />
           </div>
-          </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function LogsButton({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const closeLogs = useCallback(() => { onOpenChange(false); }, [onOpenChange]);
+
+  useEscapeToClose(open, closeLogs);
+  useFocusTrap({ enabled: open, containerRef: dialogRef, returnFocusRef: triggerRef });
+
+  function toggle() {
+    onOpenChange(!open);
+  }
+
+  return (
+    <div className="logs-wrap">
+      <div className={`logs-popover-shell${open ? " is-open" : ""}`} aria-hidden={!open}>
+        <div className="logs-popover-clip">
+          <LogsPanel
+            panelRef={dialogRef}
+            onClose={closeLogs}
+          />
         </div>
       </div>
 

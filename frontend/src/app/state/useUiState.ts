@@ -22,17 +22,19 @@ function sameQuestionnaireNav(a: QuestionnaireNavState, b: QuestionnaireNavState
   );
 }
 
-function hasStoredSurveySession() {
-  return !!(getSessionItem('be.mySection') && getSessionItem('be.myEntryId'));
-}
-
 export default function useUiState() {
+  // ── Survey shell ───────────────────────────────────────────────────────────
+  // isSurveyActive: survey shell is mounted (role → section → questions).
+  // Distinct from questionnaireOpen, which is narrower (only the 'questions' stage).
   const [isSurveyActive, setSurveyActive] = useState<boolean>(false);
-  const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(hasStoredSurveySession);
+  const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(false);
 
+  // ── Questionnaire sub-state ────────────────────────────────────────────────
   const [questionnaireOpen, _setQuestionnaireOpen] = useState<boolean>(false);
   const questionnaireOpenRef = useRef(false);
-  const graphOpenedFromQuestionnaireRef = useRef(false);
+  // Tracks whether the graph was opened while the questionnaire was active so
+  // closeGraph() can restore the questionnaire rather than returning to landing.
+  const graphReturnRef = useRef(false);
   const [sectionOpen, setSectionOpen] = useState<boolean>(false);
   const [cityPanelOpen, setCityPanelOpen] = useState<boolean>(false);
   const [questionnaireNav, _setQuestionnaireNav] = useState<QuestionnaireNavState>(
@@ -65,25 +67,38 @@ export default function useUiState() {
     }
   }, [resetQuestionnaireNav]);
 
+  // ── Graph visibility ───────────────────────────────────────────────────────
   const [observerMode, setObserverMode] = useState<boolean>(false);
-  const [vizVisible, _setVizVisible] = useState<boolean>(hasStoredSurveySession);
-  const vizVisibleRef = useRef(hasStoredSurveySession());
+  const [vizVisible, _setVizVisible] = useState<boolean>(false);
+  const vizVisibleRef = useRef(false);
+
   const setVizVisible = useCallback((v: boolean) => {
-    if (!v) graphOpenedFromQuestionnaireRef.current = false;
+    if (!v) graphReturnRef.current = false;
     vizVisibleRef.current = v;
     _setVizVisible(v);
   }, []);
+
   const [logsOpen, setLogsOpen] = useState<boolean>(false);
   const [widgetsOpen, setWidgetsOpen] = useState<boolean>(false);
+
   const openGraph = useCallback(() => {
     if (!vizVisibleRef.current) {
-      graphOpenedFromQuestionnaireRef.current = questionnaireOpenRef.current;
+      const wasInQuestionnaire = questionnaireOpenRef.current;
+      graphReturnRef.current = wasInQuestionnaire;
+      if (wasInQuestionnaire) {
+        // Suppress questionnaire UI while graph is visible; closeGraph restores it.
+        // Use the raw setter to avoid clearing cityPanelOpen or questionnaireNav,
+        // which closeGraph does NOT restore (intentional: return to questions, not city panel).
+        questionnaireOpenRef.current = false;
+        _setQuestionnaireOpen(false);
+        setCityPanelOpen(false);
+      }
     }
     setVizVisible(true);
   }, [setVizVisible]);
+
   const closeGraph = useCallback(() => {
-    const shouldRestoreQuestionnaire = graphOpenedFromQuestionnaireRef.current;
-    if (shouldRestoreQuestionnaire) {
+    if (graphReturnRef.current) {
       questionnaireOpenRef.current = true;
       _setQuestionnaireOpen(true);
     }
@@ -92,13 +107,13 @@ export default function useUiState() {
     setWidgetsOpen(false);
   }, [setVizVisible]);
 
-  const [surveyResetKey, setSurveyResetKey] = useState(0);
-  const incrementSurveyResetKey = useCallback(() => { setSurveyResetKey((k) => k + 1); }, []);
-
+  // ── Other overlays ─────────────────────────────────────────────────────────
   const [animationVisible, setAnimationVisible] = useState(false);
   const [openPersonalized, setOpenPersonalized] = useState(false);
+  const [personalPanelOpen, setPersonalPanelOpen] = useState(true);
   const [spotlightRequest, setSpotlightRequest] = useState<SpotlightRequest | null>(null);
 
+  // ── Persisted preferences ──────────────────────────────────────────────────
   const [mode, setMode] = useState<Mode>(() => readStoredMode('absolute'));
   useEffect(() => {
     setSessionItem('be.mode', mode);
@@ -108,6 +123,10 @@ export default function useUiState() {
   useEffect(() => {
     setSessionItem('be.radarMode', radarMode ? '1' : '0');
   }, [radarMode]);
+
+  // ── Survey reset ───────────────────────────────────────────────────────────
+  const [surveyResetKey, setSurveyResetKey] = useState(0);
+  const incrementSurveyResetKey = useCallback(() => { setSurveyResetKey((k) => k + 1); }, []);
 
   return {
     isSurveyActive,
@@ -134,6 +153,8 @@ export default function useUiState() {
     setAnimationVisible,
     openPersonalized,
     setOpenPersonalized,
+    personalPanelOpen,
+    setPersonalPanelOpen,
     mode,
     setMode,
     radarMode,

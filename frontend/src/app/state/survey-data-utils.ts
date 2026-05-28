@@ -39,3 +39,20 @@ export function filterRowsForSection(allRows: SurveyRow[], section: string) {
   }
   return allRows.filter((row) => row.section === section);
 }
+
+function newestTimestampOf(row: SurveyRow) {
+  const raw = row.submittedAt ?? row._createdAt;
+  const ts = Date.parse(raw);
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+export function upsertSurveyRow(
+  allRows: SurveyRow[],
+  nextRow: SurveyRow,
+  replaceId?: string
+) {
+  const filtered = allRows.filter((row) =>
+    row._id !== nextRow._id && (!replaceId || row._id !== replaceId)
+  );
+  return [nextRow, ...filtered].sort((a, b) => newestTimestampOf(b) - newestTimestampOf(a));
+}

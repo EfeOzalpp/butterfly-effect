@@ -30,16 +30,6 @@ const STUDENT_UMBRELLA_OPTIONS: GraphOption[] = [
   { id: "foundations", label: "Foundations" },
 ];
 
-export const NON_PERSONAL_IDS = new Set([
-  "all",
-  "all-massart",
-  "all-students",
-  "all-staff",
-  CHOOSE_STUDENT,
-  CHOOSE_STAFF,
-  GO_BACK,
-]);
-
 export function titleFromId(id: string) {
   if (!id) return "";
   return id.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
@@ -48,8 +38,6 @@ export function titleFromId(id: string) {
 export function useGraphPickerData(value: string) {
   const { counts } = useSurveyData();
   const { mySection } = useIdentity();
-
-  const yourIdsSet = useMemo(() => new Set(mySection ? [mySection] : []), [mySection]);
 
   const BASE_STUDENT = useMemo(() => {
     const base = ROLE_SECTIONS.student.map((section) => ({ id: section.value, label: section.label }));
@@ -99,6 +87,15 @@ export function useGraphPickerData(value: string) {
 
   const studentIdSet = useMemo(() => new Set(BASE_STUDENT.map((section) => section.id)), [BASE_STUDENT]);
   const staffIdSet = useMemo(() => new Set(BASE_STAFF.map((section) => section.id)), [BASE_STAFF]);
+  const yourIdsSet = useMemo(() => {
+    const ids = new Set<string>();
+    if (!mySection) return ids;
+
+    ids.add(mySection);
+    if (studentIdSet.has(mySection)) ids.add("all-students");
+    if (staffIdSet.has(mySection)) ids.add("all-staff");
+    return ids;
+  }, [mySection, staffIdSet, studentIdSet]);
 
   return {
     yourIdsSet,

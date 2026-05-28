@@ -51,7 +51,7 @@ export default function LiveAvgButtonGroup({
             <button
               key={item.id}
               type="button"
-              className={`button-questionnaire__button${active ? " is-active" : ""}`}
+              className={`ui-toggle-option button-questionnaire__button${active ? " is-active" : ""}`}
               aria-pressed={active}
               disabled={item.disabled}
               onClick={() => { toggleButton(item.id); }}

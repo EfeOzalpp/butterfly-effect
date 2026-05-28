@@ -1,6 +1,13 @@
 import { getSessionItem, setSessionItem } from '../../app/session';
 import { USE_MOCK_SANITY, shouldUseMockSanityReads } from './config';
-import { getClientId, getSupabaseEdgeConfig, makeEdgeFunctionError, makeRandomId } from './edgeFunction';
+import {
+  EdgeFunctionError,
+  getClientId,
+  getSupabaseEdgeConfig,
+  isEdgeEditToken,
+  makeEdgeFunctionError,
+  makeRandomId,
+} from './edgeFunction';
 import { updateMockSoloMessage } from './mockData';
 
 export interface SavedSoloMessage {
@@ -28,6 +35,19 @@ function isSavedSoloMessage(value: unknown): value is SavedSoloMessage {
   if (!value || typeof value !== 'object') return false;
   const record = value as Record<string, unknown>;
   return typeof record._id === 'string';
+}
+
+function explainSoloMessageSaveError(error: EdgeFunctionError): Error {
+  if (
+    error.code === 'EDIT_TOKEN_MISMATCH' ||
+    /invalid edit token|not allowed to edit/i.test(error.message)
+  ) {
+    return new Error(
+      'This saved response cannot be edited from this browser. It may have been saved before message editing was enabled.'
+    );
+  }
+
+  return error;
 }
 
 function persistSoloMessageSnapshot(updated: SavedSoloMessage) {
@@ -63,6 +83,10 @@ export async function saveSoloMessage(message: string): Promise<SavedSoloMessage
     throw new Error('This browser can no longer edit that response.');
   }
 
+  if (!isEdgeEditToken(editToken)) {
+    throw new Error('This browser has an old edit token for that response. Submit a new response to enable message editing.');
+  }
+
   if (USE_MOCK_SANITY || shouldUseMockSanityReads()) {
     const updated = updateMockSoloMessage(responseId, normalized);
     persistSoloMessageSnapshot(updated);
@@ -92,12 +116,13 @@ export async function saveSoloMessage(message: string): Promise<SavedSoloMessage
 
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    throw makeEdgeFunctionError(
+    const edgeError = makeEdgeFunctionError(
       'save-solo-message',
       res.status,
       json,
       `Solo message request failed with status ${String(res.status)}`
     );
+    throw explainSoloMessageSaveError(edgeError);
   }
 
   if (!isSavedSoloMessage(json)) {

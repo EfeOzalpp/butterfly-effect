@@ -5,8 +5,8 @@ import "../styles/graph-picker.css";
 import {
   useGraphPickerData,
   CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
-  NON_PERSONAL_IDS, titleFromId,
-} from "./graph-picker-data";
+  titleFromId,
+} from "./gp-data";
 import ExpandIcon from "../assets/svg/expand/ExpandIcon";
 
 export default function GraphPicker({
@@ -41,9 +41,8 @@ export default function GraphPicker({
     if (open && mode === "student") return "Student Departments";
     if (open && mode === "staff") return "Institutional Departments";
     const base = ALL_LABELS.get(value) ?? "Everyone";
-    const isPersonal = yourIdsSet.has(value) && !NON_PERSONAL_IDS.has(value);
-    return isPersonal ? `${base} (you)` : base;
-  }, [open, mode, value, ALL_LABELS, yourIdsSet]);
+    return base;
+  }, [open, mode, value, ALL_LABELS]);
 
   const maxActiveIndex = Math.max(0, VISIBLE_OPTS.length - 1);
   const safeActiveIndex = Math.min(Math.max(activeIndex, 0), maxActiveIndex);
@@ -158,7 +157,9 @@ export default function GraphPicker({
         onKeyDown={onTriggerKeyDown}
         tabIndex={0}
       >
-        <span className="trigger-label"><h4>{triggerCoreLabel}</h4></span>
+        <span className="trigger-label">
+          <h4>{triggerCoreLabel}</h4>
+        </span>
         <span className="trigger-chevron" aria-hidden>
           <ExpandIcon expanded={open} className="section-chevron-svg ui-icon" />
         </span>
@@ -185,7 +186,8 @@ export default function GraphPicker({
               const isStaffChooser = opt.id === CHOOSE_STAFF;
               const showCount = !(isBack || isChooser);
               const n = counts[opt.id] ?? 0;
-              const isPersonal = yourIdsSet.has(opt.id) && !NON_PERSONAL_IDS.has(opt.id);
+              const isPersonal = yourIdsSet.has(opt.id);
+              const countLabel = `${String(n)} ${n === 1 ? "person" : "people"}`;
 
               return (
                 <div
@@ -201,8 +203,8 @@ export default function GraphPicker({
                   {isBack ? (
                     <>
                       <span className="back-icon" aria-hidden>
-                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <polyline points="15 6 9 12 15 18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M15 18L9 12L15 6" />
                         </svg>
                       </span>
                       <span className="label">Back</span>
@@ -222,18 +224,24 @@ export default function GraphPicker({
                         })()}
                       </span>
                       <span className="chooser-icon" aria-hidden>
-                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <polyline points="9 6 15 12 9 18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18L15 12L9 6" />
                         </svg>
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="label">
+                      <span className="label option-label">
                         {opt.id === "visitor" && <span className="explorer-emoji" aria-hidden>🌍</span>}
                         {ALL_LABELS.get(opt.id) ?? titleFromId(opt.id)}
-                        {isPersonal && <span className="you"> (you)</span>}
-                        {showCount && <span className="count"> · {n}</span>}
+                      </span>
+                      <span className="picker-labels">
+                        {isPersonal && <span className="ui-label picker-you">you</span>}
+                        {showCount && (
+                          <span className="ui-label picker-count" aria-label={countLabel} title={countLabel}>
+                            {n}
+                          </span>
+                        )}
                       </span>
                     </>
                   )}

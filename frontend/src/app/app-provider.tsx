@@ -1,11 +1,10 @@
 // src/app/app-provider.tsx
 // Creates the app-wide state providers and handles cross-slice reset/bootstrap.
 
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { unstable_batchedUpdates as batched } from "react-dom";
 
 import { getSessionItem, removeSessionItems } from "./session";
-import { USE_MOCK_SANITY } from "../services/sanity/config";
 
 import useCanvasRuntimeState from "./state/useCanvasRuntimeState";
 import useIdentityState from "./state/useIdentityState";
@@ -25,8 +24,6 @@ import { UiCtx } from "./state/ui-context";
 import type { UiState } from "./state/ui-context";
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const didMockBootstrapRef = useRef(false);
-
   const { mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole } = useIdentityState();
   const { darkMode, setDarkMode } = usePreferencesState();
   const {
@@ -44,6 +41,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     spotlightRequest, setSpotlightRequest,
     animationVisible, setAnimationVisible,
     openPersonalized, setOpenPersonalized,
+    personalPanelOpen, setPersonalPanelOpen,
     questionnaireNav, setQuestionnaireNav,
     questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
     surveyResetKey, incrementSurveyResetKey,
@@ -55,7 +53,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setReservedFootprints,
     resetCanvasRuntimeState,
   } = useCanvasRuntimeState();
-  const { section, setSection, counts, allRows, data, allFilteredRows, loading, subscribeToSurveyData } = useSurveyDataState({ mySection });
+  const { section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow, subscribeToSurveyData } = useSurveyDataState({ mySection });
 
   // Sanity subscription starts once at the app boundary and writes into SurveyDataCtx.
   useEffect(() => {
@@ -63,46 +61,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     return () => { unsub(); };
   }, [subscribeToSurveyData]);
 
-  // Mock bootstrap: restore session on reload.
-  useEffect(() => {
-    if (!USE_MOCK_SANITY || didMockBootstrapRef.current) return;
-    didMockBootstrapRef.current = true;
-
-    const mockSection = getSessionItem("be.mySection");
-    const mockEntryId = getSessionItem("be.myEntryId");
-    const mockRole = getSessionItem("be.myRole");
-
-    if (!mockSection || !mockEntryId) return;
-
-    setMySection(mockSection);
-    setMyEntryId(mockEntryId);
-    setMyRole(mockRole);
-    setSection(mockSection);
-    setSurveyActive(false);
-    setHasCompletedSurvey(true);
-    setObserverMode(false);
-    openGraph();
-  }, [
-    setHasCompletedSurvey,
-    setMyEntryId,
-    setMyRole,
-    setMySection,
-    setObserverMode,
-    setSection,
-    setSurveyActive,
-    openGraph,
-  ]);
-
   const resetToStart = useCallback(() => {
+    const savedEntryId = getSessionItem("be.myEntryId");
+    const savedSection = getSessionItem("be.mySection");
+    const savedRole = getSessionItem("be.myRole");
+
     batched(() => {
       setVizVisible(false);
       setSurveyActive(false);
       setHasCompletedSurvey(false);
       setObserverMode(false);
-      setMyEntryId(null);
-      setMySection(null);
-      setMyRole(null);
-      setSection("all");
+      setMyEntryId(savedEntryId);
+      setMySection(savedSection);
+      setMyRole(savedRole);
+      setSection(savedSection ?? "all");
       setQuestionnaireOpen(false);
       setSectionOpen(false);
       setCityPanelOpen(false);
@@ -156,6 +128,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       observerMode, setObserverMode,
       animationVisible, setAnimationVisible,
       openPersonalized, setOpenPersonalized,
+      personalPanelOpen, setPersonalPanelOpen,
       resetToStart,
       surveyResetKey,
       radarMode, setRadarMode,
@@ -176,6 +149,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       observerMode, setObserverMode,
       animationVisible, setAnimationVisible,
       openPersonalized, setOpenPersonalized,
+      personalPanelOpen, setPersonalPanelOpen,
       resetToStart,
       surveyResetKey,
       radarMode, setRadarMode,
@@ -209,8 +183,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const surveyDataValue = useMemo<SurveyDataState>(
-    () => ({ section, setSection, counts, allRows, data, allFilteredRows, loading }),
-    [section, setSection, counts, allRows, data, allFilteredRows, loading]
+    () => ({ section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow }),
+    [section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow]
   );
 
   return (

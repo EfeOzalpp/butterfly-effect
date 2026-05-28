@@ -3,23 +3,30 @@ import { useState } from "react";
 
 import ColorToggle from "./color-toggle";
 import GraphPicker from "../graph-picker";
+import { getSessionItem } from "../../app/session";
+import { useIdentity } from "../../app/state/identity-context";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
+import { isDesktopWidth, isTabletWidth } from "../../lib/responsive/breakpoints";
+import { desktopGraphToolsOffsetPx } from "../../lib/responsive/graph-tools-offset";
 
 const DEFAULT_SECTION = "fine-arts";
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
 type PickerOffsetStyle = CSSProperties & { "--picker-offset": string };
 
 export default function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
-  const { isSurveyActive, setSurveyActive, hasCompletedSurvey, observerMode, setObserverMode, openGraph, closeGraph, resetToStart, logsOpen, widgetsOpen } = useUiFlow();
+  const { isSurveyActive, setSurveyActive, hasCompletedSurvey, setHasCompletedSurvey, observerMode, setObserverMode, openGraph, closeGraph, resetToStart, logsOpen, widgetsOpen, questionnaireOpen } = useUiFlow();
   const { section, setSection } = useSurveyData();
+  const { myEntryId, mySection, setMyEntryId, setMySection, setMyRole } = useIdentity();
   const windowWidth = useWindowWidth();
   const [pickerOpen, setPickerOpen] = useState(false);
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
-  const pickerOffset = windowWidth > 1024
-    ? ((logsOpen ? 130 : 0) + (widgetsOpen ? 50 : 0)) * aspectRatio
-    : (pickerOpen ? 0 : -30);
+  const pickerOffset = isDesktopWidth(windowWidth)
+    ? desktopGraphToolsOffsetPx(windowWidth, logsOpen, widgetsOpen, aspectRatio)
+    : isTabletWidth(windowWidth)
+      ? 0
+      : (pickerOpen ? 0 : -30);
 
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
@@ -32,6 +39,20 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const toggleObserverMode = () => {
     if (hasCompletedSurvey && !observerMode) {
       resetToStart();
+      return;
+    }
+
+    const savedEntryId = myEntryId ?? getSessionItem("be.myEntryId");
+    const savedSection = mySection ?? getSessionItem("be.mySection");
+    if (!observerMode && !hasCompletedSurvey && savedEntryId && savedSection && !questionnaireOpen) {
+      setMyEntryId(savedEntryId);
+      setMySection(savedSection);
+      setMyRole(getSessionItem("be.myRole"));
+      setHasCompletedSurvey(true);
+      setObserverMode(false);
+      setSurveyActive(false);
+      setSection(savedSection);
+      openGraph();
       return;
     }
 
@@ -65,16 +86,15 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
             <span className="observe-results__inner">{observerLabel}</span>
           </button>
         )}
-
-        {showPicker && (
-          <div
-            className="graph-picker"
-            style={pickerStyle}
-          >
-            <GraphPicker value={section} onChange={setSection} onOpenChange={setPickerOpen} />
-          </div>
-        )}
       </div>
+      {showPicker && (
+        <div
+          className="graph-picker"
+          style={pickerStyle}
+        >
+          <GraphPicker value={section} onChange={setSection} onOpenChange={setPickerOpen} />
+        </div>
+      )}
     </>
   );
 }

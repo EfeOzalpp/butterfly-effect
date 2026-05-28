@@ -1,11 +1,13 @@
 import { USE_MOCK_SANITY, enableMockSanityReadFallback, shouldUseMockSanityReads } from './config';
 import { createMockUserResponse } from './mockData';
-import type { SurveyWeights } from './types';
+import type { SurveyRow, SurveyWeights } from './types';
 import { getSessionItem, setSessionItem } from '../../app/session';
 import {
   EdgeFunctionError,
   getClientId,
   getSupabaseEdgeConfig,
+  isEdgeEditToken,
+  makeEdgeEditToken,
   makeEdgeFunctionError,
   makeRandomId,
 } from './edgeFunction';
@@ -65,24 +67,21 @@ function isSavedUserResponse(value: unknown): value is SavedUserResponse {
 
 export function ensureUserResponseEditToken(): string {
   const existing = getSessionItem('be.myEditToken');
-  if (existing) return existing;
+  if (isEdgeEditToken(existing)) return existing;
 
-  const next = makeRandomId();
+  const next = makeEdgeEditToken();
+  setSessionItem('be.myEditToken', next);
+  return next;
+}
+
+export function beginUserResponseEditSession(): string {
+  const next = makeEdgeEditToken();
   setSessionItem('be.myEditToken', next);
   return next;
 }
 
 function shouldFallbackToMockWrite(error: unknown) {
   return error instanceof EdgeFunctionError && error.code === 'SANITY_WRITE_UNAVAILABLE';
-}
-
-function shouldRetryWithoutEditToken(error: unknown) {
-  return (
-    error instanceof EdgeFunctionError &&
-    error.functionName === 'save-user-response' &&
-    error.status === 400 &&
-    /unexpected payload|edit token/i.test(error.message)
-  );
 }
 
 export function createOptimisticUserResponse(section: string, weights: SurveyWeights): SavedUserResponse {
@@ -100,6 +99,40 @@ export function createOptimisticUserResponse(section: string, weights: SurveyWei
     q5: clamped.q5 ?? 0.5,
     avgWeight,
     submittedAt,
+  };
+}
+
+export function savedUserResponseToSurveyRow(
+  response: SavedUserResponse,
+  fallbackSection: string
+): SurveyRow {
+  const submittedAt = response.submittedAt ?? new Date().toISOString();
+  const q1 = response.q1 ?? 0.5;
+  const q2 = response.q2 ?? 0.5;
+  const q3 = response.q3 ?? 0.5;
+  const q4 = response.q4 ?? 0.5;
+  const q5 = response.q5 ?? 0.5;
+
+  return {
+    _id: response._id,
+    section: response.section ?? fallbackSection,
+    q1,
+    q2,
+    q3,
+    q4,
+    q5,
+    avgWeight: response.avgWeight,
+    soloMessage: response.soloMessage,
+    soloMessageUpdatedAt: response.soloMessageUpdatedAt,
+    submittedAt: response.submittedAt ?? submittedAt,
+    _createdAt: submittedAt,
+    weights: {
+      question1: q1,
+      question2: q2,
+      question3: q3,
+      question4: q4,
+      question5: q5,
+    },
   };
 }
 
@@ -172,19 +205,7 @@ async function saveUserResponseViaEdge(section: string, weights: SurveyWeights):
     editToken: ensureUserResponseEditToken(),
   };
 
-  try {
-    return await postSaveUserResponse(edge, payload);
-  } catch (error) {
-    if (!shouldRetryWithoutEditToken(error)) throw error;
-
-    console.warn(
-      '[saveUserResponse] save-user-response edge function does not accept editToken yet; retrying legacy payload.'
-    );
-    return await postSaveUserResponse(edge, {
-      ...basePayload,
-      clientRequestId: makeRandomId(),
-    });
-  }
+  return await postSaveUserResponse(edge, payload);
 }
 
 async function postSaveUserResponse(

@@ -12,10 +12,11 @@ import type { RoleValue } from "./role-picker";
 import { ButtonQuestionnaireFlow, BUTTON_QUESTIONS } from "./questionnaire";
 
 import {
+  beginUserResponseEditSession,
   createOptimisticUserResponse,
-  ensureUserResponseEditToken,
   persistUserResponseSession,
   saveUserResponse,
+  savedUserResponseToSurveyRow,
 } from "../services/sanity/saveUserResponse";
 import { track } from "../lib/posthog";
 import { removeSessionItems, setSessionItem } from "../app/session";
@@ -48,15 +49,16 @@ export default function Survey({
   const prevCompletedRef = useRef(false);
 
   const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey } = useUiFlow();
-  const { section, setSection } = useSurveyData();
+  const { section, setSection, upsertLocalSurveyRow } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
 
-  // Keep questionnaireOpen in sync with our stage (and finished latch)
+  // Keep questionnaireOpen in sync with our stage (and finished latch).
+  // No cleanup: the effect body always computes the correct value on re-run,
+  // and Survey never unmounts. A cleanup here fires when observerMode changes
+  // back to false (return from graph), momentarily setting questionnaireOpen=false
+  // and flashing the landing canvas before the body can restore it.
   useEffect(() => {
     setQuestionnaireOpen(stage === 'questions' && !observerMode && !finished);
-    return () => {
-      setQuestionnaireOpen(false);
-    };
   }, [stage, observerMode, finished, setQuestionnaireOpen]);
 
   // Ensure sectionOpen resets whenever we leave the section stage
@@ -229,10 +231,12 @@ export default function Survey({
     setQuestionnaireOpen(false);
 
     const weights = answersToWeights(answers);
-    ensureUserResponseEditToken();
+    beginUserResponseEditSession();
     const optimistic = createOptimisticUserResponse(surveySection, weights);
+    const optimisticRow = savedUserResponseToSurveyRow(optimistic, surveySection);
 
     persistUserResponseSession(optimistic, surveySection);
+    upsertLocalSurveyRow(optimisticRow);
     setSection(surveySection);
     setMySection(surveySection);
     setMyEntryId(optimistic._id);
@@ -245,6 +249,10 @@ export default function Survey({
 
     try {
       const created = await saveUserResponse(surveySection, weights);
+      upsertLocalSurveyRow(
+        savedUserResponseToSurveyRow(created, surveySection),
+        optimistic._id
+      );
 
       setSection(surveySection);
       setMySection(surveySection);

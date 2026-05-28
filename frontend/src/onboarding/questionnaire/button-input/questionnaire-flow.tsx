@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { DEFAULT_AVG, useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
 import { useUiFlow } from "../../../app/state/ui-context";
+import HintBanner from "../../../app/ui/HintBanner";
 import CheckIcon from "../../../assets/svg/check/CheckIcon";
 import { BUTTON_QUESTIONS } from "./button-questions";
 import { getQuestionButtonPlacement } from "./button-layouts";
@@ -84,40 +85,17 @@ export default function ButtonQuestionnaireFlow({
   const selected = answers[question.id] ?? null;
   const isLast = step === BUTTON_QUESTIONS.length - 1;
   const hintBanner = (
-    <div
-      className={`questionnaire-read-banner${showQuestionHint ? " is-visible" : ""}`}
-      role="status"
-      aria-live="polite"
+    <HintBanner
+      visible={showQuestionHint}
+      className="questionnaire-read-banner"
+      copyClassName="questionnaire-read-banner-copy"
+      closeClassName="questionnaire-read-banner-close"
+      closeLabel="Dismiss questionnaire hint"
+      onDismiss={() => { setShowQuestionHint(false); }}
     >
-      <span className="questionnaire-read-banner-copy">
-        <span>Select all that apply.</span>
-        <span>Tap again to remove.</span>
-      </span>
-      <button
-        type="button"
-        className="questionnaire-read-banner-close"
-        aria-label="Dismiss questionnaire hint"
-        onClick={() => { setShowQuestionHint(false); }}
-      >
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            d="M17 7L7 17M7 7L17 17"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
+      <span>Select all that apply.</span>
+      <span>Tap again to remove.</span>
+    </HintBanner>
   );
 
   useEffect(() => {
@@ -247,7 +225,7 @@ export default function ButtonQuestionnaireFlow({
               >
                 <button
                   type="button"
-                  className={`button-questionnaire__button button-questionnaire__button--placed${active ? " is-active" : ""}`}
+                  className={`ui-toggle-option button-questionnaire__button button-questionnaire__button--placed${active ? " is-active" : ""}`}
                   aria-pressed={active}
                   onClick={() => { toggleOption(option.key); }}
                 >
@@ -285,7 +263,7 @@ export default function ButtonQuestionnaireFlow({
               <button
                 key={option.key}
                 type="button"
-                className={`button-questionnaire__button${active ? " is-active" : ""}`}
+                className={`ui-toggle-option button-questionnaire__button${active ? " is-active" : ""}`}
                 aria-pressed={active}
                 onClick={() => { toggleOption(option.key); }}
               >

@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: var(--ui-bg-input);
+  background: var(--inactive-accent-color);
   border: none;
   border-radius: var(--btn-radius);
   padding: var(--input-padding);
@@ -31,7 +31,7 @@
   -webkit-user-select: none;
   overflow: visible;
 }
-.trigger:hover{  background: var(--ui-bg-input-hover); padding: var(--input-padding-hover); }
+.trigger:hover{  background: var(--inactive-accent-color-hover); padding: var(--input-padding-hover); }
 .trigger svg.ui-icon { transform: scale(1.1, 0.95);}
 
 .trigger.is-open {
@@ -48,7 +48,9 @@
   box-shadow: 0 0 0 2px var(--ui-border-strong);
 }
 .trigger-label {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   flex: 1 1 auto;
   max-width: calc(100% - 34px);
   white-space: nowrap;
@@ -56,10 +58,38 @@
   text-overflow: ellipsis;
   font-weight: var(--fw-bold);
 }
+
+.trigger-label h4 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .trigger-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; align-items: center; justify-content: center; pointer-events: none; }
 .trigger-chevron .ui-icon { opacity: 0.95; color: var(--ui-trigger-chevron-fill); }
 .back-icon,
-.chooser-icon svg.ui-icon { color: var(--ui-icon-subtle); }
+.chooser-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: var(--ui-text-muted);
+  line-height: 0;
+}
+
+.back-icon .ui-icon,
+.chooser-icon .ui-icon {
+  color: currentColor;
+  stroke: currentColor;
+}
+
+.option.is-active .back-icon,
+.option.is-active .chooser-icon {
+  color: var(--ui-text);
+}
 
 .listbox-shell {
   display: grid;
@@ -121,6 +151,7 @@
   color: var(--ui-text);
   user-select: none;
   -webkit-user-select: none;
+  align-items: center;
 }
 .option--student-chooser,
 .option--staff-chooser {
@@ -133,7 +164,29 @@
 .option.is-active  { background: var(--ui-bg-surface-hover); }
 .option.is-selected { background: var(--ui-bg-surface-selected); }
 
-.label { flex: 1 1 auto; }
+.label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.option-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-labels {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.picker-count,
+.picker-you {
+  flex: 0 0 auto;
+}
 
 .label-wrap {
   flex: 1 1 auto;
@@ -151,26 +204,12 @@
   text-overflow: ellipsis;
 }
 
-.back-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-}
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .picker { max-width: 160px; min-width: 160px;}
   .picker:has(.trigger.is-open) { min-width: 280px; }
   .listbox-shell { width: 280px; }
   .listbox { max-height: 400px; }
-
-  .navigation.picker-open-mobile .left,
-  .navigation.picker-open-mobile .right > :not(.graph-picker) {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 160ms ease;
-  }
+  .option { padding: 0.8rem; }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -178,24 +217,24 @@
   .picker:hover { max-width: 260px; min-width: 260px; transition: 50ms ease-in;}
   .picker:has(.trigger.is-open) { max-width: 320px; min-width: 320px; }
   .listbox-shell { width: 320px; }
-  .listbox { max-height: 400px; }
+  .listbox { min-height: 360px; max-height: 410px;}
 }
 
 @media (min-width: 1025px) {
   .picker { max-width: 200px; min-width: 200px; }
-  .picker:hover { max-width: 180px; min-width: 180px; transition: 50ms ease-in;}
+  .picker:hover { max-width: 220px; min-width: 220px; transition: 50ms ease-in;}
   .picker:has(.trigger.is-open) { max-width: 320px; min-width: 320px; }
   .listbox-shell { width: 320px; max-width: 320px; min-width: 320px; }
-  .listbox { max-height: 390px; }
+  .listbox { min-height: 360px; max-height: 440px;}
+  .option { padding: 0.8rem; }
 }
 
-/* Explorer emoji glow */
+/* Explorer icon */
 .explorer-emoji {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  isolation: isolate;
   margin-right: 0.3em;
   width: 1.5em;
   height: 1.5em;
@@ -203,37 +242,8 @@
   flex-shrink: 0;
 }
 
-.explorer-emoji::before {
-  content: '';
-  position: absolute;
-  width: 190%;
-  height: 190%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(circle at center,
-    rgba(40, 110, 255, 0.22) 0%,
-    rgba(40, 110, 255, 0.10) 30%,
-    rgba(40, 110, 255, 0.03) 60%,
-    transparent 80%
-  );
-}
-
-:root[data-theme="dark"] .explorer-emoji::before {
-  background: radial-gradient(circle at center,
-    rgba(0, 200, 210, 0.28) 0%,
-    rgba(0, 180, 195, 0.13) 30%,
-    rgba(0, 160, 180, 0.04) 60%,
-    transparent 80%
-  );
-}
-
 /* Theme wiring: graph picker */
 .label,
-.count,
 .trigger-label {
   color: var(--ui-text);
 }

@@ -15,6 +15,8 @@ export interface SurveyDataState {
   allFilteredRows: SurveyRow[];
   // True while the initial Sanity fetch is in flight
   loading: boolean;
+  // Local insert used after submit so graph data does not wait for Sanity's listener echo.
+  upsertLocalSurveyRow: (row: SurveyRow, replaceId?: string) => void;
 };
 
 export const SurveyDataCtx = createContext<SurveyDataState | null>(null);
