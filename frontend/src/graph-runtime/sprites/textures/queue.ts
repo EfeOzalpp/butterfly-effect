@@ -6,6 +6,7 @@ interface Job {
   prio: number;
   gen: number;
   background?: boolean;
+  onCancel?: () => void;
 }
 
 interface QueueCounts {
@@ -28,9 +29,10 @@ let snapshot: QueueCounts = { pending: 0, inflight: 0, paused: false, background
 // Generation invalidates stale jobs when a graph/theme reset makes old texture
 // requests irrelevant.
 let GEN = 0;
-const noop = () => {
-  // No subscription was created.
-};
+
+const isTouchDevice =
+  typeof window !== 'undefined' &&
+  (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
 
 const scheduleIdle: (callback: IdleRequestCallback) => number =
   typeof requestIdleCallback === 'function'
@@ -81,18 +83,40 @@ function notify() {
   }
 }
 
+function maxJobsPerIdleSlice() {
+  return isTouchDevice ? 1 : 3;
+}
+
+function minTimeRemainingMs() {
+  return isTouchDevice ? 10 : 6;
+}
+
+function takeNextJob() {
+  const foregroundIndex = Q.findIndex((job) => !job.background);
+  const index = foregroundIndex >= 0 ? foregroundIndex : 0;
+  return Q.splice(index, 1)[0];
+}
+
 function step(deadline?: IdleDeadline) {
   if (paused) { pumping = false; return; }
 
   let done = 0;
-  const hasTime = () => !deadline || deadline.timeRemaining() > 6;
+  const maxJobs = maxJobsPerIdleSlice();
+  const hasTime = () => !deadline || deadline.timeRemaining() > minTimeRemainingMs();
 
-  while (Q.length && (done < 3 || hasTime())) {
-    const job = Q.shift();
+  while (Q.length && done < maxJobs && (done === 0 || hasTime())) {
+    const job = takeNextJob();
     if (!job) break;
     if (job.background) backgroundPendingCount--;
     notify();
-    if (job.gen !== GEN) continue;
+    if (job.gen !== GEN) {
+      try {
+        job.onCancel?.();
+      } catch {
+        // Keep stale job cleanup best-effort.
+      }
+      continue;
+    }
 
     inflight++;
     if (job.background) backgroundInflightCount++;
@@ -113,10 +137,10 @@ function step(deadline?: IdleDeadline) {
   }
 }
 
-export function enqueueTexture(run: () => void, prio = 0, background = false) {
+export function enqueueTexture(run: () => void, prio = 0, background = false, onCancel?: () => void) {
   const gen = GEN;
   if (background) backgroundPendingCount++;
-  Q.push({ run, prio, gen, background });
+  Q.push({ run, prio, gen, background, onCancel });
   // Higher priority textures are usually visible sooner, so they move first.
   Q.sort((a, b) => b.prio - a.prio);
   notify();
@@ -147,6 +171,13 @@ export function resumeQueue() {
 }
 
 function cancelAllJobs() {
+  for (const job of Q) {
+    try {
+      job.onCancel?.();
+    } catch {
+      // Keep cancellation cleanup best-effort.
+    }
+  }
   Q = [];
   backgroundPendingCount = 0;
   pumping = false;
@@ -169,28 +200,5 @@ export function subscribeQueue(listener: () => void) {
   return () => {
     listeners.delete(listener);
   };
-}
-
-/** Calls cb once the non-background queue goes idle. If already idle, fires immediately. */
-export function onceQueueIdle(cb: () => void): () => void {
-  refreshSnapshot();
-  const isIdle = () => {
-    const s = snapshot;
-    return (s.pending - s.backgroundPending + s.inflight - s.backgroundInflight) <= 0;
-  };
-
-  if (isIdle()) {
-    cb();
-    return noop;
-  }
-
-  const off = subscribeQueue(() => {
-    if (isIdle()) {
-      off();
-      cb();
-    }
-  });
-
-  return off;
 }
 

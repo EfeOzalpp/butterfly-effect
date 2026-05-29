@@ -123,6 +123,7 @@ export function makeTextureFromDrawer({
       coreScaleMult: Math.max(1, pixelScaleBoost ?? 1),
       pixelScale: Math.max(1, pixelScaleBoost ?? 1),
       particlePixelScale: Math.max(1, pixelScaleBoost ?? 1),
+      disableParticleDepthTint: true,
     },
     particles: {
       particleStore: drawParticleStore,
@@ -135,10 +136,11 @@ export function makeTextureFromDrawer({
 
   const r = Math.min(logicalW, logicalH) * 0.8;
   const safeDtSec = Math.max(1 / 120, Math.min(0.35, dtSec));
+  const renderTimeMs = timeMs;
 
-  p.__tick(timeMs - safeDtSec * 1000);
-  p.__tick(timeMs);
-  const opts = { ...baseOpts, lifecycle: { timeMs, dtSec: safeDtSec } };
+  p.__tick(renderTimeMs - safeDtSec * 1000);
+  p.__tick(renderTimeMs);
+  const opts = { ...baseOpts, lifecycle: { timeMs: renderTimeMs, dtSec: safeDtSec } };
 
   try {
     drawer(p, centerX, centerY, r, opts);

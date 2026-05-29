@@ -1,6 +1,6 @@
 // src/graph-runtime/dotgraph/scene/useDotGraphSceneState.ts
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
 import { useRealMobileViewport } from '../../../lib/hooks/useRealMobileViewport';
@@ -8,7 +8,7 @@ import { useWindowWidth } from '../../../lib/hooks/useWindowWidth';
 import { isMobileWidth, isTabletWidth } from '../../../lib/responsive/breakpoints';
 import { desktopGraphToolsOffsetPx, tabletGraphToolsYOffsetPx } from '../../../lib/responsive/graph-tools-offset';
 import { useOptionalUiFlow } from '../../../app/state/ui-context';
-import { chooseCameraSpriteTileSize, prewarmSpriteTextures } from '../../sprites/entry';
+import { chooseCameraSpriteTileSize, prewarmSpriteTextures, resolveSpriteVisual } from '../../sprites/entry';
 import { useOrbitController } from '../camera';
 import useDotPoints from './useDotPoints';
 import { nonlinearLerp } from '../utils/math';
@@ -17,22 +17,129 @@ import type { DotPointsOptions, SurveyResponseLike, Vec3 } from '../types';
 interface UseDotGraphSceneStateParams {
   safeData: SurveyResponseLike[];
   personalizedEntryId: string | null;
+  sectionKey: string;
   showPersonalized: boolean;
   darkMode: boolean;
   wantsSkew: boolean;
   wantsSoloSkew: boolean;
+  zoomResetKey?: string | number;
 }
 
 const MOBILE_PANEL_X_OFFSET_PX = -112;
 const SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX = -112;
+const GRAPH_MIN_RADIUS_MOBILE = 2;
+const GRAPH_MIN_RADIUS_DESKTOP = 20;
+const GRAPH_MAX_RADIUS = 800;
+const PERSONALIZED_MAX_ZOOM_FRACTION_DESKTOP = 0.965;
+const PERSONALIZED_INITIAL_ZOOM_FRACTION_DESKTOP = 0.92;
+const PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_1_TILE = 0.965;
+const PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_2_TILE = 0.92;
+const PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_3_TILE = 0.89;
+const PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_1_TILE = 0.92;
+const PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_2_TILE = 0.83;
+const PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_3_TILE = 0.74;
+const DOTGRAPH_BAG_SEED = 'dotgraph-bag-v1';
+const TILE_SIZE_ZOOM_SETTLE_MS = 220;
+const DENSE_SCENE_TILE_CAP_COUNT = 240;
+
+function resolvePersonalizedMaxZoomFraction({
+  isRealMobile,
+  isSmallScreen,
+  isTabletLike,
+  tileWidth,
+}: {
+  isRealMobile: boolean;
+  isSmallScreen: boolean;
+  isTabletLike: boolean;
+  tileWidth: number;
+}) {
+  const width = Math.max(1, Math.round(tileWidth));
+  if (isRealMobile || isSmallScreen) {
+    if (width >= 3) return PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_3_TILE;
+    if (width >= 2) return PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_2_TILE;
+    return PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_1_TILE;
+  }
+  if (isTabletLike) {
+    if (width >= 3) return PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_3_TILE;
+    if (width >= 2) return PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_2_TILE;
+    return PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_1_TILE;
+  }
+  return PERSONALIZED_MAX_ZOOM_FRACTION_DESKTOP;
+}
+
+function resolvePersonalizedInitialZoomFraction({
+  isRealMobile,
+  isSmallScreen,
+  isTabletLike,
+  tileWidth,
+}: {
+  isRealMobile: boolean;
+  isSmallScreen: boolean;
+  isTabletLike: boolean;
+  tileWidth: number;
+}) {
+  const width = Math.max(1, Math.round(tileWidth));
+  if (isRealMobile || isSmallScreen) {
+    if (width >= 3) return PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_3_TILE;
+    if (width >= 2) return PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_2_TILE;
+    return PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_1_TILE;
+  }
+  if (isTabletLike) {
+    if (width >= 3) return PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_3_TILE;
+    if (width >= 2) return PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_2_TILE;
+    return PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_1_TILE;
+  }
+  return PERSONALIZED_INITIAL_ZOOM_FRACTION_DESKTOP;
+}
+
+function resolvePersonalizedSpriteTileWidth({
+  safeData,
+  personalizedEntryId,
+  sectionKey,
+}: {
+  safeData: SurveyResponseLike[];
+  personalizedEntryId: string | null;
+  sectionKey: string;
+}) {
+  if (!personalizedEntryId) return 1;
+
+  const index = safeData.findIndex((entry) => entry._id === personalizedEntryId);
+  const entry = index >= 0 ? safeData[index] : null;
+  if (!entry) return 1;
+
+  const avg = Number.isFinite(entry.avgWeight) ? Number(entry.avgWeight) : 0.5;
+  return resolveSpriteVisual({
+    entryId: personalizedEntryId,
+    sectionKey,
+    avg,
+    seed: DOTGRAPH_BAG_SEED,
+    orderIndex: Math.max(0, index),
+    baseScale: 1,
+  }).layout.footprint.w;
+}
+
+function minRadiusForZoomFraction({
+  baseMinRadius,
+  maxRadius,
+  maxZoomFraction,
+}: {
+  baseMinRadius: number;
+  maxRadius: number;
+  maxZoomFraction: number;
+}) {
+  const fraction = Math.max(0, Math.min(1, maxZoomFraction));
+  return maxRadius - fraction * (maxRadius - baseMinRadius);
+}
 
 export default function useDotGraphSceneState({
   safeData,
   personalizedEntryId,
+  sectionKey,
   showPersonalized,
   darkMode,
   wantsSkew,
   wantsSoloSkew,
+  zoomResetKey,
 }: UseDotGraphSceneStateParams) {
   const isRealMobile = useRealMobileViewport();
   const windowWidth = useWindowWidth();
@@ -47,6 +154,37 @@ export default function useDotGraphSceneState({
   const tabletNavYOffsetPx = tabletGraphToolsYOffsetPx(windowWidth, logsOpen, widgetsOpen);
   const mobilePanelOffsetPx = wantsSkew ? MOBILE_PANEL_X_OFFSET_PX : 0;
   const soloPanelOffsetPx = wantsSoloSkew ? SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX : 0;
+  const baseMinRadius = isSmallScreen ? GRAPH_MIN_RADIUS_MOBILE : GRAPH_MIN_RADIUS_DESKTOP;
+  const maxRadiusLimit = GRAPH_MAX_RADIUS;
+  const personalizedSpriteTileWidth = useMemo(
+    () =>
+      resolvePersonalizedSpriteTileWidth({
+        safeData,
+        personalizedEntryId,
+        sectionKey,
+      }),
+    [personalizedEntryId, safeData, sectionKey]
+  );
+  const personalizedZoomCap = resolvePersonalizedMaxZoomFraction({
+    isRealMobile,
+    isSmallScreen,
+    isTabletLike,
+    tileWidth: personalizedSpriteTileWidth,
+  });
+  const personalizedInitialZoomFraction = resolvePersonalizedInitialZoomFraction({
+    isRealMobile,
+    isSmallScreen,
+    isTabletLike,
+    tileWidth: personalizedSpriteTileWidth,
+  });
+  const orbitMinRadius =
+    showPersonalized && personalizedEntryId
+      ? minRadiusForZoomFraction({
+          baseMinRadius,
+          maxRadius: maxRadiusLimit,
+          maxZoomFraction: personalizedZoomCap,
+        })
+      : baseMinRadius;
 
   // Compute dot positions before orbit controller so they can drive rotation sensitivity.
   const spread = useMemo(() => {
@@ -91,7 +229,7 @@ export default function useDotGraphSceneState({
     isTouchRotatingRef,
     minRadius,
     maxRadius,
-    tooltipOffsetPx,
+    zoomTargetRef,
   } = useOrbitController({
     layout: {
       useDesktopLayout,
@@ -102,21 +240,45 @@ export default function useDotGraphSceneState({
       xOffsetPx: mobilePanelOffsetPx + soloPanelOffsetPx + graphNavOffsetPx,
       yOffsetPx: (wantsSkew ? 12 : 0) + tabletNavYOffsetPx,
     },
-    bounds: { minRadius: isSmallScreen ? 2 : 20, maxRadius: 800 },
+    bounds: { minRadius: orbitMinRadius, maxRadius: maxRadiusLimit },
     dataCount: safeData.length,
     dotPositions,
+    initialZoomFraction:
+      showPersonalized && personalizedEntryId
+        ? personalizedInitialZoomFraction
+        : undefined,
+    zoomResetKey,
   });
 
-  const bagSeed = 'dotgraph-bag-v1';
+  const bagSeed = DOTGRAPH_BAG_SEED;
 
   const particleFrames = isRealMobile ? 60 : 219;
-  const tileSize = chooseCameraSpriteTileSize({
+  const desiredLiveTileSize = chooseCameraSpriteTileSize({
     radius,
     minRadius,
     maxRadius,
     isRealMobile,
     isTabletLike,
   });
+  const desiredTileSize =
+    safeData.length >= DENSE_SCENE_TILE_CAP_COUNT
+      ? Math.min(desiredLiveTileSize, 128)
+      : desiredLiveTileSize;
+  const [tileSize, setTileSize] = useState(desiredTileSize);
+
+  useEffect(() => {
+    if (tileSize === desiredTileSize) return;
+    if (zoomTargetRef.current != null) return;
+
+    const timer = setTimeout(() => {
+      setTileSize(desiredTileSize);
+    }, TILE_SIZE_ZOOM_SETTLE_MS);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [desiredTileSize, tileSize, zoomTargetRef]);
+
   const prewarmLimit = isRealMobile ? 30 : shapes.length;
 
   const prewarmItems = useMemo(
@@ -147,18 +309,6 @@ export default function useDotGraphSceneState({
     return map;
   }, [shapes]);
 
-  const isPortrait =
-    typeof window !== 'undefined' ? window.innerHeight > window.innerWidth : false;
-  const offsetBase = isPortrait ? 160 : 120;
-
-  const offsetPx = Number.isFinite(tooltipOffsetPx)
-    ? tooltipOffsetPx
-    : nonlinearLerp(
-        offsetBase,
-        offsetBase * 1.35,
-        Math.max(0, Math.min(1, (radius - minRadius) / (maxRadius - minRadius)))
-      );
-
   const spriteScale = useMemo(() => {
     const denom = Math.max(1e-6, maxRadius - minRadius);
     // Quantize to 32 steps so zoom re-renders happen at discrete thresholds
@@ -181,9 +331,9 @@ export default function useDotGraphSceneState({
     isTouchRotatingRef,
     minRadius,
     maxRadius,
+    zoomTargetRef,
     shapes,
     posById,
-    offsetPx,
     spriteScale,
     bagSeed,
     particleFrames,

@@ -64,6 +64,7 @@ interface GamificationPersonalizedProps {
   userData: { _id?: string; soloMessage?: string } | null | undefined;
   percentage: number | undefined;
   color: string;
+  shapeCopy?: string;
   mode?: 'relative' | 'absolute';
   onOpenChange?: (open: boolean) => void;
   belowCountStrict?: number;
@@ -77,6 +78,7 @@ export default function GamificationPersonalized({
   userData,
   percentage,
   color,
+  shapeCopy,
   mode = 'relative',
   onOpenChange,
 
@@ -280,7 +282,9 @@ export default function GamificationPersonalized({
             ) : null}
             {mode === 'absolute' ? (
               <>
-                {normalizedSavedMessage ? (
+                {shapeCopy ? (
+                  <h4 className="gam-subline">{shapeCopy}</h4>
+                ) : normalizedSavedMessage ? (
                   <h4 className="gam-subline">{normalizedSavedMessage}</h4>
                 ) : null}
                 <div className="solo-message-intro">

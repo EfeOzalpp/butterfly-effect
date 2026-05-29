@@ -31,8 +31,10 @@ const entries = new Map<string, Entry>();
 let keys: string[] = [];
 let rrIdx = 0;
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
+let paused = false;
 
 function schedulerTick() {
+  if (paused) return;
   if (typeof document !== 'undefined' && document.hidden) return;
   const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const visible: string[] = [];
@@ -56,6 +58,14 @@ function schedulerTick() {
     }
     rrIdx = (rrIdx + 1) % visible.length;
   }
+}
+
+export function pauseEpochScheduler() {
+  paused = true;
+}
+
+export function resumeEpochScheduler() {
+  paused = false;
 }
 
 function startScheduler() {

@@ -9,9 +9,12 @@ export type { Vec3 } from "./utils/positions";
 
 import type { DotPoint, SurveyResponseLike } from "./utils/dotPoints";
 import type { Vec3 } from "./utils/positions";
+import type { TooltipPlacement } from "./tooltip/placement";
+import type { SpriteVisualLayout } from "../sprites/types";
 
 export type IdentifiedDotPoint = DotPoint & { _id: string };
 export type DotGraphEntry = SurveyResponseLike;
+export type TooltipAnchorMode = "hitboxCenter" | "shapeCenter";
 
 export interface DotGraphHoverEvent {
   nativeEvent?: {
@@ -21,6 +24,10 @@ export interface DotGraphHoverEvent {
   };
   clientX?: number;
   clientY?: number;
+  anchorPosition?: Vec3;
+  tooltipLayout?: SpriteVisualLayout;
+  tooltipPlacement?: TooltipPlacement;
+  tooltipAnchorMode?: TooltipAnchorMode;
   stopPropagation?: () => void;
   preventDefault?: () => void;
 }
@@ -29,6 +36,10 @@ export interface DotGraphHoveredDot {
   dotId: string;
   percentage: number;
   color: string;
+  anchorPosition?: Vec3;
+  tooltipLayout?: SpriteVisualLayout;
+  tooltipPlacement?: TooltipPlacement;
+  tooltipAnchorMode?: TooltipAnchorMode;
 }
 
 export type DotGraphHoverStart = (

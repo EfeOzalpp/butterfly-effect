@@ -1,5 +1,5 @@
 // src/graph-runtime/dotgraph/camera/useOrbitController.ts
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import type { Vec3 } from '../types';
@@ -9,10 +9,8 @@ import useZoom from './controls/useZoom';
 import useRotation from './controls/useRotation';
 import usePixelOffsets from './controls/usePixelOffsets';
 
-import { useDynamicOffset } from './useDynamicOffset';
 import { createGestureState } from './shared/sharedGesture';
 
-import { computeTooltipOffsetPx } from './compute/tooltipOffset';
 import { computeInitialZoomTarget } from './compute/zoomTarget';
 
 export interface OrbitLayout {
@@ -68,8 +66,10 @@ export interface OrbitParams {
 
   minRadius?: number;
   maxRadius?: number;
+  initialZoomFraction?: number;
 
   dotPositions?: readonly Vec3[];
+  zoomResetKey?: string | number;
 }
 
 export interface OrbitReturn {
@@ -79,7 +79,6 @@ export interface OrbitReturn {
   isTouchRotatingRef: React.RefObject<boolean>;
   minRadius: number;
   maxRadius: number;
-  tooltipOffsetPx: number;
   setZoomTarget: (val: number) => void;
   zoomTargetRef: React.RefObject<number | null>;
 }
@@ -101,8 +100,10 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
 
     minRadius = params.bounds?.minRadius ?? params.minRadius ?? (isSmallScreen ? 2 : 20),
     maxRadius = params.bounds?.maxRadius ?? params.maxRadius ?? 800,
+    initialZoomFraction = params.initialZoomFraction,
 
     dataCount = params.dataCount ?? (Array.isArray(params.data) ? params.data.length : 0),
+    zoomResetKey = params.zoomResetKey,
 
     idle = {},
     thresholds = { mobile: 50, tablet: 65, desktop: 90 },
@@ -124,16 +125,22 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
   const count = useMemo(() => (typeof dataCount === 'number' ? dataCount : 0), [dataCount]);
 
   const initialTargetComputed = useMemo(
-    () =>
-      computeInitialZoomTarget({
+    () => {
+      if (typeof initialZoomFraction === 'number' && Number.isFinite(initialZoomFraction)) {
+        const t = Math.max(0, Math.min(1, initialZoomFraction));
+        return maxRadius - t * (maxRadius - minRadius);
+      }
+
+      return computeInitialZoomTarget({
         count,
         isSmallScreen,
         isTabletLike,
         thresholds,
         minRadius,
         maxRadius,
-      }),
-    [count, isSmallScreen, isTabletLike, thresholds, minRadius, maxRadius]
+      });
+    },
+    [count, initialZoomFraction, isSmallScreen, isTabletLike, thresholds, minRadius, maxRadius]
   );
 
   // Activity and idle helpers
@@ -162,7 +169,7 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
   };
 
   // Zoom
-  const { radius, zoomTargetRef, zoomVelRef, setZoomTarget } = useZoom({
+  const { radius, zoomTargetRef, zoomVelRef, setZoomTarget, resetZoomTarget } = useZoom({
     minRadius,
     maxRadius,
     initialTarget: initialTargetComputed,
@@ -172,13 +179,23 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
 
   void zoomVelRef; // keep side-effect-free if lint complains about unused
 
-  // Re-target zoom when section changes (count-driven); skip mount since useState already set the initial position.
+  useLayoutEffect(() => {
+    camera.position.set(0, 0, radius);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+  }, [camera, radius]);
+
+  // Dataset switches should snap to the new count-based camera radius. Letting
+  // the old radius/velocity spring into a new point cloud creates stale zoom
+  // state during graph picker transitions.
   const mountedRef = useRef(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return; }
-    setZoomTarget(initialTargetComputed);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count]);
+    const nextRadius = resetZoomTarget(initialTargetComputed);
+    camera.position.set(0, 0, nextRadius);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+  }, [camera, initialTargetComputed, resetZoomTarget, zoomResetKey, count]);
 
   // Rotation
   const rot = useRotation({
@@ -215,7 +232,7 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
   useFrame(() => {
     camera.position.set(0, 0, radius);
     camera.lookAt(0, 0, 0);
-  });
+  }, -100);
 
   useFrame((_, delta) => {
     const userInteracting =
@@ -242,19 +259,6 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
     }
   });
 
-  // Tooltip offset (extracted computation; uses dynamicOffset + zoom factor)
-  const dynamicOffset = useDynamicOffset();
-
-  const tooltipOffsetPx = computeTooltipOffsetPx({
-    width: typeof window !== 'undefined' ? window.innerWidth : 0,
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
-    radius,
-    minRadius,
-    maxRadius,
-    dynamicOffset,
-    useMobilePortraitCurve: isSmallScreen,
-  });
-
   return {
     groupRef,
     radius,
@@ -262,7 +266,6 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
     isTouchRotatingRef,
     minRadius,
     maxRadius,
-    tooltipOffsetPx,
     setZoomTarget,
     zoomTargetRef,
   };

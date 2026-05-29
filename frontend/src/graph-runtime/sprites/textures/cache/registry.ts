@@ -12,7 +12,10 @@ const isMobileDevice =
   (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
 
 import { enqueueTexture } from '../queue';
-import { spriteCachingDisabled } from '../../internal/debug-flags';
+import {
+  shouldLogSpriteLoadErrors,
+  spriteCachingDisabled,
+} from '../../../debug/spriteFlags';
 
 export interface MakeArgs {
   key: string;
@@ -32,6 +35,7 @@ export interface MakeArgs {
 }
 
 type Listener = (key: string, tex: CanvasTexture) => void;
+type CancelListener = (key: string) => void;
 
 // Static texture cache with in-flight protection. Multiple sprites can ask for
 // the same key without building the same canvas twice.
@@ -39,6 +43,7 @@ class TextureRegistry {
   private cache = new Map<string, CanvasTexture>();
   private inFlight = new Set<string>();
   private listeners = new Set<Listener>();
+  private cancelListeners = new Set<CancelListener>();
 
   get(key: string) {
     if (spriteCachingDisabled()) return null;
@@ -48,6 +53,11 @@ class TextureRegistry {
   onReady(cb: Listener) {
     this.listeners.add(cb);
     return () => this.listeners.delete(cb);
+  }
+
+  onCancel(cb: CancelListener) {
+    this.cancelListeners.add(cb);
+    return () => this.cancelListeners.delete(cb);
   }
 
   ensure(args: MakeArgs) {
@@ -84,13 +94,16 @@ class TextureRegistry {
         if (!disableCache) this.cache.set(key, tex);
         for (const l of this.listeners) l(key, tex);
       } catch (err) {
-        if (window.__GP_LOG_LOAD_ERRORS) {
+        if (shouldLogSpriteLoadErrors()) {
           console.warn('[SPRITE:STATIC] build failed', key, err);
         }
       } finally {
         this.inFlight.delete(key);
       }
-    }, prio);
+    }, prio, false, () => {
+      this.inFlight.delete(key);
+      for (const listener of this.cancelListeners) listener(key);
+    });
   }
 
   prewarm(list: MakeArgs[], { prioBase = 0 }: { prioBase?: number } = {}) {
@@ -106,6 +119,7 @@ class TextureRegistry {
     this.cache.clear();
     this.inFlight.clear();
     this.listeners.clear();
+    this.cancelListeners.clear();
   }
 }
 

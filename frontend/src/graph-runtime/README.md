@@ -21,14 +21,17 @@ bargraph/
 
 dotgraph/
   Three.js graph scene, camera/orbit behavior, personalized layers, hover state,
-  and point placement.
+  and point placement. See dotgraph/README.md for tooltip anchoring, hitboxes,
+  spotlight behavior, and dataset-switch reset details.
 
 gamification/
   Rank, relative/absolute copy, and personalized result panels.
 
 sprites/
   Texture-backed visual markers used by dotgraph. This hides canvas texture
-  generation, caching, prewarm, lifecycle, and theme handling.
+  generation, caching, prewarm, lifecycle, and theme handling. See
+  sprites/api/README.md for shape profiles, footprint/bleed/padding ownership,
+  visual layout, identity, and public sprite operations.
 
 GraphDataContext.tsx
   Local graph data provider. Keeps graph consumers away from app-level survey
@@ -91,12 +94,10 @@ selection/
   Maps data values to sprite shape choices and footprint policy.
 
 textures/
-  Canvas texture creation, frozen texture generation, queue progress, and
-  queue scheduling.
+  Canvas texture creation, queue progress, and queue scheduling.
 
 textures/cache/
-  Texture registry, frozen texture registry, particle LRU cache, and tracked
-  texture disposal.
+  Texture registry and tracked texture disposal.
 
 internal/
   Runtime policy, scheduling, debug flags, and the low-level sprite component.
@@ -128,4 +129,4 @@ avoid placeholder flashes during camera motion
 keep per-frame allocations out of render loops where possible
 ```
 
-If a change makes camera orbit flicker, inspect sprite texture keys, frozen texture readiness, and any depth-dependent invalidation first.
+If a change makes camera orbit flicker, inspect sprite texture keys, queue readiness, and any depth-dependent invalidation first.

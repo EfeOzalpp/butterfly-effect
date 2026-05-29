@@ -24,6 +24,10 @@ export type SpriteDrawerOptions = Omit<ShapeDrawOptions, 'style'> & {
 };
 export type DrawerFn = ShapeDrawFn<SpriteDrawerOptions>;
 
+const drawSpriteSnow: DrawerFn = (p, x, y, r, opts) => {
+  drawSnow(p, x, y, r, { ...opts, showGround: false });
+};
+
 // Bridge from graph sprite keys to canvas-engine art drawers.
 // The sprite layer decides which drawer to run; the shape files only draw.
 export const DRAWERS: Partial<Record<ShapeKey, DrawerFn>> = {
@@ -36,6 +40,6 @@ export const DRAWERS: Partial<Record<ShapeKey, DrawerFn>> = {
   bus: drawBus,
   clouds: drawClouds,
   sun: drawSun,
-  snow: drawSnow,
+  snow: drawSpriteSnow,
   villa: drawVilla,
 };

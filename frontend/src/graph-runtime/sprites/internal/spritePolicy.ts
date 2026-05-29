@@ -1,7 +1,11 @@
 // graph-runtime/sprites/internal/spritePolicy.ts
 import { sampleShapeForAvg } from '../selection/shapeForAvg';
 import type { ShapeKey } from '../selection/types';
-import { spriteQuantizationDisabled } from './debug-flags';
+import {
+  forcedSpriteShape,
+  forcedSpriteShapeCacheKey,
+  spriteQuantizationDisabled,
+} from '../../debug/spriteFlags';
 
 // Sprite policy turns score data into stable cacheable sprite identity:
 // shape, color bucket, and visual variant.
@@ -75,10 +79,15 @@ export function makeStaticKey(args: {
   variant: number;
   darkMode?: boolean;
   pixelScaleBoost?: number;
+  footprint?: { w: number; h: number };
+  bleed?: { top?: number; right?: number; bottom?: number; left?: number };
 }) {
-  const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode, pixelScaleBoost } = args;
+  const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode, pixelScaleBoost, footprint, bleed } = args;
   const boostSuffix = pixelScaleBoost !== undefined && pixelScaleBoost !== 1
     ? `|PX${String(pixelScaleBoost)}`
+    : '';
+  const geometrySuffix = footprint
+    ? `|FP${String(footprint.w)}x${String(footprint.h)}|BL${String(bleed?.top ?? 0)},${String(bleed?.right ?? 0)},${String(bleed?.bottom ?? 0)},${String(bleed?.left ?? 0)}`
     : '';
   return [
     'SPRITE',
@@ -88,35 +97,7 @@ export function makeStaticKey(args: {
     String(tileSize),
     String(dpr),
     String(alpha),
-    `STATIC_NATIVE${darkMode ? '|DK' : ''}${boostSuffix}`,
-  ].join('|');
-}
-
-export function makeFrozenKey(args: {
-  shape: ShapeKey;
-  tileSize: number;
-  dpr: number;
-  alpha: number;
-  simulateMs: number;
-  stepMs: number;
-  bucketId: number;
-  variant: number;
-  darkMode?: boolean;
-  pixelScaleBoost?: number;
-}) {
-  const { shape, tileSize, dpr, alpha, simulateMs, stepMs, bucketId, variant, darkMode, pixelScaleBoost } = args;
-  const boostSuffix = pixelScaleBoost !== undefined && pixelScaleBoost !== 1
-    ? `|PX${String(pixelScaleBoost)}`
-    : '';
-  return [
-    'SPRITE',
-    shape,
-    `B${String(bucketId)}`,
-    `V${String(variant)}`,
-    String(tileSize),
-    String(dpr),
-    String(alpha),
-    `FROZEN_NATIVE_${String(Math.round(simulateMs))}_${String(Math.round(stepMs))}${darkMode ? '|DK' : ''}${boostSuffix}`,
+    `STATIC_NATIVE${darkMode ? '|DK' : ''}${boostSuffix}${geometrySuffix}`,
   ].join('|');
 }
 
@@ -130,6 +111,8 @@ export function makeSpriteSeedKey(args: {
 }
 
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {
+  const forced = forcedSpriteShape();
+  if (forced) return forced;
   const t = clamp01(Number.isFinite(args.avg) ? args.avg : 0.5);
   return sampleShapeForAvg(t, args.seed ?? t, args.orderIndex);
 }
@@ -152,7 +135,7 @@ export function getOrAssignShapeEntry(
   orderIndex: number,
   variantSlots = DEFAULT_VARIANT_SLOTS
 ): ShapeAssignment {
-  const cacheKey = `${entryId}|${sectionKey}`;
+  const cacheKey = `${entryId}|${sectionKey}|${forcedSpriteShapeCacheKey()}`;
   const hit = _assignmentCache.get(cacheKey);
   if (hit) return hit;
 

@@ -13,8 +13,18 @@ export interface SpriteFootprint {
   h: number;
 }
 
+export type SpriteBoundsPaddingValue = number | [far: number, near: number];
+
 // Tile-relative hitbox padding. Positive values grow the interaction bounds;
-// negative values shrink them inward from the footprint.
+// negative values shrink them inward from the footprint. A tuple means
+// [far-from-camera value, close-to-camera value].
+export interface SpriteBoundsPaddingSpec {
+  top?: SpriteBoundsPaddingValue;
+  right?: SpriteBoundsPaddingValue;
+  bottom?: SpriteBoundsPaddingValue;
+  left?: SpriteBoundsPaddingValue;
+}
+
 export interface SpriteBoundsPadding {
   top?: number;
   right?: number;
@@ -25,9 +35,15 @@ export interface SpriteBoundsPadding {
 export interface SpriteVisualLayout {
   scale: [number, number, number];
   offset: [number, number, number];
+  center: [number, number];
+  visualOffset: [number, number, number];
   aspect: number;
+  tileWorld: number;
   footprint: SpriteFootprint;
+  boundsSize: SpriteFootprint;
   boundsPadding: Required<SpriteBoundsPadding>;
+  boundsPaddingSpec: Required<SpriteBoundsPaddingSpec>;
+  tooltipBiasY: number;
 }
 
 export interface SpriteVisual {
@@ -48,7 +64,6 @@ export interface SpriteShapeProps {
   alpha?: number;
   blend?: number;
   opacity?: number;
-  freezeParticles?: boolean;
   particleFrames?: number;
   particleStepMs?: number;
   variantSlots?: number;
@@ -57,5 +72,8 @@ export interface SpriteShapeProps {
   occasionalRefreshMs?: number;
   enableDepthFog?: boolean;
   worldPosition?: SpriteVec3;
+  centerAtPosition?: boolean;
+  suspendQualityUpdates?: boolean;
+  texturePriority?: number;
   assignment?: SpriteAssignment;
 }

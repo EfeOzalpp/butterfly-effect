@@ -4,6 +4,12 @@ import { useEffect, useMemo } from 'react';
 
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
 import { getTieStats } from '../../gamification/rankLogic';
+import {
+  resolveSpriteIdentity,
+  resolveSpriteVisual,
+  type SpriteAssignment,
+  type SpriteIdentity,
+} from '../../sprites/entry';
 import { useOptionalUiFlow } from '../../../app/state/ui-context';
 import { getSessionItem, removeSessionItems } from '../../../app/session';
 import type {
@@ -15,6 +21,8 @@ import type {
 
 interface UsePersonalizationStateParams {
   personalizedEntryId: string | null;
+  sectionKey: string;
+  bagSeed: string;
   shapes: DotPoint[];
   dataById: Map<string, DotGraphEntry>;
   showCompleteUI: boolean;
@@ -25,12 +33,13 @@ interface UsePersonalizationStateParams {
   getAbsForValue: (value: number) => number;
   fullData: DotGraphEntry[];
   shouldShowPersonalized: boolean;
-  hasPersonalizedInDataset: boolean;
   statsLoading: boolean;
 }
 
 export default function usePersonalizationState({
   personalizedEntryId,
+  sectionKey,
+  bagSeed,
   shapes,
   dataById,
   showCompleteUI,
@@ -41,11 +50,15 @@ export default function usePersonalizationState({
   getAbsForValue,
   fullData,
   shouldShowPersonalized,
-  hasPersonalizedInDataset,
   statsLoading,
 }: UsePersonalizationStateParams) {
   const myShape = useMemo(
     () => shapes.find((shape) => shape._id === personalizedEntryId),
+    [shapes, personalizedEntryId]
+  );
+
+  const myShapeIndex = useMemo(
+    () => shapes.findIndex((shape) => shape._id === personalizedEntryId),
     [shapes, personalizedEntryId]
   );
 
@@ -77,6 +90,40 @@ export default function usePersonalizationState({
   const effectiveMyShape: PersonalizedDotShape | null =
     myShape ??
     (effectiveMyEntry ? { position: [0, 0, 0], color: fallbackColor } : null);
+
+  const personalSprite = useMemo<{
+    assignment: SpriteAssignment;
+    identity: SpriteIdentity;
+  } | null>(() => {
+    if (!effectiveMyEntry) return null;
+
+    const entryId = effectiveMyEntry._id ?? personalizedEntryId;
+    if (!entryId) return null;
+
+    const entryAvg = Number(effectiveMyEntry.avgWeight);
+    const shapeAvg = Number(myShape?.averageWeight);
+    const avg = Number.isFinite(entryAvg)
+      ? entryAvg
+      : Number.isFinite(shapeAvg)
+        ? shapeAvg
+        : 0.5;
+
+    const visual = resolveSpriteVisual({
+      entryId,
+      sectionKey,
+      avg,
+      seed: bagSeed,
+      orderIndex: myShapeIndex >= 0 ? myShapeIndex : 0,
+      baseScale: 1,
+    });
+
+    if (!visual.assignment) return null;
+
+    return {
+      assignment: visual.assignment,
+      identity: resolveSpriteIdentity(visual.assignment),
+    };
+  }, [bagSeed, effectiveMyEntry, myShape?.averageWeight, myShapeIndex, personalizedEntryId, sectionKey]);
 
   const myDisplayValue = useMemo(() => {
     if (!(showCompleteUI && effectiveMyEntry)) return 0;
@@ -115,7 +162,7 @@ export default function usePersonalizationState({
   const shouldShowStatsLoading =
     shouldRenderPersonalUI && (statsLoading || !myEntry?._id);
 
-  const shouldRenderExtraPersonalSprite = shouldRenderPersonalUI && !hasPersonalizedInDataset;
+  const shouldRenderExtraPersonalSprite = shouldRenderPersonalUI;
 
   useEffect(() => {
     const wantOpen = getSessionItem('be.openPersonalOnNext') === '1';
@@ -129,6 +176,8 @@ export default function usePersonalizationState({
     myEntry,
     effectiveMyEntry,
     effectiveMyShape,
+    personalSpriteAssignment: personalSprite?.assignment,
+    personalSpriteIdentity: personalSprite?.identity,
     myDisplayValue,
     myStats,
     shouldShowStatsLoading,

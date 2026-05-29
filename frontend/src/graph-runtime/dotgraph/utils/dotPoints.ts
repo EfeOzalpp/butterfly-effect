@@ -310,6 +310,7 @@ export function computeDotPoints(
       // personalized shape. Any shape closer than CLEAR_RADIUS is pushed
       // radially outward to the boundary.
       const CLEAR_RADIUS = 22;
+      const FRONT_CORRIDOR_RADIUS = 26;
       for (const pt of pts) {
         if (pt._id === personalizedEntryId) continue;
         const [x, y, z] = pt.position;
@@ -319,6 +320,27 @@ export function computeDotPoints(
           const pushed: Vec3 = [x * scale, y * scale, z * scale];
           pt.position = pushed;
           pt.originalPosition = pushed;
+        }
+
+        // Initial camera looks down the z axis toward the personalized shape.
+        // Keep that first-open sightline clear; later user rotation can move
+        // shapes through this view naturally.
+        if (pt.position[2] > 0) {
+          const [px, py, pz] = pt.position;
+          const planarDist = Math.hypot(px, py);
+          if (planarDist < FRONT_CORRIDOR_RADIUS) {
+            const fallbackSeed = hashFromString(pt._id ?? `${String(px)}:${String(py)}:${String(pz)}`);
+            const fallbackAngle = hashUnit(fallbackSeed) * Math.PI * 2;
+            const dirX = planarDist < 0.001 ? Math.cos(fallbackAngle) : px / planarDist;
+            const dirY = planarDist < 0.001 ? Math.sin(fallbackAngle) : py / planarDist;
+            const pushed: Vec3 = [
+              dirX * FRONT_CORRIDOR_RADIUS,
+              dirY * FRONT_CORRIDOR_RADIUS,
+              pz,
+            ];
+            pt.position = pushed;
+            pt.originalPosition = pushed;
+          }
         }
       }
     }

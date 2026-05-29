@@ -1,5 +1,5 @@
 // src/graph-runtime/dotgraph/camera/controls/useZoom.ts
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { MutableRefObject } from 'react';
 
@@ -22,6 +22,7 @@ export interface UseZoomReturn {
   zoomTargetRef: MutableRefObject<number | null>;
   zoomVelRef: MutableRefObject<number>;
   setZoomTarget: (val: number) => void;
+  resetZoomTarget: (val: number) => number;
 }
 
 export default function useZoom({
@@ -55,13 +56,26 @@ export default function useZoom({
     radiusRef.current = radius;
   }, [radius]);
 
+  const setZoomTarget = useCallback((val: number) => {
+    zoomTargetRef.current = clamp(val, minRadius, maxRadius);
+  }, [minRadius, maxRadius]);
+
+  const resetZoomTarget = useCallback((val: number) => {
+    const next = clamp(val, minRadius, maxRadius);
+    zoomVelRef.current = 0;
+    zoomTargetRef.current = null;
+    radiusRef.current = next;
+    setRadius(next);
+    return next;
+  }, [minRadius, maxRadius]);
+
   useEffect(() => {
     // Proportional zoom: each wheel notch scales radius by a fixed % regardless of zoom level.
     // WHEEL_SCALE_PER_PX: radius multiplier per normalised pixel of scroll.
     // At 120px/notch (typical mouse) → ~14% zoom per notch; trackpad sends 2-5px per event → smooth.
     const WHEEL_SCALE_PER_PX = 0.0012;
     const CTRL_ZOOM_GAIN = 3.0;
-    const PINCH_GAIN = 1.25;
+    const PINCH_GAIN = 1.4;
     const PINCH_COOLDOWN_MS = 200;
 
     const ping = () => {
@@ -98,8 +112,10 @@ export default function useZoom({
 
       if (touchStartDistance.current != null) {
         const pinchDelta = dist - touchStartDistance.current; // >0 when fingers move apart
+        const zoomOutT = clamp((current - minRadius) / Math.max(1e-6, maxRadius - minRadius), 0, 1);
+        const pinchGain = PINCH_GAIN * (0.55 + 0.75 * Math.pow(zoomOutT, 0.7));
         // Fingers apart => zoom IN => radius should DECREASE
-        const next = clamp(current - pinchDelta * PINCH_GAIN, minRadius, maxRadius);
+        const next = clamp(current - pinchDelta * pinchGain, minRadius, maxRadius);
         zoomTargetRef.current = next;
       }
       touchStartDistance.current = dist;
@@ -198,8 +214,7 @@ export default function useZoom({
     radius,
     zoomTargetRef,
     zoomVelRef,
-    setZoomTarget: (val: number) => {
-      zoomTargetRef.current = clamp(val, minRadius, maxRadius);
-    },
+    setZoomTarget,
+    resetZoomTarget,
   };
 }

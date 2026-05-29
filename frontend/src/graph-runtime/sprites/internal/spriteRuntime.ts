@@ -1,60 +1,36 @@
 // graph-runtime/sprites/internal/spriteRuntime.ts
-import {
-  LinearFilter,
-  LinearMipmapLinearFilter,
-  type CanvasTexture,
-} from 'three';
+import type { CanvasTexture } from 'three';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
-import type { ShapeKey } from '../selection/types';
-import { DRAWERS, type DrawerFn } from '../selection/drawers';
+import { DRAWERS } from '../selection/drawers';
 import {
   FOOTPRINTS,
   BLEED,
   PARTICLE_SHAPES,
   resolveParticleScaleBoost,
-} from '../selection/footprints';
+} from '../api/shapeProfiles';
 import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
-import { makeFrozenTextureFromDrawer } from '../textures/frozenTexture';
 import { textureRegistry, type MakeArgs } from '../textures/cache/registry';
-import { enqueueTexture } from '../textures/queue';
-
-import {
-  frozenGet,
-  frozenSet,
-  frozenIsFailed,
-  frozenMarkFailed,
-  frozenBeginInflight,
-  frozenEndInflight,
-  frozenIsInflight,
-  frozenOnReady,
-  frozenClearAll,
-  frozenSize,
-} from '../textures/cache/frozenRegistry';
 
 import {
   chooseShape,
   quantizeAvgWithDownshift,
   pickVariantSlot,
   makeStaticKey,
-  makeFrozenKey,
   makeSpriteSeedKey,
   resolveDpr,
 } from './spritePolicy';
 import { clampSpriteTileSize } from './spriteQuality';
 
-import { trackTexture, disposeAllTrackedTextures } from '../textures/cache/textureTracker';
-
-const track = trackTexture;
+import { disposeAllTrackedTextures } from '../textures/cache/textureTracker';
 const noop = () => undefined;
 
 // Runtime owns texture creation/caching. React components ask for textures here
 // instead of building canvas textures inside render.
 export function disposeAllSpriteTextures() {
   disposeAllTrackedTextures();
-  try { frozenClearAll(); } catch {}
   try { textureRegistry.clear(); } catch {}
 }
 
@@ -80,11 +56,8 @@ export function prewarmSpriteTextures(
   // placeholder frames when the dot graph first appears.
   const dev = deviceType(getViewportSize().w);
   const TILE = clampSpriteTileSize(tileSize, dev);
-  const simulateMs = Math.max(0, particleFrames * particleStepMs);
-
   const seen = new Set<string>(); // (shape,bucketId,variant)
   const jobs: MakeArgs[] = [];
-  const frozenJobs: (() => void)[] = [];
 
   const limited = items.slice(0, Math.max(1, maxCount));
 
@@ -112,8 +85,8 @@ export function prewarmSpriteTextures(
     const blendUse = vs.blend;
 
     if (PARTICLE_SHAPES.has(shape)) {
-      // Static first, frozen second: components can show art quickly while the
-      // particle-heavy frozen texture finishes in the background.
+      // Particles now start from an already-active moment in the drawer itself,
+      // so prewarm only needs the static texture path.
       const sKeyEarly = makeStaticKey({
         shape,
         tileSize: TILE,
@@ -123,6 +96,8 @@ export function prewarmSpriteTextures(
         variant,
         darkMode,
         pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
+        footprint,
+        bleed,
       });
       if (!textureRegistry.get(sKeyEarly)) {
         jobs.push({
@@ -142,84 +117,6 @@ export function prewarmSpriteTextures(
           pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
         });
       }
-
-      const key = makeFrozenKey({
-        shape,
-        tileSize: TILE,
-        dpr,
-        alpha: alphaUse,
-        simulateMs,
-        stepMs: particleStepMs,
-        bucketId,
-        variant,
-        darkMode,
-        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
-      });
-
-      if (!frozenGet(key) && !frozenIsFailed(key) && !frozenIsInflight(key)) {
-        frozenBeginInflight(key);
-
-        frozenJobs.push(() => {
-          try {
-            const { texture } = makeFrozenTextureFromDrawer({
-              drawer,
-              tileSize: TILE,
-              dpr,
-              alpha: alphaUse,
-              gradientRGB: vs.rgb,
-              liveAvg: bucketAvg,
-              blend: blendUse,
-              footprint,
-              bleed,
-              seedKey,
-              darkMode,
-              simulateMs,
-              stepMs: particleStepMs,
-              generateMipmaps: true,
-              anisotropy: 1,
-              minFilter: LinearMipmapLinearFilter,
-              magFilter: LinearFilter,
-            });
-            frozenSet(key, track(texture));
-          } catch (err) {
-            frozenMarkFailed(key);
-            if (window.__GP_LOG_LOAD_ERRORS) {
-              console.warn('[SPRITE:FROZEN] build failed (prewarm)', key, err);
-            }
-
-            const sKey = makeStaticKey({
-              shape,
-              tileSize: TILE,
-              dpr,
-              alpha: alphaUse,
-              bucketId,
-              variant,
-              darkMode,
-              pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
-            });
-            if (!textureRegistry.get(sKey)) {
-              textureRegistry.ensure({
-                key: sKey,
-                drawer,
-                tileSize: TILE,
-                dpr,
-                alpha: alphaUse,
-                gradientRGB: vs.rgb,
-                liveAvg: bucketAvg,
-                blend: blendUse,
-                footprint,
-                bleed,
-                seedKey,
-                prio: 0,
-                darkMode,
-                pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
-              });
-            }
-          } finally {
-            frozenEndInflight(key);
-          }
-        });
-      }
     } else {
       const key2 = makeStaticKey({
         shape,
@@ -230,6 +127,8 @@ export function prewarmSpriteTextures(
         variant,
         darkMode,
         pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
+        footprint,
+        bleed,
       });
       if (!textureRegistry.get(key2)) {
         jobs.push({
@@ -253,20 +152,11 @@ export function prewarmSpriteTextures(
   }
 
   if (jobs.length) textureRegistry.prewarm(jobs, { prioBase: 0 });
-  for (const run of frozenJobs) enqueueTexture(run, 1000, true);
-
-  if (typeof window !== 'undefined') {
-    window.__GP_FROZEN_TEX = { size: frozenSize() };
-  }
 }
 
 /* runtime request helpers used by the React component */
 export function getStaticTexture(key: string) {
   return textureRegistry.get(key);
-}
-
-export function getFrozenTexture(key: string) {
-  return frozenGet(key);
 }
 
 export function requestStaticTexture(args: MakeArgs, onReady: (tex: CanvasTexture) => void) {
@@ -277,90 +167,25 @@ export function requestStaticTexture(args: MakeArgs, onReady: (tex: CanvasTextur
   }
 
   textureRegistry.ensure({ ...args, prio: args.prio ?? 0 });
+  let active = true;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
   // Multiple mounted sprites can wait for the same in-flight texture key.
   const off = textureRegistry.onReady((readyKey, readyTex) => {
+    if (!active) return;
     if (readyKey === args.key) onReady(readyTex);
   });
+  const offCancel = textureRegistry.onCancel((cancelledKey) => {
+    if (!active || cancelledKey !== args.key) return;
+    retryTimer = setTimeout(() => {
+      if (!active || textureRegistry.get(args.key)) return;
+      textureRegistry.ensure({ ...args, prio: args.prio ?? 0 });
+    }, 0);
+  });
 
-  return off;
-}
-
-export function requestFrozenTexture(args: {
-  key: string;
-  shape: ShapeKey;
-  drawer: DrawerFn;
-  tileSize: number;
-  dpr: number;
-  alpha: number;
-  bucketAvg: number;
-  gradientRGB?: { r: number; g: number; b: number };
-  blend: number;
-  footprint: { w: number; h: number };
-  bleed?: { top?: number; right?: number; bottom?: number; left?: number };
-  seedKey: string;
-  simulateMs: number;
-  stepMs: number;
-  darkMode?: boolean;
-  background?: boolean;
-  pixelScaleBoost?: number;
-  onReady: (tex: CanvasTexture) => void;
-  onFail: () => void;
-}) {
-  // Frozen textures simulate particles once and cache the result. That is much
-  // cheaper than running particle animation for every sprite every frame.
-  const cached = frozenGet(args.key);
-  if (cached) {
-    args.onReady(cached);
-    return noop;
-  }
-
-  if (frozenIsFailed(args.key)) {
-    args.onFail();
-    return noop;
-  }
-
-  if (frozenIsInflight(args.key)) {
-    return frozenOnReady((readyKey, readyTex) => {
-      if (readyKey === args.key) args.onReady(readyTex);
-    });
-  }
-
-  if (frozenBeginInflight(args.key)) {
-    enqueueTexture(() => {
-      try {
-        const { texture } = makeFrozenTextureFromDrawer({
-          drawer: args.drawer,
-          tileSize: args.tileSize,
-          dpr: args.dpr,
-          alpha: args.alpha,
-          gradientRGB: args.gradientRGB,
-          liveAvg: args.bucketAvg,
-          blend: args.blend,
-          footprint: args.footprint,
-          bleed: args.bleed,
-          seedKey: args.seedKey,
-          darkMode: args.darkMode,
-          pixelScaleBoost: args.pixelScaleBoost,
-          simulateMs: args.simulateMs,
-          stepMs: args.stepMs,
-          generateMipmaps: true,
-          anisotropy: 1,
-          minFilter: LinearMipmapLinearFilter,
-          magFilter: LinearFilter,
-        });
-        frozenSet(args.key, track(texture));
-        args.onReady(texture);
-      } catch (err) {
-        frozenMarkFailed(args.key);
-        if (window.__GP_LOG_LOAD_ERRORS) {
-          console.warn('[SPRITE:FROZEN] build failed (runtime)', args.key, err);
-        }
-        args.onFail();
-      } finally {
-        frozenEndInflight(args.key);
-      }
-    }, 0, args.background);
-  }
-
-  return noop;
+  return () => {
+    active = false;
+    off();
+    offCancel();
+    if (retryTimer !== undefined) clearTimeout(retryTimer);
+  };
 }

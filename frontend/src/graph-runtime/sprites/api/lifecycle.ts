@@ -9,3 +9,8 @@ export {
   pauseQueue as pauseSpriteTextureQueue,
   resumeQueue as resumeSpriteTextureQueue,
 } from "../textures/queue";
+
+export {
+  pauseEpochScheduler as pauseSpriteEpochScheduler,
+  resumeEpochScheduler as resumeSpriteEpochScheduler,
+} from "../internal/epochScheduler";

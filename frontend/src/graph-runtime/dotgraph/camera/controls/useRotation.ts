@@ -17,6 +17,7 @@ const _projScreen = new Matrix4();
 const ROT_RELEASE_TAU = 0.38;
 const ROT_IDLE_RELEASE_TAU = 0.18;
 const ROT_STOP_EPSILON = 0.001;
+const TOUCH_SENSITIVITY_RELEASE_CURVE = 0.55;
 
 const mapResponsiveDelta = (delta: number, deadzone: number) => {
   const magnitude = Math.abs(delta);
@@ -67,13 +68,15 @@ const getDragTuning = ({
   // Desktop sensitivity scales with how close the nearest dot is to the camera.
   // Near dot → low sensitivity (precision); far dots → full speed.
   const distRatio = clamp01(closestDist / maxRadius);
+  const zoomReleaseRatio = Math.pow(zoomRatio, TOUCH_SENSITIVITY_RELEASE_CURVE);
+  const sensitivityRatio = isTouch ? Math.max(distRatio, zoomReleaseRatio) : distRatio;
 
   return {
     // Close zooms need less angular travel, but also less deadzone so the motion
     // still starts promptly instead of feeling sticky before it suddenly jumps.
     deadzoneMul: isTouch ? lerp(0.72, 1, distRatio) : lerp(0.55, 1.1, distRatio),
     sensitivityMul: isTouch
-      ? lerp(isTabletLike ? 0.42 : 0.35, 1.0, distRatio)
+      ? lerp(isTabletLike ? 0.42 : 0.35, 1.0, sensitivityRatio)
       : lerp(0.17, 1.2, distRatio),
   };
 };

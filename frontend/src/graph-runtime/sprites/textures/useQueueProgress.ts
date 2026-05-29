@@ -2,8 +2,8 @@
 import { useSyncExternalStore } from 'react';
 import { getQueueCounts, subscribeQueue } from './queue';
 
-// React bridge for texture queue state. Background frozen jobs are excluded from
-// isBusy so UI loading states do not stay on forever.
+// React bridge for texture queue state. Background jobs are excluded from isBusy
+// so UI loading states do not stay on forever.
 export default function useTextureQueueProgress() {
   const counts = useSyncExternalStore(subscribeQueue, getQueueCounts, getQueueCounts);
 

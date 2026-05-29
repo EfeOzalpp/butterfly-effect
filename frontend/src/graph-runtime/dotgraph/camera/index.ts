@@ -11,7 +11,6 @@ export { default as useActivity } from './controls/useActivity';
 export { default as usePixelOffsets } from './controls/usePixelOffsets';
 
 // Pure computations
-export { computeTooltipOffsetPx } from './compute/tooltipOffset';
 export { computeInitialZoomTarget } from './compute/zoomTarget';
 
 // Shared state helpers

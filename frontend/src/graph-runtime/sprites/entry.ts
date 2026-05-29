@@ -10,5 +10,6 @@ export * from './api/dispose';
 export * from './api/lifecycle';
 export * from './api/theme';
 export * from './api/quality';
+export * from './api/identity';
 
 export { default as useTextureQueueProgress } from './textures/useQueueProgress';

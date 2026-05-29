@@ -4,21 +4,27 @@ import * as React from 'react';
 import {
   Frustum,
   Matrix4,
-  SpriteMaterial,
+  Vector2,
   Vector3,
   type CanvasTexture,
   type Sprite,
+  type SpriteMaterial,
 } from 'three';
 import { useFrame } from '@react-three/fiber';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
 import type { ShapeKey, SpriteShapeProps } from '../types';
-import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeFrozenKey, makeSpriteSeedKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
+import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeSpriteSeedKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
 
 import { DRAWERS } from '../selection/drawers';
 import { houseHasChimney } from '../../../canvas-engine/shapes/house';
-import { FOOTPRINTS, BLEED, VISUAL_SCALE, ANCHOR_BIAS_Y, PARTICLE_SHAPES, resolveParticleScaleBoost } from '../selection/footprints';
+import {
+  FOOTPRINTS,
+  BLEED,
+  PARTICLE_SHAPES,
+  resolveParticleScaleBoost,
+} from '../api/shapeProfiles';
 import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
 import { textureRegistry } from '../textures/cache/registry';
@@ -30,9 +36,7 @@ import {
 
 import {
   getStaticTexture,
-  getFrozenTexture,
   requestStaticTexture,
-  requestFrozenTexture,
 } from '../internal/spriteRuntime';
 import {
   chooseSpriteTileForScreenSize,
@@ -41,22 +45,19 @@ import {
   spriteQualityCheckFrameModulo,
   spriteQualityUpgradeDelayMs,
 } from './spriteQuality';
-import { onceQueueIdle } from '../textures/queue';
 import { registerEpochShape } from './epochScheduler';
-import { spriteMaterialCachingDisabled } from './debug-flags';
+import { spriteMaterialCachingDisabled } from '../../debug/spriteFlags';
+import {
+  PLACEHOLDER_MATERIAL,
+  acquireSpriteMaterial,
+  makeUnsharedSpriteMaterial,
+  releaseSpriteMaterial,
+} from './spriteMaterials';
+import { computeSpriteWorldGeometry } from './spriteGeometry';
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
 }
-
-const PLACEHOLDER_MATERIAL = new SpriteMaterial({
-  transparent: true,
-  opacity: 0.24,
-  color: '#a6a6a6',
-  depthWrite: false,
-  depthTest: false,
-  toneMapped: false,
-});
 
 import { trackTexture } from '../textures/cache/textureTracker';
 const track = trackTexture;
@@ -74,72 +75,6 @@ function releaseEpochTex(tex: CanvasTexture | null) {
   } catch {}
 }
 
-interface SharedMaterialEntry {
-  material: SpriteMaterial;
-  refs: number;
-}
-
-const __SHARED_SPRITE_MATERIALS = new Map<string, SharedMaterialEntry>();
-
-// Many sprites share the same texture/opacity. Sharing materials avoids a large
-// pile of identical Three SpriteMaterial instances.
-function makeSpriteMaterialKey(tex: CanvasTexture, opacity: number) {
-  return [
-    tex.uuid,
-    opacity,
-    0, // depthWrite=false
-    0, // depthTest=false
-    0, // toneMapped=false
-    'white',
-  ].join('|');
-}
-
-function acquireSpriteMaterial(tex: CanvasTexture, opacity: number) {
-  const key = makeSpriteMaterialKey(tex, opacity);
-  const hit = __SHARED_SPRITE_MATERIALS.get(key);
-  if (hit) {
-    hit.refs += 1;
-    return hit.material;
-  }
-
-  const material = new SpriteMaterial({
-    map: tex,
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    opacity,
-    toneMapped: false,
-    color: 'white',
-  });
-  material.needsUpdate = true;
-  __SHARED_SPRITE_MATERIALS.set(key, { material, refs: 1 });
-  return material;
-}
-
-function releaseSpriteMaterial(tex: CanvasTexture, opacity: number) {
-  const key = makeSpriteMaterialKey(tex, opacity);
-  const hit = __SHARED_SPRITE_MATERIALS.get(key);
-  if (!hit) return;
-  hit.refs -= 1;
-  if (hit.refs > 0) return;
-  try { hit.material.dispose(); } catch {}
-  __SHARED_SPRITE_MATERIALS.delete(key);
-}
-
-function makeUnsharedSpriteMaterial(tex: CanvasTexture, opacity: number) {
-  const material = new SpriteMaterial({
-    map: tex,
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    opacity,
-    toneMapped: false,
-    color: 'white',
-  });
-  material.needsUpdate = true;
-  return material;
-}
-
 export function SpriteShape({
   avg,
   seed,
@@ -150,14 +85,14 @@ export function SpriteShape({
   alpha: _alpha = 215,
   blend: _blend = 1.0,
   opacity = 1,
-  freezeParticles = true,
-  particleFrames = 240,
-  particleStepMs = 33,
   variantSlots = DEFAULT_VARIANT_SLOTS,
   variantSeed,
   darkMode = false,
   occasionalRefreshMs = 0,
   worldPosition,
+  centerAtPosition = false,
+  suspendQualityUpdates = false,
+  texturePriority = 0,
   assignment,
 }: SpriteShapeProps) {
 
@@ -218,9 +153,6 @@ export function SpriteShape({
   }, [baseTile, clearPendingQualityUpgrade, dev, qualityTileSize, scheduleQualityUpgrade]);
 
   const isParticleShape = PARTICLE_SHAPES.has(shape);
-  const [animationReady, setAnimationReady] = React.useState(false);
-  const wantsFrozen = animationReady && freezeParticles && isParticleShape;
-  const simulateMs = Math.max(0, particleFrames * particleStepMs);
 
   const vs = computeVisualStyle(bucketAvg);
   const alphaUse = vs.alpha;
@@ -266,16 +198,24 @@ export function SpriteShape({
   }, [occasionalRefreshMs, wantsEpochRefresh]);
 
   const key = React.useMemo(() => {
-    const staticBase = makeStaticKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) });
-    // Epoch refreshes always use cheap static textures — frozen rebuilds are too expensive
+    const staticBase = makeStaticKey({
+      shape,
+      tileSize: TILE,
+      dpr,
+      alpha: alphaUse,
+      bucketId,
+      variant,
+      darkMode: localDarkMode,
+      pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
+      footprint: FOOTPRINTS[shape],
+      bleed: BLEED[shape],
+    });
     if (refreshEpoch > 0) return `${staticBase}|e:${String(refreshEpoch)}`;
-    return wantsFrozen
-      ? makeFrozenKey({ shape, tileSize: TILE, dpr, alpha: alphaUse, simulateMs, stepMs: particleStepMs, bucketId, variant, darkMode: localDarkMode, pixelScaleBoost: resolveParticleScaleBoost(shape, dev) })
-      : staticBase;
-  }, [wantsFrozen, shape, TILE, dpr, alphaUse, simulateMs, particleStepMs, bucketId, variant, localDarkMode, refreshEpoch, dev]);
+    return staticBase;
+  }, [shape, TILE, dpr, alphaUse, bucketId, variant, localDarkMode, refreshEpoch, dev]);
 
   const [texState, setTexState] = React.useState<{ key: string; tex: CanvasTexture | null }>(() => {
-    const tex = wantsFrozen ? (getFrozenTexture(key) ?? null) : (getStaticTexture(key) ?? null);
+    const tex = getStaticTexture(key) ?? null;
     return { key, tex };
   });
   const tex = texState.key === key ? texState.tex : null;
@@ -290,27 +230,11 @@ export function SpriteShape({
   // Only reuse prev texture if it's the same shape — cross-shape fallback shows the wrong sprite
   const displayTex = tex ?? (prevTexShapeRef.current === shape ? prevTexRef.current : null);
 
-  // Once static texture is loaded, wait for the static queue to go idle, then stagger frozen upgrade
-  React.useEffect(() => {
-    if (animationReady || !isParticleShape || !tex) return;
-    let timerId: ReturnType<typeof setTimeout> | undefined;
-    let cancelled = false;
-    const offIdle = onceQueueIdle(() => {
-      if (cancelled) return;
-      timerId = setTimeout(() => { setAnimationReady(true); }, ((orderIndex ?? 0) % 300) * 10);
-    });
-    return () => {
-      cancelled = true;
-      offIdle();
-      if (timerId !== undefined) clearTimeout(timerId);
-    };
-  }, [animationReady, isParticleShape, tex, orderIndex]);
-
   // Reset texture when dark mode changes so we request a new dark/light variant
   React.useEffect(() => {
-    const nextTex = wantsFrozen ? (getFrozenTexture(key) ?? null) : (getStaticTexture(key) ?? null);
+    const nextTex = getStaticTexture(key) ?? null;
     setTexState({ key, tex: nextTex });
-  }, [localDarkMode, key, wantsFrozen]);
+  }, [localDarkMode, key]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -342,89 +266,6 @@ export function SpriteShape({
       bleed,
       seedKey: stableSeedKey,
     } as const;
-
-    const requestStatic = () => {
-      const sKey = makeStaticKey({
-        shape,
-        tileSize: TILE,
-        dpr,
-        alpha: alphaUse,
-        bucketId,
-        variant,
-        darkMode: localDarkMode,
-        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
-      });
-
-      const existing = textureRegistry.get(sKey);
-      if (existing) {
-        setIfAlive(existing);
-        return undefined;
-      }
-
-      off = requestStaticTexture(
-        {
-          key: sKey,
-          drawer,
-          tileSize: TILE,
-          dpr,
-          alpha: alphaUse,
-          gradientRGB: vs.rgb,
-          liveAvg: bucketAvg,
-          blend: vs.blend,
-          footprint,
-          bleed,
-          seedKey: stableSeedKey,
-          prio: 0,
-          darkMode: localDarkMode,
-          pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
-        },
-        (t) => { setIfAlive(t); }
-      );
-
-      return off;
-    };
-
-    if (wantsFrozen && refreshEpoch === 0) {
-      const cached = getFrozenTexture(key);
-      if (cached) {
-        setIfAlive(cached);
-        return;
-      }
-
-      off = requestFrozenTexture({
-        key,
-        shape,
-        drawer,
-        tileSize: TILE,
-        dpr,
-        alpha: alphaUse,
-        bucketAvg,
-        gradientRGB: vs.rgb,
-        blend: vs.blend,
-        footprint,
-        bleed,
-        seedKey: common.seedKey,
-        simulateMs,
-        stepMs: particleStepMs,
-        darkMode: localDarkMode,
-        background: true,
-        pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
-        onReady: (t) => { setIfAlive(t); },
-        onFail: () => { requestStatic(); },
-      });
-
-      watchdog = setTimeout(() => {
-        if (!cancelled && !getFrozenTexture(key) && !textureRegistry.get(key)) {
-          requestStatic();
-        }
-      }, 1000);
-
-      return () => {
-        cancelled = true;
-        if (off) off();
-        if (watchdog) clearTimeout(watchdog);
-      };
-    }
 
     // Epoch refreshes: build texture directly, bypassing the registry entirely.
     // IMPORTANT: epoch textures must NOT go through track()/setIfAlive because
@@ -500,7 +341,7 @@ export function SpriteShape({
         footprint,
         bleed,
         seedKey: common.seedKey,
-        prio: 0,
+        prio: texturePriority,
         darkMode: localDarkMode,
         pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
       },
@@ -514,14 +355,11 @@ export function SpriteShape({
   }, [
     key,
     tex,
-    wantsFrozen,
     shape,
     TILE,
     dpr,
     alphaUse,
     bucketAvg,
-    simulateMs,
-    particleStepMs,
     variant,
     bucketId,
     localDarkMode,
@@ -551,17 +389,22 @@ export function SpriteShape({
     };
   }, [displayTex, opacity, material, materialCacheDisabled]);
 
-  const shapeScaleK = VISUAL_SCALE[shape] ?? 1;
-  const finalScale = scale * shapeScaleK;
-
-  // Use footprint+bleed constants for stable scale — texture swaps never cause size jumps
-  const fp = FOOTPRINTS[shape];
-  const bl = BLEED[shape];
-  const totalW = fp.w + (bl?.left ?? 0) + (bl?.right ?? 0);
-  const totalH = fp.h + (bl?.top ?? 0) + (bl?.bottom ?? 0);
-  const maxSide = Math.max(totalW, totalH) || 1;
-  const sx = finalScale * (totalW / maxSide);
-  const sy = finalScale * (totalH / maxSide);
+  const basePosition: [number, number, number] = Array.isArray(position)
+    ? ([...position] as [number, number, number])
+    : [0, 0, 0];
+  const spriteGeometry = computeSpriteWorldGeometry({
+    shape,
+    basePosition,
+    scale,
+    applyVisualOffsets: !centerAtPosition,
+    assignment,
+  });
+  const sx = spriteGeometry.width;
+  const sy = spriteGeometry.height;
+  const spriteCenter = React.useMemo(
+    () => new Vector2(spriteGeometry.center[0], spriteGeometry.center[1]),
+    [spriteGeometry.center]
+  );
 
   const materialRef = React.useRef<SpriteMaterial | null>(null);
   React.useEffect(() => { materialRef.current = material; }, [material]);
@@ -595,7 +438,7 @@ export function SpriteShape({
       isVisibleRef.current = _frustum.current.containsPoint(_wp.current);
     }
 
-    if (spr && isVisibleRef.current) {
+    if (!suspendQualityUpdates && spr && isVisibleRef.current) {
       qualityCheckFrameRef.current = (qualityCheckFrameRef.current + 1) % qualityCheckModulo;
       if (qualityCheckFrameRef.current === 0) {
         const distance = Math.max(0.001, camera.position.distanceTo(_wp.current));
@@ -644,17 +487,12 @@ export function SpriteShape({
 
   if (!displayTex) return null;
 
-  const biasY = ANCHOR_BIAS_Y[shape] ?? 0;
-  const pos: [number, number, number] = Array.isArray(position)
-    ? ([...position] as [number, number, number])
-    : [0, 0, 0];
-  pos[1] += sy * biasY;
-
   return (
     <sprite
       ref={spriteRef}
-      position={pos}
-      scale={[sx, sy, 1]}
+      position={spriteGeometry.position}
+      scale={spriteGeometry.scale}
+      center={spriteCenter}
       renderOrder={5}
     >
       <primitive object={material ?? PLACEHOLDER_MATERIAL} attach="material" dispose={null} />

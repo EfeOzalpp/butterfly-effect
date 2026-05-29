@@ -1,7 +1,7 @@
 // src/graph-runtime/dotgraph/interaction/useHoverBubble.ts
 
 import { useCallback, useRef, useState } from 'react';
-import { computeHoverViewportClass } from '../utils/hoverViewport';
+import { computeTooltipPlacement } from '../tooltip/placement';
 import type {
   DotGraphHoverEvent,
   DotGraphHoveredDot,
@@ -40,15 +40,16 @@ export default function useHoverBubble({
         Number.isFinite(clientY) &&
         typeof window !== 'undefined'
       ) {
-        setViewportClass(
-          computeHoverViewportClass({
+        const placement =
+          e.tooltipPlacement ??
+          computeTooltipPlacement({
             x: clientX,
             y: clientY,
             width: document.documentElement.clientWidth,
             height: document.documentElement.clientHeight,
             useDesktopLayout,
-          })
-        );
+          });
+        setViewportClass(placement.className);
       }
 
       if (!useDesktopLayout && hideTimerRef.current) {
@@ -63,6 +64,10 @@ export default function useHoverBubble({
         dotId: dot._id,
         percentage: pct,
         color: dot.color,
+        anchorPosition: e.anchorPosition,
+        tooltipLayout: e.tooltipLayout,
+        tooltipPlacement: e.tooltipPlacement,
+        tooltipAnchorMode: e.tooltipAnchorMode,
       });
 
     },

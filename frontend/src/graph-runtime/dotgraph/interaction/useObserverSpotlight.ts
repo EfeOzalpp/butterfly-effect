@@ -7,9 +7,11 @@ import { Frustum, Matrix4, Vector3 } from "three";
 import type { Group } from "three";
 import type { RefObject } from "react";
 import { useOptionalUiFlow } from "../../../app/state/ui-context";
+import { resolveSpriteVisual } from "../../sprites/entry";
 import { hasDotId } from "../types";
+import { makeCenteredTooltipEvent } from "../tooltip/hoverEvent";
+import { resolveTooltipHitboxState } from "./hitboxDistancePolicy";
 import type {
-  DotGraphHoverEvent,
   DotGraphHoverStart,
   DotPoint,
   IdentifiedDotPoint,
@@ -27,6 +29,11 @@ interface UseObserverSpotlightArgs {
   onHoverEnd: () => void;
   groupRef: RefObject<Group | null>;
   excludeId?: string | null;
+  sectionKey: string;
+  bagSeed: string;
+  spriteScale: number;
+  hitboxScale: number;
+  useDesktopLayout: boolean;
 }
 
 export default function useObserverSpotlight({
@@ -35,10 +42,17 @@ export default function useObserverSpotlight({
   onHoverEnd,
   groupRef,
   excludeId,
+  sectionKey,
+  bagSeed,
+  spriteScale,
+  hitboxScale,
+  useDesktopLayout,
 }: UseObserverSpotlightArgs) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const cameraRef = useRef(camera);
   useEffect(() => { cameraRef.current = camera; }, [camera]);
+  const glRef = useRef(gl);
+  useEffect(() => { glRef.current = gl; }, [gl]);
   const ui = useOptionalUiFlow();
   const spotlightRequest = ui?.spotlightRequest ?? null;
   const setSpotlightRequest = ui?.setSpotlightRequest;
@@ -110,7 +124,35 @@ export default function useObserverSpotlight({
     }
 
     spotlightActiveRef.current = true;
-    const synthEvt: DotGraphHoverEvent = {
+    const bestIndex = pts.findIndex((point) => point._id === best?._id);
+    const sprite = resolveSpriteVisual({
+      entryId: best._id,
+      sectionKey,
+      avg: Number.isFinite(best.averageWeight) ? best.averageWeight : 0.5,
+      seed: bagSeed,
+      orderIndex: Math.max(0, bestIndex),
+      baseScale: spriteScale,
+    });
+    const centerWorld = new Vector3(best.position[0], best.position[1], best.position[2]);
+    if (group) centerWorld.applyMatrix4(group.matrixWorld);
+    const distanceState = resolveTooltipHitboxState({
+      layout: sprite.layout,
+      distanceToCamera: cam.position.distanceTo(centerWorld),
+      sceneHitboxScale: hitboxScale,
+    });
+    const tooltipLayout = {
+      ...sprite.layout,
+      scale: distanceState.scale,
+      center: distanceState.center,
+    };
+    const synthEvt = makeCenteredTooltipEvent({
+      camera: cam,
+      domElement: glRef.current.domElement,
+      centerWorld,
+      layout: tooltipLayout,
+      target: null,
+      useDesktopLayout,
+    }) ?? {
       stopPropagation: noop,
       preventDefault: noop,
       clientX: (typeof window !== "undefined" ? window.innerWidth : 1000) * xRatio,
@@ -141,7 +183,17 @@ export default function useObserverSpotlight({
       spotlightTimerRef.current = null;
       spotlightActiveRef.current = false;
     };
-  }, [setSpotlightRequest, spotlightRequest]);
+  }, [
+    bagSeed,
+    excludeId,
+    groupRef,
+    hitboxScale,
+    sectionKey,
+    setSpotlightRequest,
+    spotlightRequest,
+    spriteScale,
+    useDesktopLayout,
+  ]);
 
   return { spotlightActiveRef };
 }

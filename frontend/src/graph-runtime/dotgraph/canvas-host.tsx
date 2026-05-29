@@ -23,12 +23,7 @@ import {
   resetQueue,
   disposeAllSpriteTextures,
 } from "../sprites/entry";
-
-declare global {
-  interface Window {
-    __GP_CTX_LOST?: boolean;
-  }
-}
+import { setGraphContextLost } from "../debug/context";
 
 interface GraphCanvasElement extends HTMLCanvasElement {
   __gp_onLost?: EventListener | null;
@@ -97,7 +92,7 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
         loseExt?.loseContext();
 
         try {
-          window.__GP_CTX_LOST = true;
+          setGraphContextLost(true);
         } catch {}
       } catch {}
     };
@@ -132,13 +127,13 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
           try {
             event.preventDefault();
           } catch {}
-          window.__GP_CTX_LOST = true;
+          setGraphContextLost(true);
           console.warn('WebGL context lost');
         };
 
         const onRestored = () => {
           try {
-            window.__GP_CTX_LOST = false;
+            setGraphContextLost(false);
           } catch {}
           console.warn('WebGL context restored');
         };

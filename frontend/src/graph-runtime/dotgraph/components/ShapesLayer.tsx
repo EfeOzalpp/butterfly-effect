@@ -1,12 +1,29 @@
 // src/graph-runtime/dotgraph/components/ShapesLayer.tsx
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
-import { Vector3 } from "three";
+import { Vector2, Vector3 } from "three";
 import type { Sprite } from "three";
-import { SpriteShape, resolveSpriteVisual } from "../../sprites/entry";
+import {
+  SpriteShape,
+  pauseSpriteEpochScheduler,
+  pauseSpriteTextureQueue,
+  resolveSpriteVisual,
+  resumeSpriteEpochScheduler,
+  resumeSpriteTextureQueue,
+} from "../../sprites/entry";
+import {
+  makeCenteredTooltipEvent,
+  spriteRuntimeTooltipLayout,
+} from "../tooltip/hoverEvent";
 import { hasDotId } from "../types";
 import type { DotGraphHoverEvent, DotGraphHoverStart, DotPoint } from "../types";
+import type { SpriteVisualLayout } from "../../sprites/types";
+import {
+  resolveHitboxDistanceState,
+  resolveTooltipHitboxState,
+} from "../interaction/hitboxDistancePolicy";
+import { shouldShowHitboxDebugOverlay } from "../../debug/spriteFlags";
 
 interface ShapesLayerProps {
   shapes: DotPoint[];
@@ -23,7 +40,14 @@ interface ShapesLayerProps {
   tileSize?: number;
   section?: string;
   hitboxScale?: number;
+  useDesktopLayout: boolean;
+  zoomTargetRef?: RefObject<number | null>;
+  hidePersonalizedSprite?: boolean;
 }
+
+const HITBOX_ZOOM_SETTLE_MS = 80;
+const TEXTURE_ZOOM_SETTLE_MS = 180;
+const DENSE_SCENE_QUALITY_UPGRADE_LIMIT = 180;
 
 export default function ShapesLayer({
   shapes,
@@ -40,43 +64,20 @@ export default function ShapesLayer({
   tileSize = 128,
   section = '',
   hitboxScale = 1,
+  useDesktopLayout,
+  zoomTargetRef,
+  hidePersonalizedSprite = false,
 }: ShapesLayerProps) {
   const { camera, gl } = useThree();
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hitboxRefs = useRef<(Sprite | null)[]>([]);
   const _tmpVec = useMemo(() => new Vector3(), []);
-
-  useFrame(() => {
-    const cullDist = camera.position.length() * 0.35;
-    for (let i = 0; i < shapeVisuals.length; i++) {
-      const sprite = hitboxRefs.current[i];
-      if (!sprite?.parent) continue;
-      sprite.getWorldPosition(_tmpVec);
-      const tooClose = camera.position.distanceTo(_tmpVec) < cullDist;
-      const { sx, sy } = shapeVisuals[i];
-      sprite.scale.set(
-        tooClose ? 0 : sx,
-        tooClose ? 0 : sy,
-        1
-      );
-    }
-  });
-
-  const clearHoverTimer = () => {
-    if (!hoverTimerRef.current) return;
-    clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = null;
-  };
-
-  useEffect(() => () => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-  }, []);
-
-  const setShapeCursor = (active: boolean, e?: DotGraphHoverEvent) => {
-    const target = e?.nativeEvent?.target;
-    if (!(target instanceof HTMLElement)) return;
-    target.classList.toggle("hovering-shape", active);
-  };
+  const showHitboxDebugOverlay = shouldShowHitboxDebugOverlay();
+  const lastZoomActiveAtRef = useRef(0);
+  const textureQueuePausedRef = useRef(false);
+  const epochSchedulerPausedRef = useRef(false);
+  const [suspendSpriteQuality, setSuspendSpriteQuality] = useState(false);
+  const denseScene = shapes.length >= DENSE_SCENE_QUALITY_UPGRADE_LIMIT;
 
   const shapeVisuals = useMemo(
     () =>
@@ -89,7 +90,6 @@ export default function ShapesLayer({
           seed: bagSeed,
           orderIndex: i,
           baseScale: spriteScale,
-          hitboxScale,
         });
         return {
           shape,
@@ -98,17 +98,125 @@ export default function ShapesLayer({
           sx: sprite.layout.scale[0],
           sy: sprite.layout.scale[1],
           offset: sprite.layout.offset,
+          center: sprite.layout.center,
+          spriteShape: sprite.shape,
           assignment: sprite.assignment,
+          layout: sprite.layout,
         };
       }),
-    [shapes, bagSeed, spriteScale, section, hitboxScale]
+    [shapes, bagSeed, spriteScale, section]
   );
+
+  useFrame(() => {
+    const now = performance.now();
+    const zoomActive = zoomTargetRef?.current != null;
+    if (zoomActive) {
+      lastZoomActiveAtRef.current = now;
+      if (!textureQueuePausedRef.current) {
+        pauseSpriteTextureQueue();
+        textureQueuePausedRef.current = true;
+      }
+      if (!epochSchedulerPausedRef.current) {
+        pauseSpriteEpochScheduler();
+        epochSchedulerPausedRef.current = true;
+      }
+      setSuspendSpriteQuality((prev) => prev ? prev : true);
+      return;
+    }
+
+    if (
+      textureQueuePausedRef.current &&
+      now - lastZoomActiveAtRef.current >= TEXTURE_ZOOM_SETTLE_MS
+    ) {
+      resumeSpriteTextureQueue();
+      textureQueuePausedRef.current = false;
+      resumeSpriteEpochScheduler();
+      epochSchedulerPausedRef.current = false;
+      setSuspendSpriteQuality((prev) => prev ? false : prev);
+    }
+
+    if (now - lastZoomActiveAtRef.current < HITBOX_ZOOM_SETTLE_MS) return;
+
+    const camRadius = camera.position.length();
+    for (let i = 0; i < shapeVisuals.length; i++) {
+      const sprite = hitboxRefs.current[i];
+      if (!sprite?.parent) continue;
+      sprite.getWorldPosition(_tmpVec);
+      const d = camera.position.distanceTo(_tmpVec);
+      const next = resolveHitboxDistanceState({
+        shape: shapeVisuals[i].spriteShape,
+        layout: shapeVisuals[i].layout,
+        distanceToCamera: d,
+        cameraRadius: camRadius,
+        sceneHitboxScale: hitboxScale,
+      });
+      sprite.visible = next.visible;
+      sprite.scale.set(next.scale[0], next.scale[1], next.scale[2]);
+      sprite.center.set(next.center[0], next.center[1]);
+    }
+  });
+
+  const clearHoverTimer = () => {
+    if (!hoverTimerRef.current) return;
+    clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = null;
+  };
+
+  useEffect(() => () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    if (textureQueuePausedRef.current) {
+      resumeSpriteTextureQueue();
+      textureQueuePausedRef.current = false;
+    }
+    if (epochSchedulerPausedRef.current) {
+      resumeSpriteEpochScheduler();
+      epochSchedulerPausedRef.current = false;
+    }
+  }, []);
+
+  const setShapeCursor = (active: boolean, e?: DotGraphHoverEvent) => {
+    const target = e?.nativeEvent?.target;
+    if (!(target instanceof HTMLElement)) return;
+    target.classList.toggle("hovering-shape", active);
+  };
+
+  const makeTooltipHoverEvent = (
+    hitbox: Sprite | null,
+    target: EventTarget | null,
+    layout: SpriteVisualLayout,
+    useShapeCenterAnchor: boolean
+  ): DotGraphHoverEvent | null => {
+    if (!hitbox) return null;
+
+    const centerWorld = new Vector3();
+    hitbox.getWorldPosition(centerWorld);
+    const tooltipState = resolveTooltipHitboxState({
+      layout,
+      distanceToCamera: camera.position.distanceTo(centerWorld),
+      sceneHitboxScale: hitboxScale,
+    });
+    return makeCenteredTooltipEvent({
+      camera,
+      domElement: gl.domElement,
+      centerWorld,
+      layout: {
+        ...spriteRuntimeTooltipLayout(layout, hitbox),
+        scale: tooltipState.scale,
+        center: tooltipState.center,
+      },
+      target,
+      useDesktopLayout,
+      anchorMode: useShapeCenterAnchor ? "shapeCenter" : "hitboxCenter",
+    });
+  };
 
   return (
     <>
-      {shapeVisuals.map(({ shape, avg, index, offset, assignment }, loopIdx) => {
+      {shapeVisuals.map(({ shape, avg, index, offset, center, assignment, layout }, loopIdx) => {
         const suppressHover = !!(myEntry && shape._id === personalizedEntryId && showCompleteUI);
         const identifiedShape = hasDotId(shape) ? shape : null;
+        const isPersonalizedShape = !!myEntry && shape._id === personalizedEntryId;
+        const shouldHideGraphSprite = hidePersonalizedSprite && isPersonalizedShape;
 
         return (
           <group
@@ -123,15 +231,16 @@ export default function ShapesLayer({
                   setShapeCursor(true, e);
                   const tgt = e.nativeEvent.target;
                   const capturedShape = identifiedShape;
-                  const capturedPos = shape.position;
                   clearHoverTimer();
                   hoverTimerRef.current = setTimeout(() => {
                     hoverTimerRef.current = null;
-                    const projected = new Vector3(...capturedPos).project(camera);
-                    const rect = gl.domElement.getBoundingClientRect();
-                    const sx = (projected.x * 0.5 + 0.5) * rect.width + rect.left;
-                    const sy = (-projected.y * 0.5 + 0.5) * rect.height + rect.top;
-                    onHoverStart(capturedShape, { nativeEvent: { clientX: sx, clientY: sy, target: tgt } });
+                    const hoverEvent = makeTooltipHoverEvent(
+                      hitboxRefs.current[loopIdx] ?? (e.object as Sprite),
+                      tgt,
+                      layout,
+                      isPersonalizedShape
+                    );
+                    if (hoverEvent) onHoverStart(capturedShape, hoverEvent);
                   }, 80);
                 }
               }}
@@ -146,30 +255,48 @@ export default function ShapesLayer({
               onClick={(e) => {
                 e.stopPropagation();
                 if (!identifiedShape) return;
-                if (!suppressHover) onHoverStart(identifiedShape, e);
+                if (!suppressHover) {
+                  const hoverEvent = makeTooltipHoverEvent(
+                    hitboxRefs.current[loopIdx] ?? (e.object as Sprite),
+                    e.nativeEvent.target,
+                    layout,
+                    isPersonalizedShape
+                  );
+                  onHoverStart(identifiedShape, hoverEvent ?? e);
+                }
               }}
               position={offset}
+              center={new Vector2(center[0], center[1])}
             >
-              <spriteMaterial transparent opacity={0} depthWrite={false} depthTest={false} />
+              <spriteMaterial
+                color="#ff3b8a"
+                transparent
+                opacity={showHitboxDebugOverlay ? 0.24 : 0}
+                depthWrite={false}
+                depthTest={false}
+              />
             </sprite>
 
-            <SpriteShape
-              avg={avg}
-              position={[0, 0, 0]}
-              scale={spriteScale}
-              tileSize={tileSize}
-              alpha={215}
-              blend={0.6}
-              worldPosition={shape.position}
-              seed={bagSeed}
-              orderIndex={index}
-              freezeParticles={true}
-              particleStepMs={33}
-              particleFrames={particleFrames}
-              darkMode={darkMode}
-              occasionalRefreshMs={occasionalRefreshMs}
-              assignment={assignment}
-            />
+            {!shouldHideGraphSprite && (
+              <SpriteShape
+                avg={avg}
+                position={[0, 0, 0]}
+                scale={spriteScale}
+                tileSize={tileSize}
+                alpha={215}
+                blend={0.6}
+                worldPosition={shape.position}
+                seed={bagSeed}
+                orderIndex={index}
+                particleStepMs={33}
+                particleFrames={particleFrames}
+                darkMode={darkMode}
+                occasionalRefreshMs={occasionalRefreshMs}
+                assignment={assignment}
+                centerAtPosition={isPersonalizedShape}
+                suspendQualityUpdates={suspendSpriteQuality || denseScene}
+              />
+            )}
           </group>
         );
       })}

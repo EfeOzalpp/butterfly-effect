@@ -2,21 +2,20 @@
 
 // Composition root for DotGraph data, hover state, personalization, and rendered layers.
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 
 import { usePreferences } from '../../app/state/preferences-context';
 import { useUiFlow } from '../../app/state/ui-context';
 import { useIdentity } from '../../app/state/identity-context';
 import { useSurveyData } from '../../app/state/survey-data-context';
 import { useSharedGraphData } from '../GraphDataContext';
-import { useTextureQueueProgress } from '../sprites/entry';
+import { bumpGeneration, resetQueue } from '../sprites/entry';
 import { DEFAULT_VIEWPORT_WIDTH, isMobileWidth } from '../../lib/responsive/breakpoints';
 
 import useHoverBubble from './interaction/useHoverBubble';
 import useHoverDismissal from './interaction/useHoverDismissal';
 import useObserverDelay from './interaction/useObserverDelay';
 import useObserverSpotlight from './interaction/useObserverSpotlight';
-import GraphOverlays from './components/GraphLoading';
 import ShapesLayer from './components/ShapesLayer';
 import PersonalizedLayer from './components/PersonalizedLayer';
 import HoveredLayer from './components/GeneralizedLayer';
@@ -40,6 +39,16 @@ export default function DotGraph() {
     absScoreById: absScoreByIdMap,
   } = useSharedGraphData();
 
+  const datasetKey = useMemo(
+    () => [
+      section,
+      safeData.length,
+      safeData[0]?._id ?? '',
+      safeData[safeData.length - 1]?._id ?? '',
+    ].join('|'),
+    [section, safeData]
+  );
+
   const showCompleteUI = useObserverDelay(observerMode, 2000);
 
   const personalizationGate = usePersonalizationGate({
@@ -58,13 +67,14 @@ export default function DotGraph() {
   const scene = useDotGraphSceneState({
     safeData,
     personalizedEntryId: personalizationGate.personalizedEntryId,
+    sectionKey: section,
     showPersonalized:
-      showCompleteUI &&
       personalizationGate.hasPersonalizedInDataset &&
       personalizationGate.shouldShowPersonalized,
     darkMode,
     wantsSkew: personalizationGate.wantsSkew,
     wantsSoloSkew: mode === 'absolute' && personalizationGate.wantsSkew,
+    zoomResetKey: datasetKey,
   });
   // Pull the scene contract out of the hook result so layer props stay explicit.
   const {
@@ -75,7 +85,6 @@ export default function DotGraph() {
     isTouchRotatingRef,
     spriteScale,
     bagSeed,
-    offsetPx,
     isRealMobile,
     isTabletLike,
     particleFrames,
@@ -83,12 +92,16 @@ export default function DotGraph() {
     radius,
     minRadius,
     maxRadius,
+    zoomTargetRef,
   } = scene;
 
   const zoomFraction = (maxRadius - radius) / Math.max(1, maxRadius - minRadius);
+  const shapeHitboxScale = 1;
 
   const personalization = usePersonalizationState({
     personalizedEntryId: personalizationGate.personalizedEntryId,
+    sectionKey: section,
+    bagSeed,
     shapes,
     dataById,
     showCompleteUI,
@@ -99,7 +112,6 @@ export default function DotGraph() {
     getAbsForValue,
     fullData: fullSurveyData,
     shouldShowPersonalized: personalizationGate.shouldShowPersonalized,
-    hasPersonalizedInDataset: personalizationGate.hasPersonalizedInDataset,
     statsLoading: loading,
   });
 
@@ -121,6 +133,12 @@ export default function DotGraph() {
     calcPercentForAvg: calcValueForAvg,
   });
 
+  useLayoutEffect(() => {
+    bumpGeneration();
+    resetQueue();
+    onHoverEnd();
+  }, [datasetKey, onHoverEnd]);
+
   // Observer mode can briefly synthesize a hover so the graph explains itself without real pointer input.
   const { spotlightActiveRef } = useObserverSpotlight({
     points: shapes,
@@ -128,6 +146,11 @@ export default function DotGraph() {
     onHoverEnd,
     groupRef,
     excludeId: personalizationGate.personalizedEntryId,
+    sectionKey: section,
+    bagSeed,
+    spriteScale,
+    hitboxScale: shapeHitboxScale,
+    useDesktopLayout,
   });
 
   useHoverDismissal({
@@ -139,12 +162,8 @@ export default function DotGraph() {
     onHoverEnd,
   });
 
-  const { isBusy } = useTextureQueueProgress();
-
   return (
     <>
-      <GraphOverlays isBusy={isBusy} />
-
       <group ref={groupRef}>
         <ShapesLayer
           shapes={shapes}
@@ -157,10 +176,13 @@ export default function DotGraph() {
           bagSeed={bagSeed}
           darkMode={darkMode}
           occasionalRefreshMs={isRealMobile ? 3600 : isTabletLike ? 2200 : 2000}
-          hitboxScale={isRealMobile ? 2.2 : isTabletLike ? 1.2 : 1}
+          hitboxScale={shapeHitboxScale}
           particleFrames={particleFrames}
           tileSize={tileSize}
           section={section}
+          useDesktopLayout={useDesktopLayout}
+          zoomTargetRef={zoomTargetRef}
+          hidePersonalizedSprite={personalization.shouldRenderPersonalUI}
         />
 
         <PersonalizedLayer
@@ -168,9 +190,10 @@ export default function DotGraph() {
           shouldRenderExtraPersonalSprite={personalization.shouldRenderExtraPersonalSprite}
           effectiveMyShape={personalization.effectiveMyShape}
           effectiveMyEntry={personalization.effectiveMyEntry}
+          personalSpriteAssignment={personalization.personalSpriteAssignment}
+          personalSpriteIdentity={personalization.personalSpriteIdentity}
           spriteScale={spriteScale}
           bagSeed={bagSeed}
-          offsetPx={offsetPx}
           myDisplayValue={personalization.myDisplayValue}
           mode={mode}
           myStats={personalization.myStats}
@@ -179,6 +202,8 @@ export default function DotGraph() {
           darkMode={darkMode}
           zoomFraction={zoomFraction}
           particleFrames={particleFrames}
+          sectionKey={section}
+          hitboxScale={shapeHitboxScale}
         />
 
         <HoveredLayer
@@ -186,7 +211,7 @@ export default function DotGraph() {
           shapes={shapes}
           safeData={safeData}
           mode={mode}
-          offsetPx={offsetPx}
+          zoomFraction={zoomFraction}
           viewportClass={viewportClass}
           calcValueForAvg={calcValueForAvg}
           getRelForId={getRelForId}
