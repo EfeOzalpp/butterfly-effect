@@ -31,7 +31,7 @@
   -webkit-user-select: none;
   overflow: visible;
 }
-.trigger:hover{  background: var(--inactive-accent-color-hover); padding: var(--input-padding-hover); }
+.trigger:hover { background: var(--inactive-accent-color-hover); padding: var(--input-padding-hover); }
 .trigger svg.ui-icon { transform: scale(1.1, 0.95);}
 
 .trigger.is-open {
@@ -230,17 +230,7 @@
 }
 
 /* Explorer icon */
-.explorer-emoji {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.3em;
-  width: 1.5em;
-  height: 1.5em;
-  line-height: 1;
-  flex-shrink: 0;
-}
+.explorer-emoji { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-right: 0.3em; width: 1.5em; height: 1.5em; line-height: 1; flex-shrink: 0; }
 
 /* Theme wiring: graph picker */
 .label,

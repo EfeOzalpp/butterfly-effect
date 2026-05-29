@@ -115,11 +115,29 @@
   height: fit-content;
 }
 
-/* Generalized result popup orientation */ 
-/* offset-px is a dynamic value that anchors the popup in the 3D space */
-
-/* default */
-.generalized-result { transform: translateX(var(--offset-px)); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-start; }
+/* Generalized result popup orientation */
+/* Generalized result is a hitbox-sized anchor lane. The panel is allowed to
+   overflow from that lane, while the lane itself is shifted to the requested
+   hitbox edge. */
+.generalized-result {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: var(--hitbox-width-px);
+  height: var(--hitbox-height-px);
+  min-width: var(--hitbox-width-px) !important;
+  min-height: var(--hitbox-height-px) !important;
+  max-width: var(--hitbox-width-px);
+  max-height: var(--hitbox-height-px);
+  transform: none;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  overflow: visible;
+}
+.generalized-result > * {
+  flex: 0 0 auto;
+}
 
 /* container, MID + RIGHT + LEFT */
 .is-right .generalized-result .gam-panel,
@@ -140,36 +158,71 @@
 .is-top.is-mid .generalized-result, .is-bottom.is-mid .generalized-result,
 .is-top.is-right .generalized-result, .is-bottom.is-right .generalized-result,
 .is-top.is-left .generalized-result, .is-bottom.is-left .generalized-result {
-  min-height: clamp(16rem, 32vw, 18rem); display: flex; flex-wrap: wrap;
+  display: flex; flex-wrap: wrap;
 }
-.is-top.is-mid .generalized-result, .is-bottom.is-mid .generalized-result { justify-content: center;}
-.is-bottom.is-left .generalized-result { justify-content: flex-start;}
-.is-bottom.is-right .generalized-result { justify-content: flex-end;}
-.is-bottom.is-right .generalized-result, .is-bottom.is-left .generalized-result, .is-bottom.is-mid .generalized-result { align-items: flex-end;}
-.is-top.is-right .generalized-result, .is-top.is-left .generalized-result, .is-top.is-mid .generalized-result { align-items: flex-start;}
 
-/* dynamic offset TOP */
-.is-top .generalized-result { transform: translateY(var(--offset-px)) !important; }
+/* Horizontal hitbox edges */
+.is-left .generalized-result,
+.is-mid .generalized-result {
+  left: var(--hitbox-width-px);
+  justify-content: flex-start;
+  align-items: center;
+  align-content: center;
+}
+.is-right .generalized-result {
+  left: calc(0px - var(--hitbox-width-px));
+  justify-content: flex-end;
+  align-items: center;
+  align-content: center;
+}
 
-/* dynamic offset BOTTOM */
-.is-bottom.is-mid .generalized-result,
-.is-bottom.is-left .generalized-result,
-.is-bottom.is-right .generalized-result { transform: translateY(calc(-1 * var(--offset-px)));}
+/* Vertical hitbox edges */
+.is-top .generalized-result {
+  top: var(--hitbox-height-px);
+  align-items: flex-start;
+  align-content: flex-start;
+}
+.is-bottom .generalized-result {
+  top: calc(0px - var(--hitbox-height-px));
+  align-items: flex-end;
+  align-content: flex-end;
+}
 
-/* dynamic offset MID + RIGHT */
-.is-right .generalized-result { transform: translateX(calc(1 - var(--offset-px))); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-end; }
-
-/* dynamic offset LEFT + orientation box */
-.is-left .generalized-result { transform: translateX(var(--offset-px)); min-width: clamp(24rem, 40vw, 30rem) !important; display: flex; justify-content: flex-start; }
+/* Corner cases combine the horizontal and vertical lane shifts. */
+.is-top.is-left .generalized-result,
+.is-bottom.is-left .generalized-result {
+  left: var(--hitbox-width-px);
+}
+.is-top.is-right .generalized-result,
+.is-bottom.is-right .generalized-result {
+  left: calc(0px - var(--hitbox-width-px));
+}
+.is-top.is-mid .generalized-result,
+.is-bottom.is-mid .generalized-result {
+  left: 0;
+  justify-content: center;
+}
 
 /* personalized results orientation */
 .personalized-anchor {
+  position: relative;
+  left: var(--hitbox-width-px);
+  top: 0;
+  width: var(--hitbox-width-px);
+  height: var(--hitbox-height-px);
+  min-width: var(--hitbox-width-px) !important;
+  min-height: var(--hitbox-height-px) !important;
+  max-width: var(--hitbox-width-px);
+  max-height: var(--hitbox-height-px);
   display: flex;
   justify-content: flex-start;
-  min-width: 360px;
-  max-width: 360px;
-  transform: translateX(var(--offset-px));
+  align-items: center;
+  overflow: visible;
 }
+.personalized-anchor > div {
+  flex: 0 0 auto;
+}
+
 .personalized-result {
   position: relative;
   pointer-events: all;
@@ -192,97 +245,30 @@
 }
 .personalized-result .gam-panel {
   border: none;
-  border-radius: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   box-shadow: none;
 }
 .toggle-button.toggle[aria-expanded="false"] { position: relative; }
 .personalized-root { display: flex; align-items: flex-start; justify-content: flex-start; }
+
 @media screen and (max-width: 767px) {
-  /* ALL BOTTOM */
-  /* bottom + right */
-  .is-bottom.is-right .generalized-result { top: -80px; left: -280px; }
-  /* bottom + left */
-  .is-bottom.is-left .generalized-result { top: -80px; left: 90px; }
-  /* bottom + mid */
-  .is-bottom.is-mid .generalized-result { top: -20px; left: 0; }
-
-  /* ALL TOP */
-  /* top + right */
-  .is-top.is-right .generalized-result { top: 65px; left: -280px; }
-  /* top + left */
-  .is-top.is-left .generalized-result { top: 65px; left: 90px; }
-  /* top + mid */
-  .is-top.is-mid .generalized-result { top: 20px; left: 0; }
-
-  /* CENTRAL BANDS */
-  /* left + mid (is-left covers mid when its not is-bottom or is-top) */
-  .is-left .generalized-result { left: 80px; }
-  /* right */
-  .is-right .generalized-result { left: -210px; }
 
   /* personalized results */
-  .personalized-result { min-width: 150px; max-width: 150px; left: 60px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: -2px; left: 56px;}
+  .personalized-result { min-width: 150px; max-width: 150px; }
   .personalized-result:not(:has(> .is-team)) {min-width: 260px; max-width: 260px; }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1024px) {
-  /* ALL BOTTOM */
-  /* bottom + right */
-  .is-bottom.is-right .generalized-result { top: -80px; left: -170px; }
-  /* bottom + left */
-  .is-bottom.is-left .generalized-result { top: -80px; left: 150px; }
-  /* bottom + mid */
-  .is-bottom.is-mid .generalized-result { top: -80px; left: 0; }
-
-  /* ALL TOP */
-  /* top + right */
-  .is-top.is-right .generalized-result { top: 80px; left: -170px; }
-  /* top + left */
-  .is-top.is-left .generalized-result { top: 80px; left: 150px; }
-  /* top + mid */
-  .is-top.is-mid .generalized-result { top: 80px; left: 0; }
-
-  /* CENTRAL BANDS */
-  /* left + mid (is-left covers mid when its not is-bottom or is-top) */
-  .is-left .generalized-result { left: 140px; }
-  /* right */
-  .is-right .generalized-result { left: -220px; }
 
   /* personalized results */
-  .personalized-result { min-width: 160px; left: 112px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: 2px; right: -112px; }
+  .personalized-result { min-width: 160px; max-width: 160px; }
   .personalized-result:not(:has(> .is-team)) {min-width: 260px; max-width: 260px; }
 }
 
 @media screen and (min-width: 1025px) {
 
-  /* ALL BOTTOM */
-  /* bottom + right */
-  .is-bottom.is-right .generalized-result { top: -80px; left: -225px; }
-  /* bottom + left */
-  .is-bottom.is-left .generalized-result { top: -80px; left: 190px; }
-  /* bottom + mid */
-  .is-bottom.is-mid .generalized-result { top: -80px; left: 0; }
-
-  /* ALL TOP */
-  /* top + right */
-  .is-top.is-right .generalized-result { top: 70px; left: -225px; }
-  /* top + left */
-  .is-top.is-left .generalized-result { top: 70px; left: 190px; }
-  /* top + mid */
-  .is-top.is-mid .generalized-result { top: 70px; left: 0; }
-
-  /* CENTRAL BANDS */
-  /* left + mid */
-  .is-left .generalized-result { left: 170px; }
-  .is-mid .generalized-result { left: 160px; }
-  /* right */
-  .is-right .generalized-result { left: -260px; }
-
   /* personalized results */
-  .personalized-result { max-width: 160px; min-width: 160px; left: 96px; }
-  .toggle-button.toggle[aria-expanded="false"] { top: -2px; right: -88px; }
+  .personalized-result { max-width: 160px; min-width: 160px; }
   .personalized-result:not(:has(> .is-team)) {min-width: 260px; max-width: 260px; }
 }
 
