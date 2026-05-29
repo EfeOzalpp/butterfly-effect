@@ -57,6 +57,7 @@ export interface ParticleEmitterOpts {
   edgeFadePx?: ParticleEdgeFade;
 
   respawn?: boolean;
+  warmStartSec?: number;
 
   /** Multiplier for line stroke thickness in texture pixels (sprite path can boost). */
   thicknessScale?: number;
@@ -78,6 +79,7 @@ interface EmitterState {
   particles: Particle[];
   seed: number;
   rnd: RandomSource;
+  warmStarted?: boolean;
 }
 
 function hashParticleKey(s: string) {
@@ -378,6 +380,32 @@ export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpt
 
     pr.size = randRange(rnd, rMin, rMax);
     pr.len = randRange(rnd, lMin, lMax);
+  }
+
+  if (!state.warmStarted) {
+    state.warmStarted = true;
+    const warmStartSec =
+      typeof opts.warmStartSec === "number" && Number.isFinite(opts.warmStartSec)
+        ? Math.max(0, opts.warmStartSec)
+        : 0;
+    const warmStepSec = 1 / 30;
+    const warmSteps = Math.min(180, Math.ceil(warmStartSec / warmStepSec));
+    for (let step = 0; step < warmSteps; step++) {
+      const stepSec = Math.min(warmStepSec, warmStartSec - step * warmStepSec);
+      if (stepSec <= 0) break;
+      for (const [i, pr] of state.particles.entries()) {
+        advanceParticle(pr, stepSec, accX, accY);
+        const alive = pr.age <= pr.life;
+        const inside =
+          pr.x >= rect.x &&
+          pr.x <= rect.x + rect.w &&
+          pr.y >= rect.y &&
+          pr.y <= rect.y + rect.h;
+        if ((!alive || !inside) && respawn) {
+          respawnParticle(pr, i, state.particles.length);
+        }
+      }
+    }
   }
 
   for (const [i, pr] of state.particles.entries()) {

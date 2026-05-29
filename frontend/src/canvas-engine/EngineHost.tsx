@@ -34,7 +34,6 @@ export function EngineHost({
     return hostDef.canvasDimensions;
   }, [hostDef]);
 
-
   React.useEffect(() => {
     if (!open) return;
     for (const mount of stopOnOpenMounts) {

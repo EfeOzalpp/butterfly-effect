@@ -11,8 +11,8 @@ export type {
   SolidBackgroundSpec,
   BackgroundSpec,
   BackgroundsByMode,
-  IntroBackgroundLookupKey,
-  IntroBackgroundsByMode,
+  StartBackgroundsByMode,
+  QuestionnaireBackgroundsByMode,
   CityBackgroundsByMode,
 } from "./index";
 
@@ -21,6 +21,8 @@ export {
   BACKGROUNDS_LIGHT,
   BACKGROUNDS_DARK,
   BACKGROUNDS_START_DARK,
+  BACKGROUNDS_QUESTIONNAIRE,
+  BACKGROUNDS_QUESTIONNAIRE_DARK,
   BACKGROUNDS_CITY,
   BACKGROUNDS_CITY_DARK,
 } from "./index";

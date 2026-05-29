@@ -13,7 +13,7 @@ import {
   drawCanvasLayer,
   getOrCreateCanvasLayer,
 } from "../../cache/offscreenCache";
-import { backgroundAnchorCacheKey, resolveStopK } from "./anchors";
+import { backgroundAnchorCacheKey, resolveBackgroundStops } from "./anchors";
 import { resolveStopColor } from "../shared/color";
 import { createStarGeometryCache, drawStars } from "../atmosphere/stars";
 import { drawLinearStopSurface } from "./surface";
@@ -84,8 +84,8 @@ export function drawBackground(
       if (!drewSurface) {
         const { x1, y1, x2, y2 } = resolveLinearPoints(p, overlay);
         const g = ctx.createLinearGradient(x1, y1, x2, y2);
-        for (const stop of overlay.stops) {
-          const k = resolveStopK(stop, t, anchors);
+        for (const resolved of resolveBackgroundStops(overlay.stops, t, anchors)) {
+          const { stop, k } = resolved;
           g.addColorStop(k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
         }
         ctx.save();
@@ -101,8 +101,9 @@ export function drawBackground(
       const outer = resolveOuterRadius(p, overlay.outer);
 
       const g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
-      for (const stop of overlay.stops) {
-        g.addColorStop(resolveStopK(stop, p.millis() / 1000, anchors), resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
+      for (const resolved of resolveBackgroundStops(overlay.stops, p.millis() / 1000, anchors)) {
+        const { stop, k } = resolved;
+        g.addColorStop(k, resolveStopColor(stop.rgba, stop.liveBlend, liveAvg));
       }
       ctx.save();
       ctx.globalAlpha = alpha;

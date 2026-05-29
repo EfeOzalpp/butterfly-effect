@@ -87,6 +87,7 @@ const RAIN = {
   lifeMax: 5,
   fadeInFrac: 0.15,
   fadeOutFrac: 0.25,
+  warmStartSec: 1.2,
 
   fadeLeft: 12,
   fadeRight: 12,
@@ -119,6 +120,7 @@ const RAIN = {
   lifeMax: number;
   fadeInFrac: number;
   fadeOutFrac: number;
+  warmStartSec: number;
   fadeLeft: number;
   fadeRight: number;
   fadeTop: number;
@@ -401,6 +403,7 @@ export function drawClouds(
       lifetime: { min: RAIN.lifeMin * lifeK, max: RAIN.lifeMax * lifeK },
       fadeInFrac: RAIN.fadeInFrac,
       fadeOutFrac: RAIN.fadeOutFrac,
+      warmStartSec: RAIN.warmStartSec,
 
       edgeFadePx: { left: RAIN.fadeLeft, right: RAIN.fadeRight, top: RAIN.fadeTop, bottom: RAIN.fadeBottom },
       respawn: true,

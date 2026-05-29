@@ -17,7 +17,10 @@ export interface BackgroundAnchorContext {
 }
 
 export interface RgbaStop {
-  k: BackgroundStopK; // vertical position of a color band - k in [0..1], or the visual horizon anchor.
+  // Optional vertical position. Missing stops are distributed between the
+  // nearest authored anchors, so background colors can follow the runtime
+  // horizon without hand-tuning every band.
+  k?: BackgroundStopK;
   rgba: string; // color itself
   rightRgba?: string; // optional right-edge color for horizontal blends across this band
   oscK?: { amp: number; hz: number }; // oscillates color stops K value up and down for movement.
@@ -66,7 +69,6 @@ export interface BackgroundSpec {
 // background lookups are keyed by the scene key the runtime is currently using.
 export type BackgroundsByMode = Record<SceneLookupKey, BackgroundSpec>;
 
-// Intro backgrounds cover the start and questionnaire scene keys. City owns a separate table.
-export type IntroBackgroundLookupKey = Exclude<SceneLookupKey, "city">;
-export type IntroBackgroundsByMode = Record<IntroBackgroundLookupKey, BackgroundSpec>;
+export type StartBackgroundsByMode = Record<Extract<SceneLookupKey, "start">, BackgroundSpec>;
+export type QuestionnaireBackgroundsByMode = Record<Extract<SceneLookupKey, "questionnaire">, BackgroundSpec>;
 export type CityBackgroundsByMode = Record<Extract<SceneLookupKey, "city">, BackgroundSpec>;

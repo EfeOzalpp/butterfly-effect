@@ -11,26 +11,30 @@ export type {
   SolidBackgroundSpec,
   BackgroundSpec,
   BackgroundsByMode,
-  IntroBackgroundLookupKey,
-  IntroBackgroundsByMode,
+  StartBackgroundsByMode,
+  QuestionnaireBackgroundsByMode,
   CityBackgroundsByMode,
 } from "./types";
 
 export { BACKGROUNDS_LIGHT, BACKGROUNDS_START_DARK } from "./start";
+export { BACKGROUNDS_QUESTIONNAIRE, BACKGROUNDS_QUESTIONNAIRE_DARK } from "./questionnaire";
 export { BACKGROUNDS_CITY, BACKGROUNDS_CITY_DARK } from "./city";
 
 import type { BackgroundsByMode } from "./types";
 import { BACKGROUNDS_LIGHT, BACKGROUNDS_START_DARK } from "./start";
+import { BACKGROUNDS_QUESTIONNAIRE, BACKGROUNDS_QUESTIONNAIRE_DARK } from "./questionnaire";
 import { BACKGROUNDS_CITY, BACKGROUNDS_CITY_DARK } from "./city";
 
 // Full-scene lookup used by runtime when no host-specific background is passed.
 export const BACKGROUNDS: BackgroundsByMode = {
   ...BACKGROUNDS_LIGHT,
+  ...BACKGROUNDS_QUESTIONNAIRE,
   city: BACKGROUNDS_CITY.city,
 };
 
 // Dark variant of the full-scene lookup.
 export const BACKGROUNDS_DARK: BackgroundsByMode = {
   ...BACKGROUNDS_START_DARK,
+  ...BACKGROUNDS_QUESTIONNAIRE_DARK,
   city: BACKGROUNDS_CITY_DARK.city,
 };

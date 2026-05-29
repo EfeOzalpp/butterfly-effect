@@ -5,15 +5,11 @@ import type { GridFootprint } from "../shared/geometry";
 export type Place = GridFootprint;
 
 export type CellForbidden = (r: number, c: number) => boolean;
-export interface PlaceOpts {
-  ignoreForbidden?: boolean;
-  ignoreOccupied?: boolean;
-  reserveSpace?: boolean;
-}
 
 /**
- * Tracks occupied cells for a grid and supports incremental placement of rectangular footprints.
- * A provided forbidden predicate is treated as pre-occupied space.
+ * Tracks the bottom row of placed footprints.
+ * A multi-row footprint still controls sizing/depth elsewhere; occupation only
+ * reserves the cells that touch the ground row.
  */
 export function createOccupancy(rows: number, cols: number, isForbidden?: CellForbidden, colsPerRow?: number[]) {
   const forbidden = new Array(rows * cols).fill(false);
@@ -27,18 +23,13 @@ export function createOccupancy(rows: number, cols: number, isForbidden?: CellFo
     }
   }
 
-  function canPlace(r0: number, c0: number, w: number, h: number, opts: PlaceOpts = {}) {
-    const {
-      ignoreForbidden = false,
-      ignoreOccupied = false,
-    } = opts;
+  function canPlace(r0: number, c0: number, w: number, h: number) {
     if (r0 < 0 || c0 < 0 || r0 + h > rows || c0 + w > cols) return false;
     const bottomR = r0 + h - 1;
     if (colsPerRow && c0 + w > (colsPerRow[bottomR] ?? cols)) return false;
     for (let c = 0; c < w; c++) {
       const cellIdx = idx(bottomR, c0 + c);
-      if (!ignoreOccupied && used[cellIdx]) return false;
-      if (!ignoreForbidden && forbidden[cellIdx]) return false;
+      if (used[cellIdx] || forbidden[cellIdx]) return false;
     }
     return true;
   }
@@ -50,13 +41,11 @@ export function createOccupancy(rows: number, cols: number, isForbidden?: CellFo
     }
   }
 
-  function tryPlaceAt(r0: number, c0: number, w: number, h: number, opts: PlaceOpts = {}): Place | null {
-    if (!canPlace(r0, c0, w, h, opts)) return null;
-    if (opts.reserveSpace !== false) {
-      mark(r0, c0, w, h);
-    }
+  function tryPlaceAt(r0: number, c0: number, w: number, h: number): Place | null {
+    if (!canPlace(r0, c0, w, h)) return null;
+    mark(r0, c0, w, h);
     return { r0, c0, w, h };
   }
 
-  return { canPlace, tryPlaceAt };
+  return { tryPlaceAt };
 }

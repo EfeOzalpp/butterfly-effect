@@ -103,7 +103,7 @@ const CAR_BASE_PALETTE: CarPalette = {
     { r: 222, g: 212, b: 148 },
     { r: 126, g: 128, b: 134 },
   ],
-  window: { r: 180, g: 210, b: 235 },
+  window: { r: 154, g: 188, b: 218 },
   wheel: { r: 40, g: 40, b: 40 },
 };
 
@@ -143,7 +143,7 @@ const CAR_DARK_PALETTE: CarPalette = {
     { r: 128, g: 90, b: 210 },
     { r: 92, g: 130, b: 230 },
   ],
-  window: { r: 125, g: 135, b: 190 },
+  window: { r: 104, g: 116, b: 174 },
   wheel: { r: 22, g: 25, b: 31 },
 };
 

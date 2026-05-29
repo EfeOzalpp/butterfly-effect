@@ -57,6 +57,7 @@ export interface PuffEmitterOpts {
   depthAlpha?: number;
 
   respawn?: boolean;
+  warmStartSec?: number;
 }
 
 interface Particle {
@@ -73,6 +74,7 @@ interface Particle {
 interface EmitterState {
   particles: Particle[];
   rnd: RandomSource;
+  warmStarted?: boolean;
 }
 
 function makeDormantParticle(uSlot: number): Particle {
@@ -270,6 +272,32 @@ export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec
 
   for (const [i, pr] of state.particles.entries()) {
     if (pr.life <= 0) respawnParticle(pr, i, state.particles.length, true);
+  }
+
+  if (!state.warmStarted) {
+    state.warmStarted = true;
+    const warmStartSec =
+      typeof opts.warmStartSec === "number" && Number.isFinite(opts.warmStartSec)
+        ? Math.max(0, opts.warmStartSec)
+        : 0;
+    const warmStepSec = 1 / 30;
+    const warmSteps = Math.min(180, Math.ceil(warmStartSec / warmStepSec));
+    for (let step = 0; step < warmSteps; step++) {
+      const stepSec = Math.min(warmStepSec, warmStartSec - step * warmStepSec);
+      if (stepSec <= 0) break;
+      for (const [i, pr] of state.particles.entries()) {
+        advanceParticle(pr, stepSec);
+        const alive = pr.age <= pr.life;
+        const inside =
+          pr.x >= rect.x &&
+          pr.x <= rect.x + rect.w &&
+          pr.y >= rect.y &&
+          pr.y <= rect.y + rect.h;
+        if ((!alive || !inside) && respawn) {
+          respawnParticle(pr, i, state.particles.length);
+        }
+      }
+    }
   }
 
   for (const [i, pr] of state.particles.entries()) {

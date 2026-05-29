@@ -56,7 +56,6 @@ export function placePoolItems(opts: {
   }
 
   const placedAccum: { id: PoolItem["id"]; x: number; y: number; footprint: FootRect }[] = [];
-  const placedClouds: { id: PoolItem["id"]; x: number; y: number; footprint: FootRect }[] = [];
   const outPlaced: PlacedItem[] = [];
   let cursor = 0;
 
@@ -152,9 +151,7 @@ export function placePoolItems(opts: {
     item.x = x;
     item.y = y;
 
-    if (shape === "clouds") {
-      placedClouds.push({ id: item.id, x, y, footprint: rectHit });
-    } else {
+    if (shape !== "clouds") {
       placedAccum.push({ id: item.id, x, y, footprint: rectHit });
     }
     outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });

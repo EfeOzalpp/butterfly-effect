@@ -9,6 +9,8 @@ import {
   BACKGROUNDS_CITY,
   BACKGROUNDS_CITY_DARK,
   BACKGROUNDS_LIGHT,
+  BACKGROUNDS_QUESTIONNAIRE,
+  BACKGROUNDS_QUESTIONNAIRE_DARK,
   BACKGROUNDS_START_DARK,
   type BackgroundSpec,
 } from "./backgrounds";
@@ -48,8 +50,8 @@ function backgroundForState(
 
   if (state.lookupKey === "questionnaire") {
     return context.darkMode
-      ? BACKGROUNDS_START_DARK.questionnaire
-      : BACKGROUNDS_LIGHT.questionnaire;
+      ? BACKGROUNDS_QUESTIONNAIRE_DARK.questionnaire
+      : BACKGROUNDS_QUESTIONNAIRE.questionnaire;
   }
 
   return context.darkMode ? BACKGROUNDS_START_DARK.start : BACKGROUNDS_LIGHT.start;

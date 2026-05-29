@@ -65,6 +65,7 @@ export interface ShapeSpriteOptions {
   coreScaleMult?: number;
   pixelScale?: number;
   particlePixelScale?: number;
+  disableParticleDepthTint?: boolean;
 }
 
 // Engine-owned particle state passed to particle-backed shapes.

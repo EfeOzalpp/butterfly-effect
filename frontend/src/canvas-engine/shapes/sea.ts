@@ -498,9 +498,12 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
       const waterTopY    = bottomY + Ttop0 * waterScaleY;
       const waterBottomY = bottomY + (Ttop0 + H0) * waterScaleY;
       const bottomBound  = y0 + h;
+      const visibleBottomBound = isSprite
+        ? bottomBound
+        : bottomBound + Math.max(spill, cell * 0.45);
 
       const surfaceY = waterTopY;
-      const bandTopY = surfaceY - cell * 0.10;
+      const bandTopY = surfaceY - cell * 0.28;
       const bandH    = Math.max(1, bottomBound - bandTopY + cell * 0.25);
 
       const spawnHeightPx = Math.max(8, cell * 0.35);
@@ -512,32 +515,33 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
       const colWBase = Math.max(8, cell * 0.35);
 
       // Base X for each corridor.
-      // In sprite mode: anchor corridors to the bowl walls (x0 / x0+w) so particles fall
-      // in the bleed area outside the pool, not inside it. Canvas mode uses global shift/nudges.
+      // In sprite mode: overlap the bowl wall so spill particles visually bond
+      // with the edge instead of starting from the outer bleed boundary.
       const leftNudge  = isSprite ? 0 : (T.spill.leftNudgePx  + (isMobile ? T.spill.mobile.leftNudgePx  : 0));
       const rightNudge = isSprite ? 0 : (T.spill.rightNudgePx + (isMobile ? T.spill.mobile.rightNudgePx : 0));
 
       const extraRoom = isMobile ? Math.round(cell * 0.25) : T.spill.leftExtraRoomPx;
       const leftCorridorW  = colWBase + extraRoom;
       const rightCorridorW = colWBase + (isSprite ? extraRoom : spill);
+      const spriteEdgeOverlap = isSprite ? Math.max(4, Math.round(colWBase * 0.40)) : 0;
 
       const leftBaseX  = isSprite
-        ? (x0 - leftCorridorW)
+        ? (x0 - leftCorridorW + spriteEdgeOverlap)
         : (x0 - spill + globalShiftX + leftNudge);
       const rightBaseX = isSprite
-        ? (x0 + w)
+        ? (x0 + w - spriteEdgeOverlap)
         : (x0 + w - colWBase + globalShiftX + rightNudge);
 
       const leftCorridor  = { x: leftBaseX,  y: bandTopY, w: leftCorridorW,  h: bandH };
       const rightCorridor = { x: rightBaseX, y: bandTopY, w: rightCorridorW, h: bandH };
 
-      // Spawn fracs: in sprite mode target the full corridor (which is now entirely in bleed),
-      // avoiding the extreme outer edge. Canvas mode uses the tuning values as-is.
+      // Spawn fracs: in sprite mode bias toward the bowl edge so droplets
+      // originate from the water boundary rather than floating outside it.
       const leftSpawnFrac = isSprite
-        ? { x0: 0.10, x1: 0.90, y0: 0.00, y1: spawnFracY }
+        ? { x0: 0.52, x1: 0.94, y0: 0.00, y1: spawnFracY }
         : { x0: leftSpawnFracX[0],  x1: leftSpawnFracX[1],  y0: 0.00, y1: spawnFracY };
       const rightSpawnFrac = isSprite
-        ? { x0: 0.10, x1: 0.90, y0: 0.00, y1: spawnFracY }
+        ? { x0: 0.06, x1: 0.48, y0: 0.00, y1: spawnFracY }
         : { x0: rightSpawnFracX[0], x1: rightSpawnFracX[1], y0: 0.00, y1: spawnFracY };
 
       const rMin  = (Array.isArray(T.spill.sizePx) ? T.spill.sizePx[0] : T.spill.sizePx) * pxK * particleSizeK;
@@ -594,7 +598,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
             : T.spill.edgeFadePx,
 
           color: (pr) => {
-            if (pr.y > bottomBound) return { r: 0, g: 0, b: 0, a: 0 };
+            if (pr.y > visibleBottomBound) return { r: 0, g: 0, b: 0, a: 0 };
             const c = seaRGBAtY(pr.y, waterTopY, waterBottomY, topRGB, bottomRGB);
             return { r: c.r, g: c.g, b: c.b, a: Math.round(175 * aFactor * alphaMul) };
           },

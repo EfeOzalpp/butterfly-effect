@@ -4,7 +4,7 @@ import type {
 } from "../../../../scene-rules/backgrounds";
 import type { PLike } from "../../../p/makeP";
 import { clamp01 } from "../../../../shared/math";
-import { resolveStopK } from "./anchors";
+import { resolveBackgroundStops } from "./anchors";
 import {
   cssRgba,
   mixRgba,
@@ -38,23 +38,23 @@ function resolveSurfaceStops(
 ): ResolvedSurfaceStop[] | null {
   const stops: ResolvedSurfaceStop[] = [];
 
-  for (let i = 0; i < spec.stops.length; i += 1) {
-    const stop = spec.stops[i];
+  for (const resolved of resolveBackgroundStops(spec.stops, t, anchors)) {
+    const { stop, k, order } = resolved;
     const left = resolveStopRgba(stop.rgba, stop.liveBlend, liveAvg);
     const right = resolveStopRgba(stop.rightRgba ?? stop.rgba, stop.liveBlend, liveAvg);
     if (!left || !right) return null;
 
     stops.push({
-      k: resolveStopK(stop, t, anchors),
+      k,
       left,
       right,
       blendFromPrevious: stop.blendFromPrevious !== false,
       blendToNext: stop.blendToNext !== false,
-      order: i,
+      order,
     });
   }
 
-  return stops.sort((a, b) => (a.k - b.k) || (a.order - b.order));
+  return stops;
 }
 
 function drawSurfaceBand(

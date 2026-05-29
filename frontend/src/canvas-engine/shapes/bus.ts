@@ -81,7 +81,7 @@ const BUS_BASE_PALETTE: BusPalette = {
     { r: 154, g: 138, b: 204 },
     { r: 118, g: 172, b: 184 },
   ],
-  window: { r: 180, g: 210, b: 235 },
+  window: { r: 150, g: 184, b: 214 },
   wheel: { r: 40, g: 40, b: 40 },
 };
 
@@ -128,7 +128,7 @@ const BUS_DARK_PALETTE: BusPalette = {
     { r: 156, g: 124, b: 108 },
     { r: 112, g: 124, b: 148 },
   ],
-  window: { r: 125, g: 135, b: 200 },
+  window: { r: 104, g: 118, b: 182 },
   wheel: { r: 45, g: 48, b: 58 },
 };
 

@@ -20,11 +20,60 @@ export function resolveStopKValue(k: BackgroundStopK, anchors?: BackgroundAnchor
   return typeof k === "number" ? clamp01(k) : resolveAnchorK(k, anchors);
 }
 
-export function resolveStopK(stop: RgbaStop, t: number, anchors?: BackgroundAnchorContext) {
-  const baseK = resolveStopKValue(stop.k, anchors);
+export interface ResolvedBackgroundStop {
+  stop: RgbaStop;
+  k: number;
+  order: number;
+}
+
+function resolveExplicitStopK(stop: RgbaStop, anchors?: BackgroundAnchorContext) {
+  return stop.k === undefined ? null : resolveStopKValue(stop.k, anchors);
+}
+
+function applyStopOscillation(k: number, stop: RgbaStop, t: number) {
   return stop.oscK
-    ? clamp01(baseK + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t))
-    : baseK;
+    ? clamp01(k + stop.oscK.amp * Math.sin(2 * Math.PI * stop.oscK.hz * t))
+    : clamp01(k);
+}
+
+export function resolveBackgroundStops(
+  stops: readonly RgbaStop[],
+  t: number,
+  anchors?: BackgroundAnchorContext
+): ResolvedBackgroundStop[] {
+  if (stops.length === 0) return [];
+
+  const resolved = stops.map((stop) => resolveExplicitStopK(stop, anchors));
+  resolved[0] ??= 0;
+  resolved[resolved.length - 1] ??= 1;
+
+  for (let i = 0; i < resolved.length; i += 1) {
+    if (resolved[i] !== null) continue;
+
+    const startIndex = i - 1;
+    let endIndex = i + 1;
+    while (endIndex < resolved.length && resolved[endIndex] === null) {
+      endIndex += 1;
+    }
+
+    const startK = startIndex >= 0 ? resolved[startIndex] ?? 0 : 0;
+    const endK = endIndex < resolved.length ? resolved[endIndex] ?? 1 : 1;
+    const span = Math.max(1, endIndex - startIndex);
+
+    for (let j = i; j < endIndex; j += 1) {
+      resolved[j] = clamp01(startK + (endK - startK) * ((j - startIndex) / span));
+    }
+
+    i = endIndex - 1;
+  }
+
+  return stops
+    .map((stop, order) => ({
+      stop,
+      k: applyStopOscillation(resolved[order] ?? 0, stop, t),
+      order,
+    }))
+    .sort((a, b) => a.k - b.k || a.order - b.order);
 }
 
 export function createBackgroundAnchorContext(args: {

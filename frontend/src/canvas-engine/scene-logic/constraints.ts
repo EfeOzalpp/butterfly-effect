@@ -11,7 +11,9 @@ export function cellForbiddenFromSpec(spec: CanvasPaddingSpec, rows: number, col
 }
 
 /**
- * Checks whether a footprint rectangle is within bounds and contains no forbidden cells.
+ * Checks whether a footprint fits and its bottom row avoids forbidden cells.
+ * The upper rows still affect vertical fit and projection, but no longer block
+ * occupation.
  */
 export function footprintAllowed(
   r0: number,

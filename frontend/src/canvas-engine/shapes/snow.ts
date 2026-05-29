@@ -103,6 +103,7 @@ const SNOW = {
 
   fadeInFrac:  0.10,
   fadeOutFrac: 0.02,
+  warmStartSec: 1.4,
   edgeFadePx:  { left: 2, right: 2, top: 8, bottom: 24 },
 
   sizeHz: 3,
@@ -132,6 +133,7 @@ const SNOW = {
   jitterAngle: NumberRange;
   fadeInFrac: number;
   fadeOutFrac: number;
+  warmStartSec: number;
   edgeFadePx: { left: number; right: number; top: number; bottom: number };
   sizeHz: number;
   blendK: NumberRange;
@@ -365,10 +367,13 @@ export function drawSnow(
   const horizonScale = snowRowContextScale(rowBucket.t);
   const particleSizeK = particleDepthSizeScale(rowBucket);
   const spriteScale      = Math.max(1, (sprite.pixelScale ?? sprite.coreScaleMult ?? 1));
+  const spriteLifeScale  = spriteScale > 1.7
+    ? Math.pow(spriteScale, 1.25)
+    : Math.pow(spriteScale, 5);
   const sizeK     = horizonScale.size * particleSizeK * Math.pow(spriteScale, 1.75);
   const speedK    = horizonScale.motion * spriteScale * 1.35;
   const gravityK  = horizonScale.motion * spriteScale * 1.35;
-  const lifeK     = horizonScale.life * Math.pow(spriteScale, 5);
+  const lifeK     = horizonScale.life * spriteLifeScale;
   const countK    = horizonScale.count * Math.sqrt(spriteScale);
 
   const sizeMin   = resolveRangeValue(SNOW.sizeMin, u) * sizeK;
@@ -393,7 +398,10 @@ export function drawSnow(
   flakeBase = gradientRGB ? blendRGB(flakeBase, gradientRGB, blendK) : flakeBase;
   const flakeLRange = darkMode ? [0.7, 0.84] : SNOW.lightnessRange;
   flakeBase      = clampBrightness(flakeBase, flakeLRange[0], flakeLRange[1]);
-  flakeBase      = applyDepthTint(applySrgbExposureContrast(flakeBase, exposure, contrast), pass, 0.7);
+  flakeBase      = applySrgbExposureContrast(flakeBase, exposure, contrast);
+  if (sprite.disableParticleDepthTint !== true) {
+    flakeBase = applyDepthTint(flakeBase, pass, 0.7);
+  }
 
   const snowColor  = { r: flakeBase.r, g: flakeBase.g, b: flakeBase.b, a: alpha };
   const dt = Math.max(0.001, (p.deltaTime || 16) / 1000);
@@ -420,6 +428,7 @@ export function drawSnow(
     lifetime: { min: lifeMin, max: lifeMax },
     fadeInFrac: SNOW.fadeInFrac,
     fadeOutFrac: SNOW.fadeOutFrac,
+    warmStartSec: SNOW.warmStartSec,
     edgeFadePx: { ...SNOW.edgeFadePx, left: sideFadePx, right: sideFadePx },
 
     color: snowColor,

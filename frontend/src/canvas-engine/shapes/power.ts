@@ -232,6 +232,27 @@ function randFromKey(key: ShapeSeed): number {
 function instanceRand01FromKey(key: ShapeSeed): number {
   return randFromKey(`power-kind-v2|${String(key)}`);
 }
+export type PowerVisualKind = "windTurbine" | "factory";
+
+export function resolvePowerVisualKind({
+  liveAvg,
+  seedKey,
+  occurrenceIndex = 0,
+}: {
+  liveAvg: number;
+  seedKey: ShapeSeed;
+  occurrenceIndex?: number;
+}): PowerVisualKind {
+  const u = clamp01(liveAvg);
+  const midpointDist = Math.abs(u - POWER.kindBalance.midpoint);
+  const inMidpointBand = midpointDist <= POWER.kindBalance.midpointBand;
+  const rInst = instanceRand01FromKey(`kind|${String(seedKey)}`);
+  const asTurbine = inMidpointBand
+    ? ((occurrenceIndex % 2) === 1)
+    : (rInst < windProbability(u));
+
+  return asTurbine ? "windTurbine" : "factory";
+}
 function factoryLayoutFromKey(key: ShapeSeed): { chimneyOnLeft: boolean; roofRiseK: number } {
   const seed = hash32(`factory-layout|${String(key)}`);
   const rA = rand01(seed ^ 0x9e3779b9);
@@ -324,12 +345,11 @@ export function drawPower(
 
   // Decide: turbine vs factory (stable regardless of bleed)
   const occurrenceIndex = typeof identity.shapeOccurrenceIndex === "number" && Number.isFinite(identity.shapeOccurrenceIndex) ? identity.shapeOccurrenceIndex : 0;
-  const midpointDist = Math.abs(u - POWER.kindBalance.midpoint);
-  const inMidpointBand = midpointDist <= POWER.kindBalance.midpointBand;
-  const rInst = instanceRand01FromKey(`kind|${String(seedKey)}`);
-  const asTurbine = inMidpointBand
-    ? ((occurrenceIndex % 2) === 1)
-    : (rInst < windProbability(u));
+  const asTurbine = resolvePowerVisualKind({
+    liveAvg: u,
+    seedKey,
+    occurrenceIndex,
+  }) === "windTurbine";
 
   // Root appear is the standard bottom-center envelope.
   const anchorX = pxX + pxW / 2;
