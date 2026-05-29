@@ -11,9 +11,20 @@ import { useWindowWidth } from "../../../../lib/hooks/useWindowWidth";
 import { viewportBandForWidth } from "../../../../lib/responsive/breakpoints";
 import { avgWeightOf } from "../../../../lib/utils/score";
 import { useSharedGraphData } from "../../../../graph-runtime/GraphDataContext";
+import { useGraphPickerData, titleFromId } from "../../../gp-data";
 
 import EmptyStateArt from "./EmptyArt";
 
+function ordinalSuffix(n: number): string {
+  const mod100 = Math.abs(n) % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  switch (Math.abs(n) % 10) {
+    case 1: return `${n}st`;
+    case 2: return `${n}nd`;
+    case 3: return `${n}rd`;
+    default: return `${n}th`;
+  }
+}
 
 type BarColor = 'red' | 'yellow' | 'green';
 
@@ -31,6 +42,7 @@ export default function BarGraph() {
   const windowWidth = useWindowWidth();
 
   const { safeData, dataById, getRelForId } = useSharedGraphData();
+  const { ALL_LABELS } = useGraphPickerData(section ?? '');
 
   const [animationState, setAnimationState] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
@@ -81,6 +93,12 @@ export default function BarGraph() {
     () => (canShowYou && totalCount === 1 ? 100 : rawYouPercentile),
     [canShowYou, totalCount, rawYouPercentile]
   );
+
+  const youRank = useMemo(() => {
+    if (!canShowYou || totalCount === 0) return null;
+    if (totalCount === 1) return 1;
+    return Math.max(1, Math.min(totalCount, Math.round((1 - youPercentile / 100) * (totalCount - 1)) + 1));
+  }, [canShowYou, youPercentile, totalCount]);
 
   const youAbsoluteBar: BarColor | null = useMemo(() => {
     if (!canShowYou) return null;
@@ -133,6 +151,8 @@ export default function BarGraph() {
   if (!section) return <p className="graph-loading">Pick a section to begin.</p>;
   if (loading) return null;
 
+  const sectionLabel = ALL_LABELS.get(section) ?? titleFromId(section);
+
   const noData = safeData.length === 0;
   if (noData) {
     return (
@@ -182,8 +202,10 @@ export default function BarGraph() {
                   >
                     <div className="percentage-line" aria-hidden="true" />
                     <div className="percentage-indicator">
-                      <p className="percentage-indicator-title">You</p>
-                      <p className="percentage-indicator-score">{youPercentile}%</p>
+                      <p className="percentage-indicator-title">You're</p>
+                      <p className="percentage-indicator-score">
+                        {youRank === totalCount ? 'Last' : ordinalSuffix(youRank ?? 1)}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -199,6 +221,11 @@ export default function BarGraph() {
           );
         })}
       </div>
+      {canShowYou && animationState && animateBars && (
+        <h4 className="bar-graph-percentile-caption">
+          Among <strong>{sectionLabel}</strong>, you are the {ordinalSuffix(youPercentile)} percentile.
+        </h4>
+      )}
     </>
   );
 }

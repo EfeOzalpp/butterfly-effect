@@ -1,11 +1,12 @@
 // src/app/app-effects.tsx
 // Browser-only app shell effects live here so main.tsx stays readable.
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 
 import { usePreventPageZoomOutsideZones } from "../lib/hooks/usePreventPageZoom";
 import HintBanner from "./ui/HintBanner";
 import { useMockBanner } from "./useMockBanner";
+import { listenForDuplicateSurveyNotice } from "./notices";
 
 const GamificationCopyPreloader = React.lazy(() =>
   import("../lib/hooks/useGamificationTextPreload")
@@ -124,6 +125,48 @@ export function MockReadBanner() {
       onDismiss={() => { setDismissed(true); }}
     >
       {`API quota exceeded. Demo data until ${quotaResetMonth} 1.`}
+    </HintBanner>
+  );
+}
+
+export function DuplicateSurveyBanner() {
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return listenForDuplicateSurveyNotice(() => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      setVisible(true);
+      timerRef.current = window.setTimeout(() => {
+        setVisible(false);
+        timerRef.current = null;
+      }, 5200);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <HintBanner
+      visible={visible}
+      className="duplicate-survey-banner"
+      closeClassName="duplicate-survey-banner-close"
+      closeLabel="Dismiss survey notice"
+      onDismiss={() => {
+        if (timerRef.current) window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+        setVisible(false);
+      }}
+    >
+      <>
+        You've already taken the survey.
+        <br />
+        View now button at top will let you in.
+      </>
     </HintBanner>
   );
 }

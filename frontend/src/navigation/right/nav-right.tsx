@@ -16,7 +16,23 @@ const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean)
 type PickerOffsetStyle = CSSProperties & { "--picker-offset": string };
 
 export default function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
-  const { isSurveyActive, setSurveyActive, hasCompletedSurvey, setHasCompletedSurvey, observerMode, setObserverMode, openGraph, closeGraph, resetToStart, logsOpen, widgetsOpen, questionnaireOpen } = useUiFlow();
+  const {
+    isSurveyActive,
+    setSurveyActive,
+    hasCompletedSurvey,
+    setHasCompletedSurvey,
+    observerMode,
+    setObserverMode,
+    openGraph,
+    closeGraph,
+    resetToStart,
+    logsOpen,
+    widgetsOpen,
+    questionnaireOpen,
+    vizVisible,
+    cityPanelOpen,
+    setCityPanelOpen,
+  } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const { myEntryId, mySection, setMyEntryId, setMySection, setMyRole } = useIdentity();
   const windowWidth = useWindowWidth();
@@ -31,9 +47,27 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
   const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View now";
+  const savedEntryId = myEntryId ?? getSessionItem("be.myEntryId");
+  const savedSection = mySection ?? getSessionItem("be.mySection");
+  const hasSavedSubmission = Boolean(savedEntryId && savedSection);
+  const showSavedCityButton =
+    hasSavedSubmission &&
+    !isSurveyActive &&
+    !observerMode &&
+    !hasCompletedSurvey &&
+    !vizVisible;
   const pickerStyle: PickerOffsetStyle = {
     "--picker-offset": `${String(pickerOffset)}px`,
     transition: "transform 0.2s ease",
+  };
+
+  const openSavedCity = () => {
+    if (!savedEntryId || !savedSection) return;
+    setMyEntryId(savedEntryId);
+    setMySection(savedSection);
+    setMyRole(getSessionItem("be.myRole"));
+    setSection(savedSection);
+    setCityPanelOpen(!cityPanelOpen);
   };
 
   const toggleObserverMode = () => {
@@ -42,8 +76,6 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
       return;
     }
 
-    const savedEntryId = myEntryId ?? getSessionItem("be.myEntryId");
-    const savedSection = mySection ?? getSessionItem("be.mySection");
     if (!observerMode && !hasCompletedSurvey && savedEntryId && savedSection && !questionnaireOpen) {
       setMyEntryId(savedEntryId);
       setMySection(savedSection);
@@ -84,6 +116,20 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
           >
             <span className="observe-results__ghost" aria-hidden="true">{observerLabel}</span>
             <span className="observe-results__inner">{observerLabel}</span>
+          </button>
+        )}
+
+        {showSavedCityButton && (
+          <button
+            type="button"
+            className="city-button city-top-button"
+            data-label={cityPanelOpen ? "Back" : "My city"}
+            onClick={openSavedCity}
+            aria-label={cityPanelOpen ? "Back to home" : "Open my city"}
+          >
+            <span className="city-button__inner">
+              <span>{cityPanelOpen ? "Back" : "My city"}</span>
+            </span>
           </button>
         )}
       </div>

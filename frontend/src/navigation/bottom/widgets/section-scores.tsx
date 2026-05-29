@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSurveyData } from "../../../app/state/survey-data-context";
+import HintBanner from "../../../app/ui/HintBanner";
 import PlayPauseIcon from "../../../assets/svg/play/PlayPauseIcon";
 import { CHOOSE_STAFF, CHOOSE_STUDENT, GO_BACK, useGraphPickerData } from "../../gp-data";
 import { BUTTON_QUESTIONS } from "../../../onboarding/questionnaire/button-input/button-questions";
@@ -16,6 +17,19 @@ export default function SectionScores() {
   const { allRows, section } = useSurveyData();
   const { ALL_LABELS, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS, counts } = useGraphPickerData(section);
   const [paused, setPaused] = useState(false);
+  const [tooltipIndex, setTooltipIndex] = useState<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      if (listRef.current && !listRef.current.contains(e.target as Node)) {
+        setTooltipIndex(null);
+      }
+    };
+    document.addEventListener("pointerdown", handler);
+    return () => { document.removeEventListener("pointerdown", handler); };
+  }, []);
+
   const [localSectionState, setLocalSectionState] = useState<LocalSectionState>({
     sourceSection: section,
     value: section,
@@ -127,20 +141,28 @@ export default function SectionScores() {
         </button>
       </div>
 
-      <div className="q-scores-list">
+      <div className="q-scores-list" ref={listRef}>
         {BUTTON_QUESTIONS.map((q, i) => {
           const pct = Math.round(avgs[i] * 100);
           return (
-            <div key={q.id} className="q-scores-item">
+            <div
+              key={q.id}
+              className="q-scores-item"
+              onMouseEnter={() => { setTooltipIndex(i); }}
+              onMouseLeave={() => { setTooltipIndex(null); }}
+              onClick={(e) => { e.stopPropagation(); setTooltipIndex((prev) => prev === i ? null : i); }}
+            >
               <div className="q-scores-item-head">
                 <span className="q-scores-prompt">{q.prompt}</span>
-                <span className="ui-label q-scores-pct">{pct}%</span>
               </div>
               <div className="q-scores-track">
                 <div
                   className="q-scores-fill"
                   style={{ width: `${String(pct)}%` }}
                 />
+              </div>
+              <div className="q-scores-pct-tip">
+                <HintBanner visible={tooltipIndex === i}>{pct}%</HintBanner>
               </div>
             </div>
           );

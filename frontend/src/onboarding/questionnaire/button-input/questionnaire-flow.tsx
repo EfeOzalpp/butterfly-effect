@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { createPortal } from "react-dom";
 import { DEFAULT_AVG, useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
 import { useUiFlow } from "../../../app/state/ui-context";
-import HintBanner from "../../../app/ui/HintBanner";
 import CheckIcon from "../../../assets/svg/check/CheckIcon";
 import { BUTTON_QUESTIONS } from "./button-questions";
 import { getQuestionButtonPlacement } from "./button-layouts";
 import { useQuestionnaireGridLayout } from "./useQuestionnaireGridLayout";
 import type { Place } from "../../../canvas-engine/grid-layout/occupancy";
-
-const QUESTIONNAIRE_HINT_DELAY_MS = 1500;
-const QUESTIONNAIRE_HINT_VISIBLE_MS = 6000;
 
 type ButtonQuestionnaireGridStyle = CSSProperties & {
   "--button-questionnaire-columns": string;
@@ -36,14 +31,10 @@ function reserveSingleTile(footprint: Place): Place {
 export default function ButtonQuestionnaireFlow({
   onAnswersUpdate,
   onSubmit,
-  showIntroHint = true,
-  onIntroHintShown,
   submitting,
 }: {
   onAnswersUpdate?: (answers: Record<string, number | null>) => void;
   onSubmit?: (answers: Record<string, number | null>) => void;
-  showIntroHint?: boolean;
-  onIntroHintShown?: () => void;
   submitting?: boolean;
 }) {
   const { setLiveAvg, setReservedFootprints } = useCanvasRuntime();
@@ -54,8 +45,6 @@ export default function ButtonQuestionnaireFlow({
   } = useUiFlow();
   const [step, setStep] = useState(0);
   const [activeOptionsByQuestion, setActiveOptionsByQuestion] = useState<Record<string, string[]>>({});
-  const [showQuestionHint, setShowQuestionHint] = useState(false);
-  const [shouldShowIntroHint] = useState(showIntroHint);
   const lastConsumedAdvanceTickRef = useRef(0);
   const {
     ready: gridReady,
@@ -84,19 +73,6 @@ export default function ButtonQuestionnaireFlow({
   );
   const selected = answers[question.id] ?? null;
   const isLast = step === BUTTON_QUESTIONS.length - 1;
-  const hintBanner = (
-    <HintBanner
-      visible={showQuestionHint}
-      className="questionnaire-read-banner"
-      copyClassName="questionnaire-read-banner-copy"
-      closeClassName="questionnaire-read-banner-close"
-      closeLabel="Dismiss questionnaire hint"
-      onDismiss={() => { setShowQuestionHint(false); }}
-    >
-      <span>Select all that apply.</span>
-      <span>Tap again to remove.</span>
-    </HintBanner>
-  );
 
   useEffect(() => {
     onAnswersUpdate?.(answers);
@@ -122,24 +98,6 @@ export default function ButtonQuestionnaireFlow({
     step,
     submitting,
   ]);
-
-  useEffect(() => {
-    if (!shouldShowIntroHint) return;
-
-    const showTimer = window.setTimeout(() => {
-      setShowQuestionHint(true);
-      onIntroHintShown?.();
-    }, QUESTIONNAIRE_HINT_DELAY_MS);
-
-    const hideTimer = window.setTimeout(() => {
-      setShowQuestionHint(false);
-    }, QUESTIONNAIRE_HINT_DELAY_MS + QUESTIONNAIRE_HINT_VISIBLE_MS);
-
-    return () => {
-      window.clearTimeout(showTimer);
-      window.clearTimeout(hideTimer);
-    };
-  }, [onIntroHintShown, shouldShowIntroHint]);
 
   useEffect(() => {
     if (!gridReady || !layout) {
@@ -207,8 +165,6 @@ export default function ButtonQuestionnaireFlow({
         </h2>
       </div>
 
-      {typeof document !== "undefined" ? createPortal(hintBanner, document.body) : hintBanner}
-
       {gridReady ? (
         <div className="button-questionnaire__canvas-layer" aria-label={`${question.prompt} options`}>
           {question.options.map((option, optionIndex) => {
@@ -219,9 +175,9 @@ export default function ButtonQuestionnaireFlow({
 
             return (
               <div
-                key={option.key}
+                key={`${question.id}:${option.key}`}
                 className="button-questionnaire__slot"
-                style={style}
+                style={{ ...style, '--slot-index': optionIndex } as CSSProperties}
               >
                 <button
                   type="button"
@@ -257,13 +213,14 @@ export default function ButtonQuestionnaireFlow({
           className="button-questionnaire__grid button-questionnaire__grid--single"
           style={FALLBACK_GRID_STYLE}
         >
-          {question.options.map((option) => {
+          {question.options.map((option, optionIndex) => {
             const active = selectedKeys.includes(option.key);
             return (
               <button
-                key={option.key}
+                key={`${question.id}:${option.key}`}
                 type="button"
                 className={`ui-toggle-option button-questionnaire__button${active ? " is-active" : ""}`}
+                style={{ '--slot-index': optionIndex } as CSSProperties}
                 aria-pressed={active}
                 onClick={() => { toggleOption(option.key); }}
               >

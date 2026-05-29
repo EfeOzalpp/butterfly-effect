@@ -3,14 +3,24 @@ import NavLeft from "./left/nav-left";
 import NavRight from "./right/nav-right";
 import NavBottom from "./bottom/nav-bottom";
 import { usePreferences } from "../app/state/preferences-context";
+import { useIdentity } from "../app/state/identity-context";
 import { useUiFlow } from "../app/state/ui-context";
+import { getSessionItem } from "../app/session";
 import "../styles/navigation.css";
 
 const PLACEMENT_TRANSITION_MS = 220;
 
 const Navigation = () => {
   const { darkMode } = usePreferences();
-  const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
+  const {
+    vizVisible,
+    questionnaireOpen,
+    cityPanelOpen,
+    animationVisible,
+    hasCompletedSurvey,
+    observerMode,
+  } = useUiFlow();
+  const { myEntryId, mySection } = useIdentity();
   const [introActive, setIntroActive] = React.useState(true);
   const navRef = React.useRef<HTMLElement | null>(null);
   const previousPlacementRef = React.useRef<"centered" | "spread" | null>(null);
@@ -18,7 +28,22 @@ const Navigation = () => {
   const transitionFrameRef = React.useRef<number | null>(null);
   const transitionTimeoutRef = React.useRef<number | null>(null);
 
-  const isLandingState = !vizVisible && !questionnaireOpen && !cityPanelOpen && !animationVisible;
+  const savedEntryId = myEntryId ?? getSessionItem("be.myEntryId");
+  const savedSection = mySection ?? getSessionItem("be.mySection");
+  const savedHomeCityOpen =
+    cityPanelOpen &&
+    !!savedEntryId &&
+    !!savedSection &&
+    !questionnaireOpen &&
+    !vizVisible &&
+    !animationVisible &&
+    !hasCompletedSurvey &&
+    !observerMode;
+  const isLandingState =
+    !vizVisible &&
+    !questionnaireOpen &&
+    !animationVisible &&
+    (!cityPanelOpen || savedHomeCityOpen);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {

@@ -8,10 +8,13 @@ import { useUiFlow } from "./state/ui-context";
 import Survey from "../onboarding";
 import Navigation from "../navigation/navigation";
 import DataVisualization from "../graph-runtime";
+import CanvasEntry from "../canvas-instances/OnboardingEntry";
+import CityOverlay from "../canvas-instances/CityEntry";
 
 import {
   AppBrowserPolicies,
   DeferredGamificationPreloader,
+  DuplicateSurveyBanner,
   MockReadBanner,
 } from "./app-effects";
 import ErrorBoundary from "./error-boundary";
@@ -20,9 +23,7 @@ import "../styles/fonts.css";
 import "../styles/global-styles.css";
 import "../styles/ui-system.css";
 
-const CanvasEntry = React.lazy(() => import("../canvas-instances/OnboardingEntry"));
 const QuestionnaireEntry = React.lazy(() => import("../canvas-instances/QuestionnaireEntry"));
-const CityOverlay = React.lazy(() => import("../canvas-instances/CityEntry"));
 const GraphBGDark = React.lazy(() => import("../navigation/right/system-color"));
 const AppInner: React.FC = () => {
   const { vizVisible, questionnaireOpen, cityPanelOpen, animationVisible } = useUiFlow();
@@ -31,6 +32,7 @@ const AppInner: React.FC = () => {
     <main id="main-content" className="app-content">
       <AppBrowserPolicies questionnaireOpen={questionnaireOpen} vizVisible={vizVisible} />
       <MockReadBanner />
+      <DuplicateSurveyBanner />
 
       {vizVisible && (
         <Suspense fallback={null}>
@@ -49,9 +51,7 @@ const AppInner: React.FC = () => {
 
       {!vizVisible && !animationVisible && !cityPanelOpen && !questionnaireOpen && (
         <ErrorBoundary name="CanvasEntry">
-          <Suspense fallback={null}>
-            <CanvasEntry visible={true} />
-          </Suspense>
+          <CanvasEntry visible={true} />
         </ErrorBoundary>
       )}
 
@@ -63,11 +63,9 @@ const AppInner: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      {cityPanelOpen && questionnaireOpen && (
+      {cityPanelOpen && (
         <ErrorBoundary name="CityOverlay">
-          <Suspense fallback={null}>
-            <CityOverlay open={true} />
-          </Suspense>
+          <CityOverlay open={true} />
         </ErrorBoundary>
       )}
 

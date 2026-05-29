@@ -1,5 +1,5 @@
 // src/onboarding/index.tsx
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
@@ -10,6 +10,7 @@ import { ROLE_SECTIONS } from "./section-picker/sections";
 import type { RoleSection, SectionItem, SectionOption } from "./section-picker/sections";
 import type { RoleValue } from "./role-picker";
 import { ButtonQuestionnaireFlow, BUTTON_QUESTIONS } from "./questionnaire";
+import { showDuplicateSurveyNotice } from "../app/notices";
 
 import {
   beginUserResponseEditSession,
@@ -19,7 +20,7 @@ import {
   savedUserResponseToSurveyRow,
 } from "../services/sanity/saveUserResponse";
 import { track } from "../lib/posthog";
-import { removeSessionItems, setSessionItem } from "../app/session";
+import { getSessionItem, removeSessionItems, setSessionItem } from "../app/session";
 
 type Audience = RoleValue | '';
 
@@ -41,14 +42,13 @@ export default function Survey({
   const [submitting, setSubmitting] = useState(false);
   const [fadeState, setFadeState] = useState<'fade-in' | 'fade-out'>('fade-in');
   const [introActive, setIntroActive] = useState(true);
-  const [questionnaireHintShown, setQuestionnaireHintShown] = useState(false);
   const shouldScrollToSectionRef = useRef(false);
 
   // latches
   const [finished, setFinished] = useState(false); // hide questionnaire immediately after submit
   const prevCompletedRef = useRef(false);
 
-  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey } = useUiFlow();
+  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey, resetToStart } = useUiFlow();
   const { section, setSection, upsertLocalSurveyRow } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
 
@@ -105,7 +105,6 @@ export default function Survey({
       setError('');
       setSubmitting(false);
       setFinished(false);
-      setQuestionnaireHintShown(false);
       setFadeState('fade-in');
       setQuestionnaireOpen(false);
       setSectionOpen(false);
@@ -130,7 +129,6 @@ export default function Survey({
     setError('');
     setSubmitting(false);
     setFinished(false);
-    setQuestionnaireHintShown(false);
     setFadeState('fade-in');
     setQuestionnaireOpen(false);
     setSectionOpen(false);
@@ -145,10 +143,6 @@ export default function Survey({
       setFadeState('fade-in');
     }, 70);
   };
-
-  const handleQuestionnaireHintShown = useCallback(() => {
-    setQuestionnaireHintShown(true);
-  }, []);
 
   // Normalize role sections into the picker contract and add headers for staff mode.
   const availableSections = useMemo<SectionItem[]>(() => {
@@ -176,6 +170,14 @@ export default function Survey({
   }, [audience]);
 
   const handleRoleNext = () => {
+    const savedEntryId = getSessionItem('be.myEntryId');
+    const savedSection = getSessionItem('be.mySection');
+    if (savedEntryId && savedSection) {
+      showDuplicateSurveyNotice();
+      resetToStart();
+      return;
+    }
+
     if (!audience) {
       setError('Choose whether you are Student, Staff, or Visitor.');
       return;
@@ -223,6 +225,15 @@ export default function Survey({
 
   const handleSubmitFromQuestions = async (answers: Record<string, number | null>) => {
     if (submitting) return;
+
+    const savedEntryId = getSessionItem('be.myEntryId');
+    const savedSection = getSessionItem('be.mySection');
+    if (savedEntryId && savedSection) {
+      showDuplicateSurveyNotice();
+      resetToStart();
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
@@ -336,8 +347,6 @@ export default function Survey({
             <ButtonQuestionnaireFlow
               onAnswersUpdate={onAnswersUpdate}
               onSubmit={(answers) => { void handleSubmitFromQuestions(answers); }}
-              showIntroHint={!questionnaireHintShown}
-              onIntroHintShown={handleQuestionnaireHintShown}
               submitting={submitting}
             />
           )}
