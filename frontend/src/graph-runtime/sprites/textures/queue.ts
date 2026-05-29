@@ -106,7 +106,6 @@ function step(deadline?: IdleDeadline) {
 
   while (Q.length && done < maxJobs && (done === 0 || hasTime())) {
     const job = takeNextJob();
-    if (!job) break;
     if (job.background) backgroundPendingCount--;
     notify();
     if (job.gen !== GEN) {

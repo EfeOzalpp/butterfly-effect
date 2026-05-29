@@ -17,12 +17,12 @@ import EmptyStateArt from "./EmptyArt";
 
 function ordinalSuffix(n: number): string {
   const mod100 = Math.abs(n) % 100;
-  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  if (mod100 >= 11 && mod100 <= 13) return `${String(n)}th`;
   switch (Math.abs(n) % 10) {
-    case 1: return `${n}st`;
-    case 2: return `${n}nd`;
-    case 3: return `${n}rd`;
-    default: return `${n}th`;
+    case 1: return `${String(n)}st`;
+    case 2: return `${String(n)}nd`;
+    case 3: return `${String(n)}rd`;
+    default: return `${String(n)}th`;
   }
 }
 
@@ -42,7 +42,7 @@ export default function BarGraph() {
   const windowWidth = useWindowWidth();
 
   const { safeData, dataById, getRelForId } = useSharedGraphData();
-  const { ALL_LABELS } = useGraphPickerData(section ?? '');
+  const { ALL_LABELS } = useGraphPickerData(section);
 
   const [animationState, setAnimationState] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);

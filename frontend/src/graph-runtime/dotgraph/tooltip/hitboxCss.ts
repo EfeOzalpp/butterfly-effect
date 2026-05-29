@@ -41,9 +41,9 @@ export function makeTooltipHitboxCssVars({
 
   return {
     ...style,
-    "--hitbox-width-px": `${halfSize.width * 2 + edgeGapPx}px`,
-    "--hitbox-height-px": `${halfSize.height * 2 + edgeGapPx}px`,
-    "--hitbox-half-width-px": `${halfSize.width}px`,
-    "--hitbox-half-height-px": `${halfSize.height}px`,
+    "--hitbox-width-px": `${String(halfSize.width * 2 + edgeGapPx)}px`,
+    "--hitbox-height-px": `${String(halfSize.height * 2 + edgeGapPx)}px`,
+    "--hitbox-half-width-px": `${String(halfSize.width)}px`,
+    "--hitbox-half-height-px": `${String(halfSize.height)}px`,
   };
 }

@@ -1,6 +1,6 @@
 // src/graph-runtime/VisualizationPage.tsx
 // Graph page: loads DotGraph only; auxiliary panels live in navigation widgets
-import React, { Suspense, useMemo, useRef } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 
 import { useSurveyData } from "../app/state/survey-data-context";
 import { useIdentity } from "../app/state/identity-context";
@@ -28,8 +28,10 @@ function readPersonalSnapshot(entryId: string | null): SurveyRow | null {
   try {
     const raw = getSessionItem("be.myDoc");
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as SurveyRow;
-    return parsed?._id === entryId ? parsed : null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return null;
+    const row = parsed as SurveyRow;
+    return row._id === entryId ? row : null;
   } catch {
     return null;
   }
@@ -50,42 +52,67 @@ function includePersonalRow(
   return [reservedRow, ...capped.filter((row) => row._id !== reservedRow._id)].slice(0, limit);
 }
 
+interface VisibleRowsSnapshot {
+  scopeKey: string;
+  rows: SurveyRow[];
+  knownIds: Set<string>;
+}
+
+function buildVisibleRowsSnapshot(
+  rows: SurveyRow[],
+  limit: number,
+  scopeKey: string,
+  previous: VisibleRowsSnapshot | null
+): VisibleRowsSnapshot {
+  const nextKnownIds = new Set(
+    rows
+      .map((row) => row._id)
+      .filter((id): id is string => Boolean(id))
+  );
+
+  if (previous?.scopeKey !== scopeKey) {
+    return {
+      scopeKey,
+      rows: rows.slice(0, limit),
+      knownIds: nextKnownIds,
+    };
+  }
+
+  const latestById = new Map(rows.map((row) => [row._id, row]));
+  const stillVisible: SurveyRow[] = [];
+
+  for (const row of previous.rows) {
+    if (!row._id) continue;
+    const latest = latestById.get(row._id);
+    if (latest) stillVisible.push(latest);
+  }
+
+  const incoming = rows.filter((row) => row._id && !previous.knownIds.has(row._id));
+  const keepCount = Math.max(0, limit - incoming.length);
+  const nextRows = [...stillVisible.slice(0, keepCount), ...incoming].slice(0, limit);
+
+  return {
+    scopeKey,
+    rows: nextRows,
+    knownIds: nextKnownIds,
+  };
+}
+
 function useStableVisibleRows(
   rows: SurveyRow[],
   limit: number,
   scopeKey: string
 ): SurveyRow[] {
-  const previousRef = useRef<{
-    scopeKey: string;
-    rows: SurveyRow[];
-    knownIds: Set<string>;
-  } | null>(null);
+  const [snapshot, setSnapshot] = useState<VisibleRowsSnapshot>(() =>
+    buildVisibleRowsSnapshot(rows, limit, scopeKey, null)
+  );
 
-  return useMemo(() => {
-    const previous = previousRef.current;
-    const nextKnownIds = new Set(rows.map((row) => row._id).filter(Boolean) as string[]);
-    if (!previous || previous.scopeKey !== scopeKey) {
-      const initial = rows.slice(0, limit);
-      previousRef.current = { scopeKey, rows: initial, knownIds: nextKnownIds };
-      return initial;
-    }
-
-    const latestById = new Map(rows.map((row) => [row._id, row]));
-    const stillVisible: SurveyRow[] = [];
-
-    for (const row of previous.rows) {
-      if (!row._id) continue;
-      const latest = latestById.get(row._id);
-      if (latest) stillVisible.push(latest);
-    }
-
-    const incoming = rows.filter((row) => row._id && !previous.knownIds.has(row._id));
-    const keepCount = Math.max(0, limit - incoming.length);
-    const next = [...stillVisible.slice(0, keepCount), ...incoming].slice(0, limit);
-
-    previousRef.current = { scopeKey, rows: next, knownIds: nextKnownIds };
-    return next;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSnapshot((previous) => buildVisibleRowsSnapshot(rows, limit, scopeKey, previous));
   }, [limit, rows, scopeKey]);
+
+  return snapshot.scopeKey === scopeKey ? snapshot.rows : rows.slice(0, limit);
 }
 
 export default function VisualizationPage() {

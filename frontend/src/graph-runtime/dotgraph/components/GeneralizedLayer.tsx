@@ -127,6 +127,7 @@ function AnchoredTooltip({
   }, [camera, fallbackPosition, gl.domElement, hoveredDot.anchorPosition, hoveredDot.tooltipAnchorMode, hoveredDot.tooltipLayout]);
 
   useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updateAnchorPosition();
   }, [updateAnchorPosition]);
 
@@ -138,7 +139,7 @@ function AnchoredTooltip({
       zoomFraction,
       style,
     }),
-    [hitboxHalfSize.height, hitboxHalfSize.width, style, zoomFraction]
+    [hitboxHalfSize, style, zoomFraction]
   );
 
   return (

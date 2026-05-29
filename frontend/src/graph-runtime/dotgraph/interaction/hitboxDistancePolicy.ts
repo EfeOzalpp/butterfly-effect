@@ -63,7 +63,7 @@ function resolvePaddedLayout(
   sceneHitboxScale: number,
   distanceScale = 1
 ): Pick<ResolvedHitboxDistance, "scale" | "center"> {
-  const boundsSize = layout.boundsSize ?? layout.footprint;
+  const boundsSize = layout.boundsSize;
   const baseTotalW = resolveBoundedSize(
     boundsSize.w,
     layout.boundsPadding.left,

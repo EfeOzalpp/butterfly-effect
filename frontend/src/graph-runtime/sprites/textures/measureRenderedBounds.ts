@@ -57,8 +57,8 @@ export function measureRenderedShapeBounds(
   const logicalH = Math.max(2, Math.round((footprint.h + bTop + bBottom) * tileSize));
 
   const canvas = document.createElement('canvas');
-  canvas.style.width = `${logicalW}px`;
-  canvas.style.height = `${logicalH}px`;
+  canvas.style.width = `${String(logicalW)}px`;
+  canvas.style.height = `${String(logicalH)}px`;
   const p = makeCanvasFacade(canvas, { dpr: 1 });
   const ctx = p.drawingContext;
   ctx.setTransform(1, 0, 0, 1, 0, 0);

@@ -150,6 +150,7 @@ function PersonalizedAnchor({
 
   useLayoutEffect(() => {
     hasPositionedOnceRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHtmlReady(false);
   }, [positionX, positionY, positionZ, shape]);
 
@@ -161,7 +162,7 @@ function PersonalizedAnchor({
       zoomFraction,
       style,
     }),
-    [hitboxHalfSize.height, hitboxHalfSize.width, style, zoomFraction]
+    [hitboxHalfSize, style, zoomFraction]
   );
 
   return (

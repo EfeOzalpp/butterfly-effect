@@ -124,7 +124,7 @@ export default function useObserverSpotlight({
     }
 
     spotlightActiveRef.current = true;
-    const bestIndex = pts.findIndex((point) => point._id === best?._id);
+    const bestIndex = pts.findIndex((point) => point._id === best._id);
     const sprite = resolveSpriteVisual({
       entryId: best._id,
       sectionKey,

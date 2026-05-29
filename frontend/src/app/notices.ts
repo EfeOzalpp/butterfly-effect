@@ -6,7 +6,9 @@ export function showDuplicateSurveyNotice() {
 }
 
 export function listenForDuplicateSurveyNotice(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
 
   window.addEventListener(DUPLICATE_SURVEY_NOTICE_EVENT, callback);
   return () => {

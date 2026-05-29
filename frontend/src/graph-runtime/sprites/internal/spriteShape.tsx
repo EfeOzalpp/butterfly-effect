@@ -27,7 +27,6 @@ import {
 } from '../api/shapeProfiles';
 import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
 
-import { textureRegistry } from '../textures/cache/registry';
 import { makeTextureFromDrawer } from '../textures/makeTextureFromDrawer';
 import {
   createParticleStore,
@@ -238,8 +237,6 @@ export function SpriteShape({
 
   React.useEffect(() => {
     let cancelled = false;
-    let off: (() => void) | undefined;
-    let watchdog: ReturnType<typeof setTimeout> | undefined;
 
     const setIfAlive = (t: CanvasTexture | null) => {
       if (!cancelled && t) {
@@ -328,7 +325,7 @@ export function SpriteShape({
       return () => { cancelled = true; };
     }
 
-    off = requestStaticTexture(
+    const off = requestStaticTexture(
       {
         key,
         drawer,
@@ -350,7 +347,7 @@ export function SpriteShape({
 
     return () => {
       cancelled = true;
-      if (off) off();
+      off();
     };
   }, [
     key,
@@ -369,6 +366,7 @@ export function SpriteShape({
     stableSeedKey,
     isParticleShape,
     dev,
+    texturePriority,
   ]);
 
   const materialCacheDisabled = spriteMaterialCachingDisabled() || !!worldPosition;

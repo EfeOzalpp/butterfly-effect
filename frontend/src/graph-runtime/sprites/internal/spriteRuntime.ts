@@ -39,8 +39,6 @@ export function prewarmSpriteTextures(
   {
     tileSize = 256,
     dpr = resolveDpr(1),
-    particleStepMs = 33,
-    particleFrames = 36,
     maxCount = 32,
     darkMode = false,
   }: {
