@@ -11,7 +11,79 @@ import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
 import { clamp01, usedRowsFromSpec } from "./math";
 import { placePoolItems } from "./place";
 
-function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
+function buildPresetPool(
+  opts: ComposeOpts,
+  device: ReturnType<typeof deviceType>
+): PoolItem[] {
+  const preset = opts.placements.preset;
+  if (preset?.kind !== "zone-communities") return [];
+
+  const t = clamp01(opts.liveAvg);
+  const queues: PoolItem[][] = [];
+
+  preset.zones.forEach((zone, zoneIdx) => {
+    for (const shape of SHAPES) {
+      const rule = zone.shapes[shape];
+      if (!rule) continue;
+
+      const baseCount =
+        rule.count[device] ??
+        rule.count.tablet ??
+        rule.count.mobile ??
+        0;
+      const pct = interpolatePct(rule.quota, t);
+      const count = Math.max(0, Math.round(baseCount * pct / 50));
+      if (count <= 0) continue;
+
+      const size = footprintForShape(shape);
+      const radiusX = zone.radius.xTiles ?? zone.radius.tiles * (zone.radius.xDistort ?? 1);
+      const radiusY = zone.radius.yTiles ?? zone.radius.tiles * (zone.radius.yDistort ?? 1);
+      const radiusShape = zone.radius.shape ?? "ellipse";
+      const queue: PoolItem[] = [];
+
+      for (let i = 0; i < count; i++) {
+        queue.push({
+          id: stableItemId(shape, zoneIdx, i),
+          shape,
+          zoneIndex: zoneIdx,
+          size,
+          communityZone: {
+            id: zone.id,
+            band: zone.band,
+            centerX: zone.center.x,
+            centerY: zone.center.y,
+            radiusTiles: zone.radius.tiles,
+            radiusShape,
+            radiusX,
+            radiusY,
+          },
+        });
+      }
+
+      queues.push(queue);
+    }
+  });
+
+  const items: PoolItem[] = [];
+  let round = 0;
+  let found = true;
+
+  while (found) {
+    found = false;
+    for (const queue of queues) {
+      const item = queue[round];
+      if (item) {
+        items.push(item);
+        found = true;
+      }
+    }
+    round += 1;
+  }
+
+  return items;
+}
+
+function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
   const { placements, liveAvg } = opts;
   const t = clamp01(liveAvg);
   const items: PoolItem[] = [];
@@ -23,7 +95,31 @@ function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): Po
     const pct = interpolatePct(rule.quota, t);
     const size = footprintForShape(shape);
 
-    rule.zones.forEach((zone, zoneIdx) => {
+    if (rule.absolute) {
+      const baseCount =
+        rule.absolute.count[device] ??
+        rule.absolute.count.tablet ??
+        rule.absolute.count.mobile ??
+        0;
+      const count = Math.max(0, Math.round(baseCount * pct / 50));
+
+      for (let i = 0; i < count; i++) {
+        items.push({
+          id: stableItemId(shape, -1, i),
+          shape,
+          zoneIndex: -1,
+          size,
+          absolute: {
+            kind: rule.absolute.kind,
+            xK: rule.absolute.xK ?? 0.5,
+            yK: rule.absolute.yK ?? 0.5,
+            scale: rule.absolute.scale ?? 1,
+          },
+        });
+      }
+    }
+
+    rule.zones?.forEach((zone, zoneIdx) => {
       const baseCount = zone.count[device] ?? zone.count.tablet ?? zone.count.mobile ?? 0;
       const count = Math.max(0, Math.round(baseCount * pct / 50));
 
@@ -39,6 +135,14 @@ function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): Po
   }
 
   return items;
+}
+
+function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
+  if (opts.placements.preset?.kind === "zone-communities") {
+    return buildPresetPool(opts, device);
+  }
+
+  return buildRulePool(opts, device);
 }
 
 export function composeField(opts: ComposeOpts): ComposeResult {
@@ -81,6 +185,7 @@ export function composeField(opts: ComposeOpts): ComposeResult {
     cellH,
     ox,
     oy,
+    canvas: { w, h },
     usedRows,
     salt,
     placements: opts.placements,

@@ -14,4 +14,8 @@ export const SCENE_RULESETS = {
   city: defineRuleSet("city", (state: SceneState, context: SceneProfileContext) =>
     resolveProfile(state, context)
   ),
+
+  spotlight: defineRuleSet("spotlight", (state: SceneState, context: SceneProfileContext) =>
+    resolveProfile(state, context)
+  ),
 } as const;

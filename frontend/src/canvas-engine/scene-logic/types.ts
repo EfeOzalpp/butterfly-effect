@@ -2,10 +2,11 @@
 
 import type { DeviceType } from "../shared/responsiveness";
 import type { GridFootprint } from "../shared/geometry";
-import type { CanvasPaddingSpec } from "../scene-rules/canvas-padding";
+import type { CanvasPaddingPolicy } from "../scene-rules/canvas-padding";
 import type { ShapeName } from "../scene-rules/shapeCatalog";
 import type { Size } from "../scene-rules/conditionFootprints";
 import type { ScenePlacementRules } from "../scene-rules/placement-rules/index";
+import type { ProceduralZoneBand } from "../scene-rules/placement-rules";
 import type { EngineFieldItem } from "../runtime/engine/field";
 
 export type FootRect = GridFootprint;
@@ -15,7 +16,24 @@ export interface PoolItem {
   shape: ShapeName;
   zoneIndex: number;    // index into the shape's zones array
   size: Size;           // footprint grid dimensions
+  absolute?: {
+    kind: "center";
+    xK: number;
+    yK: number;
+    scale: number;
+  };
+  communityZone?: {
+    id: string;
+    band: ProceduralZoneBand;
+    centerX: number;
+    centerY: number;
+    radiusTiles: number;
+    radiusShape: "ellipse" | "rect";
+    radiusX: number;
+    radiusY: number;
+  };
   footprint?: FootRect;
+  pixelFootprint?: EngineFieldItem["pixelFootprint"];
   x?: number;
   y?: number;
 }
@@ -27,7 +45,7 @@ export interface PlacedItem extends EngineFieldItem {
 }
 
 export interface ComposeOpts {
-  padding: Record<DeviceType, CanvasPaddingSpec | null>;
+  padding: CanvasPaddingPolicy;
   placements: ScenePlacementRules;
   liveAvg: number | undefined;
   reservedFootprints?: FootRect[];

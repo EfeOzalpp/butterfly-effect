@@ -1,7 +1,29 @@
 // src/canvas-engine/scene-rules/canvas-padding/resolve.ts
 
 import { deviceType, type DeviceType } from "../../shared/responsiveness";
-import type { CanvasPaddingSpec } from "./types";
+import type {
+  CanvasPaddingPolicy,
+  CanvasPaddingPolicyByDevice,
+  CanvasPaddingSpec,
+} from "./types";
+
+function positiveModulo(value: number, length: number) {
+  return ((value % length) + length) % length;
+}
+
+export function resolvePaddingPolicyVariants(
+  paddingByDevice: CanvasPaddingPolicy,
+  spotlightIndex: number | undefined
+): CanvasPaddingPolicyByDevice {
+  const variants = paddingByDevice.variants;
+  if (!variants?.length) return paddingByDevice;
+
+  if (typeof spotlightIndex !== "number") {
+    return variants[0] ?? paddingByDevice;
+  }
+
+  return variants[positiveModulo(spotlightIndex, variants.length)] ?? variants[0] ?? paddingByDevice;
+}
 
 // Pick the padding spec that matches the current rule width/device band.
 export function resolvePaddingSpec(

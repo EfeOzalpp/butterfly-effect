@@ -567,6 +567,8 @@ export function drawVilla(
     );
   }
 
+  const roofDrawers: Array<() => void> = [];
+
   for (const col of order) {
     const isLeftCol = (col === 0);
     const colLeft = Math.round(pxX + col * colW);
@@ -647,9 +649,9 @@ export function drawVilla(
       if (cellsH >  mid) dProfile = 'tall';
 
       const DOOR_PROFILES: Record<VillaProfileName, { W_FRAC: number; H_FRAC: number; Y_OFFSET_FRAC: number }> = {
-        short: { W_FRAC: 0.18, H_FRAC: 0.20, Y_OFFSET_FRAC: 0.00 },
-        mid:   { W_FRAC: 0.18, H_FRAC: 0.18, Y_OFFSET_FRAC: 0.00 },
-        tall:  { W_FRAC: 0.18, H_FRAC: 0.14, Y_OFFSET_FRAC: -0.02 },
+        short: { W_FRAC: 0.18, H_FRAC: 0.24, Y_OFFSET_FRAC: 0.00 },
+        mid:   { W_FRAC: 0.18, H_FRAC: 0.22, Y_OFFSET_FRAC: 0.00 },
+        tall:  { W_FRAC: 0.18, H_FRAC: 0.18, Y_OFFSET_FRAC: -0.02 },
       };
       const dCfg = DOOR_PROFILES[dProfile];
 
@@ -664,7 +666,7 @@ export function drawVilla(
       if (gradientRGB) doorTint = blendRGB(doorTint, gradientRGB, resolveRangeValue(VILLA.body.colorBlend, u));
       doorTint = applySrgbExposureContrast(doorTint, ex, ct);
       fillRgb(p, doorTint, drawAlpha);
-      p.rect(doorX, doorY, doorW, doorH, Math.round(localTile * 0.03));
+      p.rect(doorX, doorY, doorW, doorH, Math.round(localTile * 0.012));
 
       let wProfile: VillaProfileName = 'short';
       if (cellsH >= low) wProfile = 'mid';
@@ -763,7 +765,7 @@ export function drawVilla(
       const speed = F.wind.speedRange[0] + (F.wind.speedRange[1]-F.wind.speedRange[0]) * r1;
       const phase = rBush * F.wind.phaseJitter;
 
-      const { x: bx, y: by, scaleX, scaleY, rotation } = applyShapeMods({
+      const { x: bx, scaleX, scaleY, rotation } = applyShapeMods({
         p, x: cx, y: cy, r: baseH, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
         mods: {
           scale2D:    { x: s, y: s, anchor: 'bottom-center' },
@@ -774,6 +776,7 @@ export function drawVilla(
 
       const w = baseW * scaleX;
       const h = baseH * scaleY;
+      const by = cy;
 
       const bushLight = sampleDirectionalLightRect(
         { x: bx - w / 2, y: by - h, w, h },
@@ -815,7 +818,10 @@ export function drawVilla(
       }
     });
 
-    drawPart(true, (isMaskPass) => {
+    roofDrawers.push(() => {
+      p.push();
+      p.noStroke();
+      drawPart(true, (isMaskPass) => {
       // Roofs are part of the depth mask. Strokes and side foliage are color-only.
       if (!isSide) {
         const ridgeY = Math.round(Math.max(pxY, bodyY - roofH));
@@ -837,8 +843,23 @@ export function drawVilla(
         p.strokeWeight(Math.max(1, Math.round(localTile * 0.06)));
         strokeRgb(p, strokeCol, isMaskPass ? maskAlpha : opaque);
         p.noFill();
-        p.line(apexX, safeRidgeY, ix,         baseY);
-        p.line(apexX, safeRidgeY, ix + iColW, baseY);
+        const trimRidgeExtend = Math.max(0.5, localTile * 0.018);
+        const trimOuterExtend = Math.max(1, localTile * 0.045);
+        const drawRoofTrim = (baseX: number) => {
+          const dx = baseX - apexX;
+          const dy = baseY - safeRidgeY;
+          const len = Math.max(1, Math.hypot(dx, dy));
+          const ux = dx / len;
+          const uy = dy / len;
+          p.line(
+            apexX - ux * trimRidgeExtend,
+            safeRidgeY - uy * trimRidgeExtend,
+            baseX + ux * trimOuterExtend,
+            baseY + uy * trimOuterExtend
+          );
+        };
+        drawRoofTrim(ix);
+        drawRoofTrim(ix + iColW);
         return;
       }
 
@@ -968,9 +989,13 @@ export function drawVilla(
         p.pop();
       }
     });
+      p.pop();
+    });
 
     p.pop();
   }
+
+  for (const drawRoof of roofDrawers) drawRoof();
 
   p.pop();
 }

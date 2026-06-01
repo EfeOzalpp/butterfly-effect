@@ -57,10 +57,14 @@ export const CONDITIONS: Record<ConditionKind, ConditionSpec> = {
 } as const;
 
 // flat lookup from shape name to footprint size.
-export function footprintForShape(shape: ShapeName): Size {
-  for (const kind of CONDITION_KINDS) {
-    const hit = CONDITIONS[kind].variants.find((v) => v.shape === shape);
-    if (hit) return hit.footprint;
+const FOOTPRINTS: Partial<Record<ShapeName, Size>> = {};
+
+for (const kind of CONDITION_KINDS) {
+  for (const variant of CONDITIONS[kind].variants) {
+    FOOTPRINTS[variant.shape] = variant.footprint;
   }
-  return { w: 1, h: 1 };
+}
+
+export function footprintForShape(shape: ShapeName): Size {
+  return FOOTPRINTS[shape] ?? { w: 1, h: 1 };
 }

@@ -589,13 +589,13 @@ export function drawPower(
   const topRFrac = resolveRangeValue(POWER.mast.topRound, u);
 
   const groundTop   = pxY + pxH;
-  const mastBottomY = groundTop - Math.max(2, Math.round(localTileH * platFrac));
+  const mastBottomY = groundTop - Math.max(1, Math.round(localTileH * platFrac));
   const mastTopFrac = resolveRangeValue(POWER.mast.topFrac, u);
   const headroom    = resolveRangeValue(POWER.mast.headroom, u);
   const tileTopY    = pxY + Math.round(pxH * mastTopFrac);
-  const mastClearance = compactTurbine ? Math.max(14, Math.round(localTileH * 2.1)) : 32;
+  const mastClearance = compactTurbine ? Math.max(6, Math.round(localTileH * 2.1)) : 32;
   const mastTopY    = Math.min(tileTopY + Math.round(pxH * headroom * 0.22), mastBottomY - mastClearance);
-  const mastH       = Math.max(compactTurbine ? 12 : 16, mastBottomY - mastTopY);
+  const mastH       = Math.max(compactTurbine ? 6 : 16, mastBottomY - mastTopY);
 
   const cxTile = pxX + pxW / 2;
   const baseX0 = cxTile - baseW / 2;
@@ -635,7 +635,7 @@ export function drawPower(
   if (gradientRGB) coreBase = blendRGB(coreBase, gradientRGB, resolveRangeValue(POWER.mast.coreBlend, u));
   const coreTint = applySrgbExposureContrast(coreBase, ex, ct);
 
-  const capW  = Math.max(4, Math.round(waistW * 0.98));
+  const capW  = Math.max(compactTurbine ? 2 : 4, Math.round(waistW * 0.98));
   const capR  = Math.round(capW * topRFrac);
   const capCx = cxTile;
   const capY  = mastTopY + Math.round(mastH * 0.42);
@@ -675,7 +675,7 @@ export function drawPower(
 
   if (shouldDrawMass) {
     p.push();
-    p.strokeWeight(Math.max(1, Math.round(localTileW * 0.08)));
+    p.strokeWeight(Math.max(compactTurbine ? 0.5 : 1, Math.round(localTileW * 0.08)));
     strokeRgb(p, shapeColorForRenderPass(renderPass, pal.mastCore, maskColor), renderPass === "depthMask" ? maskAlpha : 255);
     p.noFill();
     const lineEndY = capTopY + 2;
@@ -690,7 +690,7 @@ export function drawPower(
     const bladeScale = compactTurbine ? 0.72 : 1;
     const bladeL = Math.max(hubR * 2, Math.round(bladeRef * resolveRangeValue(POWER.rotor.bladeLk, u) * bladeScale));
     const bladeW = compactTurbine
-      ? Math.max(2, Math.round(bladeRef * resolveRangeValue(POWER.rotor.bladeWk, u) * 0.78))
+      ? Math.max(1, Math.round(bladeRef * resolveRangeValue(POWER.rotor.bladeWk, u) * 0.62))
       : Math.max(3, Math.round(bladeRef * resolveRangeValue(POWER.rotor.bladeWk, u)));
     const tipR   = compactTurbine
       ? Math.max(1, Math.round(bladeW * 0.4))
@@ -762,7 +762,7 @@ export function drawPower(
 
       p.rectMode(p.CORNER);
       const rootLen = compactTurbine
-        ? Math.max(3, Math.round(bladeL * 0.14))
+        ? Math.max(1, Math.round(bladeL * 0.12))
         : Math.max(6, Math.round(bladeL * 0.18));
       p.rect(-rootGap, -Math.round(bladeW * 0.65), rootLen, Math.round(bladeW * 1.3), Math.round(bladeW * 0.6));
 

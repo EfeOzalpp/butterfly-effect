@@ -12,8 +12,7 @@ const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
       { rgba: "rgb(175, 228, 255)" },
       { rgba: "rgb(214, 242, 255)" },
       { rgba: "rgb(214, 242, 255)" },
-      { rgba: "rgb(214, 245, 255)" },
-      { rgba: "rgb(255, 237, 195)" },
+      { rgba: "rgb(248, 243, 239)" },
       { k: "visualHorizon", rgba: "rgb(255, 226, 202)" },
       // ground
       { k: "visualHorizon", rgba: "rgba(108, 214, 184, 0.95)", liveBlend: [0.04, 0.12] },

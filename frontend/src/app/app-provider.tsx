@@ -49,8 +49,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const {
     liveAvgState,
     setLiveAvg,
+    spotlightLiveAvgState,
+    setSpotlightLiveAvg,
     reservedFootprintsState,
     setReservedFootprints,
+    spotlightState,
+    previousSpotlight,
+    nextSpotlight,
+    setSpotlightPaused,
+    toggleSpotlightPaused,
     resetCanvasRuntimeState,
   } = useCanvasRuntimeState();
   const { section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow, subscribeToSurveyData } = useSurveyDataState({ mySection });
@@ -166,14 +173,28 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       liveAvg: liveAvgState,
       setLiveAvg,
+      spotlightLiveAvg: spotlightLiveAvgState,
+      setSpotlightLiveAvg,
       reservedFootprints: reservedFootprintsState,
       setReservedFootprints,
+      spotlight: spotlightState,
+      previousSpotlight,
+      nextSpotlight,
+      setSpotlightPaused,
+      toggleSpotlightPaused,
     }),
     [
       liveAvgState,
       setLiveAvg,
+      spotlightLiveAvgState,
+      setSpotlightLiveAvg,
       reservedFootprintsState,
       setReservedFootprints,
+      spotlightState,
+      previousSpotlight,
+      nextSpotlight,
+      setSpotlightPaused,
+      toggleSpotlightPaused,
     ]
   );
 

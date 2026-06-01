@@ -1,4 +1,4 @@
-import { clamp01 } from "../../shared/math";
+import { clamp01, mixRgb } from "../../shared/math";
 import type { RGB } from "../../shared/math";
 import { footprintToPx } from "../projection";
 import type { GridFootprint, PixelRect, ProjectionContext } from "../projection";
@@ -9,6 +9,7 @@ interface LightItem {
   x: number;
   y: number;
   footprint?: GridFootprint;
+  paletteClosenessK?: number;
 }
 
 interface LightContextOpts extends ProjectionContext {
@@ -196,6 +197,10 @@ export function createSceneLightContext(opts: LightContextOpts): SceneLightConte
     sourceY,
     kind: darkMode ? "moon" : "sun",
     intensity: darkMode ? 0.88 : 1.22,
+    paletteClosenessK:
+      typeof lightItem.paletteClosenessK === "number"
+        ? clamp01(lightItem.paletteClosenessK)
+        : undefined,
     sceneW: Math.max(1, canvasW),
     sceneH: Math.max(1, canvasH),
     sceneDiag: Math.max(1, Math.hypot(canvasW, canvasH)),
@@ -239,6 +244,8 @@ export function sampleDirectionalLightRect(
     ? clamp01(light.paletteClosenessK)
     : clamp01(1 - dist / closenessDistanceScale(light));
   const overallK = Math.min(1.48, light.intensity * (0.96 + 0.22 * falloffK + 0.24 * falloffK * falloffK));
+  const proximityHighlightK = Math.pow(closenessK, 1.35) * (light.kind === "moon" ? 0.18 : 0.24);
+  const lightColor = mixRgb(light.lightColor, { r: 255, g: 255, b: 255 }, proximityHighlightK);
 
   return {
     overallK,
@@ -249,7 +256,7 @@ export function sampleDirectionalLightRect(
     bottomK: overallK * Math.max(0, ny),
     xBias: nx,
     yBias: ny,
-    lightColor: light.lightColor,
+    lightColor,
     shadowColor: light.shadowColor,
   };
 }

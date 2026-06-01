@@ -8,6 +8,13 @@ import { DEBUG_DEFAULT, type DebugFlags } from "../debug";
 import type { EngineFieldItem } from "./field";
 import type { LiveState } from "./itemLifecycle";
 import type { SceneSurfaceLifecycleState } from "./sceneSurfaceLifecycle";
+import type { SpotlightSignal } from "../../hooks/signals";
+
+export interface EngineShapeLightSource {
+  xK: number;
+  yK: number;
+  paletteClosenessK?: number;
+}
 
 export interface EngineStyle {
   // Base visual knobs. These are changed through controls.setFieldStyle().
@@ -25,6 +32,7 @@ export interface EngineStyle {
   // Environment switches passed down into render/fog/shape behavior.
   darkMode: boolean;
   fog: boolean;
+  shapeLightSource: EngineShapeLightSource | null;
 
   // Debug flags are kept with style because they change what gets rendered.
   debug: DebugFlags;
@@ -32,7 +40,10 @@ export interface EngineStyle {
 
 // Signal inputs coming from the app. They are not style themselves;
 // they are data values that the renderer turns into motion/color.
-export interface EngineInputs { liveAvg: number }
+export interface EngineInputs {
+  liveAvg: number;
+  spotlight: SpotlightSignal | null;
+}
 
 // Field is the current payload of things the canvas should draw.
 export interface EngineField { items: EngineFieldItem[]; visible: boolean }
@@ -66,6 +77,7 @@ export const ENGINE_STYLE_DEFAULT: EngineStyle = {
   appearStaggerMs: 520,
   darkMode: false,
   fog: true,
+  shapeLightSource: null,
   debug: { ...DEBUG_DEFAULT },
 };
 
@@ -80,7 +92,10 @@ export function createEngineStyle(initialDarkMode?: boolean): EngineStyle {
 
 // Start with a neutral signal. App controls can push real values later.
 export function createEngineInputs(): EngineInputs {
-  return { liveAvg: 0.5 };
+  return {
+    liveAvg: 0.5,
+    spotlight: null,
+  };
 }
 
 // Start hidden and empty. The app owns when to provide items and show them.

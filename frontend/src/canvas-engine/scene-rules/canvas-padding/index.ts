@@ -1,18 +1,19 @@
 // src/canvas-engine/scene-rules/canvas-padding/index.ts
 
 import type { SceneLookupKey } from '../../scene-state';
-import type { DeviceType } from '../../shared/responsiveness';
-import type { CanvasPaddingSpec } from './types';
+import type { CanvasPaddingPolicy } from './types';
 
-export type { CanvasPaddingSpec } from './types';
-export { resolvePaddingSpec } from "./resolve";
+export type { CanvasPaddingPolicy, CanvasPaddingPolicyByDevice, CanvasPaddingSpec } from './types';
+export { resolvePaddingPolicyVariants, resolvePaddingSpec } from "./resolve";
 
 import { START_PADDING }         from './start';
 import { QUESTIONNAIRE_PADDING }          from './questionnaire';
 import { CITY_PADDING }          from './city';
+import { SPOTLIGHT_PADDING } from './spotlight';
 
-export const CANVAS_PADDING: Record<SceneLookupKey, Record<DeviceType, CanvasPaddingSpec | null>> = {
+export const CANVAS_PADDING: Record<SceneLookupKey, CanvasPaddingPolicy> = {
   start:         START_PADDING,
   city:          CITY_PADDING,
   questionnaire: QUESTIONNAIRE_PADDING,
+  spotlight:     SPOTLIGHT_PADDING,
 };

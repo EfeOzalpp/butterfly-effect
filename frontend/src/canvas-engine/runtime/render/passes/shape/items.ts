@@ -103,6 +103,7 @@ export function drawItems(params: {
     const pass = opts.pass ?? (opts.pass = {});
 
     projection.footprint = it.footprint;
+    projection.pixelFootprint = it.pixelFootprint;
     style.alpha = Math.round(235 * alphaK);
     identity.seedKey = `${it.shape}|${it.id}`;
     identity.shapeOccurrenceIndex = occurrenceIndex;

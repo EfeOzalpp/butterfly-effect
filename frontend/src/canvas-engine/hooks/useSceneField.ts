@@ -6,10 +6,12 @@ import { composeField } from "../scene-logic/composeField";
 import type { HostId } from "../multi-canvas-setup/hostDefs";
 import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 import type { CanvasEngineControls } from "../runtime";
+import type { EngineShapeLightSource } from "../runtime/engine/state";
 
 import type { SceneLookupKey, SceneState } from "../scene-state";
 
-import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
+import { resolvePaddingPolicyVariants, resolvePaddingSpec } from "../scene-rules/canvas-padding";
+import type { ScenePlacementRules } from "../scene-rules/placement-rules";
 
 import { getCanvasMeta } from "../runtime/p/canvasMeta";
 import { getViewportSize } from "../shared/responsiveness";
@@ -20,6 +22,24 @@ interface Engine {
   ready: RefObject<boolean>;
   controls: RefObject<CanvasEngineControls | null>;
   readyTick?: number;
+}
+
+function positiveModulo(value: number, length: number) {
+  return ((value % length) + length) % length;
+}
+
+function resolveRuntimePlacements(
+  placements: ScenePlacementRules,
+  spotlightIndex: number | undefined
+): ScenePlacementRules {
+  const variants = placements.variants;
+  if (!variants?.length) return placements;
+
+  if (typeof spotlightIndex !== "number") {
+    return variants[0] ?? placements;
+  }
+
+  return variants[positiveModulo(spotlightIndex, variants.length)] ?? variants[0] ?? placements;
 }
 
 function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
@@ -53,7 +73,10 @@ export function useSceneField(
   hostId: HostId,
   liveAvg: number | undefined,
   reservedFootprints: Place[] | undefined,
-  viewportKey?: number | string
+  viewportKey?: number | string,
+  spotlightIndex?: number,
+  fog?: boolean,
+  shapeLightSource?: EngineShapeLightSource | null
 ) {
   const [canvasResizeTick, setCanvasResizeTick] = useState(0);
   const { ready, controls, readyTick } = engine;
@@ -109,16 +132,19 @@ export function useSceneField(
 
     const sceneState: SceneState = { lookupKey: sceneLookupKey };
     const profile = ruleset.getProfile(sceneState, { darkMode });
+    const placements = resolveRuntimePlacements(profile.placements, spotlightIndex);
+    const padding = resolvePaddingPolicyVariants(profile.padding, spotlightIndex);
 
     const canvas = engineControls.canvas;
     const { w, h } = getCanvasLogicalSize(canvas);
     const viewportW = getViewportSize().w;
-    const ruleWidthPx =
-      hostId === "start" || hostId === "questionnaire" ? viewportW : w;
+    // Device-band rules should follow the actual viewport/device, not the
+    // bounded size of a canvas instance such as Spotlight.
+    const ruleWidthPx = viewportW;
 
     const result = composeField({
-      padding: profile.padding,
-      placements: profile.placements,
+      padding,
+      placements,
       liveAvg,
       reservedFootprints,
       ruleWidthPx,
@@ -127,14 +153,17 @@ export function useSceneField(
 
     // Let runtime compute forbidden/rows from the current profile padding
     // and receive the other resolved scene policies as one handoff.
-    const spec = resolvePaddingSpec(ruleWidthPx, profile.padding);
+    const spec = resolvePaddingSpec(ruleWidthPx, padding);
     engineControls.setSceneProfile({
       lookupKey: sceneLookupKey,
       paddingSpec: spec,
       background: profile.background,
+      ambientParticles: profile.ambientParticles,
+      fog: profile.fog,
+      foliage: profile.foliage,
       renderCache: profile.renderCache,
     });
-    engineControls.setFieldStyle({ darkMode });
+    engineControls.setFieldStyle({ darkMode, fog, shapeLightSource });
 
     engineControls.setFieldItems(result.placed);
     engineControls.setFieldVisible(result.placed.length > 0);
@@ -144,6 +173,9 @@ export function useSceneField(
     readyTick,
     liveAvg,
     viewportKey,
+    spotlightIndex,
+    fog,
+    shapeLightSource,
     canvasResizeTick,
     hostId,
     sceneLookupKey,

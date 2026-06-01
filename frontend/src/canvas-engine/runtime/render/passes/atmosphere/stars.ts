@@ -66,6 +66,27 @@ function resolveStarRange(
   ] as const;
 }
 
+function resolveStarCount(
+  count: NonNullable<BackgroundSpec["stars"]>["count"],
+  liveAvg: number
+) {
+  return Math.max(
+    0,
+    Math.round(
+      typeof count === "number"
+        ? count
+        : mix(count[0], count[1], clamp01(liveAvg))
+    )
+  );
+}
+
+function resolveMaxStarCount(count: NonNullable<BackgroundSpec["stars"]>["count"]) {
+  return Math.max(
+    0,
+    Math.round(typeof count === "number" ? count : Math.max(count[0], count[1]))
+  );
+}
+
 export function createStarGeometryCache() {
   let lastKey = "";
   const stars: StarParticle[] = [];
@@ -74,21 +95,11 @@ export function createStarGeometryCache() {
     width: number;
     height: number;
     spec: NonNullable<BackgroundSpec["stars"]>;
-    liveAvg: number;
   }): StarParticle[] {
-    const { width, height, spec, liveAvg } = args;
+    const { width, height, spec } = args;
     const maxY = height * spec.topBandK;
-
-    const starCount = Math.max(
-      0,
-      Math.round(
-        typeof spec.count === "number"
-          ? spec.count
-          : mix(spec.count[0], spec.count[1], clamp01(liveAvg))
-      )
-    );
-
-    const flickerRange = resolveStarRange(spec.flickerHz, liveAvg);
+    const starCount = resolveMaxStarCount(spec.count);
+    const flickerRange = resolveStarRange(spec.flickerHz, 1);
 
     const key = [
       String(width),
@@ -139,14 +150,15 @@ export function drawStars(
     width: p.width,
     height: p.height,
     spec,
-    liveAvg,
   });
 
+  const activeCount = Math.min(stars.length, resolveStarCount(spec.count, liveAvg));
   const alphaRange = resolveStarRange(spec.alpha, liveAvg);
 
   ctx.save();
 
-  for (const star of stars) {
+  for (let i = 0; i < activeCount; i += 1) {
+    const star = stars[i];
     const twinkle = 0.5 + 0.5 * Math.sin(t * star.hz * Math.PI * 2 + star.phase);
     const alpha = alphaRange[0] + (alphaRange[1] - alphaRange[0]) * twinkle;
 

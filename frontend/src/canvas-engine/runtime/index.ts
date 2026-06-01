@@ -67,6 +67,9 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     lookupKey: "start",
     paddingSpec: null,
     background: null,
+    ambientParticles: null,
+    fog: null,
+    foliage: null,
     renderCache: DEFAULT_RENDER_CACHE_POLICY,
   };
 
@@ -157,6 +160,9 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
   function setInputs(args: EngineInputsPayload = {}) {
     if (typeof args.liveAvg === "number") inputs.liveAvg = clamp01(args.liveAvg);
+    if ("spotlight" in args) {
+      inputs.spotlight = args.spotlight ?? null;
+    }
   }
 
   function setFieldItems(nextItems: EngineFieldItem[] = []) {
@@ -197,6 +203,25 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     }
     if (typeof args.darkMode === "boolean") style.darkMode = args.darkMode;
     if (typeof args.fog === "boolean") style.fog = args.fog;
+    if ("shapeLightSource" in args) {
+      const source = args.shapeLightSource;
+      style.shapeLightSource =
+        source &&
+        typeof source.xK === "number" &&
+        Number.isFinite(source.xK) &&
+        typeof source.yK === "number" &&
+        Number.isFinite(source.yK)
+          ? {
+              xK: source.xK,
+              yK: source.yK,
+              paletteClosenessK:
+                typeof source.paletteClosenessK === "number" &&
+                Number.isFinite(source.paletteClosenessK)
+                  ? Math.max(0, Math.min(1, source.paletteClosenessK))
+                  : undefined,
+            }
+          : null;
+    }
 
     if (args.debug && typeof args.debug === "object") {
       const d = args.debug;
@@ -217,6 +242,9 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
       lookupKey: next.lookupKey,
       paddingSpec: next.paddingSpec ?? null,
       background: next.background ?? null,
+      ambientParticles: next.ambientParticles ?? null,
+      fog: next.fog ?? null,
+      foliage: next.foliage ?? null,
       renderCache: next.renderCache,
     };
 

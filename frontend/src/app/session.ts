@@ -71,8 +71,13 @@ export function readStoredDarkMode(defaultValue = true): boolean {
 export function applyThemeToDocument(darkMode: boolean) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
+  root.classList.add("theme-switching");
+  void root.offsetWidth;
   root.dataset.theme = darkMode ? "dark" : "light";
   root.classList.toggle("dark", darkMode);
+  window.requestAnimationFrame(() => {
+    root.classList.remove("theme-switching");
+  });
 
   const color = darkMode ? "#21201e" : "#f8f3ef";
   document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(m => {

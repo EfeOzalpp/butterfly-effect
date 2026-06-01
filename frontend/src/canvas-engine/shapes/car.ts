@@ -383,7 +383,7 @@ export function drawCarAsset(
     const leftAligned = rSide < 0.5;
 
     const chassisW = w * 0.92;
-    const chassisH = Math.max(6, r * 0.65);
+    const chassisH = Math.max(1, r * 0.65);
     const chassisCy = wheelY - chassisH * 0.58 + bodyYOffset;
     const bodyLight = sampleDirectionalLightRect(
       { x: cx - chassisW / 2, y: wheelY - r * 1.8 + bodyYOffset, w: chassisW, h: r * 1.8 },
@@ -416,12 +416,12 @@ export function drawCarAsset(
     }
 
     const cabinW = w * 0.64;
-    const cabinH = Math.max(10, r * 1.15);
+    const cabinH = Math.max(1, r * 1.15);
     const chassisTopY = chassisCy - chassisH / 2;
     const cabinBaseY = chassisTopY;
     const cabinTopY = cabinBaseY - cabinH;
 
-    const sidePad = r * 0.20;
+    const sidePad = Math.max(0.5, r * 0.20);
     const cabinX0 = leftAligned
       ? cx - chassisW / 2 + sidePad
       : cx + chassisW / 2 - cabinW - sidePad;
@@ -447,10 +447,10 @@ export function drawCarAsset(
       );
     }
 
-    const pad = Math.max(3, r * 0.22);
+    const pad = Math.max(1, r * 0.22);
     const innerW = cabinW - pad * 2;
     const innerH = cabinH - pad * 2;
-    const gap = Math.max(2, r * 0.20);
+    const gap = Math.max(1, r * 0.20);
     const eachW = (innerW - gap) / 2;
     const eachH = innerH * 0.70;
     const winY = cabinTopY + pad + (innerH - eachH) * 0.30;
@@ -573,12 +573,13 @@ export function drawCar(
   }
 
   const wheelY = aspY + aspH * 0.62;
-  const designW = r * 3.2;
+  const designW = cell && f ? tileW : r * 3.2;
+  const designUnit = cell && f ? Math.max(1, tileW / 3.2) : r;
   const sidePad = Math.max(2, tileW * 0.06);
   const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: sprite.allowUpscale === true });
 
   beginFitScale(p, { cx: cx0, anchorY: wheelY, scale: s });
-  drawCarAsset(p, cx0, wheelY, r, {
+  drawCarAsset(p, cx0, wheelY, designUnit, {
     style: {
       alpha,
       exposure: ex,

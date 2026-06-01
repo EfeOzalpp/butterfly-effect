@@ -11,9 +11,18 @@ import {
   BACKGROUNDS_LIGHT,
   BACKGROUNDS_QUESTIONNAIRE,
   BACKGROUNDS_QUESTIONNAIRE_DARK,
+  BACKGROUNDS_SPOTLIGHT,
+  BACKGROUNDS_SPOTLIGHT_DARK,
   BACKGROUNDS_START_DARK,
   type BackgroundSpec,
 } from "./backgrounds";
+import {
+  AMBIENT_PARTICLES,
+  AMBIENT_PARTICLES_DARK,
+  type AmbientParticlesSceneSpec,
+} from "./ambient-particles";
+import { FOG, FOG_DARK, type FogSceneSpec } from "./fog";
+import { FOLIAGE, FOLIAGE_DARK, type FoliageSceneSpec } from "./foliage";
 import { DEFAULT_RENDER_CACHE_POLICY } from "./render-cache";
 
 type SceneRules = Pick<SceneProfile, "padding" | "placements">;
@@ -30,6 +39,13 @@ function rulesForLookupKey(lookupKey: SceneLookupKey): SceneRules {
     return {
       padding: CANVAS_PADDING.questionnaire,
       placements: SHAPE_PLACEMENTS.questionnaire,
+    };
+  }
+
+  if (lookupKey === "spotlight") {
+    return {
+      padding: CANVAS_PADDING.spotlight,
+      placements: SHAPE_PLACEMENTS.spotlight,
     };
   }
 
@@ -54,7 +70,36 @@ function backgroundForState(
       : BACKGROUNDS_QUESTIONNAIRE.questionnaire;
   }
 
+  if (state.lookupKey === "spotlight") {
+    return context.darkMode
+      ? BACKGROUNDS_SPOTLIGHT_DARK.spotlight
+      : BACKGROUNDS_SPOTLIGHT.spotlight;
+  }
+
   return context.darkMode ? BACKGROUNDS_START_DARK.start : BACKGROUNDS_LIGHT.start;
+}
+
+function fogForState(
+  state: SceneState,
+  context: SceneProfileContext
+): FogSceneSpec | null {
+  return context.darkMode ? FOG_DARK[state.lookupKey] : FOG[state.lookupKey];
+}
+
+function ambientParticlesForState(
+  state: SceneState,
+  context: SceneProfileContext
+): AmbientParticlesSceneSpec | null {
+  return context.darkMode
+    ? AMBIENT_PARTICLES_DARK[state.lookupKey]
+    : AMBIENT_PARTICLES[state.lookupKey];
+}
+
+function foliageForState(
+  state: SceneState,
+  context: SceneProfileContext
+): FoliageSceneSpec | null {
+  return context.darkMode ? FOLIAGE_DARK[state.lookupKey] : FOLIAGE[state.lookupKey];
 }
 
 export function resolveProfile(
@@ -64,6 +109,9 @@ export function resolveProfile(
   return {
     ...rulesForLookupKey(state.lookupKey),
     background: backgroundForState(state, context),
+    ambientParticles: ambientParticlesForState(state, context),
+    fog: fogForState(state, context),
+    foliage: foliageForState(state, context),
     renderCache: DEFAULT_RENDER_CACHE_POLICY,
   };
 }

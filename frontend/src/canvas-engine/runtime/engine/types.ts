@@ -1,6 +1,9 @@
 import type { SceneLookupKey } from "../../scene-state";
 import type { CanvasPaddingSpec } from "../../scene-rules/canvas-padding";
 import type { BackgroundSpec } from "../../scene-rules/backgrounds";
+import type { AmbientParticlesSceneSpec } from "../../scene-rules/ambient-particles";
+import type { FogSceneSpec } from "../../scene-rules/fog";
+import type { FoliageSceneSpec } from "../../scene-rules/foliage";
 import type { RenderCachePolicy } from "../../scene-rules/render-cache";
 import type { EngineLayoutMode } from "../platform/mount";
 import type { DprMode } from "../platform/viewport";
@@ -9,11 +12,14 @@ import type { ShapeRegistry } from "../shape-adapter/registry";
 import type { DebugFlags } from "../debug";
 import type { RGB } from "../../shared/math";
 import type { EngineFieldItem } from "./field";
+import type { SpotlightSignal } from "../../hooks/signals";
+import type { EngineShapeLightSource } from "./state";
 
 export type { EngineFieldItem } from "./field";
 
 export interface EngineInputsPayload {
   liveAvg?: number;
+  spotlight?: SpotlightSignal;
 }
 
 // Style patch accepted from outside the runtime.
@@ -29,6 +35,7 @@ export interface EngineFieldStyle {
   appearStaggerMs?: number;
   darkMode?: boolean;
   fog?: boolean;
+  shapeLightSource?: EngineShapeLightSource | null;
   debug?: Partial<DebugFlags>;
 }
 
@@ -36,6 +43,9 @@ export interface EngineSceneProfile {
   lookupKey: SceneLookupKey;
   paddingSpec: CanvasPaddingSpec | null;
   background: BackgroundSpec | null;
+  ambientParticles: AmbientParticlesSceneSpec | null;
+  fog: FogSceneSpec | null;
+  foliage: FoliageSceneSpec | null;
   renderCache: RenderCachePolicy;
 }
 

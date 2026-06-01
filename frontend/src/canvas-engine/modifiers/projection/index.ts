@@ -9,6 +9,7 @@ export interface ProjectionContext extends Partial<GridMetrics> {
   cell?: number;
   cellW?: number;
   cellH?: number;
+  pixelFootprint?: PixelRect;
 }
 
 function rowValue(values: number[] | undefined, row: number, fallback: number): number {
@@ -22,6 +23,8 @@ function nonZeroBase(value: number): number {
 // Use the bottom row as the unit tile so multi-row shapes do not distort when
 // perspective rows have different widths and heights.
 export function footprintToPx(f: GridFootprint, opts: ProjectionContext): PixelRect {
+  if (opts.pixelFootprint) return opts.pixelFootprint;
+
   const cell = opts.cell ?? 0;
   const cellW = opts.cellW ?? cell;
   const cellH = opts.cellH ?? cell;

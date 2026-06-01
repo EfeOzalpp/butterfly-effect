@@ -248,7 +248,8 @@ export function drawBus(
   }
 
   const wheelY = aspY + aspH * 0.25;
-  const designW = r * 6.4;
+  const designW = cell && f ? tileW : r * 6.4;
+  const designUnit = cell && f ? Math.max(1, tileH / 3.0) : r;
   const sidePad = Math.max(2, tileW * 0.08);
   const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: sprite.allowUpscale === true });
 
@@ -262,7 +263,7 @@ export function drawBus(
   beginFitScale(p, { cx: tileCx, anchorY: wheelY, scale: s });
   {
     const w = designW;
-    const bodyH = r * 2.0;
+    const bodyH = designUnit * 2.0;
     const busX = tileCx - w / 2;
     const bodyY = wheelY - bodyH * 1.00;
     const bodyLight = sampleDirectionalLightRect(
@@ -274,7 +275,7 @@ export function drawBus(
     const busShadow = mixRgb(litBodyTint, bodyLight.shadowColor, 0.28);
 
     if (shouldDrawColorDetails) {
-      const wheelD = Math.max(3, r * 0.85);
+      const wheelD = Math.max(3, designUnit * 0.85);
       fillRgb(p, pal.wheel, 255);
       p.circle(busX + w * 0.22, wheelY, wheelD);
       p.circle(busX + w * 0.38, wheelY, wheelD);
@@ -283,14 +284,14 @@ export function drawBus(
 
     if (shouldDrawMass) {
       fillRgb(p, shapeColorForRenderPass(renderPass, litBodyTint, maskColor), renderPass === "depthMask" ? maskAlpha : 255);
-      p.rect(busX, bodyY, w, bodyH, r * 0.22);
+      p.rect(busX, bodyY, w, bodyH, designUnit * 0.22);
     }
     if (shouldDrawColorDetails) {
       paintPixelLightBands(p, { x: busX, y: bodyY, w, h: bodyH }, bodyLight, {
         alpha: 255,
         highlightColor: busHighlight,
         shadowColor: busShadow,
-        corner: Math.round(r * 0.22),
+        corner: Math.round(designUnit * 0.22),
         sideK: 0.40,
         topK: 0.24,
         shadowK: 0.16,
@@ -299,7 +300,7 @@ export function drawBus(
       fillRgb(p, winTint, 255);
       const smallCount = 4;
       const gap = w * 0.02;
-      const frontW = Math.max(w * 0.20, r * 2.4);
+      const frontW = Math.max(w * 0.20, designUnit * 2.4);
       const winH = bodyH * 0.42;
       const winY = bodyY + bodyH * 0.20;
       const usableForSmall = w - frontW - gap * (smallCount + 2);
@@ -307,13 +308,13 @@ export function drawBus(
 
       let wx = busX + gap;
       for (let i = 0; i < smallCount; i++) {
-        p.rect(wx, winY, smallW, winH, r * 0.08);
+        p.rect(wx, winY, smallW, winH, designUnit * 0.08);
         wx += smallW + gap;
       }
 
       const frontX = busX + w - frontW;
-      const frontY = winY - Math.max(0, r * 0.02);
-      p.rect(frontX, frontY, frontW, winH, r * 0.10, r * 0.30, 0, r * 0.08);
+      const frontY = winY - Math.max(0, designUnit * 0.02);
+      p.rect(frontX, frontY, frontW, winH, designUnit * 0.10, designUnit * 0.30, 0, designUnit * 0.08);
     }
   }
   endFitScale(p);

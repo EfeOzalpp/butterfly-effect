@@ -1,4 +1,10 @@
 import { clamp01 } from "../../../../shared/math";
+import type {
+  FogColor,
+  FogGradientStop,
+  FogLightGradientSpec,
+  FogSceneSpec,
+} from "../../../../scene-rules/fog";
 import type { GridMetrics } from "../../../geometry/gridCache";
 import type { PLike } from "../../../p/makeP";
 import {
@@ -9,12 +15,10 @@ import {
 } from "../../cache/offscreenCache";
 import { resolveHorizonRow } from "../shared/horizon";
 
-interface FogColor { r: number; g: number; b: number }
-interface FogGradientStop { k: number; color: FogColor }
-
 // Frame-ready fog layout. The loop should not recalculate these row boundaries
 // unless the grid or theme changes.
 interface FogState {
+  isFlat: boolean;
   fogStartY: number;
   fogCanvasH: number;
   horizonRow: number;
@@ -31,23 +35,15 @@ interface FogStateInput {
   p: PLike;
   metrics: GridMetrics;
   darkMode: boolean;
+  spec?: FogSceneSpec | null;
+  lightSource?: FogLightSource | null;
+  hasHorizon: boolean;
 }
 
-const DARK_SKY_FOG_GRADIENT: readonly FogGradientStop[] = [
-  { k: 0, color: { r: 55, g: 58, b: 72 } },
-  { k: 0.06, color: { r: 68, g: 70, b: 88 } },
-  { k: 0.19, color: { r: 68, g: 70, b: 88 } },
-  { k: 0.64, color: { r: 28, g: 22, b: 42 } },
-  { k: 1, color: { r: 14, g: 10, b: 32 } },
-] as const;
-
-const DARK_GROUND_FOG_GRADIENT: readonly FogGradientStop[] = [
-  { k: 0, color: { r: 52, g: 54, b: 54 } },
-  { k: 0.16, color: { r: 72, g: 76, b: 86 } },
-  { k: 0.22, color: { r: 72, g: 76, b: 86 } },
-  { k: 0.74, color: { r: 30, g: 18, b: 30 } },
-  { k: 1, color: { r: 15, g: 9, b: 30 } },
-] as const;
+export interface FogLightSource {
+  xK: number;
+  color: FogColor;
+}
 
 function remap01(v: number, start: number, end: number) {
   if (end <= start) return v >= end ? 1 : 0;
@@ -72,6 +68,72 @@ function gradientCacheKey(gradientStops: readonly FogGradientStop[] | null | und
   return gradientStops
     .map((stop) => `${String(stop.k)}:${String(stop.color.r)},${String(stop.color.g)},${String(stop.color.b)}`)
     .join("|");
+}
+
+function isLightGradientSpec(value: FogSceneSpec["sky"] extends infer Sky
+  ? Sky extends { skyGradient?: infer G } ? G : never
+  : never): value is FogLightGradientSpec {
+  return Boolean(value && !Array.isArray(value));
+}
+
+function isFogGradientStops(
+  value: FogLightGradientSpec | readonly FogGradientStop[]
+): value is readonly FogGradientStop[] {
+  return Array.isArray(value);
+}
+
+function resolveLightGradient(
+  spec: FogLightGradientSpec,
+  lightSource: FogLightSource,
+  fallbackRadiusK?: number
+): readonly FogGradientStop[] {
+  const centerK = clamp01(lightSource.xK);
+  const centerColor = lightSource.color;
+  const effectiveRadiusK = Math.max(0.01, Math.min(0.5, fallbackRadiusK ?? spec.innerRadiusK ?? 0.13));
+  const effectiveLeftInnerK = clamp01(centerK - effectiveRadiusK);
+  const effectiveRightInnerK = clamp01(centerK + effectiveRadiusK);
+  const resolvedLeftEdgeColor = spec.leftEdgeColor ?? spec.edgeColor ?? centerColor;
+  const resolvedRightEdgeColor = spec.rightEdgeColor ?? spec.edgeColor ?? centerColor;
+  const leftEdgeColor = centerK <= effectiveRadiusK ? centerColor : resolvedLeftEdgeColor;
+  const rightEdgeColor = 1 - centerK <= effectiveRadiusK ? centerColor : resolvedRightEdgeColor;
+  return [
+    { k: 0, color: leftEdgeColor },
+    { k: effectiveLeftInnerK, color: centerColor },
+    { k: centerK, color: centerColor },
+    { k: effectiveRightInnerK, color: centerColor },
+    { k: 1, color: rightEdgeColor },
+  ];
+}
+
+function defaultLightGradient(darkMode: boolean): FogLightGradientSpec {
+  return darkMode
+    ? {
+        leftEdgeColor: { r: 55, g: 58, b: 72 },
+        rightEdgeColor: { r: 14, g: 10, b: 32 },
+        innerRadiusK: 0.13,
+      }
+    : {
+        edgeColor: { r: 246, g: 246, b: 248 },
+        innerRadiusK: 0.13,
+      };
+}
+
+function resolveGradient(
+  gradient: FogLightGradientSpec | readonly FogGradientStop[] | null | undefined,
+  lightSource?: FogLightSource | null,
+  fallbackRadiusK?: number,
+  darkMode = false
+): readonly FogGradientStop[] | null {
+  if (!gradient) {
+    return lightSource
+      ? resolveLightGradient(defaultLightGradient(darkMode), lightSource, fallbackRadiusK)
+      : null;
+  }
+  if (isFogGradientStops(gradient)) return gradient;
+  if (isLightGradientSpec(gradient) && lightSource) {
+    return resolveLightGradient(gradient, lightSource, fallbackRadiusK);
+  }
+  return null;
 }
 
 function fogOpacityScaleForRowCount(rowCount: number) {
@@ -185,9 +247,41 @@ function computeFogState(args: {
   p: PLike;
   metrics: GridMetrics;
   darkMode: boolean;
+  spec?: FogSceneSpec | null;
+  lightSource?: FogLightSource | null;
+  hasHorizon: boolean;
 }): FogState | null {
-  const { p, metrics, darkMode } = args;
+  const { p, metrics, darkMode, spec, lightSource, hasHorizon } = args;
   if (metrics.rowHeights.length <= 2) return null;
+
+  const fogColor = spec?.ground?.color ?? spec?.sky?.color ?? (darkMode ? { r: 33, g: 32, b: 40 } : { r: 246, g: 246, b: 248 });
+  const baseFogLayerAlpha = spec?.ground?.layerAlpha ?? spec?.sky?.layerAlpha ?? (darkMode ? 44 / 255 : 26 / 255);
+
+  if (!hasHorizon) {
+    const flatFogLayerBoundaries = [
+      ...metrics.rowOffsetY.slice(1),
+      p.height,
+    ].filter((y) => Number.isFinite(y) && y > 0);
+    const flatGradient = resolveGradient(
+      spec?.ground?.groundGradient ?? spec?.sky?.skyGradient,
+      lightSource,
+      spec?.lightRadiusK,
+      darkMode
+    );
+    return {
+      isFlat: true,
+      fogStartY: 0,
+      fogCanvasH: p.height,
+      horizonRow: 0,
+      skyLayerAlpha: 0,
+      rowOffsetY: [],
+      groundFogLayerBoundaries: flatFogLayerBoundaries,
+      fogColor,
+      skyFogGradient: null,
+      groundFogGradient: flatGradient,
+      fogLayerAlpha255: Math.round(baseFogLayerAlpha * 255),
+    };
+  }
 
   const horizonRow = resolveHorizonRow(metrics.rowHeights);
   const fogStartY = metrics.rowOffsetY[horizonRow];
@@ -203,7 +297,6 @@ function computeFogState(args: {
 
   const rowCount = metrics.rowHeights.length;
   const fogOpacityScale = fogOpacityScaleForRowCount(rowCount);
-  const baseFogLayerAlpha = darkMode ? 44 / 255 : 26 / 255;
   const fogLayerAlpha = baseFogLayerAlpha * fogOpacityScale;
   const numGroundFogLayers = groundFogLayerBoundaries.length;
   // Match sky opacity to the accumulated ground fog so the horizon stays soft.
@@ -214,17 +307,18 @@ function computeFogState(args: {
   const skyLayerAlpha = numSkyFogLayers > 0
     ? 1 - Math.pow(1 - targetHorizonOpacity, 1 / numSkyFogLayers)
     : 0;
-  const skyFogGradient = darkMode ? DARK_SKY_FOG_GRADIENT : null;
-  const groundFogGradient = darkMode ? DARK_GROUND_FOG_GRADIENT : null;
+  const skyFogGradient = resolveGradient(spec?.sky?.skyGradient, lightSource, spec?.lightRadiusK, darkMode);
+  const groundFogGradient = resolveGradient(spec?.ground?.groundGradient, lightSource, spec?.lightRadiusK, darkMode);
 
   return {
+    isFlat: false,
     fogStartY,
     fogCanvasH,
     horizonRow,
     skyLayerAlpha,
     rowOffsetY: [...metrics.rowOffsetY],
     groundFogLayerBoundaries,
-    fogColor: darkMode ? { r: 33, g: 32, b: 40 } : { r: 246, g: 246, b: 248 },
+    fogColor,
     skyFogGradient,
     groundFogGradient,
     fogLayerAlpha255: Math.round(fogLayerAlpha * 255),
@@ -239,19 +333,31 @@ export function createFogStateCache() {
   let lastHeight = 0;
   let lastMetrics: GridMetrics | null = null;
   let lastDarkMode = false;
+  let lastSpec: FogSceneSpec | null | undefined = undefined;
+  let lastLightXK: number | null = null;
+  let lastLightColorKey = "";
+  let lastHasHorizon = false;
   let lastFog: FogState | null = null;
 
   return function getFogState(args: FogStateInput): FogState | null {
-    const { p, metrics, darkMode } = args;
+    const { p, metrics, darkMode, spec, lightSource } = args;
     const width = p.width;
     const height = p.height;
+    const lightXK = lightSource?.xK ?? null;
+    const lightColorKey = lightSource
+      ? `${String(lightSource.color.r)},${String(lightSource.color.g)},${String(lightSource.color.b)}`
+      : "";
 
     if (
       hasValue &&
       width === lastWidth &&
       height === lastHeight &&
       metrics === lastMetrics &&
-      darkMode === lastDarkMode
+      darkMode === lastDarkMode &&
+      spec === lastSpec &&
+      lightXK === lastLightXK &&
+      lightColorKey === lastLightColorKey &&
+      args.hasHorizon === lastHasHorizon
     ) {
       return lastFog;
     }
@@ -260,6 +366,10 @@ export function createFogStateCache() {
     lastHeight = height;
     lastMetrics = metrics;
     lastDarkMode = darkMode;
+    lastSpec = spec;
+    lastLightXK = lightXK;
+    lastLightColorKey = lightColorKey;
+    lastHasHorizon = args.hasHorizon;
     lastFog = computeFogState(args);
     hasValue = true;
 
@@ -295,6 +405,19 @@ function drawGroundFog(p: PLike, fog: FogState) {
       gradientStops,
     });
   }
+}
+
+function drawFlatFog(p: PLike, fog: FogState) {
+  drawFogBand({
+    p,
+    top: 0,
+    height: p.height,
+    alpha255: fog.fogLayerAlpha255,
+    overhangEdge: "bottom",
+    color: fog.fogColor,
+    gradientStops: fog.groundFogGradient,
+    overhangPx: 0,
+  });
 }
 
 // Offscreen cache for the whole static fog layer. Shape depth now lives in
@@ -350,6 +473,11 @@ export function createFogLayerCache() {
 }
 
 function drawFogLayer(p: PLike, fog: FogState) {
+  if (fog.isFlat) {
+    drawFlatFog(p, fog);
+    return;
+  }
+
   drawSkyFog(p, fog);
   drawGroundFog(p, fog);
 }

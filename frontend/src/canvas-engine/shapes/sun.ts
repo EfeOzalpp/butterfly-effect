@@ -197,9 +197,16 @@ export function drawSun(
   const ex = finiteNumber(style.exposure, 1);
   const ct = finiteNumber(style.contrast, 1);
 
-  // allow footprint fit (convenience for grid users)
+  // Absolute/projected placements, such as Spotlight slides, already know the
+  // exact pixel rect the shape should occupy. Use that rect so the sun scales
+  // with authored canvas rows instead of the legacy radius unit.
   let x = xIn, y = yIn, r = rIn;
-  if (sprite.fitToFootprint && projection.cell && projection.footprint) {
+  if (projection.pixelFootprint && projection.footprint) {
+    const fp = footprintToPx(projection.footprint, projection);
+    x = fp.x + fp.w / 2;
+    y = fp.y + fp.h / 2;
+    r = Math.min(fp.w, fp.h) * 0.22;
+  } else if (sprite.fitToFootprint && projection.cell && projection.footprint) {
     const { c0, w } = projection.footprint;
     const cellW = projection.cellW ?? projection.cell;
     const { y: fpY, h: fpH } = footprintToPx(projection.footprint, projection);

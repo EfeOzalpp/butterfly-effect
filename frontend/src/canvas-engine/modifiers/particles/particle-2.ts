@@ -90,6 +90,11 @@ function makeDormantParticle(uSlot: number): Particle {
   };
 }
 
+function decorrelatedSlot(uSlot: number) {
+  const x = Math.sin((uSlot + 0.173) * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 function hashPuffKey(s: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) {
@@ -218,7 +223,7 @@ export function stepAndDrawPuffs(p: ParticleCanvas, opts: PuffEmitterOpts, dtSec
   const wantSizeFollow = sizeHz > 0 && rMax !== rMin;
 
   function laneTargetSize(uSlot: number) {
-    return rMin + (rMax - rMin) * uSlot;
+    return rMin + (rMax - rMin) * decorrelatedSlot(uSlot);
   }
 
   function advanceParticle(pr: Particle, stepSec: number) {

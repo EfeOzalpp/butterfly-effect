@@ -25,14 +25,26 @@ export function scoreCandidateGeneric(opts: {
 
   // center of the allowed segment this candidate belongs to (overrides full-grid center)
   effectiveCenterC?: number;
+  effectiveCenterR?: number;
 }) {
-  const { r0, c0, wCell, hCell, cols, usedRows, placed, salt, effectiveCenterC } = opts;
+  const {
+    r0,
+    c0,
+    wCell,
+    hCell,
+    cols,
+    usedRows,
+    placed,
+    salt,
+    effectiveCenterC,
+    effectiveCenterR,
+  } = opts;
 
   const { x: cx, y: cy } = centerOf({ r0, c0, w: wCell, h: hCell });
 
   // prefer center of the available zone, fall back to full-grid center
   const gridCx = effectiveCenterC ?? (cols - 1) / 2;
-  const usedCy = (usedRows - 1) / 2;
+  const usedCy = effectiveCenterR ?? (usedRows - 1) / 2;
   const dCenter2 = (cx - gridCx) ** 2 + (cy - usedCy) ** 2;
   const centerTerm = -0.08 * dCenter2;
 

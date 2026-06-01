@@ -54,6 +54,9 @@ export interface BackgroundSpec {
   // optional overlay drawn over the base. most scenes use this for the actual
   // sky/ground mood, while base stays as the cheap clear color.
   overlay?: RadialGradientSpec | LinearGradientSpec | SolidBackgroundSpec;
+  // Optional runtime-selectable backgrounds. The engine chooses one by a
+  // SpotlightSignal index, wrapping after the final entry.
+  variants?: readonly BackgroundSpec[];
   // stars are authored here because they are part of the sky mood, but runtime
   // still resolves/draws them in the atmosphere pass.
   stars?: {
@@ -72,3 +75,4 @@ export type BackgroundsByMode = Record<SceneLookupKey, BackgroundSpec>;
 export type StartBackgroundsByMode = Record<Extract<SceneLookupKey, "start">, BackgroundSpec>;
 export type QuestionnaireBackgroundsByMode = Record<Extract<SceneLookupKey, "questionnaire">, BackgroundSpec>;
 export type CityBackgroundsByMode = Record<Extract<SceneLookupKey, "city">, BackgroundSpec>;
+export type SpotlightBackgroundsByMode = Record<Extract<SceneLookupKey, "spotlight">, BackgroundSpec>;

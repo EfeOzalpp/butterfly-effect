@@ -7,6 +7,8 @@ import { useViewportKey } from "./hooks/useViewportKey";
 import { useSceneField } from "./hooks/useSceneField";
 import { stopCanvasEngine } from "./runtime/index";
 import type { Place } from "./grid-layout/occupancy";
+import type { SpotlightSignal } from "./hooks/signals";
+import type { EngineShapeLightSource } from "./runtime/engine/state";
 
 import { HOST_DEFS, type CanvasBounds, type HostDef, type HostId } from "./multi-canvas-setup/hostDefs";
 
@@ -16,12 +18,18 @@ export function EngineHost({
   visible = true,
   liveAvg = 0.5,
   reservedFootprints,
+  spotlight,
+  fog,
+  shapeLightSource,
 }: {
   id: HostId;
   open?: boolean;
   visible?: boolean;
   liveAvg?: number;
   reservedFootprints?: Place[];
+  spotlight?: SpotlightSignal;
+  fog?: boolean;
+  shapeLightSource?: EngineShapeLightSource | null;
 }) {
   const hostDef = React.useMemo<HostDef>(() => HOST_DEFS[id], [id]);
 
@@ -62,13 +70,16 @@ export function EngineHost({
     id,
     liveAvg,
     reservedFootprints,
-    viewportKey
+    viewportKey,
+    spotlight?.index,
+    fog,
+    shapeLightSource
   );
 
   React.useEffect(() => {
     if (!engine.ready.current) return;
-    engine.controls.current?.setInputs({ liveAvg });
-  }, [engine, liveAvg]);
+    engine.controls.current?.setInputs({ liveAvg, spotlight });
+  }, [engine, liveAvg, spotlight]);
 
   return null;
 }

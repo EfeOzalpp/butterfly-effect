@@ -3,7 +3,7 @@
 
 import { useCallback, useState } from 'react';
 
-import { DEFAULT_AVG } from './canvas-runtime-context';
+import { DEFAULT_AVG, DEFAULT_SPOTLIGHT_SIGNAL } from './canvas-runtime-context';
 import type { Place } from '../../canvas-engine/grid-layout/occupancy';
 
 function normalizeAvg(avg: unknown) {
@@ -25,26 +25,66 @@ function sameFootprints(a: Place[], b: Place[]) {
 
 export default function useCanvasRuntimeState() {
   const [liveAvgState, _setLiveAvgState] = useState<number>(DEFAULT_AVG);
+  const [spotlightLiveAvgState, _setSpotlightLiveAvgState] = useState<number>(DEFAULT_AVG);
   const [reservedFootprintsState, _setReservedFootprintsState] = useState<Place[]>([]);
+  const [spotlightState, setSpotlightState] = useState(DEFAULT_SPOTLIGHT_SIGNAL);
 
   const setLiveAvg = useCallback((avg?: number) => {
     _setLiveAvgState(normalizeAvg(avg));
+  }, []);
+
+  const setSpotlightLiveAvg = useCallback((avg?: number) => {
+    _setSpotlightLiveAvgState(normalizeAvg(avg));
   }, []);
 
   const setReservedFootprints = useCallback((next: Place[]) => {
     _setReservedFootprintsState((prev) => (sameFootprints(prev, next) ? prev : next));
   }, []);
 
+  const previousSpotlight = useCallback(() => {
+    setSpotlightState((prev) => ({
+      ...prev,
+      index: prev.index - 1,
+    }));
+  }, []);
+
+  const nextSpotlight = useCallback(() => {
+    setSpotlightState((prev) => ({
+      ...prev,
+      index: prev.index + 1,
+    }));
+  }, []);
+
+  const setSpotlightPaused = useCallback((paused: boolean) => {
+    setSpotlightState((prev) => (prev.paused === paused ? prev : { ...prev, paused }));
+  }, []);
+
+  const toggleSpotlightPaused = useCallback(() => {
+    setSpotlightState((prev) => ({
+      ...prev,
+      paused: !prev.paused,
+    }));
+  }, []);
+
   const resetCanvasRuntimeState = useCallback(() => {
     _setLiveAvgState(DEFAULT_AVG);
+    _setSpotlightLiveAvgState(DEFAULT_AVG);
     _setReservedFootprintsState([]);
+    setSpotlightState(DEFAULT_SPOTLIGHT_SIGNAL);
   }, []);
 
   return {
     liveAvgState,
     setLiveAvg,
+    spotlightLiveAvgState,
+    setSpotlightLiveAvg,
     reservedFootprintsState,
     setReservedFootprints,
+    spotlightState,
+    previousSpotlight,
+    nextSpotlight,
+    setSpotlightPaused,
+    toggleSpotlightPaused,
     resetCanvasRuntimeState,
   };
 }

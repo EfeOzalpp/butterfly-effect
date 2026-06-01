@@ -15,6 +15,9 @@ import {
   createStarGeometryCache,
   drawBackgroundStarsOnly,
 } from "../render/passes/atmosphere";
+import { createFoliageLayerCache } from "../render/passes/foliage";
+import { drawAmbientParticles } from "../render/passes/ambient-particles";
+import type { FogLightSource } from "../render/passes/atmosphere/fog";
 import { createRowLightCache } from "../render/passes/light";
 import { drawGridOverlay } from "../debug";
 import {
@@ -31,6 +34,10 @@ import { drawItemFromRegistry } from "../shape-adapter/draw";
 import type { RuntimeShapeServices } from "../shape-adapter/registry";
 import type { RuntimeShapeOptions } from "../shape-adapter/types";
 import type { RuntimeSurface } from "../p/makeP";
+import { ENVIRONMENT_LIGHT_SHAPE } from "../../shapes";
+import type { BackgroundSpec } from "../../scene-rules/backgrounds";
+import type { AmbientParticlesSceneSpec } from "../../scene-rules/ambient-particles";
+import type { FoliageSceneSpec } from "../../scene-rules/foliage";
 import {
   clearSceneSurfaceToUnderpaint,
   resolveSceneSurfaceFrame,
@@ -76,6 +83,7 @@ export function createEngineTicker(deps: LoopDeps) {
   const fogLayerCache = createFogLayerCache();
   const fogStateCache = createFogStateCache();
   const starGeometryCache = createStarGeometryCache();
+  const foliageLayerCache = createFoliageLayerCache();
   const paletteCache = createPaletteCache();
   const shapeRenderCache = createShapeRenderCache(() => sceneSource.getProfile().renderCache);
 
@@ -85,12 +93,17 @@ export function createEngineTicker(deps: LoopDeps) {
 
   let sortedItemsSource: EngineFieldItem[] | null = null;
   let sortedItemsMetrics: GridMetrics | null = null;
+  let environmentLightItemsSource: EngineFieldItem[] | null = null;
+  let environmentLightWidth = 0;
+  let environmentLightDarkMode = false;
+  let environmentLightSource: FogLightSource | null = null;
 
   function clearRenderCaches() {
     bgCache.clear();
     rowLightCache.clear();
     fogLayerCache.clear();
     starGeometryCache.clear();
+    foliageLayerCache.clear();
     shapeRenderCache.clear();
   }
 
@@ -108,6 +121,117 @@ export function createEngineTicker(deps: LoopDeps) {
       if (item.shape === "sun") return item;
     }
     return null;
+  }
+
+  function getShapeLightItem(items: EngineFieldItem[]): EngineFieldItem | {
+    x: number;
+    y: number;
+    paletteClosenessK?: number;
+  } | null {
+    const visibleLightItem = findLightItem(items);
+    if (visibleLightItem) return visibleLightItem;
+
+    const source = engine.style.shapeLightSource;
+    if (!source) return null;
+
+    const lightItem: {
+      x: number;
+      y: number;
+      paletteClosenessK?: number;
+    } = {
+      x: surface.p.width * source.xK,
+      y: surface.p.height * source.yK,
+    };
+
+    if (typeof source.paletteClosenessK === "number") {
+      lightItem.paletteClosenessK = source.paletteClosenessK;
+    }
+
+    return lightItem;
+  }
+
+  function parseHexColor(hex: string): FogLightSource["color"] | null {
+    const normalized = hex.trim().replace(/^#/, "");
+    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return null;
+    const value = Number.parseInt(normalized, 16);
+    return {
+      r: (value >> 16) & 255,
+      g: (value >> 8) & 255,
+      b: value & 255,
+    };
+  }
+
+  function findEnvironmentLightSource(items: EngineFieldItem[]): FogLightSource | null {
+    const width = Math.max(1, surface.p.width);
+    if (
+      items === environmentLightItemsSource &&
+      width === environmentLightWidth &&
+      engine.style.darkMode === environmentLightDarkMode
+    ) {
+      return environmentLightSource;
+    }
+
+    environmentLightItemsSource = items;
+    environmentLightWidth = width;
+    environmentLightDarkMode = engine.style.darkMode;
+    environmentLightSource = null;
+
+    for (const item of items) {
+      const metadata = ENVIRONMENT_LIGHT_SHAPE[item.shape];
+      if (!metadata) continue;
+      const [, lightColorHex, darkColorHex] = metadata;
+      const colorHex = engine.style.darkMode && darkColorHex ? darkColorHex : lightColorHex;
+      const color = parseHexColor(colorHex);
+      if (!color) continue;
+      environmentLightSource = {
+        xK: Math.max(0, Math.min(1, item.x / width)),
+        color,
+      };
+      return environmentLightSource;
+    }
+    return null;
+  }
+
+  function positiveModulo(value: number, length: number) {
+    return ((value % length) + length) % length;
+  }
+
+  function resolveRuntimeBackground(background: BackgroundSpec | null): BackgroundSpec | null {
+    const variants = background?.variants;
+    if (!variants?.length) return background;
+
+    const spotlight = engine.inputs.spotlight;
+    if (!spotlight) {
+      return variants[0] ?? null;
+    }
+
+    return variants[positiveModulo(spotlight.index, variants.length)] ?? variants[0] ?? null;
+  }
+
+  function resolveRuntimeAmbientParticles(
+    ambientParticles: AmbientParticlesSceneSpec | null
+  ): AmbientParticlesSceneSpec | null {
+    const variants = ambientParticles?.variants;
+    if (!variants?.length) return ambientParticles;
+
+    const spotlight = engine.inputs.spotlight;
+    if (!spotlight) {
+      return variants[0] ?? null;
+    }
+
+    return variants[positiveModulo(spotlight.index, variants.length)] ?? variants[0] ?? null;
+  }
+
+  function resolveRuntimeFoliage(foliage: FoliageSceneSpec | null): FoliageSceneSpec | null {
+    const variants = foliage?.variants;
+    if (!variants?.length) return foliage;
+
+    const spotlight = engine.inputs.spotlight;
+    if (!spotlight) {
+      return variants[0] ?? null;
+    }
+
+    return variants[positiveModulo(spotlight.index, variants.length)] ?? variants[0] ?? null;
   }
 
   function renderOneSandboxed(
@@ -195,6 +319,9 @@ export function createEngineTicker(deps: LoopDeps) {
 
     normalizeDprTransform(surface.p);
     const sceneProfile = sceneSource.getProfile();
+    const background = resolveRuntimeBackground(sceneProfile.background);
+    const ambientParticles = resolveRuntimeAmbientParticles(sceneProfile.ambientParticles);
+    const foliage = resolveRuntimeFoliage(sceneProfile.foliage);
     const sceneSurface = resolveSceneSurfaceFrame(effects.sceneSurface, {
       nowMs: now,
       ready: sceneProfile.background != null,
@@ -212,14 +339,21 @@ export function createEngineTicker(deps: LoopDeps) {
       padding: spec,
       metrics: grid.metrics,
     });
+    const environmentLightSource = findEnvironmentLightSource(engine.field.items);
     const fog = engine.style.fog ? fogStateCache({
       p: surface.p,
       metrics: grid.metrics,
       darkMode: engine.style.darkMode,
+      spec: sceneProfile.fog,
+      lightSource: environmentLightSource,
+      hasHorizon: typeof spec.horizonPos === "number",
     }) : null;
 
     return {
       sceneProfile,
+      background,
+      ambientParticles,
+      foliage,
       sceneSurface,
       liveAvgSignal,
       spec,
@@ -236,23 +370,49 @@ export function createEngineTicker(deps: LoopDeps) {
     bgCache(
       surface.p,
       frame.sceneProfile.lookupKey,
-      frame.sceneProfile.background,
+      frame.background,
       frame.liveAvgSignal,
       frame.backgroundAnchors,
       frame.sceneSurface.alpha
     );
   }
 
-  function renderAtmospherePass(frame: SceneFrameContext) {
+  function renderStarPass(frame: SceneFrameContext) {
     if (!frame.sceneSurface.ready) return;
     drawBackgroundStarsOnly(
       surface.p,
       frame.sceneProfile.lookupKey,
-      frame.sceneProfile.background,
+      frame.background,
       frame.sceneSurface.alpha,
       frame.liveAvgSignal,
       starGeometryCache
     );
+  }
+
+  function renderFoliagePass(frame: SceneFrameContext) {
+    if (!frame.sceneSurface.ready) return;
+    foliageLayerCache({
+      p: surface.p,
+      spec: frame.foliage,
+      liveAvg: frame.liveAvgSignal,
+      anchors: frame.backgroundAnchors,
+      compositeAlpha: frame.sceneSurface.alpha,
+    });
+  }
+
+  function renderAmbientParticlesPass(frame: SceneFrameContext) {
+    if (!frame.sceneSurface.ready) return;
+    drawAmbientParticles({
+      p: surface.p,
+      spec: frame.ambientParticles,
+      liveAvg: frame.liveAvgSignal,
+      timeMs: surface.p.millis(),
+      compositeAlpha: frame.sceneSurface.alpha,
+    });
+  }
+
+  function renderFogPass(frame: SceneFrameContext) {
+    if (!frame.sceneSurface.ready) return;
     fogLayerCache(surface.p, frame.fog, frame.sceneSurface.alpha);
   }
 
@@ -287,7 +447,7 @@ export function createEngineTicker(deps: LoopDeps) {
     });
 
     const sortedItems = sortedItemsForFrame(engine.field.items, sceneFrame.grid.metrics);
-    const lightItem = findLightItem(sortedItems);
+    const lightItem = getShapeLightItem(sortedItems);
 
     const sceneLight = createSceneLightContext({
       lightItem,
@@ -338,6 +498,8 @@ export function createEngineTicker(deps: LoopDeps) {
   type ShapeFrameContext = ReturnType<typeof prepareShapeFrame>;
 
   function renderLightingPass(frame: ShapeFrameContext) {
+    if (typeof frame.spec.horizonPos !== "number") return;
+
     rowLightCache({
       p: surface.p,
       metrics: frame.grid.metrics,
@@ -372,12 +534,15 @@ export function createEngineTicker(deps: LoopDeps) {
     const sceneFrame = prepareSceneFrame(now);
     if (sceneFrame.sceneSurface.appearing) clearSceneSurfaceToUnderpaint(surface.p);
     renderBackgroundPass(sceneFrame);
-    renderAtmospherePass(sceneFrame);
+    renderStarPass(sceneFrame);
+    renderFoliagePass(sceneFrame);
+    renderFogPass(sceneFrame);
     renderDebugPass(sceneFrame);
 
     const shapeFrame = prepareShapeFrame(sceneFrame);
     renderLightingPass(shapeFrame);
     renderItemPass(shapeFrame);
+    renderAmbientParticlesPass(sceneFrame);
   }
 
   return {

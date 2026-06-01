@@ -14,6 +14,7 @@ export type {
   StartBackgroundsByMode,
   QuestionnaireBackgroundsByMode,
   CityBackgroundsByMode,
+  SpotlightBackgroundsByMode,
 } from "./index";
 
 export {
@@ -25,4 +26,6 @@ export {
   BACKGROUNDS_QUESTIONNAIRE_DARK,
   BACKGROUNDS_CITY,
   BACKGROUNDS_CITY_DARK,
+  BACKGROUNDS_SPOTLIGHT,
+  BACKGROUNDS_SPOTLIGHT_DARK,
 } from "./index";

@@ -52,9 +52,17 @@ export const HOST_DEFS = defineHosts({
     zIndex: 60,
     dprMode: "cap1_5",
     fpsCap: 60,
-    stopOnOpen: ["start", "questionnaire"],
     canvasDimensions: { kind: "viewport" },
     scene: { lookupKey: "city", ruleset: SCENE_RULESETS.city },
+  },
+
+  spotlight: {
+    mount: "#spotlight-canvas-root",
+    zIndex: 60,
+    dprMode: "cap2",
+    fpsCap: 60,
+    canvasDimensions: { kind: "parent" },
+    scene: { lookupKey: "spotlight", ruleset: SCENE_RULESETS.spotlight },
   },
 } as const);
 

@@ -1,13 +1,15 @@
 import type { SceneState } from "../scene-state";
-import type { DeviceType } from "../shared/responsiveness";
 import type { BackgroundSpec } from "./backgrounds";
-import type { CanvasPaddingSpec } from "./canvas-padding";
+import type { AmbientParticlesSceneSpec } from "./ambient-particles";
+import type { CanvasPaddingPolicy } from "./canvas-padding";
+import type { FogSceneSpec } from "./fog";
+import type { FoliageSceneSpec } from "./foliage";
 import type { ScenePlacementRules } from "./placement-rules";
 import type { RenderCachePolicy } from "./render-cache";
 
 // Scene rules own the full visual profile. Hosts select a ruleset; validation
 // checks it; runtime consumes the resolved profile.
-export type PaddingPolicyByDevice = Record<DeviceType, CanvasPaddingSpec | null>;
+export type PaddingPolicyByDevice = CanvasPaddingPolicy;
 
 export interface SceneProfileContext {
   darkMode: boolean;
@@ -17,6 +19,9 @@ export interface SceneProfile {
   padding: PaddingPolicyByDevice;
   placements: ScenePlacementRules;
   background: BackgroundSpec;
+  ambientParticles: AmbientParticlesSceneSpec | null;
+  fog: FogSceneSpec | null;
+  foliage: FoliageSceneSpec | null;
   renderCache: RenderCachePolicy;
 }
 

@@ -1,4 +1,4 @@
-import type { GridFootprint } from "../../shared/geometry";
+import type { GridFootprint, PixelRect } from "../../shared/geometry";
 
 // Payload item consumed by the runtime renderer.
 // Keep this stable: it is part of the engine API.
@@ -8,4 +8,5 @@ export interface EngineFieldItem {
   y: number;
   shape: string;
   footprint?: GridFootprint;
+  pixelFootprint?: PixelRect;
 }

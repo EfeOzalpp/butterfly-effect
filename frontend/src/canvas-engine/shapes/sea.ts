@@ -260,9 +260,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   const particleSizeK = particleDepthSizeScale(rowBucket);
 
   // tile rect
-  const x0 = f.c0 * (cellW ?? 0);
-  const { y: y0, h } = footprintToPx(f, projection);
-  const w  = spanTilesX * (cellW ?? 0);
+  const { x: x0, y: y0, w, h } = footprintToPx(f, projection);
 
   const cx = x0 + w / 2;
   const bottomY = y0 + h;
@@ -323,6 +321,19 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     : 1;
   const depthMaskFactor = clamp01((requestedMaskAlpha * appearAlphaK) / 255);
   const depthMaskRGB = shapeColorForRenderPass(renderPass, topRGB, maskColor);
+  const isMobileBowl = cell <= T.bowl.mobile.cellMax;
+  const bowlThicknessK = isMobileBowl ? T.bowl.mobile.thicknessK : T.bowl.thicknessK;
+  const bowlBaseFrac = isMobileBowl ? T.bowl.mobile.baseFrac : T.bowl.baseFrac;
+  const bowlPostTopFrac = isMobileBowl ? T.bowl.mobile.postTopFrac : T.bowl.postTopFrac;
+  const bowlColWidthK = isMobileBowl ? T.bowl.mobile.colWidthK : T.bowl.colWidthK;
+  const bowlCornerK = isMobileBowl ? T.bowl.mobile.cornerK : T.bowl.cornerK;
+  const bowlThicknessPx = Math.max(1, Math.round(cell * bowlThicknessK));
+  const bowlColW = Math.max(1, Math.round(bowlThicknessPx * bowlColWidthK));
+  const bowlBaseH = Math.max(bowlThicknessPx, Math.round(H0 * bowlBaseFrac));
+  const bowlBaseY = (bottomY + Ttop0) + H0 - bowlBaseH;
+  const bowlBaseX = cx + L0;
+  const bowlBaseW = W0;
+  const bowlPostsTopY = (bottomY + Ttop0) + Math.round(H0 * bowlPostTopFrac);
 
   // Begin group transform; clip the tile
   p.push();
@@ -339,9 +350,15 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
   p.translate(cx, bottomY);
   p.scale(1, waterScaleY);
 
-  const rTop = Math.min(6, Math.max(1, Math.round(cell * 0.06)));
+  const waterSideInset = T.bowl.enable ? Math.max(1, bowlColW) : 0;
+  const waterX = L0 + waterSideInset;
+  const waterW = Math.max(1, W0 - waterSideInset * 2);
+  const rTop = Math.min(3, Math.max(0.5, Math.round(cell * 0.03)));
   {
-    const x = L0, y = Ttop0, ww = W0, hh = H0;
+    const x = waterX;
+    const y = Ttop0;
+    const ww = waterW;
+    const hh = H0;
     ctx.save();
     ctx.beginPath();
     roundedRectPath(ctx, x, y, ww, hh, rTop);
@@ -368,7 +385,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const foamHz  = resolveRangeValue(T.foam.band.oscHzRange, u);
     const yOsc    = Math.sin(tSec * foamHz * 2 * Math.PI) * (T.foam.band.oscAmpPx || 0);
 
-    const rect = { x: L0, y: Ttop0 - bandOff + yOsc, w: W0, h: bandH };
+    const rect = { x: waterX, y: Ttop0 - bandOff + yOsc, w: waterW, h: bandH };
 
     const speedLo = Array.isArray(T.foam.motion.speedPxSec) ? T.foam.motion.speedPxSec[0] : 10;
     const speedHi = Array.isArray(T.foam.motion.speedPxSec) ? T.foam.motion.speedPxSec[1] : speedLo;
@@ -493,8 +510,6 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
       const isMobile = cell <= T.spill.mobile.cellMax;
 
-      const globalShiftX = isSprite ? 0 : (T.spill.offsetTilesX * (cellW ?? 0));
-
       const waterTopY    = bottomY + Ttop0 * waterScaleY;
       const waterBottomY = bottomY + (Ttop0 + H0) * waterScaleY;
       const bottomBound  = y0 + h;
@@ -503,7 +518,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
         : bottomBound + Math.max(spill, cell * 0.45);
 
       const surfaceY = waterTopY;
-      const bandTopY = surfaceY - cell * 0.28;
+      const bandTopY = surfaceY - cell * 0.06;
       const bandH    = Math.max(1, bottomBound - bandTopY + cell * 0.25);
 
       const spawnHeightPx = Math.max(8, cell * 0.35);
@@ -524,13 +539,15 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
       const leftCorridorW  = colWBase + extraRoom;
       const rightCorridorW = colWBase + (isSprite ? extraRoom : spill);
       const spriteEdgeOverlap = isSprite ? Math.max(4, Math.round(colWBase * 0.40)) : 0;
+      const waterLeftEdgeX = cx + waterX;
+      const waterRightEdgeX = cx + waterX + waterW;
 
       const leftBaseX  = isSprite
         ? (x0 - leftCorridorW + spriteEdgeOverlap)
-        : (x0 - spill + globalShiftX + leftNudge);
+        : (waterLeftEdgeX - leftCorridorW * leftSpawnFracX[1] + leftNudge);
       const rightBaseX = isSprite
         ? (x0 + w - spriteEdgeOverlap)
-        : (x0 + w - colWBase + globalShiftX + rightNudge);
+        : (waterRightEdgeX - rightCorridorW * rightSpawnFracX[0] + rightNudge);
 
       const leftCorridor  = { x: leftBaseX,  y: bandTopY, w: leftCorridorW,  h: bandH };
       const rightCorridor = { x: rightBaseX, y: bandTopY, w: rightCorridorW, h: bandH };
@@ -618,22 +635,14 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
   // 2) BOWL composite (proportional; mobile-safe)
   if (T.bowl.enable) {
-    const isMobile = cell <= T.bowl.mobile.cellMax;
+    const tEff = bowlThicknessPx;
+    const baseH = bowlBaseH;
+    const baseY = bowlBaseY;
+    const baseX = bowlBaseX;
+    const baseW = bowlBaseW;
 
-    const kThickness = isMobile ? T.bowl.mobile.thicknessK : T.bowl.thicknessK;
-    const fBase      = isMobile ? T.bowl.mobile.baseFrac    : T.bowl.baseFrac;
-    const fPostTop   = isMobile ? T.bowl.mobile.postTopFrac : T.bowl.postTopFrac;
-    const kColWidth  = isMobile ? T.bowl.mobile.colWidthK   : T.bowl.colWidthK;
-    const kCorner    = isMobile ? T.bowl.mobile.cornerK     : T.bowl.cornerK;
-
-    const tEff   = Math.max(1, Math.round(cell * kThickness));
-    const baseH  = Math.max(tEff, Math.round(H0 * fBase));
-    const baseY  = (bottomY + Ttop0) + H0 - baseH;
-    const baseX  = cx + L0;
-    const baseW  = W0;
-
-    const postsTopY   = (bottomY + Ttop0) + Math.round(H0 * fPostTop);
-    const colW        = Math.max(1, Math.round(tEff * kColWidth));
+    const postsTopY = bowlPostsTopY;
+    const colW = bowlColW;
     const postR       = Math.max(0, (T.bowl.pieceRadiusPx ?? 0) | 0);
     const baseOverlap = Math.max(0, T.bowl.baseOverlapPx ?? 2);
     const postBottomY = baseY + baseOverlap;
@@ -655,10 +664,10 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const bowlFill = shapeColorForRenderPass(renderPass, bowlRGB, maskColor);
     const aBowl = isDepthMaskPass
       ? Math.round(255 * depthMaskFactor)
-      : Math.round(255 * clamp01(T.bowl.alphaMul) * aFactor);
+      : Math.round(255 * clamp01(T.bowl.alphaMul) * appearAlphaK);
     ctx.fillStyle = rgbaCss(bowlFill, aBowl / 255);
 
-    const rCorner = Math.round(cell * kCorner);
+    const rCorner = Math.round(cell * bowlCornerK);
     {
       const r = Math.min(rCorner, baseH / 2, baseW / 2);
       ctx.beginPath();

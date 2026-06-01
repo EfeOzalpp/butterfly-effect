@@ -24,7 +24,7 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   },
 
   laptop: {
-    rows: 18,
+    rows: 20,
     useTopRatio: 1,
     horizonPos: 0.5,
     forbidden: makeRowForbidden(
