@@ -1,7 +1,7 @@
 import type { DeviceType } from '../../../canvas-engine/shared/responsiveness';
 
 const MAX_TILE_BY_DEVICE: Record<DeviceType, number> = {
-  mobile: 192,
+  mobile: 96,
   tablet: 192,
   laptop: 192,
 };
@@ -71,6 +71,8 @@ export function chooseSpriteTileForScreenSize(
   base: number,
   dev: DeviceType
 ) {
+  if (dev === 'mobile') return base;
+
   const mid = Math.max(base, 128);
   const high = Math.max(mid, maxSpriteTileSize(dev));
   const thresholds = QUALITY_THRESHOLDS[dev];

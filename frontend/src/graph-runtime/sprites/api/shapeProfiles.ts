@@ -75,7 +75,8 @@ export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
   },
   villa: {
     footprint: { w: 2, h: 2 },
-        interactionPadding: { top: -0.3 },
+    interactionPadding: { top: -0.3 },
+    bleed: { left: 1 },
   },
   car: {
     footprint: { w: 1, h: 1 },

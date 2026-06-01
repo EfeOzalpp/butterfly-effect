@@ -199,6 +199,7 @@ export default function DotGraph() {
           myStats={personalization.myStats}
           statsLoading={personalization.shouldShowStatsLoading}
           setPersonalOpen={personalizationGate.setPersonalOpen}
+          onPersonalizedPanelEnter={onHoverEnd}
           darkMode={darkMode}
           zoomFraction={zoomFraction}
           particleFrames={particleFrames}

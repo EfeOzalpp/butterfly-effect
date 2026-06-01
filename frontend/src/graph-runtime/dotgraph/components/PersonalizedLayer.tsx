@@ -40,6 +40,7 @@ interface PersonalizedLayerProps {
   myStats: DotGraphTieStats;
   statsLoading: boolean;
   setPersonalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onPersonalizedPanelEnter?: () => void;
   viewportClass?: string;
   darkMode?: boolean;
   zoomFraction?: number;
@@ -165,6 +166,30 @@ function PersonalizedAnchor({
     [hitboxHalfSize, style, zoomFraction]
   );
 
+  const replayPointerMoveToCanvas = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if (typeof PointerEvent === "undefined") return;
+
+    const canvas = gl.domElement;
+    const replay = new PointerEvent("pointermove", {
+      bubbles: true,
+      cancelable: true,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      isPrimary: event.isPrimary,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      screenX: event.screenX,
+      screenY: event.screenY,
+      button: event.button,
+      buttons: event.buttons,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    });
+    canvas.dispatchEvent(replay);
+  }, [gl.domElement]);
+
   return (
     <group ref={anchorRef} position={position}>
       {hasResolvedHitboxSize(hitboxHalfSize) && (
@@ -178,7 +203,9 @@ function PersonalizedAnchor({
             visibility: htmlReady ? "visible" : "hidden",
           }}
         >
-          {children}
+          <div onPointerLeave={replayPointerMoveToCanvas}>
+            {children}
+          </div>
         </Html>
       )}
     </group>
@@ -199,6 +226,7 @@ export default function PersonalizedLayer({
   myStats,
   statsLoading,
   setPersonalOpen,
+  onPersonalizedPanelEnter,
   viewportClass,
   darkMode = false,
   zoomFraction,
@@ -279,6 +307,7 @@ export default function PersonalizedLayer({
               aboveCountStrict={myStats.above}
               statsLoading={statsLoading}
               onOpenChange={setPersonalOpen}
+              onPanelEnter={onPersonalizedPanelEnter}
               zoomFraction={zoomFraction}
             />
           </div>

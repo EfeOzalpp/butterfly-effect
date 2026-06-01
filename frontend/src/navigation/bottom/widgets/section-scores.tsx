@@ -108,10 +108,10 @@ export default function SectionScores() {
 
   return (
     <div className="q-scores-panel">
-      <div className="q-scores-nav">
+      <div className="ui-icon-nav q-scores-nav">
         <button
           type="button"
-          className="q-scores-nav-btn"
+          className="ui-icon-nav-button q-scores-nav-btn"
           aria-label="Previous section"
           onClick={() => { stepSection(-1); }}
         >
@@ -122,7 +122,7 @@ export default function SectionScores() {
         <div className="q-scores-nav-section" title={currentSectionLabel}>{currentSectionLabel}</div>
         <button
           type="button"
-          className="q-scores-nav-btn"
+          className="ui-icon-nav-button q-scores-nav-btn"
           aria-label="Next section"
           onClick={() => { stepSection(1); }}
         >
@@ -132,7 +132,7 @@ export default function SectionScores() {
         </button>
         <button
           type="button"
-          className="q-scores-nav-btn q-scores-nav-btn--pause"
+          className="ui-icon-nav-button q-scores-nav-btn q-scores-nav-btn--pause"
           aria-pressed={paused}
           aria-label={paused ? "Resume section autoplay" : "Pause section autoplay"}
           onClick={() => { setPaused((cur) => !cur); }}

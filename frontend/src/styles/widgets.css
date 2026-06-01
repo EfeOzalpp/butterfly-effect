@@ -127,13 +127,6 @@
 
 .q-scores-panel { display: flex; flex-direction: column; }
 
-.q-scores-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: 0.55rem 0.6rem 0.55rem 0.4rem;
-}
-
 .q-scores-nav-section {
   flex: 1 1 auto;
   min-width: 0;
@@ -145,24 +138,6 @@
   text-overflow: ellipsis;
 }
 
-.q-scores-nav-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--ui-text-muted);
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  transition: color 0.1s ease, background 0.1s ease;
-}
-
-.q-scores-nav-btn:hover { color: var(--ui-text); background: var(--btn-tertiary-hover-bg); }
-.q-scores-nav-btn .ui-icon { color: currentColor; stroke: currentColor; }
 .q-scores-nav-btn--pause { width: 26px; height: 26px; }
 .q-scores-list { display: flex; flex-direction: column; padding: 0.75rem 0; }
 .q-scores-item { display: flex; flex-direction: column; gap: var(--space-sm); padding: 0.75rem 1rem; position: relative; cursor: default; border-radius: var(--radius-md); transition: background 0.1s ease; }

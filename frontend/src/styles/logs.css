@@ -52,8 +52,8 @@
 .logs-th--num { text-align: left; width: 52px; }
 .logs-th--section { text-align: left; width: 110px; }
 .logs-th--qs { text-align: left; }
-.logs-th--avg { width: 68px; }
-.logs-th--rank { width: 68px; }
+.logs-th--avg { text-align: left; width: 68px; }
+.logs-th--rank { text-align: left; width: 68px; }
 
 .logs-row:hover { background: var(--ui-bg-surface-hover); }
 .logs-row--empty:hover { background: transparent; }
@@ -63,8 +63,8 @@
 .logs-td--num { text-align: left; color: var(--ui-text-muted); }
 .logs-td--section { text-align: left; color: var(--ui-text-secondary); }
 .logs-td--qs { text-align: left; color: var(--ui-text-muted); letter-spacing: 0.01em; }
-.logs-td--avg { font-weight: var(--fw-bold); }
-.logs-td--rank { color: var(--ui-text-muted); }
+.logs-td--avg { font-weight: var(--fw-bold); text-align: left; }
+.logs-td--rank { color: var(--ui-text-muted); text-align: left; }
 
 .logs-empty { padding: 1rem 0.75rem; color: var(--ui-text-muted); font-size: var(--type-label-size); text-align: center; }
 

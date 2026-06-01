@@ -30,6 +30,12 @@ function HighlightWord({ children, color }: HighlightWordProps) {
   return <strong style={{ textShadow: `0 0 7px ${color}` }}>{children}</strong>;
 }
 
+function stopGraphEventPropagation(event: React.SyntheticEvent<HTMLElement>) {
+  event.stopPropagation();
+  event.nativeEvent.stopPropagation();
+  event.nativeEvent.stopImmediatePropagation();
+}
+
 function classifyBand({ below: b, equal: e, above: a }: { below: number; equal: number; above: number }) {
   const totalOthers = Math.max(0, b | 0) + Math.max(0, e | 0) + Math.max(0, a | 0);
   const N = totalOthers + 1;
@@ -67,6 +73,7 @@ interface GamificationPersonalizedProps {
   shapeCopy?: string;
   mode?: 'relative' | 'absolute';
   onOpenChange?: (open: boolean) => void;
+  onPanelEnter?: () => void;
   belowCountStrict?: number;
   equalCount?: number;
   aboveCountStrict?: number;
@@ -81,6 +88,7 @@ export default function GamificationPersonalized({
   shapeCopy,
   mode = 'relative',
   onOpenChange,
+  onPanelEnter,
 
   belowCountStrict,
   equalCount,
@@ -235,7 +243,20 @@ export default function GamificationPersonalized({
   const saveLabel = currentMessageStatus === 'saving' ? 'Saving' : 'Save';
 
   return (
-    <div className={`personalized-root ${wrapperVisible ? 'is-visible' : ''}`}>
+    <div
+      className={`personalized-root ${wrapperVisible ? 'is-visible' : ''}`}
+      onPointerEnter={onPanelEnter}
+      onTouchStart={onPanelEnter}
+      onPointerDownCapture={stopGraphEventPropagation}
+      onPointerMoveCapture={stopGraphEventPropagation}
+      onPointerUpCapture={stopGraphEventPropagation}
+      onPointerCancelCapture={stopGraphEventPropagation}
+      onTouchStartCapture={stopGraphEventPropagation}
+      onTouchMoveCapture={stopGraphEventPropagation}
+      onTouchEndCapture={stopGraphEventPropagation}
+      onTouchCancelCapture={stopGraphEventPropagation}
+      onWheelCapture={stopGraphEventPropagation}
+    >
       <div className="personalized-anchor">
       {!open && (
         <button

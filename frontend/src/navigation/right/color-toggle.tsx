@@ -27,7 +27,7 @@ export default function ColorToggle() {
       aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggle}
       onKeyDown={onKeyDown}
-      className={!darkMode ? 'system-color' : 'system-color is-dark'}
+      className={`svg-lg system-color${darkMode ? " is-dark" : ""}`}
     >
       <ThemeIcon mode={darkMode ? "light" : "dark"} />
     </button>

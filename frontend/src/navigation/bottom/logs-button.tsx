@@ -86,7 +86,6 @@ export function LogsPanel({
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
-  const startIndex = safePage * PAGE_SIZE;
   const highlightPattern = query.trim();
 
   function renderHighlighted(text: string) {
@@ -181,25 +180,23 @@ export function LogsPanel({
         <table className="logs-table">
           <thead>
             <tr>
-              <th className="logs-th logs-th--num">#</th>
               <th className="logs-th logs-th--section">Section</th>
-              <th className="logs-th logs-th--qs">Q1-Q5</th>
               <th className="logs-th logs-th--avg">Avg</th>
               <th className="logs-th logs-th--rank">Rank</th>
+              <th className="logs-th logs-th--qs">Question 1-5</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
               <tr className="logs-row logs-row--empty">
-                <td className="logs-empty" colSpan={5}>couldn't find that one.</td>
+                <td className="logs-empty" colSpan={4}>couldn't find that one.</td>
               </tr>
-            ) : pageRows.map((row, i) => (
+            ) : pageRows.map((row) => (
               <tr key={row._id} className="logs-row">
-                <td className="logs-td logs-td--num">{renderHighlighted(String(startIndex + i + 1))}</td>
                 <td className="logs-td logs-td--section">{renderHighlighted(formatSectionLabel(row.section))}</td>
-                <td className="logs-td logs-td--qs">{renderHighlighted(fmtQs(row))}</td>
                 <td className="logs-td logs-td--avg">{renderHighlighted(fmt(row.avgWeight))}</td>
                 <td className="logs-td logs-td--rank">{renderHighlighted(String(rankById.get(row._id) ?? 0))}</td>
+                <td className="logs-td logs-td--qs">{renderHighlighted(fmtQs(row))}</td>
               </tr>
             ))}
           </tbody>

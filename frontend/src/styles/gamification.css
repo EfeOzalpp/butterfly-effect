@@ -162,12 +162,18 @@
 }
 
 /* Horizontal hitbox edges */
-.is-left .generalized-result,
-.is-mid .generalized-result {
+.is-left .generalized-result {
   left: var(--hitbox-width-px);
   justify-content: flex-start;
   align-items: center;
   align-content: center;
+}
+.is-mid .generalized-result {
+  left: 0;
+  top: calc(0px - var(--hitbox-height-px));
+  justify-content: center;
+  align-items: flex-end;
+  align-content: flex-end;
 }
 .is-right .generalized-result {
   left: calc(0px - var(--hitbox-width-px));

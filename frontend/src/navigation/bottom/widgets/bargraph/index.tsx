@@ -109,8 +109,6 @@ export default function BarGraph() {
     return 'green';
   }, [canShowYou, dataById, myEntryId]);
 
-  const maxItems = Math.max(categories.green, categories.yellow, categories.red) + 15;
-
   const normalizeDivisor = useMemo(() => {
     const band = viewportBandForWidth(windowWidth);
     if (band === "mobile") return 100 / 71;
@@ -170,7 +168,7 @@ export default function BarGraph() {
       <div className="bar-graph-container">
         {orderedColors.map((color) => {
           const count = categories[color];
-          const heightPercentage = count > 0 ? Math.max(10, (count / maxItems) * 100) : 0;
+          const heightPercentage = count > 0 ? (count / totalCount) * 100 : 0;
 
           const showMarkerInThisBar = canShowYou && youAbsoluteBar === color;
 
