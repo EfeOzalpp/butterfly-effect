@@ -8,14 +8,6 @@ import { getQuestionButtonPlacement } from "./button-layouts";
 import { useQuestionnaireGridLayout } from "./useQuestionnaireGridLayout";
 import type { Place } from "../../../canvas-engine/grid-layout/occupancy";
 
-type ButtonQuestionnaireGridStyle = CSSProperties & {
-  "--button-questionnaire-columns": string;
-};
-
-const FALLBACK_GRID_STYLE: ButtonQuestionnaireGridStyle = {
-  "--button-questionnaire-columns": "1",
-};
-
 function reserveSingleTile(footprint: Place): Place {
   const bottomRow = footprint.r0 + footprint.h - 1;
   const centerCol = footprint.c0 + Math.floor(Math.max(0, footprint.w - 1) / 2);
@@ -26,6 +18,55 @@ function reserveSingleTile(footprint: Place): Place {
     w: 1,
     h: 1,
   };
+}
+
+function ButtonQuestionnaireIcon({ active }: { active: boolean }) {
+  return (
+    <span className="ui-icon button-questionnaire__button-icon" aria-hidden="true">
+      {active ? (
+        <CheckIcon className="button-questionnaire__button-check-icon" />
+      ) : (
+        <svg
+          className="icon-plus button-questionnaire__button-plus-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" strokeWidth="2.5" />
+          <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+function ButtonQuestionnaireOption({
+  active,
+  label,
+  onClick,
+  className,
+  style,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  className: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <button
+      type="button"
+      className={className}
+      style={style}
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      <span className="button-questionnaire__button-content">
+        <ButtonQuestionnaireIcon active={active} />
+        <span className="button-questionnaire__button-label">{label}</span>
+      </span>
+    </button>
+  );
 }
 
 export default function ButtonQuestionnaireFlow({
@@ -47,7 +88,6 @@ export default function ButtonQuestionnaireFlow({
   const [activeOptionsByQuestion, setActiveOptionsByQuestion] = useState<Record<string, string[]>>({});
   const lastConsumedAdvanceTickRef = useRef(0);
   const {
-    ready: gridReady,
     device,
     layout,
     getPlacementStyle,
@@ -100,7 +140,7 @@ export default function ButtonQuestionnaireFlow({
   ]);
 
   useEffect(() => {
-    if (!gridReady || !layout) {
+    if (!layout) {
       setReservedFootprints([]);
       return;
     }
@@ -113,7 +153,7 @@ export default function ButtonQuestionnaireFlow({
       .map((placement) => reserveSingleTile(placement));
 
     setReservedFootprints(reserved);
-  }, [device, gridReady, layout, question.id, question.options, resolvePlacement, setReservedFootprints]);
+  }, [device, layout, question.id, question.options, resolvePlacement, setReservedFootprints]);
 
   useEffect(() => {
     setReservedFootprints([]);
@@ -165,7 +205,7 @@ export default function ButtonQuestionnaireFlow({
         </h2>
       </div>
 
-      {gridReady ? (
+      {layout && (
         <div className="button-questionnaire__canvas-layer" aria-label={`${question.prompt} options`}>
           {question.options.map((option, optionIndex) => {
             const active = selectedKeys.includes(option.key);
@@ -179,70 +219,13 @@ export default function ButtonQuestionnaireFlow({
                 className="button-questionnaire__slot"
                 style={{ ...style, '--slot-index': optionIndex } as CSSProperties}
               >
-                <button
-                  type="button"
+                <ButtonQuestionnaireOption
+                  active={active}
+                  label={option.label}
                   className={`ui-toggle-option button-questionnaire__button button-questionnaire__button--placed${active ? " is-active" : ""}`}
-                  aria-pressed={active}
                   onClick={() => { toggleOption(option.key); }}
-                >
-                  <span className="button-questionnaire__button-content">
-                    <span className="button-questionnaire__button-icon" aria-hidden="true">
-                      {active ? (
-                        <CheckIcon className="button-questionnaire__button-check-icon" />
-                      ) : (
-                        <svg
-                          className="icon-plus ui-icon button-questionnaire__button-plus-icon"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                        >
-                          <line x1="12" y1="5" x2="12" y2="19" strokeWidth="2.5" />
-                          <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
-                        </svg>
-                      )}
-                    </span>
-                    <span className="button-questionnaire__button-label">{option.label}</span>
-                  </span>
-                </button>
+                />
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div
-          className="button-questionnaire__grid button-questionnaire__grid--single"
-          style={FALLBACK_GRID_STYLE}
-        >
-          {question.options.map((option, optionIndex) => {
-            const active = selectedKeys.includes(option.key);
-            return (
-              <button
-                key={`${question.id}:${option.key}`}
-                type="button"
-                className={`ui-toggle-option button-questionnaire__button${active ? " is-active" : ""}`}
-                style={{ '--slot-index': optionIndex } as CSSProperties}
-                aria-pressed={active}
-                onClick={() => { toggleOption(option.key); }}
-              >
-                <span className="button-questionnaire__button-content">
-                  <span className="button-questionnaire__button-icon" aria-hidden="true">
-                    {active ? (
-                      <CheckIcon className="button-questionnaire__button-check-icon" />
-                    ) : (
-                      <svg
-                        className="icon-plus ui-icon button-questionnaire__button-plus-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                      >
-                        <line x1="12" y1="5" x2="12" y2="19" strokeWidth="2.5" />
-                        <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.5" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className="button-questionnaire__button-label">{option.label}</span>
-                </span>
-              </button>
             );
           })}
         </div>

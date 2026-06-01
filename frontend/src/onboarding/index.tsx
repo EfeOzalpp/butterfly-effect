@@ -25,6 +25,7 @@ import { getSessionItem, removeSessionItems, setSessionItem } from "../app/sessi
 type Audience = RoleValue | '';
 
 const RoleStep = React.lazy(() => import("./role-picker/role-step"));
+const CanvasInfo = React.lazy(() => import("./information/canvas-info"));
 const SectionPickerIntro = React.lazy(
   () => import("./section-picker")
 );
@@ -327,7 +328,10 @@ export default function Survey({
       {!observerMode && (
         <Suspense fallback={null}>
           {stage === 'role' && (
-            <RoleStep value={audience} onChange={handleAudienceChange} onNext={handleRoleNext} error={error} />
+            <>
+              <RoleStep value={audience} onChange={handleAudienceChange} onNext={handleRoleNext} error={error} />
+              <CanvasInfo />
+            </>
           )}
 
           {stage === 'section' && (

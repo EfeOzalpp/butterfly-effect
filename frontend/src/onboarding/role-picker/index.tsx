@@ -81,7 +81,7 @@ export default function RolePicker({
       >
 
         {/* Visitor */}
-        <div className="role-tag role-tag--center"><span className="role-label" id="role-picker-label">Select a role?</span></div>
+        <div className="role-tag role-tag--center"><span className="role-label" id="role-picker-label">Select Your Role</span></div>
         <div
           ref={(node) => { optionRefs.current.visitor = node; }}
           role="radio"
@@ -92,7 +92,7 @@ export default function RolePicker({
           onKeyDown={handleKeyDown("visitor")}
         >
           <SelectionIndicator selected={value === "visitor"} />
-          <h4>Exploring...</h4>
+          <h4>Explorer...</h4>
           <span className="role-indicator-spacer" />
         </div>
 

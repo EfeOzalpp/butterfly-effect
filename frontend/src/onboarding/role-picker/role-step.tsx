@@ -3,9 +3,9 @@ import RolePicker from ".";
 import type { RoleValue } from ".";
 
 const DISPLAY: Record<RoleValue, string> = {
-  student: "Step Inside",
-  staff: "Step Inside",
-  visitor: "Get Started",
+  student: "Step In",
+  staff: "Step In",
+  visitor: "Let's Begin",
 };
 
 interface RoleStepProps {
@@ -23,7 +23,7 @@ export default function RoleStep({ value, onChange, onNext, error }: RoleStepPro
   return (
     <section className="survey survey-step role-select">
         <div className="onboarding">
-          <h2 className="welcome-text">Welcome!<br />Try it today.</h2>
+          <h2 className="welcome-text">Welcome!<br />Try it Today</h2>
 
           <RolePicker value={value} onChange={onChange} errorId={errorId} />
 

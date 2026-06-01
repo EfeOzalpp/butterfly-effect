@@ -82,10 +82,6 @@ const AppInner: React.FC = () => {
           <Survey />
         </ErrorBoundary>
       </div>
-
-      <div className="radial-background">
-        <div className="radial-gradient"></div>
-      </div>
     </main>
   );
 };

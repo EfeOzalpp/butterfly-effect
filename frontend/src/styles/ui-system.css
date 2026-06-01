@@ -2,9 +2,9 @@
 
 h1, h2, h3, h4 { margin: 0; font-family: var(--font-title); font-optical-sizing: auto; font-variation-settings: "wdth" 112.5, "GRAD" 0; color: var(--ui-text); }
 
-h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 300; letter-spacing: 0.04em; }
-h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); font-weight: 300; letter-spacing: 0.03rem; color: var(--ui-title); }
-h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 300; letter-spacing: 0.03rem; }
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h-line); font-weight: 500; letter-spacing: 0.04em; }
+h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); font-weight: 400; letter-spacing: 0.03rem; color: var(--ui-title); }
+h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 400; letter-spacing: 0.03rem; }
 h4 { font-size: var(--type-h4-size); line-height: var(--type-h4-line); font-weight: 420; letter-spacing: 0.02rem; }
 
 p, li, label, input, select, textarea { font-family: var(--font-body); font-size: var(--type-p-size); line-height: var(--type-body-line); font-weight: var(--font-ui-weight); color: var(--ui-text); }
@@ -56,6 +56,46 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
 .ui-toggle-option:hover        { background: var(--ui-bg-surface-hover); color: var(--ui-text); }
 .ui-toggle-option.is-active    { background: var(--ui-bg-surface-selected); color: var(--ui-text); }
 .ui-toggle-option.is-active:hover { background: var(--ui-bg-surface-selected); color: var(--ui-text); }
+
+.ui-icon-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.55rem 0.6rem 0.55rem 0.4rem;
+}
+
+.ui-icon-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  line-height: 0;
+  transition: color 0.1s ease, background 0.1s ease;
+}
+
+.ui-icon-nav-button:hover {
+  color: var(--ui-text);
+  background: var(--btn-tertiary-hover-bg);
+}
+
+.ui-icon-nav-button:focus-visible {
+  outline: 2px solid var(--ui-border-strong);
+  outline-offset: 3px;
+}
+
+.ui-icon-nav-button .ui-icon {
+  display: block;
+  color: currentColor;
+  stroke: currentColor;
+}
 
 .hint-banner {
   display: inline-flex;
@@ -117,7 +157,8 @@ button.solo-message-save,
 button.city-button,
 .observe-results,
 .logs-button,
-.widgets-button {
+.widgets-button,
+.canvas-engine-link {
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -125,8 +166,13 @@ button.city-button,
   border-radius: var(--btn-radius);
   padding: 0;
   background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--type-p-size);
+  font-weight: var(--fw-bold);
   line-height: 1;
   text-decoration: none;
+  pointer-events: auto;
+  cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease, transform 50ms ease;
 }
 
@@ -137,7 +183,8 @@ button.solo-message-save:hover,
 button.city-button:hover,
 .observe-results:hover,
 .logs-button:hover,
-.widgets-button:hover { padding: 0; background: transparent; }
+.widgets-button:hover,
+.canvas-engine-link:hover { padding: 0; background: transparent; }
 
 /* Primary button colors */
 button.begin-button,
@@ -151,7 +198,8 @@ button.begin-button .ui-icon { color: var(--btn-primary-icon); }
 button.city-button,
 .observe-results,
 .logs-button,
-.widgets-button { color: var(--btn-secondary-text); font-weight: var(--btn-font-weight); }
+.widgets-button,
+.canvas-engine-link { color: var(--btn-secondary-text); font-weight: var(--btn-font-weight); }
 
 /* ── Primary ghost (hidden spacer that reserves hover width) ──────── */
 
@@ -260,7 +308,8 @@ button.city-button::before {
   gap: var(--space-sm);
   visibility: hidden;
   white-space: nowrap;
-  padding: var(--btn-secondary-padding-hover);
+  padding-block: var(--btn-secondary-padding-reserve-block);
+  padding-inline: var(--btn-secondary-padding-reserve-inline);
   font: inherit;
   font-weight: inherit;
   line-height: 1;
@@ -277,13 +326,15 @@ button.city-button::before {
   justify-content: center;
   visibility: hidden;
   white-space: nowrap;
-  padding: var(--btn-secondary-padding-hover);
+  padding-block: var(--btn-secondary-padding-reserve-block);
+  padding-inline: var(--btn-secondary-padding-reserve-inline);
   font: inherit;
   font-weight: inherit;
   line-height: 1;
 }
 
-.observe-results__ghost {
+.observe-results__ghost,
+.canvas-engine-link__ghost {
   grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
@@ -293,7 +344,8 @@ button.city-button::before {
   gap: var(--space-sm);
   visibility: hidden;
   white-space: nowrap;
-  padding: var(--btn-secondary-padding-hover);
+  padding-block: var(--btn-secondary-padding-reserve-block);
+  padding-inline: var(--btn-secondary-padding-reserve-inline);
   line-height: 1;
 }
 
@@ -302,7 +354,8 @@ button.city-button::before {
 .city-button__inner,
 .observe-results__inner,
 .logs-button__inner,
-.widgets-button__inner {
+.widgets-button__inner,
+.canvas-engine-link__inner {
   grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
@@ -318,14 +371,15 @@ button.city-button::before {
 button.city-button:hover .city-button__inner,
 .observe-results:hover .observe-results__inner,
 .logs-button:hover .logs-button__inner,
-.widgets-button:hover .widgets-button__inner {
+.widgets-button:hover .widgets-button__inner,
+.canvas-engine-link:hover .canvas-engine-link__inner {
   padding: var(--btn-secondary-padding-hover);
   background: var(--btn-secondary-hover-bg);
 }
 
 /* ── Tertiary button ──────────────────────────────────────────────── */
 
-.system-color {
+.svg-lg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -343,9 +397,9 @@ button.city-button:hover .city-button__inner,
 button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
 .hint-banner-close  { width: 20px !important; height: 20px !important; }
 
-@media (max-width: 767px)                      { .system-color { max-height: 40px; max-width: 40px; min-height: 40px; min-width: 40px; } }
-@media (min-width: 768px) and (max-width: 1024px) { .system-color { max-height: 52px; max-width: 52px; min-height: 52px; min-width: 52px; } }
-@media (min-width: 1025px)                     { .system-color { max-height: 48px; max-width: 48px; min-height: 48px; min-width: 48px; } }
+@media (max-width: 767px)                      { .svg-lg { max-height: 40px; max-width: 40px; min-height: 40px; min-width: 40px; } }
+@media (min-width: 768px) and (max-width: 1024px) { .svg-lg { max-height: 52px; max-width: 52px; min-height: 52px; min-width: 52px; } }
+@media (min-width: 1025px)                     { .svg-lg { max-height: 48px; max-width: 48px; min-height: 48px; min-width: 48px; } }
 
 /* ── Focus visible — WCAG 2.4.7 / 2.4.11 ─────────────────────────── */
 
@@ -360,7 +414,8 @@ button.solo-message-save:focus-visible .solo-message-save__inner {
 
 button.city-button:focus-visible .city-button__inner,
 .logs-button:focus-visible .logs-button__inner,
-.widgets-button:focus-visible .widgets-button__inner {
+.widgets-button:focus-visible .widgets-button__inner,
+.canvas-engine-link:focus-visible .canvas-engine-link__inner {
   outline: 2px solid var(--ui-border-strong);
   outline-offset: 3px;
   border-radius: inherit;

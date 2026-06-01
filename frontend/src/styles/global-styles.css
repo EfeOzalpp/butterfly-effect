@@ -7,7 +7,7 @@
   --fw-bold: 500;
 
   /* h1 is moved in a media query*/
-  --type-h2-size: clamp(1.6rem, 1.25rem + 1.2vw, 3.2rem);
+  --type-h2-size: clamp(1.6rem, 1rem + 1.2vw, 2.4rem);
   --type-h3-size: clamp(1.18rem, 1.1rem + 0.45vw, 1.6rem);
   --type-h4-size: clamp(0.82rem, 0.90rem + 0.3vw, 1rem);
   --type-p-size: 1rem;
@@ -17,11 +17,10 @@
   --type-h3-line: 1.5;
   --type-body-line: 1.4;
   --type-h4-line: 1.6;  
-  --type-tight-line: 1.25;
+  --type-tight-line: 1.5;
 
   /* Main background surfaces */
   --ui-bg-page: #f8f3ef;
-  
   /* Graph */
   --graph-bg: #f8f3ef;
 
@@ -44,7 +43,7 @@
   --ui-drop-shadow: rgba(239, 240, 250, 0.6);
 
   /* Text and misc color */
-  --ui-text-title: linear-gradient(120deg, #b1e5e8 0%, #8eb1d8 55%);
+  --ui-text-title: linear-gradient(120deg, #9ce7eb 0%, #759bc6 55%);
   --ui-questionnaire-title: linear-gradient(120deg, #656f72 0%, #444649 55%);
 
   --ui-text: #1f1f1e;
@@ -118,14 +117,14 @@
 
 :root[data-theme="dark"] {
   /* Main color */
-  --ui-bg-page: #222229;
+  --ui-bg-page: #222329;
   /* Graph */
-  --graph-bg:#222229;
+  --graph-bg:#222329;
 
   /* Main UI surface colors */
   --ui-bg-surface: #4b4845;
   --ui-bg-surface-glass: rgba(44, 44, 44, 0.7);
-  --ui-bg-surface-hover: rgba(113, 112, 108, 0.518);
+  --ui-bg-surface-hover: rgb(88, 86, 84);
   --ui-bg-surface-selected: rgba(109, 151, 108, 0.85);
 
   /* Text input surfaces */
@@ -207,6 +206,8 @@
     --btn-primary-padding-reserve-inline: 1.1rem;
     --btn-secondary-padding: 0.55rem 0.72rem;
     --btn-secondary-padding-hover: 0.47rem 0.82rem;
+    --btn-secondary-padding-reserve-block: 0.55rem;
+    --btn-secondary-padding-reserve-inline: 0.82rem;
     --input-padding: 0.72rem 0.85rem;
     --input-padding-hover: 0.68rem 0.95rem;
 
@@ -229,13 +230,15 @@
     --btn-primary-padding-reserve-inline: 1.45rem;
     --btn-secondary-padding: 0.75rem 0.9rem;
     --btn-secondary-padding-hover: 0.7rem 1.15rem;
+    --btn-secondary-padding-reserve-block: 0.75rem;
+    --btn-secondary-padding-reserve-inline: 1.15rem;
     --input-padding: 0.9rem 1rem;
     --input-padding-hover: 0.75rem 1rem;
 
     /* moved here for font size on larger devices */
     --type-small-size: 0.94rem;
-    --type-label-size: 0.9rem;
-    --type-h1-size: clamp(3.2rem, 2.4rem + 3.2vw, 7.2rem);
+    --type-label-size: 0.98rem;
+    --type-h1-size: clamp(2.4rem, 1.6rem + 2.8vw, 7.2rem);
   }
   :root[data-theme="dark"] {
     --ui-questionnaire-title: linear-gradient(150deg, rgb(245, 245, 245), rgba(255, 255, 255, 0.86));
@@ -244,43 +247,8 @@
 }
 
 @media (max-width: 767px) {
-  .ui-icon {
-    width: 1.2rem !important;
-    height: 1.2rem !important;
-  }
-  .ui-close {
-    width: 1rem !important;
-    height: 1rem !important;
-  }
-  .role-check-icon,
-  .switch-check-icon {
-    width: 16px !important;
-    height: 16px !important;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1024px) {
-  .ui-icon {
-    width: 18px !important;
-    height: 18px !important;
-  }
-  .ui-close {
-    width: 1rem !important;
-    height: 1rem !important;
-  }
-  .role-check-icon,
-  .switch-check-icon {
-    width: 18px !important;
-    height: 18px !important;
-  }
-}
-
-@media (min-width: 1025px) {
-  .ui-icon {
-    width: 1.2rem !important;
-    height: 1.2rem !important;
-  }
-  .system-color svg.ui-icon {
+  .svg-lg svg.ui-icon,
+  .canvas-info__slider-button svg.ui-icon {
     width: 1.6rem !important;
     height: 1.6rem !important;
   }
@@ -292,7 +260,47 @@
     width: 1.3em !important;
     height: 1.3em !important;
   }
-  .role-check-icon, .switch-check-icon, .role-indicator-spacer {
+  .ui-icon, .role-check-icon, .switch-check-icon, .role-indicator-spacer {
+    width: 1.2em !important;
+    height: 1.2em !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .svg-lg svg.ui-icon,
+  .canvas-info__slider-button svg.ui-icon {
+    width: 1.6rem !important;
+    height: 1.6rem !important;
+  }
+  .ui-close {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+  .trigger-chevron svg.ui-icon {
+    width: 1.3em !important;
+    height: 1.3em !important;
+  }
+  .ui-icon, .role-check-icon, .switch-check-icon, .role-indicator-spacer {
+    width: 1.2em !important;
+    height: 1.2em !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .svg-lg svg.ui-icon,
+  .canvas-info__slider-button svg.ui-icon {
+    width: 1.6rem !important;
+    height: 1.6rem !important;
+  }
+  .ui-close {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+  .trigger-chevron svg.ui-icon {
+    width: 1.3em !important;
+    height: 1.3em !important;
+  }
+  .ui-icon, .role-check-icon, .switch-check-icon, .role-indicator-spacer {
     width: 1.2em !important;
     height: 1.2em !important;
   }
@@ -354,6 +362,14 @@ html[data-theme] body {
   background: var(--ui-bg-page);
 }
 
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
 ::selection {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-text);
@@ -396,9 +412,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 #decoy-container,
-#decoy-container canvas,
-.radial-background,
-.edge-cue {
+#decoy-container canvas {
   pointer-events: none !important;
 }
 
