@@ -11,6 +11,12 @@ Draws the static scene base: base color, gradients, anchors, and cached backgrou
 `atmosphere/`
 Draws air-like effects that sit behind scene objects right now: stars and fog washes.
 
+`ambient-particles/`
+Draws scene-level animated particles such as dust, pollen, or wind flecks.
+
+`foliage/`
+Draws optional static plant-detail layers from scene rules.
+
 `light/`
 Draws scene-wide light overlays. Per-shape light response still belongs inside the shape color pass.
 

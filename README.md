@@ -1,69 +1,89 @@
 # Butterfly Effect
 
-A production React/TypeScript platform where sustainability survey responses shape a live Canvas 2D scene and a shared WebGL results view.
+A runtime-heavy sustainability app where survey answers shape an animated Canvas2D world and a shared WebGL results graph.
 
 [Live site](https://butterflyeff3ct.online/)
 
-## What This Is
+## What The Product Does
 
-Butterfly Effect turns survey input into two connected visual systems:
+Butterfly Effect lets people answer a short sustainability questionnaire, then turns those responses into visual feedback:
 
-- an onboarding canvas scene where answers change the environment in real time
-- a shared results view powered by Sanity data and a WebGL graph runtime
+- the onboarding canvas reacts to answer averages while the questionnaire is in progress
+- completed submissions are persisted through a backend write boundary
+- the shared graph view renders community results as interactive Three.js sprites
+- logs and widgets expose aggregate scores, rankings, and question-level trends
 
-The app is product-facing and runtime-heavy. The Canvas 2D layer is structured as an engine with scene rules, responsive grid placement, shape drawers, render caches, particles, fog, lighting, lifecycle controls, and a dedicated render loop.
+The product goal is simple: make sustainability data feel immediate, visual, and inspectable without turning the interface into a dashboard-only experience.
 
-## Stack
+## Why The Architecture Exists
 
-| Area | Tools |
+The app has two rendering jobs with different constraints.
+
+The onboarding experience needs an authored animated world. It uses a custom Canvas2D engine with scene rules, placement rules, particle modifiers, fog, lighting, and shape drawers. This keeps the visual system editable while avoiding hardcoded one-off canvas scenes.
+
+The results experience needs many crisp, animated representations of Sanity submissions. It uses a sprite pipeline over Three.js/WebGL. The pipeline quantizes visual inputs, reuses cached textures, budgets quality upgrades, and caps visible rows so desktop and mobile stay within memory limits.
+
+React owns product state and UI transitions. The canvas engine and graph runtime receive explicit signals and prepared scene data instead of reading app intent directly.
+
+## System Overview
+
+```txt
+React app state
+  -> onboarding, navigation, preferences, session state
+
+Canvas engine
+  -> scene rules
+  -> field composition
+  -> render loop
+  -> Canvas2D shape drawers
+
+Graph runtime
+  -> Sanity rows
+  -> visible row budget
+  -> sprite texture cache
+  -> Three.js scene
+
+Backend/data
+  -> Supabase Edge Functions
+  -> Sanity reads/subscriptions
+  -> validation and mock fallback paths
+```
+
+## Key Folders To Inspect
+
+| Path | What It Owns |
 | --- | --- |
-| App | React, TypeScript, Vite |
-| Rendering | Canvas 2D, Three.js/WebGL |
-| Data and backend | Sanity, Supabase Edge Functions, PostgreSQL |
-| Production tooling | Sentry, PostHog, GitHub Actions, ESLint |
+| `frontend/src/app` | App providers, session state, runtime signals, preferences |
+| `frontend/src/onboarding` | Role flow, questionnaire flow, Canvas Engine information section |
+| `frontend/src/canvas-engine` | Canvas runtime, scene rules, placement, render passes, shape drawers |
+| `frontend/src/canvas-engine/scene-rules` | Authored backgrounds, padding, placement, fog, spotlight slides, render-cache policy |
+| `frontend/src/canvas-engine/runtime/engine/loop.ts` | Main Canvas2D frame pipeline |
+| `frontend/src/graph-runtime` | Results graph, dot graph UI, sprite runtime, visible-row shaping |
+| `frontend/src/graph-runtime/sprites` | Sprite texture generation, quality policy, cache/runtime internals |
+| `frontend/src/navigation/bottom/widgets` | Aggregate result widgets and bar graphs |
+| `frontend/src/services/sanity` | Sanity reads, subscriptions, request reuse, fallback behavior |
+| `supabase/functions` | Edge Function write path and payload validation |
 
-## Architecture
+## Engineering Highlights
 
-| Area | Responsibility |
-| --- | --- |
-| `frontend/src/app` | App state, session persistence, UI mode, survey data, and shared context providers |
-| `frontend/src/canvas-engine` | Canvas scene runtime, layout rules, placement, shape drawing, modifiers, particles, and animation loop |
-| `frontend/src/onboarding` | Role/section selection and questionnaire flow |
-| `frontend/src/services/sanity` | Sanity reads, live subscription, polling fallback, and mock-data fallback |
-| `frontend/src/graph-runtime` | Shared results visualization, scoring, sprite textures, WebGL scene, and interaction |
-| `supabase/functions` | Backend write boundary for saving responses without exposing the Sanity write token |
+- Built a custom Canvas2D scene engine with multi-canvas hosts, scene profiles, responsive grid projection, authored placement presets, and reusable shape drawers.
+- Added scene-rule contracts for backgrounds, canvas padding, fog, placement, spotlight slides, render cache policy, foliage, and ambient particles.
+- Implemented procedural zone placement so authored communities can spawn multiple shape types around shared anchors while respecting horizon bands and occupancy.
+- Built a Three.js sprite pipeline with quantized visual inputs, texture caching, quality budgets, visible-row limits, and prioritized personalized sprites.
+- Reduced duplicate rendering work by removing stale frozen texture paths and relying on active particle starts plus runtime texture scheduling.
+- Added production data boundaries with Sanity reads, Supabase Edge Function writes, validation, mock fallback, Sentry, and PostHog.
+- Kept performance work tied to real stress cases: mobile sprite ceilings, repeated filter switching, zooming, local session recovery, and jitter/flicker audits.
 
-## Engineering Notes
+## Tradeoffs And Decisions
 
-- Custom Canvas 2D scene engine with responsive placement and deterministic shape variation.
-- `liveAvg` drives both immediate canvas feedback and scene composition.
-- Runtime render loop uses cached ordering and scratch structures to reduce frame-loop allocation.
-- Canvas DPR is capped for the heavy onboarding scene to reduce pixel workload on high-density displays.
-- Sanity integration uses live updates with polling and mock-data fallbacks.
-- Supabase Edge Function keeps the Sanity write token out of the browser and validates submitted payloads.
-- Sentry and PostHog provide production error reporting and product analytics.
-- TypeScript, ESLint, and Vite production builds are part of the local verification flow.
+- Canvas2D remains the shape authoring layer because the project depends on direct procedural drawing, small visual variations, and a p-like drawing facade.
+- Three.js/WebGL is used where many textured sprites need transforms, zooming, and graph interaction.
+- The engine uses explicit scene rules instead of embedding placement and atmosphere logic inside shape files.
+- Spotlight slides are authored as presets that compile into normal background, placement, padding, and particle variants. The runtime does not need to understand slides as a product concept.
+- Placement communities currently support tile-based radius controls. `radius.shape: "rect"` exists for authored bands; the default ellipse mode remains available for softer clusters.
+- The graph runtime caps visible rows rather than rendering every submission. New rows can enter the visible set without forcing all historical rows through the sprite pipeline.
 
-## Useful Paths
-
-- [App provider](./frontend/src/app/app-provider.tsx)
-- [Canvas host bridge](./frontend/src/canvas-engine/EngineHost.tsx)
-- [Canvas runtime](./frontend/src/canvas-engine/runtime/index.ts)
-- [Canvas render loop](./frontend/src/canvas-engine/runtime/engine/loop.ts)
-- [Scene composition](./frontend/src/canvas-engine/scene-logic)
-- [Graph runtime](./frontend/src/graph-runtime)
-- [Sanity service layer](./frontend/src/services/sanity)
-- [Supabase write functions](./supabase)
-
-## Reference Docs
-
-- [Canvas engine](./documentation/CANVAS_ENGINE.md)
-- [Graph runtime](./documentation/GRAPH_RUNTIME.md)
-- [App state](./documentation/APP_STATE.md)
-- [Data flow](./documentation/DATA_FLOW.md)
-- [User flow](./documentation/USER_FLOW.md)
-
-## Run Locally
+## Setup
 
 ```bash
 cd frontend
@@ -71,10 +91,22 @@ npm install
 npm run dev
 ```
 
-## Verify
+## Verification
 
 ```bash
+cd frontend
 npm run typecheck
 npm run lint
 npm run build
 ```
+
+## Reference Docs
+
+- [Canvas runtime](./frontend/src/canvas-engine/runtime/README.md)
+- [Canvas shape drawers](./frontend/src/canvas-engine/shapes/README.md)
+- [Canvas modifiers](./frontend/src/canvas-engine/modifiers/README.md)
+- [Scene rule backgrounds](./frontend/src/canvas-engine/scene-rules/backgrounds/README.md)
+- [Scene rule placement](./frontend/src/canvas-engine/scene-rules/placement-rules/README.md)
+- [Spotlight scene rules](./frontend/src/canvas-engine/scene-rules/spotlight/README.md)
+- [Graph runtime](./frontend/src/graph-runtime/README.md)
+- [Dot graph](./frontend/src/graph-runtime/dotgraph/README.md)
