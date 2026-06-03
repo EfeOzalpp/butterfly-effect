@@ -7,7 +7,10 @@ render layers that combine those systems.
 Main flow:
 
 ```txt
-dot-graph.tsx
+data-boundary.tsx
+  -> GraphDataProvider
+  -> canvas-host.tsx
+  -> scene.tsx
   -> scene/useDotGraphSceneState.ts
   -> interaction/*
   -> components/ShapesLayer.tsx
@@ -18,6 +21,19 @@ dot-graph.tsx
 ## Folder Map
 
 ```txt
+data-boundary.tsx
+  Data adapter for this graph. It owns visible-row limits, live-row windowing,
+  personal-row inclusion, and the GraphDataProvider boundary before the Three.js
+  canvas sees data.
+
+canvas-host.tsx
+  R3F Canvas and WebGL lifecycle. It owns renderer options, mount/unmount gates,
+  context loss handling, DPR, and GPU cleanup.
+
+scene.tsx
+  Scene composition. It connects shared graph data, scene hooks, camera hooks,
+  interaction hooks, and render layers.
+
 camera/
   Orbit, drag, zoom, responsive tooltip offset, and camera reset behavior.
 
@@ -40,9 +56,23 @@ utils/
   Math helpers for point generation and small scene calculations.
 ```
 
-`dot-graph.tsx` is the composition root. It wires app state into scene hooks,
-passes explicit props to render layers, and keeps dataset switches from leaving
-stale hover/camera/texture state behind.
+`scene.tsx` is the scene composition root. It wires shared graph data
+into scene hooks, passes explicit props to render layers, and keeps dataset
+switches from leaving stale hover/camera/texture state behind.
+
+`data-boundary.tsx` sits above it so row-budget policy does not leak into
+the page shell or the WebGL host.
+
+When live Sanity rows exceed the desktop/mobile cap, new row ids enter the
+visible window at the front and the tail of the current visible list is evicted.
+Existing row id updates are treated as updates, not new dots. If the personal
+row must be reserved outside the cap, it is inserted at the tail so the newest
+Sanity row keeps the first visible slot.
+
+Placement order is separate from data order. `data-boundary.tsx` attaches a
+private dot slot index to each visible row. Existing row ids keep their slot
+while visible; incoming row ids receive the next available stable slot, or the
+slot freed by the evicted tail row at max capacity.
 
 ## Sprite Boundary
 
@@ -132,8 +162,9 @@ at the raw dot center for one frame before moving to the resolved hitbox center.
 
 ## Camera And Dataset Switches
 
-The first camera radius is derived from graph scale and shape count. Dataset
-switches use a `datasetKey` so graph picker changes reset the right scene state:
+The first camera radius is derived from graph scale and shape count. Graph view
+switches use a `graphViewKey` so graph picker changes reset the right scene
+state:
 
 ```txt
 bump sprite generation
@@ -144,6 +175,21 @@ reset zoom target
 
 This prevents stale camera zoom targets, stale hover anchors, and obsolete
 texture work from leaking between graph views.
+
+Live Sanity updates are intentionally not camera reset events. The first zoom
+target is computed from the row count when a graph view opens or the graph
+picker changes section; later row appends should update dots without snapping
+the user's current zoom.
+
+## Dot Placement
+
+Dot positions use an even seeded sphere distribution. The current baseline is
+intentionally simple: every dot starts from the same spherical spacing algorithm,
+then render layers handle sprite scale, hitboxes, hover, and personalization.
+
+The personalized path clears the center and first-open camera corridor after
+base sphere placement. Tune spherical spacing in `utils/positions.ts`; tune
+scene spread and seed choices in `scene/useDotGraphSceneState.ts`.
 
 ## Personalized Path
 

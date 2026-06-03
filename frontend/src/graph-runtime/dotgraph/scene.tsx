@@ -1,4 +1,4 @@
-// src/graph-runtime/dotgraph/dot-graph.tsx
+// src/graph-runtime/dotgraph/scene.tsx
 
 // Composition root for DotGraph data, hover state, personalization, and rendered layers.
 
@@ -39,16 +39,6 @@ export default function DotGraph() {
     absScoreById: absScoreByIdMap,
   } = useSharedGraphData();
 
-  const datasetKey = useMemo(
-    () => [
-      section,
-      safeData.length,
-      safeData[0]?._id ?? '',
-      safeData[safeData.length - 1]?._id ?? '',
-    ].join('|'),
-    [section, safeData]
-  );
-
   const showCompleteUI = useObserverDelay(observerMode, 2000);
 
   const personalizationGate = usePersonalizationGate({
@@ -64,17 +54,33 @@ export default function DotGraph() {
     setPersonalPanelOpen(personalizationGate.personalOpen);
   }, [personalizationGate.personalOpen, setPersonalPanelOpen]);
 
+  const isPersonalizedGraphView =
+    personalizationGate.hasPersonalizedInDataset &&
+    personalizationGate.shouldShowPersonalized;
+
+  const graphViewKey = useMemo(
+    () => [
+      section,
+      isPersonalizedGraphView
+        ? personalizationGate.personalizedEntryId ?? 'personalized'
+        : 'general',
+    ].join('|'),
+    [
+      isPersonalizedGraphView,
+      personalizationGate.personalizedEntryId,
+      section,
+    ]
+  );
+
   const scene = useDotGraphSceneState({
     safeData,
     personalizedEntryId: personalizationGate.personalizedEntryId,
     sectionKey: section,
-    showPersonalized:
-      personalizationGate.hasPersonalizedInDataset &&
-      personalizationGate.shouldShowPersonalized,
+    showPersonalized: isPersonalizedGraphView,
     darkMode,
     wantsSkew: personalizationGate.wantsSkew,
     wantsSoloSkew: mode === 'absolute' && personalizationGate.wantsSkew,
-    zoomResetKey: datasetKey,
+    zoomResetKey: graphViewKey,
   });
   // Pull the scene contract out of the hook result so layer props stay explicit.
   const {
@@ -113,6 +119,7 @@ export default function DotGraph() {
     fullData: fullSurveyData,
     shouldShowPersonalized: personalizationGate.shouldShowPersonalized,
     statsLoading: loading,
+    darkMode,
   });
 
   const calcValueForAvg = useCallback(
@@ -137,7 +144,7 @@ export default function DotGraph() {
     bumpGeneration();
     resetQueue();
     onHoverEnd();
-  }, [datasetKey, onHoverEnd]);
+  }, [graphViewKey, onHoverEnd]);
 
   // Observer mode can briefly synthesize a hover so the graph explains itself without real pointer input.
   const { spotlightActiveRef } = useObserverSpotlight({
