@@ -72,8 +72,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.65, y: 0.2},
         radius: { tiles: 6, xDistort: 3, yTiles: 0.6 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(0, 1, 1), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -82,7 +82,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 1, y: 0.35},
         radius: { tiles: 6, xDistort: 5, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
+          clouds: { count: count(2, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
         },
       },
       {
@@ -91,8 +91,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.8, y: 0.55},
         radius: { tiles: 6, xDistort: 2, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -101,8 +101,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.65, y: 0.9},
         radius: { tiles: 6, xDistort: 6, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 1, 4), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(0, 2, 4), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -111,8 +111,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.95, y: 0.75},
         radius: { tiles: 6, xDistort: 6, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(0, 1, 3), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -121,8 +121,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.2, y: 0.8 },
         radius: { tiles: 6, xDistort: 4, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 2, 2), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(3, 2, 3), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(2, 1, 2), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -131,7 +131,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0, y: 0.6 },
         radius: { tiles: 3, xDistort: 4, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 2, 2), quota: START_SHAPE_QUOTAS.clouds },
+          clouds: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
         },
       },
       {
@@ -140,7 +140,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.1, y: 0.5 },
         radius: { tiles: 3, xDistort: 4, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 2, 2), quota: START_SHAPE_QUOTAS.clouds },
+          clouds: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.clouds },
         },
       },
       {
@@ -149,8 +149,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.5, y: 0.8 },
         radius: { tiles: 3, xDistort: 4, yTiles: 0.6 },
         shapes: {
-          clouds: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 2, 2), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(0, 2, 3), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -159,8 +159,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.35, y: 0.6 },
         radius: { tiles: 3, xDistort: 3, yTiles: 0.5 },
         shapes: {
-          clouds: { count: count(1, 2, 1), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(1, 2, 2), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(0, 1, 1), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(0, 1, 2), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {
@@ -169,7 +169,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.3, y: 0.9 },
         radius: { tiles: 3, xDistort: 3, yTiles: 0.5 },
         shapes: {
-          clouds: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.clouds },
+          clouds: { count: count(0, 2, 3), quota: START_SHAPE_QUOTAS.clouds },
         },
       },
       // Ground
@@ -179,10 +179,10 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.4, y: 0.0 },
         radius: { tiles: 8, xDistort: 6, yDistort: 0.3 },
         shapes: {
-          house: { count: count(1, 4, 3), quota: START_SHAPE_QUOTAS.house },
+          house: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.house },
           villa: { count: count(2, 3, 5), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 8), quota: START_SHAPE_QUOTAS.trees },
-          car: { count: count(1, 1, 4), quota: START_SHAPE_QUOTAS.car },
+          trees: { count: count(1, 6, 8), quota: START_SHAPE_QUOTAS.trees },
+          car: { count: count(1, 2, 4), quota: START_SHAPE_QUOTAS.car },
         },
       },
       {
@@ -200,7 +200,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 1, y: 1 },
         radius: { tiles: 4, xDistort: 4, yDistort: 2 },
         shapes: {
-          trees: { count: count(1, 6, 5), quota: START_SHAPE_QUOTAS.trees },
+          trees: { count: count(1, 4, 5), quota: START_SHAPE_QUOTAS.trees },
         },
       },
       {
@@ -209,7 +209,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.8, y: 0.4 },
         radius: { tiles: 4, xDistort: 4, yDistort: 2 },
         shapes: {
-          trees: { count: count(1, 6, 4), quota: START_SHAPE_QUOTAS.trees },
+          trees: { count: count(1, 3, 4), quota: START_SHAPE_QUOTAS.trees },
         },
       },
       {
@@ -218,7 +218,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.8, y: 0 },
         radius: { tiles: 4, xDistort: 4, yDistort: 2 },
         shapes: {
-          trees: { count: count(1, 6, 5), quota: START_SHAPE_QUOTAS.trees },
+          trees: { count: count(1, 4, 5), quota: START_SHAPE_QUOTAS.trees },
         },
       },
       {
@@ -227,7 +227,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.9, y: 0.2 },
         radius: { tiles: 4, xDistort: 3, yDistort: 2 },
         shapes: {
-          trees: { count: count(1, 6, 6), quota: START_SHAPE_QUOTAS.trees },
+          trees: { count: count(1, 4, 6), quota: START_SHAPE_QUOTAS.trees },
           clouds: { count: count(1, 1, 1), quota: FLAT_QUOTA },
         },
       },
@@ -237,12 +237,12 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.75, y: 0.25 },
         radius: { tiles: 6, xDistort: 4, yDistort: 0.3 },
         shapes: {
-          villa: { count: count(1, 3, 6), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 6), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 4, 6), quota: START_SHAPE_QUOTAS.villa },
+          trees: { count: count(1, 5, 6), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 3), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
           power: { count: count(1, 1, 2), quota: FLAT_QUOTA },
-          clouds: { count: count(1, 1, 1), quota: FLAT_QUOTA }
+          clouds: { count: count(0, 1, 1), quota: FLAT_QUOTA }
         }
       },
       {
@@ -251,9 +251,9 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.65, y: 0 },
         radius: { tiles: 6, xDistort: 5, yDistort: 0.4 },
         shapes: {
-          villa: { count: count(1, 3, 1), quota: START_SHAPE_QUOTAS.villa },
-          house: { count: count(1, 3, 2), quota: START_SHAPE_QUOTAS.house },
-          trees: { count: count(1, 12, 8), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.villa },
+          house: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.house },
+          trees: { count: count(1, 6, 8), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 3), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
         }
@@ -264,9 +264,9 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.9, y: 0 },
         radius: { tiles: 6, xDistort: 3, yDistort: 0.2 },
         shapes: {
-          villa: { count: count(1, 3, 1), quota: START_SHAPE_QUOTAS.villa },
-          house: { count: count(1, 3, 3), quota: START_SHAPE_QUOTAS.house },
-          trees: { count: count(1, 12, 8), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.villa },
+          house: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.house },
+          trees: { count: count(1, 6, 8), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 3), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
           power: { count: count(1, 1, 2), quota: FLAT_QUOTA },
@@ -278,8 +278,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.85, y: 0.75 },
         radius: { tiles: 6, xDistort: 4, yDistort: 0.3 },
         shapes: {
-          villa: { count: count(1, 3, 3), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 6), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.villa },
+          trees: { count: count(1, 5, 6), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
           snow: { count: count(1, 1, 1), quota: FLAT_QUOTA },
@@ -291,12 +291,12 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.6, y: 0.55 },
         radius: { tiles: 8, xDistort: 5, yDistort: 0.4 },
         shapes: {
-          villa: { count: count(1, 3, 3), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 8), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.villa },
+          trees: { count: count(1, 6, 8), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.car },
           power: { count: count(1, 1, 1), quota: FLAT_QUOTA },
           carFactory: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.carFactory },
-          house: { count: count(1, 3, 1), quota: START_SHAPE_QUOTAS.house },
+          house: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.house },
         }
       },
       {
@@ -305,11 +305,11 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.48, y: 0.3 },
         radius: { tiles: 4, xDistort: 1.55, yDistort: 0.85 },
         shapes: {
-          villa: { count: count(1, 3, 3), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 3), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.villa },
+          trees: { count: count(1, 3, 4), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.car },
           power: { count: count(1, 1, 1), quota: FLAT_QUOTA },
-          carFactory: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.carFactory }
+          carFactory: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.carFactory },
         },
       },
       {
@@ -318,13 +318,34 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.45, y: 0.75 },
         radius: { tiles: 8, xDistort: 6, yDistort: 0.3 },
         shapes: {
-          villa: { count: count(1, 3, 2), quota: START_SHAPE_QUOTAS.villa },
-          house: { count: count(1, 3, 1), quota: START_SHAPE_QUOTAS.house },
-          trees: { count: count(1, 12, 4), quota: START_SHAPE_QUOTAS.trees },
+          villa: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.villa },
+          house: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.house },
+          trees: { count: count(1, 3, 4), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.bus },
-          power: { count: count(1, 1, 2), quota: FLAT_QUOTA },
+          power: { count: count(1, 1, 1), quota: FLAT_QUOTA },
           carFactory: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.carFactory }
+        }
+      },
+      {
+        id: "mid-close-community-2",
+        band: "ground",
+        center: { x: 0.6, y: 0.82 },
+        radius: { tiles: 8, xDistort: 6, yDistort: 0.3 },
+        shapes: {
+          trees: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.trees },
+          bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
+        }
+      },
+      {
+        id: "mid-edge-patch",
+        band: "ground",
+        center: { x: 0.7, y: 0.65 },
+        radius: { tiles: 8, xDistort: 6, yDistort: 0.3 },
+        shapes: {
+          trees: { count: count(1, 3, 4), quota: START_SHAPE_QUOTAS.trees },
+          car: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.car },
+          bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
         }
       },
       {
@@ -342,8 +363,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0, y: 0.8 },
         radius: { tiles: 5, xDistort: 6, yDistort: 0.3 },
         shapes: {
-          trees: { count: count(1, 12, 4), quota: START_SHAPE_QUOTAS.trees },
-          clouds: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.clouds },
+          trees: { count: count(1, 3, 4), quota: START_SHAPE_QUOTAS.trees },
+          clouds: { count: count(0, 1, 1), quota: START_SHAPE_QUOTAS.clouds },
         }
       },
       {
@@ -352,10 +373,10 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.2, y: 0.7 },
         radius: { tiles: 5, xDistort: 1, yDistort: 0.2 },
         shapes: {
-          sea: { count: count(1, 3, 1), quota: FLAT_QUOTA },
-          house: { count: count(1, 3, 1), quota: START_SHAPE_QUOTAS.house },
-          villa: { count: count(1, 3, 3), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 4), quota: START_SHAPE_QUOTAS.trees },
+          sea: { count: count(1, 1, 1), quota: FLAT_QUOTA },
+          house: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.house },
+          villa: { count: count(1, 2, 3), quota: START_SHAPE_QUOTAS.villa },
+          trees: { count: count(1, 3, 4), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
         }
@@ -366,11 +387,11 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.3, y: 0.4 },
         radius: { tiles: 5, xDistort: 2, yDistort: 0.3 },
         shapes: {
-          sea: { count: count(1, 3, 2), quota: FLAT_QUOTA },
-          carFactory: { count: count(1, 3, 2), quota: FLAT_QUOTA },
-          house: { count: count(1, 3, 1), quota: START_SHAPE_QUOTAS.house },
-          villa: { count: count(1, 3, 2), quota: START_SHAPE_QUOTAS.villa },
-          trees: { count: count(1, 12, 6), quota: START_SHAPE_QUOTAS.trees },
+          sea: { count: count(1, 1, 2), quota: FLAT_QUOTA },
+          carFactory: { count: count(1, 1, 1), quota: FLAT_QUOTA },
+          house: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.house },
+          villa: { count: count(1, 1, 2), quota: START_SHAPE_QUOTAS.villa },
+          trees: { count: count(1, 5, 6), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
         }
@@ -383,7 +404,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         shapes: {
           villa: { count: count(1, 3, 5), quota: START_SHAPE_QUOTAS.villa },
           house: { count: count(1, 3, 5), quota: START_SHAPE_QUOTAS.house },
-          trees: { count: count(1, 12, 8), quota: START_SHAPE_QUOTAS.trees },
+          trees: { count: count(1, 6, 8), quota: START_SHAPE_QUOTAS.trees },
           car: { count: count(1, 1, 3), quota: START_SHAPE_QUOTAS.car },
           bus: { count: count(1, 1, 1), quota: START_SHAPE_QUOTAS.bus },
           power: { count: count(1, 1, 3), quota: FLAT_QUOTA }
