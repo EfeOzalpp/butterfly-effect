@@ -84,7 +84,7 @@ function notify() {
 }
 
 function maxJobsPerIdleSlice() {
-  return isTouchDevice ? 1 : 3;
+  return isTouchDevice ? 1 : 2;
 }
 
 function minTimeRemainingMs() {
@@ -127,6 +127,7 @@ function step(deadline?: IdleDeadline) {
       notify();
     }
     done++;
+    if (job.background) break;
   }
 
   if (Q.length) {

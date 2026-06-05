@@ -1,7 +1,8 @@
 // src/graph-runtime/dotgraph/utils/positions.ts
 // Product-ready 3D point layout (1 .. 5000+):
-// - Even angular coverage via Spherical Fibonacci
-// - Uniform-in-ball radial ramp, with extra inward bias for small N
+// - Progressive angular coverage: every prefix still reads as a sphere
+// - Radius grows by slot index so small counts form a small sphere and later
+//   rows expand it outward
 // - Fast local relaxation using a spatial grid (O(n))
 // - Deterministic (seed), no console logs
 
@@ -30,10 +31,27 @@ export interface GeneratePositionsOptions extends Rotation {
 }
 
 const TAU = Math.PI * 2;
+const OUTER_CLUSTER_MIN_CAPACITY = 90;
+const OUTER_CLUSTER_FULL_CAPACITY = 300;
+const OUTER_CLUSTER_COUNT = 9;
 
 // Helpers
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+const smoothstep = (t: number): number => {
+  const x = clamp01(t);
+  return x * x * (3 - 2 * x);
+};
+
+const hash01 = (seed: number): number => {
+  const x = Math.sin(seed * 12.9898) * 43758.5453123;
+  return x - Math.floor(x);
+};
+
+const normalizeVec = (v: Vec3): Vec3 => {
+  const len = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / len, v[1] / len, v[2] / len];
+};
 
 const rotateVec = (v: Vec3, rot?: Rotation): Vec3 => {
   const [x0, y0, z0] = v;
@@ -62,24 +80,24 @@ const rotateVec = (v: Vec3, rot?: Rotation): Vec3 => {
   return [x3, y3, z3];
 };
 
-const makePermutation = (n: number, rand: () => number): number[] => {
-  const a = Array.from({ length: n }, (_, i) => i);
-  for (let i = n - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+const radicalInverseVdc = (index: number): number => {
+  let bits = index >>> 0;
+  bits = (bits << 16) | (bits >>> 16);
+  bits = ((bits & 0x55555555) << 1) | ((bits & 0xaaaaaaaa) >>> 1);
+  bits = ((bits & 0x33333333) << 2) | ((bits & 0xcccccccc) >>> 2);
+  bits = ((bits & 0x0f0f0f0f) << 4) | ((bits & 0xf0f0f0f0) >>> 4);
+  bits = ((bits & 0x00ff00ff) << 8) | ((bits & 0xff00ff00) >>> 8);
+  return (bits >>> 0) * 2.3283064365386963e-10;
 };
 
-const sphericalFibonacci = (n: number, rot?: Rotation): Vec3[] => {
+const progressiveSphereDirections = (n: number, rot?: Rotation): Vec3[] => {
   if (n <= 0) return [];
   const dirs = new Array<Vec3>(n);
   const golden = (1 + Math.sqrt(5)) / 2;
   const ga = TAU / (golden * golden);
 
   for (let i = 0; i < n; i++) {
-    const t = (i + 0.5) / n;   // 0..1
-    const y = 1 - 2 * t;       // -1..1
+    const y = 1 - 2 * radicalInverseVdc(i + 1);
     const r = Math.sqrt(Math.max(0, 1 - y * y));
     const theta = ga * i;
 
@@ -127,6 +145,87 @@ const cellIndex = (p: Vec3, cs: number): [number, number, number] => [
   Math.floor(p[2] / cs),
 ];
 
+function nearestDirectionIndex(direction: Vec3, centers: Vec3[]): number {
+  let bestIndex = 0;
+  let bestDot = -Infinity;
+  for (let i = 0; i < centers.length; i += 1) {
+    const center = centers[i];
+    const dot =
+      direction[0] * center[0] +
+      direction[1] * center[1] +
+      direction[2] * center[2];
+    if (dot > bestDot) {
+      bestDot = dot;
+      bestIndex = i;
+    }
+  }
+  return bestIndex;
+}
+
+function organicAttractor(
+  direction: Vec3,
+  centers: Vec3[],
+  seed: number,
+  index: number
+): { direction: Vec3; strength: number; regionIndex: number } {
+  if (!centers.length) return { direction, strength: 0, regionIndex: 0 };
+
+  const regionIndex = nearestDirectionIndex(direction, centers);
+  let wx = direction[0] * 0.18;
+  let wy = direction[1] * 0.18;
+  let wz = direction[2] * 0.18;
+  let weightTotal = 0.18;
+
+  for (let i = 0; i < centers.length; i += 1) {
+    const center = centers[i];
+    const dot =
+      direction[0] * center[0] +
+      direction[1] * center[1] +
+      direction[2] * center[2];
+    const threshold = 0.08 + hash01(seed + i * 31.7) * 0.24;
+    const width = 0.56 + hash01(seed + i * 43.3) * 0.22;
+    const raw = smoothstep((dot - threshold) / width);
+    if (raw <= 0) continue;
+
+    const lobeWeight = Math.pow(raw, 1.35 + hash01(seed + i * 59.1) * 1.2);
+    wx += center[0] * lobeWeight;
+    wy += center[1] * lobeWeight;
+    wz += center[2] * lobeWeight;
+    weightTotal += lobeWeight;
+  }
+
+  const blended = normalizeVec([wx / weightTotal, wy / weightTotal, wz / weightTotal]);
+  const [tangentX, tangentY] = tangentBasis(blended);
+  const flowAngle =
+    hash01(seed + index * 17.13) * TAU +
+    hash01(seed + regionIndex * 113.9) * TAU;
+  const flowRadius =
+    (hash01(seed + index * 23.71) - 0.5) *
+    (0.18 + hash01(seed + regionIndex * 97.5) * 0.18);
+
+  const warped = normalizeVec([
+    blended[0] + tangentX[0] * Math.cos(flowAngle) * flowRadius + tangentY[0] * Math.sin(flowAngle) * flowRadius,
+    blended[1] + tangentX[1] * Math.cos(flowAngle) * flowRadius + tangentY[1] * Math.sin(flowAngle) * flowRadius,
+    blended[2] + tangentX[2] * Math.cos(flowAngle) * flowRadius + tangentY[2] * Math.sin(flowAngle) * flowRadius,
+  ]);
+
+  return {
+    direction: warped,
+    strength: clamp01((weightTotal - 0.18) / 2.6),
+    regionIndex,
+  };
+}
+
+function outerClusterT(index: number, total: number): number {
+  if (total < OUTER_CLUSTER_MIN_CAPACITY) return 0;
+  const slotT = total <= 1 ? 0 : index / (total - 1);
+  const capacityT = smoothstep(
+    (total - OUTER_CLUSTER_MIN_CAPACITY) /
+    (OUTER_CLUSTER_FULL_CAPACITY - OUTER_CLUSTER_MIN_CAPACITY)
+  );
+  return clamp01(capacityT * Math.pow(slotT, 1.12));
+}
+
 // Main API
 /**
  * Generate near-uniform 3D positions centered at the origin.
@@ -167,27 +266,52 @@ export const generatePositions = (
   const adaptiveMaxR = baseR_eff + densityK * minDistance * Math.cbrt(n);
   const maxR = Math.min(maxRadiusCap, spreadOverride ?? adaptiveMaxR);
 
-  // 1) Even directions
-  const dirs = sphericalFibonacci(n, { yaw, pitch, roll });
+  // 1) Even directions. The sequence is progressive, so slot prefixes remain
+  // spherical instead of exposing latitude chunks from a larger point cloud.
+  const dirs = progressiveSphereDirections(n, { yaw, pitch, roll });
+  const outerClusterCenters = n >= OUTER_CLUSTER_MIN_CAPACITY
+    ? progressiveSphereDirections(OUTER_CLUSTER_COUNT, {
+        yaw: yaw + hash01(seed + 17) * TAU,
+        pitch: pitch + (hash01(seed + 29) - 0.5) * 0.65,
+        roll: roll + (hash01(seed + 41) - 0.5) * 0.65,
+      })
+    : [];
 
   // 2) Radii: uniform-in-ball when N is large; extra inward bias when N is small
   const baseAlpha = 0.5; // inward-biased: more center fill than strict uniform-in-ball (1/3)
   const alpha = lerp(baseAlpha, tightMaxAlpha, tightT);
 
   const rand = mulberry32(seed);
-  const perm = makePermutation(n, rand);
-
   const pts = new Array<Vec3>(n);
   for (let i = 0; i < n; i++) {
-    const u = (perm[i] + 0.5) / n; // stratified & shuffled
-    const r = maxR * Math.pow(u, alpha);
-    const d = dirs[i];
+    const u = (i + 0.5) / n;
+    const outerT = outerClusterT(i, n);
+    let r = maxR * Math.pow(u, alpha);
+    let d = dirs[i];
+
+    if (outerT > 0 && outerClusterCenters.length) {
+      const easedOuterT = smoothstep(Math.pow(outerT, 0.8));
+      const organic = organicAttractor(d, outerClusterCenters, seed, i);
+      const pull = easedOuterT * organic.strength * (0.42 + hash01(seed + i * 107.19) * 0.38);
+      d = normalizeVec([
+        d[0] * (1 - pull) + organic.direction[0] * pull,
+        d[1] * (1 - pull) + organic.direction[1] * pull,
+        d[2] * (1 - pull) + organic.direction[2] * pull,
+      ]);
+      const clusterRadiusBias = hash01(seed + organic.regionIndex * 193.23);
+      const targetR = maxR * (0.58 + clusterRadiusBias * 0.52);
+      const localR = targetR * (0.86 + hash01(seed + i * 131.47) * 0.28);
+      r = lerp(r, Math.min(maxR * 1.08, localR), easedOuterT * organic.strength * 0.68);
+    }
 
     // small tangent jitter so rings don't look too perfect
     const [t1, t2] = tangentBasis(d);
     const j1 = (rand() - 0.5) * 2;
     const j2 = (rand() - 0.5) * 2;
-    const jScale = jitterAmp * minDistance;
+    const jScale =
+      jitterAmp *
+      minDistance *
+      (1 + outerT * (3.2 + hash01(seed + i * 97.11) * 2.4));
 
     const jx = t1[0] * j1 * jScale + t2[0] * j2 * jScale;
     const jy = t1[1] * j1 * jScale + t2[1] * j2 * jScale;

@@ -37,7 +37,7 @@ export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
     interactionPadding: { top: 0, right: 0, bottom: -1.5, left: 0 },
     particles: {
       enabled: true,
-      scaleBoost: { laptop: 3, tablet: 1.5, mobile: 1.6 },
+      scaleBoost: { laptop: 2.4, tablet: 1.8, mobile: 1.6 },
     },
   },
   bus: {
@@ -50,7 +50,7 @@ export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
      interactionPadding: { top: [0, -0.5], right: 0.2, left: 0.2, bottom: -1.5 },
     particles: {
       enabled: true,
-      scaleBoost: { laptop: 1.6, tablet: 1.5, mobile: 1.4 },
+      scaleBoost: { laptop: 1.4, tablet: 1.4, mobile: 1.3 },
     },
   },
   house: {
@@ -59,7 +59,7 @@ export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
     bleed: { top: 2 },
     particles: {
       enabled: true,
-      scaleBoost: { laptop: 2, tablet: 2.5, mobile: 2 },
+      scaleBoost: { laptop: 1.5, tablet: 1.5, mobile: 1.35 },
     },
   },
   power: {
@@ -88,7 +88,7 @@ export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
     bleed: { top: 0.1, bottom: 0.4, right: 1, left: 1 },
     particles: {
       enabled: true,
-      scaleBoost: { laptop: 2.4, tablet: 2, mobile: 1.6 },
+      scaleBoost: { laptop: 1.35, tablet: 1.35, mobile: 1.25 },
     },
   },
   carFactory: {

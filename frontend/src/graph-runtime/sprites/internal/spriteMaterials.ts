@@ -62,6 +62,13 @@ export function releaseSpriteMaterial(tex: CanvasTexture, opacity: number) {
   SHARED_SPRITE_MATERIALS.delete(key);
 }
 
+export function disposeAllSpriteMaterials() {
+  for (const hit of SHARED_SPRITE_MATERIALS.values()) {
+    try { hit.material.dispose(); } catch {}
+  }
+  SHARED_SPRITE_MATERIALS.clear();
+}
+
 export function makeUnsharedSpriteMaterial(tex: CanvasTexture, opacity: number) {
   const material = new SpriteMaterial({
     map: tex,

@@ -34,6 +34,7 @@ interface UsePersonalizationStateParams {
   fullData: DotGraphEntry[];
   shouldShowPersonalized: boolean;
   statsLoading: boolean;
+  darkMode: boolean;
 }
 
 export default function usePersonalizationState({
@@ -51,6 +52,7 @@ export default function usePersonalizationState({
   fullData,
   shouldShowPersonalized,
   statsLoading,
+  darkMode,
 }: UsePersonalizationStateParams) {
   const myShape = useMemo(
     () => shapes.find((shape) => shape._id === personalizedEntryId),
@@ -121,9 +123,9 @@ export default function usePersonalizationState({
 
     return {
       assignment: visual.assignment,
-      identity: resolveSpriteIdentity(visual.assignment),
+      identity: resolveSpriteIdentity(visual.assignment, { darkMode }),
     };
-  }, [bagSeed, effectiveMyEntry, myShape?.averageWeight, myShapeIndex, personalizedEntryId, sectionKey]);
+  }, [bagSeed, darkMode, effectiveMyEntry, myShape?.averageWeight, myShapeIndex, personalizedEntryId, sectionKey]);
 
   const myDisplayValue = useMemo(() => {
     if (!(showCompleteUI && effectiveMyEntry)) return 0;

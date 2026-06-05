@@ -7,9 +7,10 @@ Main flow:
 ```txt
 app/state/useSurveyDataState
   -> graph-runtime/index.tsx
+  -> dotgraph/data-boundary.tsx
   -> GraphDataProvider
   -> dotgraph/canvas-host.tsx
-  -> dotgraph/dot-graph.tsx
+  -> dotgraph/scene.tsx
   -> sprites/entry.ts
 ```
 
@@ -46,10 +47,17 @@ useGraphData.ts
 Dotgraph is split by job:
 
 ```txt
-canvas-host.tsx
-  Browser and canvas host concerns. This is the component exported by dotgraph.
+data-boundary.tsx
+  Dotgraph data boundary. Applies the desktop/mobile visible-row budget, keeps
+  the capped visible row window stable as live Sanity rows arrive, reserves the
+  personal row when it belongs in the current scope, and provides graph data to
+  the canvas host.
 
-dot-graph.tsx
+canvas-host.tsx
+  Browser and WebGL host concerns. Owns the R3F Canvas, renderer options, DPR,
+  mount fuse, context-loss handling, and GPU cleanup.
+
+scene.tsx
   Scene composition. It wires graph model, camera behavior, layers, and sprites.
 
 camera/
@@ -72,6 +80,11 @@ utils/
 ```
 
 The important rule: camera and interaction hooks can produce scene inputs, but they should not own the graph data model. Scene hooks derive graph state. Components render the result.
+
+The top-level `graph-runtime/index.tsx` should stay a page shell: lazy loading,
+the graph loading fallback, and graph CSS. Dotgraph-specific row budgets belong
+inside `dotgraph/data-boundary.tsx`; WebGL lifecycle belongs inside `canvas-host.tsx`;
+scene wiring belongs inside `dotgraph/scene.tsx`.
 
 ## Sprite Boundary
 

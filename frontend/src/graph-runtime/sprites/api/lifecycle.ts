@@ -14,3 +14,8 @@ export {
   pauseEpochScheduler as pauseSpriteEpochScheduler,
   resumeEpochScheduler as resumeSpriteEpochScheduler,
 } from "../internal/epochScheduler";
+
+export {
+  pauseQualityUpgradeScheduler as pauseSpriteQualityUpgradeScheduler,
+  resumeQualityUpgradeScheduler as resumeSpriteQualityUpgradeScheduler,
+} from "../internal/qualityUpgradeScheduler";

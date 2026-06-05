@@ -10,6 +10,8 @@ export interface SurveyResponseLike {
   weights?: Record<string, number>;
   soloMessage?: string;
   soloMessageUpdatedAt?: string;
+  __dotSlotIndex?: number;
+  __dotSlotCapacity?: number;
 }
 
 export interface DotPoint {
@@ -27,11 +29,9 @@ export interface DotPointsOptions extends GeneratePositionsOptions {
 
   minDistance?: number;
   spreadOverride?: number;
-  attractorStrength?: number;
 }
 
 const defaultColorForAverage = (avg: number) => rgbString(sampleStops(avg));
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 const hashFromString = (value: string): number => {
   let h = 2166136261;
@@ -47,156 +47,6 @@ const hashUnit = (seed: number): number => {
   return x - Math.floor(x);
 };
 
-const vecLength = (v: Vec3): number => Math.hypot(v[0], v[1], v[2]);
-
-const normalizeVec = (v: Vec3): Vec3 => {
-  const len = vecLength(v) || 1;
-  return [v[0] / len, v[1] / len, v[2] / len];
-};
-
-const addVec = (a: Vec3, b: Vec3): Vec3 => [
-  a[0] + b[0],
-  a[1] + b[1],
-  a[2] + b[2],
-];
-
-const scaleVec = (v: Vec3, s: number): Vec3 => [
-  v[0] * s,
-  v[1] * s,
-  v[2] * s,
-];
-
-const tangentBasis = (n: Vec3): [Vec3, Vec3] => {
-  const up: Vec3 = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  let ux = up[1] * n[2] - up[2] * n[1];
-  let uy = up[2] * n[0] - up[0] * n[2];
-  let uz = up[0] * n[1] - up[1] * n[0];
-  const uLen = Math.hypot(ux, uy, uz) || 1;
-  ux /= uLen;
-  uy /= uLen;
-  uz /= uLen;
-  const u: Vec3 = [ux, uy, uz];
-  const v: Vec3 = [
-    n[1] * u[2] - n[2] * u[1],
-    n[2] * u[0] - n[0] * u[2],
-    n[0] * u[1] - n[1] * u[0],
-  ];
-  return [u, v];
-};
-
-const bucketForAverage = (avg: number): 0 | 1 | 2 => {
-  if (avg < 0.34) return 0;
-  if (avg > 0.66) return 2;
-  return 1;
-};
-
-const clusterCountForBucket = (bucket: 0 | 1 | 2): number =>
-  bucket === 1 ? 3 : 4;
-
-const randomUnitVec = (seed: number): Vec3 => {
-  const z = hashUnit(seed + 1) * 2 - 1;
-  const theta = hashUnit(seed + 2) * Math.PI * 2;
-  const r = Math.sqrt(Math.max(0, 1 - z * z));
-  return [r * Math.cos(theta), z, r * Math.sin(theta)];
-};
-
-const buildGalaxyCenters = (fieldRadius: number, seed: number): Record<0 | 1 | 2, Vec3[]> => {
-  const makeBucket = (bucket: 0 | 1 | 2): Vec3[] => {
-    const count = clusterCountForBucket(bucket);
-    return Array.from({ length: count }, (_, i) => {
-      const s = seed + bucket * 1009 + i * 131;
-      const dir = randomUnitVec(s);
-      const radiusK =
-        bucket === 0 ? 0.45 + hashUnit(s + 11) * 0.28 :
-        bucket === 2 ? 0.50 + hashUnit(s + 11) * 0.28 :
-        0.20 + hashUnit(s + 11) * 0.32;
-      return [
-        dir[0] * fieldRadius * radiusK,
-        dir[1] * fieldRadius * radiusK * 0.86,
-        dir[2] * fieldRadius * radiusK,
-      ];
-    });
-  };
-
-  return {
-    0: makeBucket(0),
-    1: makeBucket(1),
-    2: makeBucket(2),
-  };
-};
-
-const galaxyPositionForAverage = (
-  basePosition: Vec3,
-  avg: number,
-  seed: number,
-  strength: number,
-  chaosT: number,
-  centersByBucket: Record<0 | 1 | 2, Vec3[]>
-): Vec3 => {
-  const bucket = bucketForAverage(avg);
-  const regionSeed = seed + Math.round(avg * 1000);
-  const clusterCount = clusterCountForBucket(bucket);
-  const clusterIndex = Math.floor(hashUnit(regionSeed + 5) * clusterCount);
-  const clusterSeed = regionSeed + clusterIndex * 101;
-  const clusterCenter = centersByBucket[bucket][clusterIndex] ?? [0, 0, 0];
-
-  // Loner fraction scales from 0% (n=1, organized) to 16% (n=300, chaotic)
-  const isLoner = hashUnit(regionSeed + 71) < chaosT * 0.16;
-
-  if (isLoner) {
-    const lonerT = 0.20 + chaosT * 0.10;
-    const lonerDir = normalizeVec([
-      basePosition[0] + (hashUnit(clusterSeed + 11) - 0.5) * 8,
-      basePosition[1] + (hashUnit(clusterSeed + 23) - 0.5) * 5,
-      basePosition[2] + (hashUnit(clusterSeed + 37) - 0.5) * 8,
-    ]);
-    const lonerRadius = Math.max(6, vecLength(basePosition) * (1.0 + chaosT * 0.22));
-    return addVec(
-      scaleVec(basePosition, 1 - lonerT),
-      scaleVec(lonerDir, lonerRadius * lonerT)
-    );
-  }
-
-  const jitterAmp = 0.22;
-  const jitter: Vec3 = [
-    (hashUnit(clusterSeed + 11) - 0.5) * jitterAmp,
-    (hashUnit(clusterSeed + 23) - 0.5) * jitterAmp * 0.72,
-    (hashUnit(clusterSeed + 37) - 0.5) * jitterAmp,
-  ];
-  const clusterDir = normalizeVec([
-    clusterCenter[0] + jitter[0],
-    clusterCenter[1] + jitter[1],
-    clusterCenter[2] + jitter[2],
-  ]);
-  const [u, v] = tangentBasis(clusterDir);
-  const baseRadius = Math.max(8, vecLength(basePosition));
-
-  const armCount = bucket === 1 ? 2 : 3;
-  const armIndex = Math.floor(hashUnit(clusterSeed + 61) * armCount);
-  const armPhase = (armIndex / armCount) * Math.PI * 2;
-  const localT = hashUnit(seed + 79);
-  // Arm sweep: tight and tidy at low count, wide and chaotic near 300
-  const armAngle = armPhase + localT * Math.PI * (0.5 + chaosT * 0.75);
-  // Swirl radius: compact at low count, grows with chaos
-  const swirlRadius =
-    (10 + baseRadius * 0.18) *
-    (0.15 + localT * (0.4 + chaosT * 0.75)) *
-    (0.95 + hashUnit(seed + 83) * 0.35);
-  const depthOffset = (hashUnit(seed + 97) - 0.5) * (5.5 + baseRadius * 0.06);
-
-  const localOffset = addVec(
-    addVec(
-      scaleVec(u, Math.cos(armAngle) * swirlRadius),
-      scaleVec(v, Math.sin(armAngle) * swirlRadius * 0.72)
-    ),
-    scaleVec(clusterDir, depthOffset)
-  );
-
-  const clusterPos = addVec(clusterCenter, localOffset);
-  const keepField = clamp01(0.30 - strength * 0.04);
-  return addVec(scaleVec(basePosition, keepField), scaleVec(clusterPos, 1 - keepField));
-};
-
 const computeLocalAvg = (response: SurveyResponseLike): number | undefined => {
   const w = response.weights;
   if (!w) return undefined;
@@ -204,6 +54,29 @@ const computeLocalAvg = (response: SurveyResponseLike): number | undefined => {
   if (!vals.length) return undefined;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 };
+
+function normalizedSlotIndex(response: SurveyResponseLike, fallbackIndex: number): number {
+  const slotIndex = response.__dotSlotIndex;
+  return typeof slotIndex === "number" && Number.isFinite(slotIndex) && slotIndex >= 0
+    ? Math.floor(slotIndex)
+    : fallbackIndex;
+}
+
+function resolvePositionCapacity(data: SurveyResponseLike[]) {
+  let capacity = data.length;
+  for (let i = 0; i < data.length; i += 1) {
+    const response = data[i];
+    const slotIndex = normalizedSlotIndex(response, i);
+    capacity = Math.max(capacity, slotIndex + 1);
+    if (
+      typeof response.__dotSlotCapacity === "number" &&
+      Number.isFinite(response.__dotSlotCapacity)
+    ) {
+      capacity = Math.max(capacity, Math.floor(response.__dotSlotCapacity));
+    }
+  }
+  return Math.max(0, capacity);
+}
 
 export function computeDotPoints(
   data: SurveyResponseLike[],
@@ -220,7 +93,6 @@ export function computeDotPoints(
 
     minDistance = 2.5,
     spreadOverride,
-    attractorStrength = 0.28,
 
     // pass-through to generatePositions
     baseRadius,
@@ -240,8 +112,9 @@ export function computeDotPoints(
     tightCurve,
   } = opts;
 
+  const positionCapacity = resolvePositionCapacity(safe);
   const base = generatePositions(
-    n,
+    positionCapacity,
     minDistance,
     spreadOverride,
     {
@@ -261,13 +134,6 @@ export function computeDotPoints(
       tightCurve,
     }
   );
-  const fieldRadius = Math.max(
-    spreadOverride ?? 0,
-    ...base.map((p) => vecLength(p))
-  );
-  const centersByBucket = buildGalaxyCenters(Math.max(18, fieldRadius), seed ?? 1337);
-  // 0 at n=1 (organized/steady), 1 at n=300 (chaotic with loners and wide arms)
-  const chaosT = n <= 1 ? 0 : Math.min(1, (n - 1) / 299);
 
   const pts: DotPoint[] = safe.map((response, i) => {
     const rawAvg =
@@ -279,21 +145,12 @@ export function computeDotPoints(
     const avg: number =
       typeof rawAvg === 'number' && Number.isFinite(rawAvg) ? rawAvg : 0.5;
 
-    // Guarantee a Vec3 (TS can't prove base[i] exists)
-    const pos: Vec3 = base[i] ?? [0, 0, 0];
-    const stableSeed = hashFromString(response._id ?? `dot-${String(i)}`);
-    const attractedPos = galaxyPositionForAverage(
-      pos,
-      avg,
-      stableSeed,
-      attractorStrength,
-      chaosT,
-      centersByBucket
-    );
+    const slotIndex = normalizedSlotIndex(response, i);
+    const pos: Vec3 = base[slotIndex];
 
     return {
-      position: attractedPos,
-      originalPosition: attractedPos,
+      position: pos,
+      originalPosition: pos,
       color: colorForAverage(avg),
       averageWeight: avg,
       _id: response._id,

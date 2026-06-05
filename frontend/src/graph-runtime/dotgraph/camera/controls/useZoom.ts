@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { MutableRefObject } from 'react';
+import { bumpZoomMetric } from '../../../debug/zoomMetrics';
 
 export interface GestureState {
   pinching: boolean;
@@ -82,7 +83,21 @@ export default function useZoom({
       if (typeof markActivity === 'function') markActivity();
     };
 
+    const isGraphEvent = (event: Event) => {
+      const target = event.target;
+      return target instanceof Element && Boolean(target.closest('.graph-container'));
+    };
+
+    const preventGraphDefault = (event: Event) => {
+      if (!isGraphEvent(event)) return false;
+      if (event.cancelable) event.preventDefault();
+      return true;
+    };
+
     const handleScroll = (event: WheelEvent) => {
+      if (!preventGraphDefault(event)) return;
+
+      bumpZoomMetric('wheelEvents');
       ping();
       const current = zoomTargetRef.current ?? radiusRef.current;
 
@@ -102,7 +117,9 @@ export default function useZoom({
     const handleTouchMove = (event: TouchEvent) => {
       // pinch zoom only (rotation is handled elsewhere)
       if (event.touches.length !== 2) return;
+      if (!preventGraphDefault(event)) return;
       if (pinchCooldownRef.current) return;
+      bumpZoomMetric('touchMoveEvents');
 
       ping();
 
@@ -122,6 +139,7 @@ export default function useZoom({
     };
 
     const handleTouchStart = (event: TouchEvent) => {
+      if (!isGraphEvent(event)) return;
       if (event.touches.length === 2) {
         ping();
         const [t1, t2] = [event.touches[0], event.touches[1]];
@@ -163,7 +181,14 @@ export default function useZoom({
       }
     };
 
-    window.addEventListener('wheel', handleScroll, { passive: true });
+    const handleBrowserGesture = (event: Event) => {
+      preventGraphDefault(event);
+    };
+
+    window.addEventListener('wheel', handleScroll, { passive: false });
+    window.addEventListener('gesturestart', handleBrowserGesture, { passive: false });
+    window.addEventListener('gesturechange', handleBrowserGesture, { passive: false });
+    window.addEventListener('gestureend', handleBrowserGesture, { passive: false });
     window.addEventListener('touchstart', handleTouchStart, { passive: false });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
@@ -172,6 +197,9 @@ export default function useZoom({
         if (pinchTimeoutRef.current) window.clearTimeout(pinchTimeoutRef.current);
         if (pinchCooldownTimerRef.current) window.clearTimeout(pinchCooldownTimerRef.current);
         window.removeEventListener('wheel', handleScroll);
+        window.removeEventListener('gesturestart', handleBrowserGesture);
+        window.removeEventListener('gesturechange', handleBrowserGesture);
+        window.removeEventListener('gestureend', handleBrowserGesture);
         window.removeEventListener('touchstart', handleTouchStart);
         window.removeEventListener('touchmove', handleTouchMove);
         window.removeEventListener('touchend', handleTouchEnd);
@@ -181,10 +209,13 @@ export default function useZoom({
   // critically damped spring to target
   const ZOOM_OMEGA = 18.0;
   const ZOOM_SNAP_EPS = 0.0015;
+  const ZOOM_MAX_FRAME_DT = 1 / 30;
 
-  useFrame((_, delta) => {
+  useFrame((_, rawDelta) => {
     if (zoomTargetRef.current == null) return;
+    bumpZoomMetric('zoomFrames');
 
+    const delta = Math.min(rawDelta, ZOOM_MAX_FRAME_DT);
     const r = radius;
     const target = clamp(zoomTargetRef.current, minRadius, maxRadius);
 
@@ -197,12 +228,14 @@ export default function useZoom({
     next = clamp(next, minRadius, maxRadius);
 
     // anti-rebound at bounds
-    if (next === maxRadius && v < 0) v = 0;
-    if (next === minRadius && v > 0) v = 0;
+    if (next === maxRadius && v > 0) v = 0;
+    if (next === minRadius && v < 0) v = 0;
 
     if (Math.abs(next - r) > ZOOM_SNAP_EPS) {
+      bumpZoomMetric('radiusStateUpdates');
       setRadius(next);
     } else {
+      bumpZoomMetric('radiusStateUpdates');
       setRadius(target);
       v = 0;
       zoomTargetRef.current = null; // stop tiny oscillations

@@ -15,7 +15,16 @@ import { useFrame } from '@react-three/fiber';
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
 import type { ShapeKey, SpriteShapeProps } from '../types';
-import { chooseShape, quantizeAvgWithDownshift, pickVariantSlot, makeStaticKey, makeSpriteSeedKey, resolveDpr, DEFAULT_VARIANT_SLOTS } from '../internal/spritePolicy';
+import {
+  chooseShape,
+  quantizeAvgWithDownshift,
+  pickVariantSlot,
+  makeStaticKey,
+  makeSpriteSeedKey,
+  resolveDpr,
+  DEFAULT_VARIANT_SLOTS,
+  resolveSpriteAvgForDebug,
+} from '../internal/spritePolicy';
 
 import { DRAWERS } from '../selection/drawers';
 import { houseHasChimney } from '../../../canvas-engine/shapes/house';
@@ -46,6 +55,7 @@ import {
 } from './spriteQuality';
 import { registerEpochShape } from './epochScheduler';
 import { spriteMaterialCachingDisabled } from '../../debug/spriteFlags';
+import { bumpZoomMetric } from '../../debug/zoomMetrics';
 import {
   PLACEHOLDER_MATERIAL,
   acquireSpriteMaterial,
@@ -53,6 +63,7 @@ import {
   releaseSpriteMaterial,
 } from './spriteMaterials';
 import { computeSpriteWorldGeometry } from './spriteGeometry';
+import { scheduleSpriteQualityUpgrade } from './qualityUpgradeScheduler';
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
@@ -66,11 +77,13 @@ const track = trackTexture;
 function releaseEpochTex(tex: CanvasTexture | null) {
   if (!tex) return;
   try {
-    if (tex.image instanceof HTMLCanvasElement) {
-      tex.image.width = 0;   // releases 2D backing store + context slot
-      tex.image.height = 0;
-    }
     tex.dispose();
+    if (tex.image instanceof HTMLCanvasElement) {
+      // Keep dimensions valid for WebGL while still releasing the large 2D
+      // backing store/context slot.
+      tex.image.width = 1;
+      tex.image.height = 1;
+    }
   } catch {}
 }
 
@@ -97,8 +110,9 @@ export function SpriteShape({
 
   // Assignment may come from the public sprite API. When it does, the component
   // follows that contract instead of picking a shape again locally.
-  const tShape = clamp01(Number.isFinite(avg) ? avg : 0.5);
-  const _derived = quantizeAvgWithDownshift(avg);
+  const effectiveAvg = resolveSpriteAvgForDebug(avg);
+  const tShape = clamp01(Number.isFinite(effectiveAvg) ? effectiveAvg : 0.5);
+  const _derived = quantizeAvgWithDownshift(effectiveAvg);
   const bucketId   = assignment?.bucketId  ?? _derived.bucketId;
   const bucketAvg  = assignment?.bucketAvg ?? _derived.bucketAvg;
 
@@ -111,15 +125,16 @@ export function SpriteShape({
   const dev = deviceType(getViewportSize().w);
   const baseTile = clampSpriteTileSize(tileSize, dev);
   const [qualityTileSize, setQualityTileSize] = React.useState(baseTile);
-  const qualityUpgradeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelQualityUpgradeRef = React.useRef<(() => void) | null>(null);
   const pendingQualityTileRef = React.useRef<number | null>(null);
   const qualityCheckModulo = spriteQualityCheckFrameModulo(dev);
   const TILE = qualityTileSize;
   const dpr = resolveDpr(1);
+  const isVisibleRef = React.useRef(true);
 
   const clearPendingQualityUpgrade = React.useCallback(() => {
-    if (qualityUpgradeTimerRef.current) clearTimeout(qualityUpgradeTimerRef.current);
-    qualityUpgradeTimerRef.current = null;
+    cancelQualityUpgradeRef.current?.();
+    cancelQualityUpgradeRef.current = null;
     pendingQualityTileRef.current = null;
   }, []);
 
@@ -127,12 +142,20 @@ export function SpriteShape({
     if (pendingQualityTileRef.current === nextTile) return;
     clearPendingQualityUpgrade();
     pendingQualityTileRef.current = nextTile;
-    qualityUpgradeTimerRef.current = setTimeout(() => {
-      const target = pendingQualityTileRef.current;
-      qualityUpgradeTimerRef.current = null;
-      pendingQualityTileRef.current = null;
-      if (target) setQualityTileSize((prev) => Math.max(prev, target));
-    }, spriteQualityUpgradeDelayMs(dev, orderIndex ?? 0));
+    bumpZoomMetric('qualityUpgradeSchedules');
+    cancelQualityUpgradeRef.current = scheduleSpriteQualityUpgrade({
+      delayMs: spriteQualityUpgradeDelayMs(dev, orderIndex ?? 0),
+      isVisible: () => isVisibleRef.current,
+      apply: () => {
+        const target = pendingQualityTileRef.current;
+        cancelQualityUpgradeRef.current = null;
+        pendingQualityTileRef.current = null;
+        if (target) {
+          bumpZoomMetric('qualityUpgradeApplies');
+          setQualityTileSize((prev) => Math.max(prev, target));
+        }
+      },
+    });
   }, [clearPendingQualityUpgrade, dev, orderIndex, setQualityTileSize]);
 
   React.useEffect(() => {
@@ -178,12 +201,11 @@ export function SpriteShape({
   }, [shape, bucketId, variant]);
 
   const wantsEpochRefresh = React.useMemo(() => {
-    if (shape === 'house') return houseHasChimney(stableSeedKey);
+    if (shape === 'house') return houseHasChimney(stableSeedKey, bucketAvg);
     return true;
-  }, [shape, stableSeedKey]);
+  }, [shape, stableSeedKey, bucketAvg]);
 
   const [refreshEpoch, setRefreshEpoch] = React.useState(0);
-  const isVisibleRef = React.useRef(true);
   const setRefreshEpochRef = React.useRef(setRefreshEpoch);
   React.useEffect(() => { setRefreshEpochRef.current = setRefreshEpoch; }, [setRefreshEpoch]);
 
@@ -251,6 +273,8 @@ export function SpriteShape({
 
     const footprint = FOOTPRINTS[shape];
     const bleed = BLEED[shape];
+    const isRetexture = prevTexShapeRef.current === shape && prevTexRef.current !== null;
+    const isBackgroundTextureRequest = isRetexture || texturePriority <= 0;
 
     const common = {
       tileSize: TILE,
@@ -341,6 +365,7 @@ export function SpriteShape({
         prio: texturePriority,
         darkMode: localDarkMode,
         pixelScaleBoost: resolveParticleScaleBoost(shape, dev),
+        background: isBackgroundTextureRequest,
       },
       (t) => { setIfAlive(t); }
     );
@@ -420,7 +445,7 @@ export function SpriteShape({
   const qualityCheckFrameRef = React.useRef((orderIndex ?? 0) % qualityCheckModulo);
   React.useEffect(() => {
     return () => {
-      if (qualityUpgradeTimerRef.current) clearTimeout(qualityUpgradeTimerRef.current);
+      cancelQualityUpgradeRef.current?.();
       pendingQualityTileRef.current = null;
       releaseEpochTex(epochTexRef.current);
       epochParticleStoreRef.current?.clear();
@@ -439,6 +464,7 @@ export function SpriteShape({
     if (!suspendQualityUpdates && spr && isVisibleRef.current) {
       qualityCheckFrameRef.current = (qualityCheckFrameRef.current + 1) % qualityCheckModulo;
       if (qualityCheckFrameRef.current === 0) {
+        bumpZoomMetric('qualityChecks');
         const distance = Math.max(0.001, camera.position.distanceTo(_wp.current));
         const height = typeof window !== 'undefined' ? window.innerHeight || 1 : 1;
         const fov = 'fov' in camera && typeof camera.fov === 'number' ? camera.fov : 50;
@@ -448,6 +474,7 @@ export function SpriteShape({
         const nextTile = chooseSpriteTileForScreenSize(screenPx, qualityTileSize, baseTile, dev);
         if (nextTile < qualityTileSize) {
           clearPendingQualityUpgrade();
+          bumpZoomMetric('qualityDowngrades');
           setQualityTileSize(nextTile);
         } else if (nextTile > qualityTileSize && pendingQualityTileRef.current !== nextTile) {
           scheduleQualityUpgrade(nextTile);

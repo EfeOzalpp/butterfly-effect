@@ -3,7 +3,6 @@ import {
   CanvasTexture,
   ClampToEdgeWrapping,
   LinearFilter,
-  LinearMipmapLinearFilter,
   SRGBColorSpace,
 } from 'three';
 import { makeCanvasFacade } from './canvasFacade';
@@ -154,8 +153,8 @@ export function makeTextureFromDrawer({
 
   const tex = new CanvasTexture(cnv);
   tex.colorSpace = SRGBColorSpace;
-  tex.generateMipmaps = true;
-  tex.minFilter = LinearMipmapLinearFilter;
+  tex.generateMipmaps = false;
+  tex.minFilter = LinearFilter;
   tex.magFilter = LinearFilter;
   tex.wrapS = ClampToEdgeWrapping;
   tex.wrapT = ClampToEdgeWrapping;

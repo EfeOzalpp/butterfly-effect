@@ -12,6 +12,7 @@ interface GamificationGeneralProps {
   dotId: string;
   percentage: number;
   color: string;
+  soloMessage?: string;
   mode?: Mode;
   belowCountStrict?: number;
   equalCount?: number;
@@ -39,6 +40,7 @@ export default function GamificationGeneral({
   dotId,
   percentage,
   color,
+  soloMessage,
   mode = 'relative',
   belowCountStrict,
   equalCount,
@@ -49,6 +51,9 @@ export default function GamificationGeneral({
   const darkMode = preferences?.darkMode ?? false;
   
   const safePct = Math.max(0, Math.min(100, Number.isFinite(percentage) ? Math.round(percentage) : 0));
+  const normalizedSoloMessage = typeof soloMessage === 'string'
+    ? soloMessage.trim().replace(/\s+/g, ' ')
+    : '';
   const emphasisShadow = useMemo(
     () =>
       darkMode
@@ -183,8 +188,8 @@ export default function GamificationGeneral({
     <div className="generalized-result">
       <div className={`gam-panel${mode === 'relative' ? ' is-team' : ''}`}>
         {/* no title in either mode */}
-        {mode === 'absolute' && description ? (
-          <h4 className="gam-subline">{description}</h4>
+        {mode === 'absolute' && (normalizedSoloMessage || description) ? (
+          <h4 className="gam-subline">{normalizedSoloMessage || description}</h4>
         ) : null}
         {mode === 'relative' ? (
           <p className="gam-copy">{relativeLine}</p>

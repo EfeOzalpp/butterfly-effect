@@ -179,23 +179,27 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
 
   void zoomVelRef; // keep side-effect-free if lint complains about unused
 
+  const latestInitialTargetRef = useRef(initialTargetComputed);
+  const latestResetZoomTargetRef = useRef(resetZoomTarget);
+  latestInitialTargetRef.current = initialTargetComputed;
+  latestResetZoomTargetRef.current = resetZoomTarget;
+
   useLayoutEffect(() => {
     camera.position.set(0, 0, radius);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
   }, [camera, radius]);
 
-  // Dataset switches should snap to the new count-based camera radius. Letting
-  // the old radius/velocity spring into a new point cloud creates stale zoom
-  // state during graph picker transitions.
+  // Graph view switches should snap to the current initial framing. Sanity data
+  // updates can change count/target, but should not overwrite a user's camera.
   const mountedRef = useRef(false);
   useLayoutEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return; }
-    const nextRadius = resetZoomTarget(initialTargetComputed);
+    const nextRadius = latestResetZoomTargetRef.current(latestInitialTargetRef.current);
     camera.position.set(0, 0, nextRadius);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
-  }, [camera, initialTargetComputed, resetZoomTarget, zoomResetKey, count]);
+  }, [camera, zoomResetKey]);
 
   // Rotation
   const rot = useRotation({

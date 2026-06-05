@@ -2,10 +2,16 @@
 import { sampleShapeForAvg } from '../selection/shapeForAvg';
 import type { ShapeKey } from '../selection/types';
 import {
+  forcedSpriteAvg,
+  forcedSpriteAvgCacheKey,
   forcedSpriteShape,
   forcedSpriteShapeCacheKey,
   spriteQuantizationDisabled,
 } from '../../debug/spriteFlags';
+import {
+  bumpSpriteCacheMetric,
+  recordSpriteBucket,
+} from '../../debug/spriteCacheMetrics';
 
 // Sprite policy turns score data into stable cacheable sprite identity:
 // shape, color bucket, and visual variant.
@@ -36,18 +42,26 @@ function bucketMidpoint(id: number) {
 
 export function quantizeAvgWithDownshift(avg: number) {
   if (spriteQuantizationDisabled()) {
+    bumpSpriteCacheMetric('quantizationDisabledCalls');
     const unclamped = clamp01(Number.isFinite(avg) ? avg : 0.5);
     const bucketId = Math.round(unclamped * 1000);
+    recordSpriteBucket(bucketId);
     return { bucketId, bucketAvg: unclamped };
   }
 
+  bumpSpriteCacheMetric('quantizationCalls');
   const base = rawBucketIdFromAvg(avg);
   const adj = adjustedBucketId(base);
+  recordSpriteBucket(adj);
   return { bucketId: adj, bucketAvg: bucketMidpoint(adj) };
 }
 
 // Variant slots let repeated shapes share the same drawer while still looking varied.
 export const DEFAULT_VARIANT_SLOTS = 8;
+
+export function resolveSpriteAvgForDebug(avg: number) {
+  return forcedSpriteAvg() ?? avg;
+}
 
 function hash01(s: string) {
   let h = 2166136261 >>> 0;
@@ -113,7 +127,8 @@ export function makeSpriteSeedKey(args: {
 export function chooseShape(args: { avg: number; seed?: string | number; orderIndex?: number }) {
   const forced = forcedSpriteShape();
   if (forced) return forced;
-  const t = clamp01(Number.isFinite(args.avg) ? args.avg : 0.5);
+  const avg = resolveSpriteAvgForDebug(args.avg);
+  const t = clamp01(Number.isFinite(avg) ? avg : 0.5);
   return sampleShapeForAvg(t, args.seed ?? t, args.orderIndex);
 }
 
@@ -122,6 +137,7 @@ export interface ShapeAssignment {
   variant: number;
   bucketId: number;
   bucketAvg: number;
+  sourceAvg?: number;
 }
 
 const _assignmentCache = new Map<string, ShapeAssignment>();
@@ -135,16 +151,21 @@ export function getOrAssignShapeEntry(
   orderIndex: number,
   variantSlots = DEFAULT_VARIANT_SLOTS
 ): ShapeAssignment {
-  const cacheKey = `${entryId}|${sectionKey}|${forcedSpriteShapeCacheKey()}`;
+  const cacheKey = `${entryId}|${sectionKey}|${forcedSpriteShapeCacheKey()}|${forcedSpriteAvgCacheKey()}`;
   const hit = _assignmentCache.get(cacheKey);
-  if (hit) return hit;
+  if (hit) {
+    bumpSpriteCacheMetric('assignmentCacheHits');
+    return hit;
+  }
+  bumpSpriteCacheMetric('assignmentCacheMisses');
 
-  const shape = chooseShape({ avg, seed, orderIndex });
-  const { bucketId, bucketAvg } = quantizeAvgWithDownshift(avg);
+  const effectiveAvg = resolveSpriteAvgForDebug(avg);
+  const shape = chooseShape({ avg: effectiveAvg, seed, orderIndex });
+  const { bucketId, bucketAvg } = quantizeAvgWithDownshift(effectiveAvg);
   const vSeed = `${shape}|B${String(bucketId)}|${String(seed)}|${String(orderIndex)}`;
   const variant = pickVariantSlot(vSeed, Math.max(1, variantSlots));
 
-  const assignment: ShapeAssignment = { shape, variant, bucketId, bucketAvg };
+  const assignment: ShapeAssignment = { shape, variant, bucketId, bucketAvg, sourceAvg: clamp01(effectiveAvg) };
   _assignmentCache.set(cacheKey, assignment);
   return assignment;
 }

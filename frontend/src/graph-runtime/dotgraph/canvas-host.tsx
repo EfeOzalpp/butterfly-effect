@@ -10,7 +10,7 @@ import {
   type WebGLRenderer,
 } from 'three';
 
-import DotGraph from "./dot-graph";
+import DotGraph from "./scene";
 
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
@@ -22,6 +22,10 @@ import {
   bumpGeneration,
   resetQueue,
   disposeAllSpriteTextures,
+  pauseSpriteEpochScheduler,
+  pauseSpriteTextureQueue,
+  resumeSpriteEpochScheduler,
+  resumeSpriteTextureQueue,
 } from "../sprites/entry";
 import { setGraphContextLost } from "../debug/context";
 
@@ -40,6 +44,7 @@ const isIOS = (() => {
 
 // Minimum delay between closing and reopening the WebGL canvas.
 const REOPEN_FUSE_MS = isIOS ? 420 : 240;
+const VISIBILITY_RESUME_DELAY_MS = 280;
 
 interface WebGLCanvasProps {
   lowFidelity: boolean;
@@ -49,6 +54,54 @@ interface WebGLCanvasProps {
 // Owns the actual R3F canvas and the browser WebGL context lifecycle.
 function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
   const rendererRef = useRef<WebGLRenderer | null>(null);
+
+  useEffect(() => {
+    let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearResumeTimer = () => {
+      if (!resumeTimer) return;
+      clearTimeout(resumeTimer);
+      resumeTimer = null;
+    };
+
+    const pauseGraphWork = () => {
+      clearResumeTimer();
+      pauseSpriteTextureQueue();
+      pauseSpriteEpochScheduler();
+    };
+
+    const resumeGraphWork = () => {
+      clearResumeTimer();
+      resumeTimer = setTimeout(() => {
+        resumeTimer = null;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        resumeSpriteTextureQueue();
+        resumeSpriteEpochScheduler();
+      }, VISIBILITY_RESUME_DELAY_MS);
+    };
+
+    const syncVisibility = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        pauseGraphWork();
+      } else {
+        resumeGraphWork();
+      }
+    };
+
+    document.addEventListener('visibilitychange', syncVisibility);
+    window.addEventListener('pagehide', pauseGraphWork);
+    window.addEventListener('pageshow', resumeGraphWork);
+    syncVisibility();
+
+    return () => {
+      clearResumeTimer();
+      document.removeEventListener('visibilitychange', syncVisibility);
+      window.removeEventListener('pagehide', pauseGraphWork);
+      window.removeEventListener('pageshow', resumeGraphWork);
+      resumeSpriteTextureQueue();
+      resumeSpriteEpochScheduler();
+    };
+  }, []);
 
   // New generation cancels any stale queued texture jobs
   useEffect(() => {

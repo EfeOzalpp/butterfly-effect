@@ -7,9 +7,11 @@ import type { Sprite } from "three";
 import {
   SpriteShape,
   pauseSpriteEpochScheduler,
+  pauseSpriteQualityUpgradeScheduler,
   pauseSpriteTextureQueue,
   resolveSpriteVisual,
   resumeSpriteEpochScheduler,
+  resumeSpriteQualityUpgradeScheduler,
   resumeSpriteTextureQueue,
 } from "../../sprites/entry";
 import {
@@ -24,6 +26,7 @@ import {
   resolveTooltipHitboxState,
 } from "../interaction/hitboxDistancePolicy";
 import { shouldShowHitboxDebugOverlay } from "../../debug/spriteFlags";
+import { bumpZoomMetric } from "../../debug/zoomMetrics";
 
 interface ShapesLayerProps {
   shapes: DotPoint[];
@@ -45,8 +48,8 @@ interface ShapesLayerProps {
   hidePersonalizedSprite?: boolean;
 }
 
-const HITBOX_ZOOM_SETTLE_MS = 80;
-const TEXTURE_ZOOM_SETTLE_MS = 180;
+const HITBOX_ZOOM_SETTLE_MS = 120;
+const TEXTURE_ZOOM_SETTLE_MS = 360;
 const DENSE_SCENE_QUALITY_UPGRADE_LIMIT = 180;
 
 export default function ShapesLayer({
@@ -76,8 +79,16 @@ export default function ShapesLayer({
   const lastZoomActiveAtRef = useRef(0);
   const textureQueuePausedRef = useRef(false);
   const epochSchedulerPausedRef = useRef(false);
+  const qualitySchedulerPausedRef = useRef(false);
+  const suspendSpriteQualityRef = useRef(false);
   const [suspendSpriteQuality, setSuspendSpriteQuality] = useState(false);
   const denseScene = shapes.length >= DENSE_SCENE_QUALITY_UPGRADE_LIMIT;
+
+  const setSpriteQualitySuspended = (next: boolean) => {
+    if (suspendSpriteQualityRef.current === next) return;
+    suspendSpriteQualityRef.current = next;
+    setSuspendSpriteQuality(next);
+  };
 
   const shapeVisuals = useMemo(
     () =>
@@ -114,13 +125,18 @@ export default function ShapesLayer({
       lastZoomActiveAtRef.current = now;
       if (!textureQueuePausedRef.current) {
         pauseSpriteTextureQueue();
+        bumpZoomMetric('zoomTexturePauses');
         textureQueuePausedRef.current = true;
       }
       if (!epochSchedulerPausedRef.current) {
         pauseSpriteEpochScheduler();
         epochSchedulerPausedRef.current = true;
       }
-      setSuspendSpriteQuality((prev) => prev ? prev : true);
+      if (!qualitySchedulerPausedRef.current) {
+        pauseSpriteQualityUpgradeScheduler();
+        qualitySchedulerPausedRef.current = true;
+      }
+      setSpriteQualitySuspended(true);
       return;
     }
 
@@ -129,10 +145,13 @@ export default function ShapesLayer({
       now - lastZoomActiveAtRef.current >= TEXTURE_ZOOM_SETTLE_MS
     ) {
       resumeSpriteTextureQueue();
+      bumpZoomMetric('zoomTextureResumes');
       textureQueuePausedRef.current = false;
       resumeSpriteEpochScheduler();
       epochSchedulerPausedRef.current = false;
-      setSuspendSpriteQuality((prev) => prev ? false : prev);
+      resumeSpriteQualityUpgradeScheduler();
+      qualitySchedulerPausedRef.current = false;
+      setSpriteQualitySuspended(false);
     }
 
     if (now - lastZoomActiveAtRef.current < HITBOX_ZOOM_SETTLE_MS) return;
@@ -172,6 +191,11 @@ export default function ShapesLayer({
       resumeSpriteEpochScheduler();
       epochSchedulerPausedRef.current = false;
     }
+    if (qualitySchedulerPausedRef.current) {
+      resumeSpriteQualityUpgradeScheduler();
+      qualitySchedulerPausedRef.current = false;
+    }
+    suspendSpriteQualityRef.current = false;
   }, []);
 
   const setShapeCursor = (active: boolean, e?: DotGraphHoverEvent) => {

@@ -169,6 +169,23 @@ export default function GamificationPersonalized({
     }
   };
 
+  const handleSoloMessageKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      event.key !== 'Enter' ||
+      event.shiftKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.nativeEvent.isComposing
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.form?.requestSubmit();
+  };
+
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
 
   useEffect(() => {
@@ -326,6 +343,7 @@ export default function GamificationPersonalized({
                   placeholder="I've been thinking about..."
                   disabled={currentMessageStatus === 'saving'}
                   onClick={(event) => { event.stopPropagation(); }}
+                  onKeyDown={handleSoloMessageKeyDown}
                   onChange={(event) => {
                     setDraftState({ entryId, value: event.currentTarget.value, dirty: true });
                     setMessageStatus({ entryId, state: 'idle', error: '' });

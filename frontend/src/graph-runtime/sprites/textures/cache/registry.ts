@@ -1,7 +1,6 @@
 // graph-runtime/sprites/textures/cache/registry.ts
 import {
   LinearFilter,
-  LinearMipmapLinearFilter,
   type CanvasTexture,
 } from 'three';
 import { makeTextureFromDrawer } from '../makeTextureFromDrawer';
@@ -16,6 +15,10 @@ import {
   shouldLogSpriteLoadErrors,
   spriteCachingDisabled,
 } from '../../../debug/spriteFlags';
+import {
+  bumpSpriteCacheMetric,
+  recordStaticTextureKey,
+} from '../../../debug/spriteCacheMetrics';
 
 export interface MakeArgs {
   key: string;
@@ -30,6 +33,7 @@ export interface MakeArgs {
   bleed?: { top?: number; right?: number; bottom?: number; left?: number };
   seedKey: string;
   prio?: number;
+  background?: boolean;
   darkMode?: boolean;
   pixelScaleBoost?: number;
 }
@@ -47,7 +51,10 @@ class TextureRegistry {
 
   get(key: string) {
     if (spriteCachingDisabled()) return null;
-    return this.cache.get(key) ?? null;
+    const tex = this.cache.get(key) ?? null;
+    bumpSpriteCacheMetric(tex ? 'registryGetHits' : 'registryGetMisses');
+    if (tex) recordStaticTextureKey(key);
+    return tex;
   }
 
   onReady(cb: Listener) {
@@ -61,12 +68,20 @@ class TextureRegistry {
   }
 
   ensure(args: MakeArgs) {
-    const { key, prio = 0 } = args;
+    const { key, prio = 0, background = false } = args;
     const disableCache = spriteCachingDisabled();
-    if (this.inFlight.has(key)) return;
-    if (!disableCache && this.cache.has(key)) return;
+    recordStaticTextureKey(key);
+    if (this.inFlight.has(key)) {
+      bumpSpriteCacheMetric('ensureInFlightDedupes');
+      return;
+    }
+    if (!disableCache && this.cache.has(key)) {
+      bumpSpriteCacheMetric('ensureCacheHits');
+      return;
+    }
 
     this.inFlight.add(key);
+    bumpSpriteCacheMetric('textureBuildsQueued');
     // Actual canvas work is queued so creating textures does not block render.
     enqueueTexture(() => {
       let tex: CanvasTexture | null = null;
@@ -85,22 +100,24 @@ class TextureRegistry {
           darkMode: args.darkMode,
           pixelScaleBoost: args.pixelScaleBoost,
         });
-        tex.generateMipmaps = true;
+        tex.generateMipmaps = false;
         tex.anisotropy = isMobileDevice ? 4 : 8;
-        tex.minFilter = LinearMipmapLinearFilter;
+        tex.minFilter = LinearFilter;
         tex.magFilter = LinearFilter;
         tex.needsUpdate = true;
 
         if (!disableCache) this.cache.set(key, tex);
+        bumpSpriteCacheMetric('textureBuildsCompleted');
         for (const l of this.listeners) l(key, tex);
       } catch (err) {
+        bumpSpriteCacheMetric('textureBuildFailures');
         if (shouldLogSpriteLoadErrors()) {
           console.warn('[SPRITE:STATIC] build failed', key, err);
         }
       } finally {
         this.inFlight.delete(key);
       }
-    }, prio, false, () => {
+    }, prio, background, () => {
       this.inFlight.delete(key);
       for (const listener of this.cancelListeners) listener(key);
     });

@@ -21,15 +21,18 @@ import {
   makeStaticKey,
   makeSpriteSeedKey,
   resolveDpr,
+  resolveSpriteAvgForDebug,
 } from './spritePolicy';
 import { clampSpriteTileSize } from './spriteQuality';
 
 import { disposeAllTrackedTextures } from '../textures/cache/textureTracker';
+import { disposeAllSpriteMaterials } from './spriteMaterials';
 const noop = () => undefined;
 
 // Runtime owns texture creation/caching. React components ask for textures here
 // instead of building canvas textures inside render.
 export function disposeAllSpriteTextures() {
+  disposeAllSpriteMaterials();
   disposeAllTrackedTextures();
   try { textureRegistry.clear(); } catch {}
 }
@@ -60,9 +63,10 @@ export function prewarmSpriteTextures(
   const limited = items.slice(0, Math.max(1, maxCount));
 
   for (const it of limited) {
-    const shape = chooseShape({ avg: it.avg, seed: it.seed, orderIndex: it.orderIndex });
+    const effectiveAvg = resolveSpriteAvgForDebug(it.avg);
+    const shape = chooseShape({ avg: effectiveAvg, seed: it.seed, orderIndex: it.orderIndex });
 
-    const { bucketId, bucketAvg } = quantizeAvgWithDownshift(it.avg);
+    const { bucketId, bucketAvg } = quantizeAvgWithDownshift(effectiveAvg);
 
     const variant = pickVariantSlot(
       `${shape}|B${String(bucketId)}|${String(it.seed ?? '')}|${String(it.orderIndex ?? 0)}`

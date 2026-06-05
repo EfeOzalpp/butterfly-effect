@@ -37,6 +37,7 @@ interface HoveredLayerProps {
 interface HoveredLayerContent {
   hoveredShape: DotPoint;
   displayPct: number;
+  soloMessage: string;
   hoveredStats: DotGraphTieStats;
   hoveredClass: DotGraphPositionClass;
 }
@@ -204,6 +205,7 @@ export default function HoveredLayer({
     return {
       hoveredShape,
       displayPct,
+      soloMessage: typeof hoveredEntry?.soloMessage === "string" ? hoveredEntry.soloMessage : "",
       hoveredStats,
       hoveredClass,
     };
@@ -229,6 +231,7 @@ export default function HoveredLayer({
         dotId={hoveredDot.dotId}
         percentage={content.displayPct}
         color={content.hoveredShape.color}
+        soloMessage={content.soloMessage}
         mode={mode}
         belowCountStrict={content.hoveredStats.below}
         equalCount={content.hoveredStats.equal}

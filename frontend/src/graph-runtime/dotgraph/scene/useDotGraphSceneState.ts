@@ -9,6 +9,7 @@ import { isMobileWidth, isTabletWidth } from '../../../lib/responsive/breakpoint
 import { desktopGraphToolsOffsetPx, tabletGraphToolsYOffsetPx } from '../../../lib/responsive/graph-tools-offset';
 import { useOptionalUiFlow } from '../../../app/state/ui-context';
 import { chooseCameraSpriteTileSize, prewarmSpriteTextures, resolveSpriteVisual } from '../../sprites/entry';
+import { bumpZoomMetric } from '../../debug/zoomMetrics';
 import { useOrbitController } from '../camera';
 import useDotPoints from './useDotPoints';
 import { nonlinearLerp } from '../utils/math';
@@ -29,7 +30,8 @@ const MOBILE_PANEL_X_OFFSET_PX = -112;
 const SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX = -112;
 const GRAPH_MIN_RADIUS_MOBILE = 2;
 const GRAPH_MIN_RADIUS_DESKTOP = 20;
-const GRAPH_MAX_RADIUS = 800;
+const GRAPH_MAX_RADIUS_TOUCH = 800;
+const GRAPH_MAX_RADIUS_DESKTOP = 600;
 const PERSONALIZED_MAX_ZOOM_FRACTION_DESKTOP = 0.965;
 const PERSONALIZED_INITIAL_ZOOM_FRACTION_DESKTOP = 0.92;
 const PERSONALIZED_MAX_ZOOM_FRACTION_TABLET_1_TILE = 0.965;
@@ -40,7 +42,6 @@ const PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_2_TILE = 0.83;
 const PERSONALIZED_MAX_ZOOM_FRACTION_PHONE_3_TILE = 0.74;
 const DOTGRAPH_BAG_SEED = 'dotgraph-bag-v1';
 const TILE_SIZE_ZOOM_SETTLE_MS = 220;
-const DENSE_SCENE_TILE_CAP_COUNT = 240;
 
 function resolvePersonalizedMaxZoomFraction({
   isRealMobile,
@@ -155,7 +156,7 @@ export default function useDotGraphSceneState({
   const mobilePanelOffsetPx = wantsSkew ? MOBILE_PANEL_X_OFFSET_PX : 0;
   const soloPanelOffsetPx = wantsSoloSkew ? SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX : 0;
   const baseMinRadius = isSmallScreen ? GRAPH_MIN_RADIUS_MOBILE : GRAPH_MIN_RADIUS_DESKTOP;
-  const maxRadiusLimit = GRAPH_MAX_RADIUS;
+  const maxRadiusLimit = useDesktopLayout ? GRAPH_MAX_RADIUS_DESKTOP : GRAPH_MAX_RADIUS_TOUCH;
   const personalizedSpriteTileWidth = useMemo(
     () =>
       resolvePersonalizedSpriteTileWidth({
@@ -203,21 +204,17 @@ export default function useDotGraphSceneState({
   );
 
   const dotPointOptions = useMemo<DotPointsOptions>(() => {
-    const n = safeData.length;
-    const chaosT = n <= 1 ? 0 : Math.min(1, (n - 1) / 299);
     return {
       spreadOverride: spread,
       minDistance: 2.1,
       seed: 1337,
       relaxPasses: 1,
       relaxStrength: 0.25,
-      // Loose at small counts, tighter clustering as cloud grows toward 300
-      attractorStrength: 0.25 + chaosT * 0.31,
       colorForAverage,
       personalizedEntryId,
       showPersonalized,
     };
-  }, [spread, colorForAverage, personalizedEntryId, showPersonalized, safeData.length]);
+  }, [spread, colorForAverage, personalizedEntryId, showPersonalized]);
 
   const shapes = useDotPoints(safeData, dotPointOptions);
   const dotPositions = useMemo(() => shapes.map(s => s.position), [shapes]);
@@ -253,17 +250,13 @@ export default function useDotGraphSceneState({
   const bagSeed = DOTGRAPH_BAG_SEED;
 
   const particleFrames = isRealMobile ? 60 : 219;
-  const desiredLiveTileSize = chooseCameraSpriteTileSize({
+  const desiredTileSize = chooseCameraSpriteTileSize({
     radius,
     minRadius,
     maxRadius,
     isRealMobile,
     isTabletLike,
   });
-  const desiredTileSize =
-    safeData.length >= DENSE_SCENE_TILE_CAP_COUNT
-      ? Math.min(desiredLiveTileSize, 128)
-      : desiredLiveTileSize;
   const [tileSize, setTileSize] = useState(desiredTileSize);
 
   useEffect(() => {
@@ -271,6 +264,7 @@ export default function useDotGraphSceneState({
     if (zoomTargetRef.current != null) return;
 
     const timer = setTimeout(() => {
+      bumpZoomMetric('tileSizeUpdates');
       setTileSize(desiredTileSize);
     }, TILE_SIZE_ZOOM_SETTLE_MS);
 
@@ -288,7 +282,7 @@ export default function useDotGraphSceneState({
         orderIndex: i,
         seed: bagSeed,
       })),
-    [shapes, prewarmLimit]
+    [shapes, prewarmLimit, bagSeed]
   );
 
   useEffect(() => {

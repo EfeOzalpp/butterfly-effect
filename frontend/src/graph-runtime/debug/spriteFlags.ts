@@ -51,6 +51,12 @@ function normalizeShape(value: unknown): ShapeKey | undefined {
   return SHAPE_ALIASES[value.trim().replace(/[\s_-]/g, '').toLowerCase()];
 }
 
+function normalizeAvg(value: unknown): number | undefined {
+  const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value.trim()) : NaN;
+  if (!Number.isFinite(n)) return undefined;
+  return Math.max(0, Math.min(1, n));
+}
+
 function readStorageShape() {
   if (typeof window === "undefined") return undefined;
   try {
@@ -65,6 +71,25 @@ function readQueryShape() {
   try {
     const params = new URLSearchParams(window.location.search);
     return normalizeShape(params.get('gpShape') ?? params.get('spriteShape'));
+  } catch {
+    return undefined;
+  }
+}
+
+function readStorageAvg() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    return normalizeAvg(window.localStorage.getItem('be.debug.spriteAvg'));
+  } catch {
+    return undefined;
+  }
+}
+
+function readQueryAvg() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return normalizeAvg(params.get('gpAvg') ?? params.get('spriteAvg'));
   } catch {
     return undefined;
   }
@@ -105,6 +130,16 @@ export function forcedSpriteShape(): ShapeKey | undefined {
 
 export function forcedSpriteShapeCacheKey() {
   return forcedSpriteShape() ?? 'auto';
+}
+
+export function forcedSpriteAvg(): number | undefined {
+  if (typeof window === "undefined") return undefined;
+  return normalizeAvg(window.__GP_FORCE_SPRITE_AVG) ?? readQueryAvg() ?? readStorageAvg();
+}
+
+export function forcedSpriteAvgCacheKey() {
+  const avg = forcedSpriteAvg();
+  return avg === undefined ? 'auto' : avg.toFixed(4);
 }
 
 export function shouldLogSpriteLoadErrors() {
