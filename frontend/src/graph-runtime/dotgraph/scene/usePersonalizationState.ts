@@ -112,7 +112,9 @@ export default function usePersonalizationState({
 
     const visual = resolveSpriteVisual({
       entryId,
-      sectionKey,
+      // Use entryId as the stable section key so the personal shape is cached
+      // once per person and doesn't change when the graph picker section changes.
+      sectionKey: entryId,
       avg,
       seed: bagSeed,
       orderIndex: myShapeIndex >= 0 ? myShapeIndex : 0,
@@ -125,7 +127,7 @@ export default function usePersonalizationState({
       assignment: visual.assignment,
       identity: resolveSpriteIdentity(visual.assignment, { darkMode }),
     };
-  }, [bagSeed, darkMode, effectiveMyEntry, myShape?.averageWeight, myShapeIndex, personalizedEntryId, sectionKey]);
+  }, [bagSeed, darkMode, effectiveMyEntry, myShape?.averageWeight, myShapeIndex, personalizedEntryId]);
 
   const myDisplayValue = useMemo(() => {
     if (!(showCompleteUI && effectiveMyEntry)) return 0;
