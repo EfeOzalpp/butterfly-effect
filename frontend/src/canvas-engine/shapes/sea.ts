@@ -81,7 +81,7 @@ const SEA_TUNING = {
   foam: {
     enable: true,
     band:   { heightPx: 10, offsetTopPx: 4, oscAmpPx: 3, oscHzRange: [0.12, 0.25] as NumberRange },
-    motion: { dir: 'up' as const, spreadAngle: 0.35, speedPxSec: [10, 24] as NumberRange, gravity: -8, drag: 0.8, jitterPos: 0.5, jitterAngle: 0.15 },
+    motion: { dir: 'up' as const, spreadAngle: 0.35, speedPxSec: [5, 11] as NumberRange, gravity: -5, drag: 0.8, jitterPos: 0.5, jitterAngle: 0.15 },
     pool:   { count: 18, sizePx: [0.8, 1.8] as NumberRange, sizeHz: 6, lifetimeSec: [0.8, 1.6] as NumberRange, fadeInFrac: 0.2, fadeOutFrac: 0.35 },
     edgeFadePx: { left: 6, right: 6, top: 0, bottom: 10 },
     color:  { base: { r: 250, g: 252, b: 255, a: 200 }, varyBySize: true },
@@ -137,7 +137,7 @@ const SEA_TUNING = {
     rightNudgePx: 0,
 
     count:  34,
-    sizePx: [1.0, 2.2] as NumberRange,
+    sizePx: [2.5, 5.0] as NumberRange,
 
     leftSpeedPxSec:  [60, 120] as NumberRange,
     rightSpeedPxSec: [60, 120] as NumberRange,
@@ -518,10 +518,10 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
         : bottomBound + Math.max(spill, cell * 0.45);
 
       const surfaceY = waterTopY;
-      const bandTopY = surfaceY - cell * 0.06;
+      const spawnHeightPx = isSprite ? Math.max(5, cell * 0.16) : Math.max(8, cell * 0.35);
+      const bandTopY = isSprite ? surfaceY - spawnHeightPx : surfaceY - cell * 0.06;
       const bandH    = Math.max(1, bottomBound - bandTopY + cell * 0.25);
 
-      const spawnHeightPx = Math.max(8, cell * 0.35);
       const spawnFracY = Math.min(1, spawnHeightPx / Math.max(1, bandH));
 
       const leftSpawnFracX  = T.spill.leftSpawnFracX;

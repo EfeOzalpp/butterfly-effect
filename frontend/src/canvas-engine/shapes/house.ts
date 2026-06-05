@@ -41,8 +41,6 @@ import {
   shapeStyle,
 } from "./options";
 
-type HousePaletteTheme = "warm" | "cool";
-
 interface HousePalette extends ShapePalette {
   grass: RGB | RGB[];
   grassByLight?: LightClosenessBandMap<RGB | RGB[]>;
@@ -56,9 +54,7 @@ interface HousePalette extends ShapePalette {
   solarPanel: RGB;
 }
 
-interface HouseOptions extends ShapeDrawOptions<HousePalette> {
-  paletteTheme?: HousePaletteTheme;
-}
+type HouseOptions = ShapeDrawOptions<HousePalette>;
 
 type DoorProfileName = "short" | "mid" | "tall";
 interface DoorProfile {
@@ -206,82 +202,6 @@ const HOUSE_BASE_PALETTE: HousePalette = {
   solarPanel: { r: 180, g: 205, b: 235 },
 };
 
-const HOUSE_WARM_PALETTE: HousePalette = {
-  grass: { r: 158, g: 188, b: 96 },
-  body: [
-    { r: 240, g: 222, b: 190 },
-    { r: 248, g: 218, b: 188 },
-    { r: 236, g: 224, b: 192 },
-    { r: 252, g: 230, b: 208 },
-    { r: 238, g: 210, b: 186 },
-    { r: 232, g: 220, b: 196 },
-    { r: 244, g: 228, b: 200 },
-    { r: 240, g: 216, b: 194 },
-    { r: 248, g: 234, b: 210 },
-  ],
-  roof: [
-    { r: 208, g: 120, b: 88 },
-    { r: 196, g: 128, b: 96 },
-    { r: 184, g: 136, b: 106 },
-    { r: 172, g: 128, b: 112 },
-  ],
-  door: [
-    { r: 192, g: 134, b: 68 },
-    { r: 180, g: 148, b: 82 },
-    { r: 210, g: 168, b: 88 },
-    { r: 188, g: 148, b: 92 },
-  ],
-  window: {
-    lit: [
-      { r: 255, g: 154, b: 64 },
-      { r: 255, g: 176, b: 78 },
-      { r: 255, g: 198, b: 96 },
-      { r: 255, g: 222, b: 128 },
-      { r: 255, g: 241, b: 176 },
-    ],
-    dark: { r: 140, g: 168, b: 192 },
-  },
-  solarPanel: { r: 188, g: 208, b: 226 },
-};
-
-const HOUSE_COOL_PALETTE: HousePalette = {
-  grass: { r: 118, g: 172, b: 140 },
-  body: [
-    { r: 198, g: 218, b: 238 },
-    { r: 210, g: 222, b: 238 },
-    { r: 196, g: 212, b: 232 },
-    { r: 218, g: 226, b: 242 },
-    { r: 206, g: 220, b: 240 },
-    { r: 208, g: 218, b: 234 },
-    { r: 202, g: 216, b: 238 },
-    { r: 214, g: 224, b: 244 },
-    { r: 196, g: 210, b: 230 },
-  ],
-  roof: [
-    { r: 154, g: 168, b: 184 },
-    { r: 148, g: 158, b: 176 },
-    { r: 142, g: 152, b: 172 },
-    { r: 136, g: 148, b: 168 },
-  ],
-  door: [
-    { r: 148, g: 164, b: 148 },
-    { r: 136, g: 152, b: 172 },
-    { r: 168, g: 178, b: 156 },
-    { r: 158, g: 168, b: 186 },
-  ],
-  window: {
-    lit: [
-      { r: 255, g: 154, b: 64 },
-      { r: 255, g: 176, b: 78 },
-      { r: 255, g: 198, b: 96 },
-      { r: 255, g: 222, b: 128 },
-      { r: 255, g: 241, b: 176 },
-    ],
-    dark: { r: 108, g: 152, b: 208 },
-  },
-  solarPanel: { r: 168, g: 196, b: 228 },
-};
-
 const HOUSE_DARK_PALETTE: HousePalette = {
   grass: { r: 56, g: 108, b: 116 },
   grassByLight: {
@@ -291,18 +211,18 @@ const HOUSE_DARK_PALETTE: HousePalette = {
   },
   body: [
     { r: 104, g: 130, b: 178 },
-    { r: 130, g: 132, b: 158 },
+    { r: 118, g: 124, b: 172 },
     { r: 108, g: 146, b: 162 },
     { r: 128, g: 136, b: 178 },
     { r: 114, g: 148, b: 188 },
-    { r: 150, g: 118, b: 152 }, // orange-lean, purple undertone (mauve)
+    { r: 158, g: 106, b: 162 },
     { r: 92,  g: 116, b: 152 },
-    { r: 110, g: 142, b: 160 }, // green-lean, purple undertone (slate-teal)
+    { r: 110, g: 142, b: 160 },
     { r: 136, g: 124, b: 166 },
     { r: 98,  g: 134, b: 170 },
-    { r: 124, g: 138, b: 158 },
-    { r: 144, g: 124, b: 150 },
-    { r: 104, g: 128, b: 146 },
+    { r: 110, g: 132, b: 174 },
+    { r: 152, g: 110, b: 162 },
+    { r: 92,  g: 120, b: 160 },
   ],
   roof: [
     { r: 140, g: 86,  b: 104 },
@@ -325,7 +245,7 @@ const HOUSE_DARK_PALETTE: HousePalette = {
       { r: 255, g: 214, b: 120 },
       { r: 250, g: 234, b: 166 },
     ],
-    dark: { r: 116, g: 128, b: 188 },
+    dark: { r: 128, g: 140, b: 205 },
   },
   solarPanel: { r: 99, g: 129, b: 180 },
 };
@@ -351,7 +271,10 @@ function oscillateWindowColor(base: RGB, timeSec: number, oscSeed: number): RGB 
   const k = (0.5 + 0.5 * Math.sin(timeSec * Math.PI * 2 * speed + phase)) * amp;
   return mixRgb(base, target, k);
 }
-export function houseHasChimney(seedKey: ShapeSeed): boolean {
+export function houseHasChimney(seedKey: ShapeSeed, liveAvg = 0.5): boolean {
+  const u = clamp01(Number.isFinite(liveAvg) ? liveAvg : 0.5);
+  if (u < 0.25) return true;
+  if (u >= 0.75) return false;
   const seed = hash32(String(seedKey));
   const r4 = rand01(seed ^ 0x27d4eb2f);
   return Math.floor(r4 * 3) === 0;
@@ -374,8 +297,6 @@ export function drawHouse(
   const darkMode = style.darkMode === true;
 
   const pal = style.palette ?? (darkMode ? HOUSE_DARK_PALETTE
-    : opts.paletteTheme === 'warm' ? HOUSE_WARM_PALETTE
-    : opts.paletteTheme === 'cool' ? HOUSE_COOL_PALETTE
     : HOUSE_BASE_PALETTE);
   const cell = projection.cell;
   const f = projection.footprint;
@@ -572,7 +493,7 @@ export function drawHouse(
     const allowPanels = !tinyRoof;
     if (hasPanels && vis > 0 && allowPanels) {
       // determine which side of the roof they go on
-      const chimneyExists = (Math.floor(r4 * 3) === 0);
+      const chimneyExists = houseHasChimney(seedKey, u);
       const chimneyLeft = chimneyExists ? (r4 < 0.5) : null;
 
       let sideLeft = r8 < 0.5;
@@ -666,7 +587,7 @@ export function drawHouse(
   // --- end solar panels ---
 
   // chimney (~1 in 3)
-  if (Math.floor(r4 * 3) === 0) {
+  if (houseHasChimney(seedKey, u)) {
     const baseW = Math.max(1, Math.round(pxW * 0.18));
     const baseH = Math.max(1, Math.round(bodyH * 0.075));
     const scale = resolveRangeValue(HOUSE.chimney.scaleRange, u) * particleBucketRange(rowBucket.t, 0.52, 1.0);
@@ -870,7 +791,7 @@ if (shouldDrawColorDetails) {
   if (totalWindows < 2) totalWindows = 2;
 
   const dynamicLitRatio = Math.pow(1 - u, WINDOW_OSC.litCurve);
-  const minLitRatio = darkMode ? 0.45 : 0.3;
+  const minLitRatio = darkMode ? 0.12 : 0.06;
   const litCount = Math.min(
     totalWindows,
     Math.max(1, Math.round(Math.max(minLitRatio, dynamicLitRatio) * totalWindows))

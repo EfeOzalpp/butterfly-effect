@@ -164,7 +164,7 @@ const CF: CarFactoryTuning = {
 
   // car fit
   carSidePadK: 0.06,
-  carScaleBoost: 1.00,
+  carScaleBoost: 0.72,
 
   // chimney shape
   chimWFrac: 0.22,
