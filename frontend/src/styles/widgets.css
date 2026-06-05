@@ -120,7 +120,10 @@
   padding: 0.5rem 0.75rem 0.25rem;
   text-align: center;
   color: var(--ui-text-secondary);
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
+.bar-graph-percentile-caption.caption-invisible { opacity: 0; pointer-events: none; }
 .bar-graph-percentile-caption strong { color: var(--ui-text); font-weight: var(--fw-bold); }
 
 .widgets-panel.q-scores { padding: 0; }

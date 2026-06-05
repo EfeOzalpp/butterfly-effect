@@ -214,8 +214,8 @@ export default function BarGraph() {
           );
         })}
       </div>
-      {canShowYou && animationState && animateBars && (
-        <h4 className="bar-graph-percentile-caption">
+      {canShowYou && (
+        <h4 className={`bar-graph-percentile-caption${animationState && animateBars ? '' : ' caption-invisible'}`}>
           Among <strong>{sectionLabel}</strong>, you are the {ordinalSuffix(youPercentile)} percentile.
         </h4>
       )}
