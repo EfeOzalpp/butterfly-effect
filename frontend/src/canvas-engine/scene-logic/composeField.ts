@@ -14,11 +14,11 @@ import { placePoolItems } from "./place";
 function hasExplicitShapePlacement(
   rule: ComposeOpts["placements"][keyof ComposeOpts["placements"]]
 ): boolean {
-  return !!rule && (
-    "center" in rule ||
-    (Array.isArray(rule.points) && rule.points.length > 0) ||
-    (Array.isArray(rule.zones) && rule.zones.length > 0)
-  );
+  if (!rule || Array.isArray(rule) || "kind" in rule) return false;
+  const r = rule as { center?: unknown; points?: unknown[]; zones?: unknown[] };
+  return "center" in r ||
+    (Array.isArray(r.points) && r.points.length > 0) ||
+    (Array.isArray(r.zones) && r.zones.length > 0);
 }
 
 function buildPresetPool(
@@ -84,7 +84,7 @@ function buildPresetPool(
     found = false;
     for (const queue of queues) {
       const item = queue[round];
-      if (item) {
+      if (item !== undefined) {
         items.push(item);
         found = true;
       }

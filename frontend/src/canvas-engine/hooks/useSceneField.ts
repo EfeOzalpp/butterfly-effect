@@ -39,7 +39,7 @@ function resolveRuntimePlacements(
     return variants[0] ?? placements;
   }
 
-  return variants[positiveModulo(spotlightIndex, variants.length)] ?? variants[0] ?? placements;
+  return variants[positiveModulo(spotlightIndex, variants.length)];
 }
 
 function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {

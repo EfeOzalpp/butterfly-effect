@@ -635,7 +635,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
   // 2) BOWL composite (proportional; mobile-safe)
   if (T.bowl.enable) {
-    const tEff = bowlThicknessPx;
+    const _tEff = bowlThicknessPx;
     const baseH = bowlBaseH;
     const baseY = bowlBaseY;
     const baseX = bowlBaseX;

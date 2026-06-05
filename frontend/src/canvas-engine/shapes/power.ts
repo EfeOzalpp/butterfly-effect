@@ -239,7 +239,7 @@ export type PowerVisualKind = "windTurbine" | "factory";
 export function resolvePowerVisualKind({
   liveAvg,
   seedKey,
-  occurrenceIndex = 0,
+  occurrenceIndex: _occurrenceIndex = 0,
 }: {
   liveAvg: number;
   seedKey: ShapeSeed;

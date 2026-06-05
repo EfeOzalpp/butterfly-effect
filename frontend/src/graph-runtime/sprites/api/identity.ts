@@ -134,7 +134,7 @@ function copyForRenderedKind({
   label: string;
   avg: number;
 }) {
-  return SHAPE_COPY[renderedKind]?.[copyBandForAvg(avg)] ?? sentenceForLabel(label);
+  return SHAPE_COPY[renderedKind][copyBandForAvg(avg)] ?? sentenceForLabel(label);
 }
 
 function seedKeyForAssignment(assignment: SpriteAssignment) {

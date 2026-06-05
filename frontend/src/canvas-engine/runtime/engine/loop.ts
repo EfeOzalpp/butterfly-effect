@@ -205,7 +205,7 @@ export function createEngineTicker(deps: LoopDeps) {
       return variants[0] ?? null;
     }
 
-    return variants[positiveModulo(spotlight.index, variants.length)] ?? variants[0] ?? null;
+    return variants[positiveModulo(spotlight.index, variants.length)];
   }
 
   function resolveRuntimeAmbientParticles(

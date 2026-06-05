@@ -376,7 +376,7 @@ export function drawVilla(
     typeof pass.maskAlpha === "number" && Number.isFinite(pass.maskAlpha)
       ? pass.maskAlpha
       : baseAlpha;
-  const shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
+  const _shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
   const u = clamp01(style.liveAvg ?? 0.5);
   const liveBlend = clamp01(typeof style.blend === 'number' ? style.blend : 1);
 
@@ -570,7 +570,7 @@ export function drawVilla(
     );
   }
 
-  const roofDrawers: Array<() => void> = [];
+  const roofDrawers: (() => void)[] = [];
 
   for (const col of order) {
     const isLeftCol = (col === 0);

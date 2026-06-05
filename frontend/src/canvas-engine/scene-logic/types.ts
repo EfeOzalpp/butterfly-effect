@@ -1,6 +1,6 @@
 // src/canvas-engine/scene-logic/types.ts
 
-import type { DeviceType } from "../shared/responsiveness";
+
 import type { GridFootprint } from "../shared/geometry";
 import type { CanvasPaddingPolicy } from "../scene-rules/canvas-padding";
 import type { ShapeName } from "../scene-rules/shapeCatalog";

@@ -1,4 +1,3 @@
-import type { AmbientParticlesSceneSpec } from "../../ambient-particles";
 import type { BackgroundSpec } from "../../backgrounds";
 import { rowsByDevice } from "../../canvas-padding/helpers";
 import { centerShape } from "../../placement-rules/helpers";
