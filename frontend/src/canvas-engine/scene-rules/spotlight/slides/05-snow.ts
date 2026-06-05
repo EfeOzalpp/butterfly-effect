@@ -1,6 +1,7 @@
 import type { BackgroundSpec } from "../../backgrounds";
-import type { ScenePlacementRuleMap } from "../../placement-rules";
-import { centeredCount, spotlightRows, type SpotlightSlide } from "./types";
+import { uniformRows } from "../../canvas-padding/helpers";
+import { centerShape } from "../../placement-rules/helpers";
+import type { SpotlightSlide } from "../types";
 
 const snowBackground: BackgroundSpec = {
   base: "rgb(40, 44, 58)",
@@ -9,9 +10,8 @@ const snowBackground: BackgroundSpec = {
     from: { xK: 0.5, yK: 0.0 },
     to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { rgba: "rgba(166, 188, 220, 0.38)" },
-      { rgba: "rgba(88, 101, 132, 0.26)" },
-      { rgba: "rgba(43, 43, 54, 0)" },
+      { rgba: "rgb(129, 178, 227)" },
+      { rgba: "rgb(190, 194, 204)", liveBlend: [0.10, 0.08] },
     ] as const,
   },
 } as const;
@@ -19,32 +19,31 @@ const snowBackground: BackgroundSpec = {
 const snowDarkBackground: BackgroundSpec = {
   base: "rgb(34, 39, 54)",
   overlay: {
-    kind: "radial",
-    center: { xK: 0.5, yK: 0.36 },
-    innerK: 0.08,
-    outer: { k: 0.86 },
+    kind: "linear",
+    from: { xK: 0.5, yK: 0.0 },
+    to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { rgba: "rgba(235, 242, 255, 0.14)" },
-      { rgba: "rgba(100, 118, 148, 0.22)" },
-      { rgba: "rgba(43, 43, 54, 0)" },
+      { rgba: "rgb(65, 97, 130)" },
+      { rgba: "rgb(53, 71, 110)", liveBlend: [0.10, 0.08] },
     ] as const,
+  },
+  stars: {
+    count: [16, 24],
+    topBandK: 0.95,
+    minR: 0.7,
+    maxR: 1.3,
+    alpha: [[0.36, 0.92], [0.44, 1.12]],
+    flickerHz: [[0.3, 0.72], [0.12, 0.28]],
   },
 } as const;
 
-const snowPlacement: ScenePlacementRuleMap = {
-  snow: {
-    absolute: {
-      kind: "center",
-      count: centeredCount,
-    },
-  },
-};
+const snowPlacement = centerShape("snow", {yK: 0.66});
 
 export const snowSlide = {
   id: "snow",
   shape: "snow",
   background: snowBackground,
   darkBackground: snowDarkBackground,
-  padding: spotlightRows(4),
+  padding: uniformRows(3),
   placement: snowPlacement,
 } as const satisfies SpotlightSlide;

@@ -20,7 +20,7 @@ export default function SpotlightEntry({
         liveAvg={liveAvg}
         spotlight={spotlight}
         fog={false}
-        shapeLightSource={{ xK: 0.72, yK: -0.12, paletteClosenessK: 0.9 }}
+        shapeLightSource={{ xK: 0.4, yK: 0.1, paletteClosenessK: 0.9 }}
       />
     </>
   );

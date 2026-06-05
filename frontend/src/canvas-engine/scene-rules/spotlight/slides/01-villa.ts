@@ -1,6 +1,7 @@
 import type { BackgroundSpec } from "../../backgrounds";
-import type { ScenePlacementRuleMap } from "../../placement-rules";
-import { centeredCount, spotlightRows, type SpotlightSlide } from "./types";
+import { uniformRows } from "../../canvas-padding/helpers";
+import { centerShape } from "../../placement-rules/helpers";
+import type { SpotlightSlide } from "../types";
 
 const villaBackground: BackgroundSpec = {
   base: "rgb(43, 43, 54)",
@@ -12,7 +13,7 @@ const villaBackground: BackgroundSpec = {
       { rgba: "rgb(214, 242, 255)" },
       { rgba: "rgb(214, 242, 255)" },
       { rgba: "rgb(248, 243, 239)" },
-      { k: 0.6, rgba: "rgb(255, 226, 202)", liveBlend: [0.1, 0] },
+      { k: 0.6, rgba: "rgb(255, 221, 208)", liveBlend: [0.1, 0] },
       { k: 0.6, rgba: "#a9e0a7", rightRgba: "#87dcb7", liveBlend: [0.1, 0.1] },
       { rgba: "#c7ca83", liveBlend: [0.1, 0.1]  },
     ] as const,
@@ -26,8 +27,7 @@ const villaDarkBackground: BackgroundSpec = {
     from: { xK: 0.5, yK: 0.0 },
     to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { rgba: "rgb(20, 35, 68)",   rightRgba: "rgb(44, 49, 60)" },
-      { rgba: "rgb(49, 84, 126)",  rightRgba: "rgb(67, 71, 93)" },
+      { rgba: "rgb(44, 63, 106)", rightRgba: "rgb(64, 59, 106)" },
       { k: 0.6, rgba: "rgb(68, 116, 179)", rightRgba: "rgb(98, 99, 129)"},
       { k: 0.6, rgba: "#757f5c", rightRgba: "#628475", liveBlend: [0.1, 0] },
       { rgba: "#3e4137", liveBlend: [0.1, 0] },
@@ -43,20 +43,13 @@ const villaDarkBackground: BackgroundSpec = {
   },
 } as const;
 
-const villaPlacement: ScenePlacementRuleMap = {
-  villa: {
-    absolute: {
-      kind: "center",
-      count: centeredCount,
-    },
-  },
-};
+const villaPlacement = centerShape("villa");
 
 export const villaSlide = {
   id: "villa",
   shape: "villa",
   background: villaBackground,
   darkBackground: villaDarkBackground,
-  padding: spotlightRows(3),
+  padding: uniformRows(3),
   placement: villaPlacement,
 } as const satisfies SpotlightSlide;
