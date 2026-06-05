@@ -8,8 +8,9 @@ export interface FoliageColorStop {
 
 export interface FoliageLayerSpec {
   count: number | readonly [number, number];
-  yK: BackgroundStopK;
+  yK: BackgroundStopK | readonly [BackgroundStopK, BackgroundStopK];
   xRange?: readonly [number, number];
+  xExclude?: readonly [number, number];
   heightPx: readonly [number, number];
   widthPx?: readonly [number, number];
   color: string | readonly FoliageColorStop[];
