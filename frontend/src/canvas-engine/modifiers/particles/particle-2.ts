@@ -90,6 +90,11 @@ function makeDormantParticle(uSlot: number): Particle {
   };
 }
 
+function stratifiedSlot(index: number, total: number, rnd: RandomSource) {
+  const n = Math.max(1, total);
+  return (index + 0.18 + rnd() * 0.64) / n;
+}
+
 function decorrelatedSlot(uSlot: number) {
   const x = Math.sin((uSlot + 0.173) * 12.9898) * 43758.5453;
   return x - Math.floor(x);
@@ -133,7 +138,7 @@ function ensureEmitter(store: ParticleStore, opts: PuffEmitterOpts): EmitterStat
   const mk = () => {
     const rnd = makePRNG(seed);
     const particles = Array.from({ length: wantCount }, (_, i) =>
-      makeDormantParticle((i + rnd()) / wantCount)
+      makeDormantParticle(stratifiedSlot(i, wantCount, rnd))
     );
     return { particles, rnd };
   };
@@ -145,10 +150,13 @@ function ensureEmitter(store: ParticleStore, opts: PuffEmitterOpts): EmitterStat
     if (st.particles.length < wantCount) {
       const rnd = st.rnd;
       for (let i = st.particles.length; i < wantCount; i++) {
-        st.particles.push(makeDormantParticle((i + rnd()) / wantCount));
+        st.particles.push(makeDormantParticle(stratifiedSlot(i, wantCount, rnd)));
       }
     } else {
       st.particles.length = wantCount;
+    }
+    for (let i = 0; i < st.particles.length; i += 1) {
+      st.particles[i].uSlot = stratifiedSlot(i, wantCount, st.rnd);
     }
   }
 

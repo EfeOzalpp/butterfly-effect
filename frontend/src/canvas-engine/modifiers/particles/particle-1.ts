@@ -352,11 +352,15 @@ export function stepAndDrawParticles(p: ParticleCanvas, opts: ParticleEmitterOpt
   const wantSizeFollow = sizeHz > 0 && rMax !== rMin;
   const wantLenFollow = lenHz > 0 && lMax !== lMin;
 
+  function decorrelatedSlot(uSlot: number) {
+    const x = Math.sin((uSlot + 0.173) * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
   function laneTargetSize(uSlot: number) {
-    return rMin + (rMax - rMin) * uSlot;
+    return rMin + (rMax - rMin) * decorrelatedSlot(uSlot);
   }
   function laneTargetLen(uSlot: number) {
-    return lMin + (lMax - lMin) * uSlot;
+    return lMin + (lMax - lMin) * decorrelatedSlot(uSlot);
   }
 
   function respawnParticle(pr: Particle, idx: number, total: number) {
