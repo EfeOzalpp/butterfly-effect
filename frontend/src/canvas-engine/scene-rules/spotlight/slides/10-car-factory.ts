@@ -1,18 +1,19 @@
 import type { BackgroundSpec } from "../../backgrounds";
-import type { ScenePlacementRuleMap } from "../../placement-rules";
-import { centeredCount, spotlightRows, type SpotlightSlide } from "./types";
+import { uniformRows } from "../../canvas-padding/helpers";
+import { centerShape } from "../../placement-rules/helpers";
+import type { SpotlightSlide } from "../types";
 
 const carFactoryBackground: BackgroundSpec = {
-  base: "rgb(48, 42, 48)",
+  base: "rgb(44, 39, 48)",
   overlay: {
-    kind: "radial",
-    center: { xK: 0.5, yK: 0.42 },
-    innerK: 0.08,
-    outer: { k: 0.84 },
+    kind: "linear",
+    from: { xK: 0.5, yK: 0.0 },
+    to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { rgba: "rgba(228, 164, 178, 0.16)" },
-      { rgba: "rgba(133, 84, 102, 0.24)" },
-      { rgba: "rgba(43, 43, 54, 0)" },
+      { rgba: "rgb(140, 211, 255)", rightRgba: "rgb(145, 157, 215)" },
+      { k: 0.75, rgba: "rgb(255, 231, 231)" },
+      { k: 0.75, rgba: "rgb(212, 189, 183)", rightRgba: "rgb(189, 173, 151)", liveBlend: [0.14, 0.08] },
+      { rgba: "rgb(185, 185, 185)", liveBlend: [0.08, 0.02] },
     ] as const,
   },
 } as const;
@@ -24,27 +25,21 @@ const carFactoryDarkBackground: BackgroundSpec = {
     from: { xK: 0.5, yK: 0.0 },
     to: { xK: 0.5, yK: 1.0 },
     stops: [
-      { rgba: "rgba(116, 82, 104, 0.40)" },
-      { rgba: "rgba(92, 70, 86, 0.24)" },
-      { rgba: "rgba(43, 43, 54, 0)" },
+      { rgba: "rgb(47, 94, 124)", rightRgba: "rgb(63, 74, 129)" },
+      { k: 0.75, rgba: "rgb(146, 123, 91)" },
+      { k: 0.75, rgba: "rgb(102, 90, 87)", rightRgba: "rgb(79, 72, 62)", liveBlend: [0.14, 0.08] },
+      { rgba: "rgb(91, 91, 91)", liveBlend: [0.08, 0.02] },
     ] as const,
   },
 } as const;
 
-const carFactoryPlacement: ScenePlacementRuleMap = {
-  carFactory: {
-    absolute: {
-      kind: "center",
-      count: centeredCount,
-    },
-  },
-};
+const carFactoryPlacement = centerShape("carFactory", {yK: 0.52} );
 
 export const carFactorySlide = {
   id: "carFactory",
   shape: "carFactory",
   background: carFactoryBackground,
   darkBackground: carFactoryDarkBackground,
-  padding: spotlightRows(3),
+  padding: uniformRows(3),
   placement: carFactoryPlacement,
 } as const satisfies SpotlightSlide;
