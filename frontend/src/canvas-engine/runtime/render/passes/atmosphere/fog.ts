@@ -89,20 +89,32 @@ function resolveLightGradient(
 ): readonly FogGradientStop[] {
   const centerK = clamp01(lightSource.xK);
   const centerColor = lightSource.color;
-  const effectiveRadiusK = Math.max(0.01, Math.min(0.5, fallbackRadiusK ?? spec.innerRadiusK ?? 0.13));
-  const effectiveLeftInnerK = clamp01(centerK - effectiveRadiusK);
-  const effectiveRightInnerK = clamp01(centerK + effectiveRadiusK);
+  const innerRadiusK = Math.max(0.01, Math.min(0.5, fallbackRadiusK ?? spec.innerRadiusK ?? 0.13));
+  // Natural fade width beyond the inner glow — fixed so the falloff looks the
+  // same regardless of where the sun sits. When the sun is near an edge, the
+  // outer fade extends past the viewport boundary; the boundary color is
+  // computed by interpolating mid-fade rather than snapping to the edge color.
+  const outerFadeWidth = Math.max(0.25, innerRadiusK * 2.5);
   const resolvedLeftEdgeColor = spec.leftEdgeColor ?? spec.edgeColor ?? centerColor;
   const resolvedRightEdgeColor = spec.rightEdgeColor ?? spec.edgeColor ?? centerColor;
-  const leftEdgeColor = centerK <= effectiveRadiusK ? centerColor : resolvedLeftEdgeColor;
-  const rightEdgeColor = 1 - centerK <= effectiveRadiusK ? centerColor : resolvedRightEdgeColor;
-  return [
-    { k: 0, color: leftEdgeColor },
-    { k: effectiveLeftInnerK, color: centerColor },
-    { k: centerK, color: centerColor },
-    { k: effectiveRightInnerK, color: centerColor },
-    { k: 1, color: rightEdgeColor },
-  ];
+
+  const colorAtK = (k: number): FogColor => {
+    const dist = Math.abs(k - centerK);
+    if (dist <= innerRadiusK) return centerColor;
+    const edgeColor = k < centerK ? resolvedLeftEdgeColor : resolvedRightEdgeColor;
+    const t = clamp01((dist - innerRadiusK) / outerFadeWidth);
+    return mixFogColor(centerColor, edgeColor, t);
+  };
+
+  const stops: FogGradientStop[] = [{ k: 0, color: colorAtK(0) }];
+  const leftInnerK = centerK - innerRadiusK;
+  if (leftInnerK > 0 && leftInnerK < 1) stops.push({ k: leftInnerK, color: centerColor });
+  stops.push({ k: centerK, color: centerColor });
+  const rightInnerK = centerK + innerRadiusK;
+  if (rightInnerK > 0 && rightInnerK < 1) stops.push({ k: rightInnerK, color: centerColor });
+  stops.push({ k: 1, color: colorAtK(1) });
+
+  return stops;
 }
 
 function defaultLightGradient(darkMode: boolean): FogLightGradientSpec {
