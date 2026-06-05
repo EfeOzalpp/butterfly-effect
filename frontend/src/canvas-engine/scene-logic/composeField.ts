@@ -83,7 +83,7 @@ function buildPresetPool(
   while (found) {
     found = false;
     for (const queue of queues) {
-      const item = queue[round];
+      const item = (queue as (PoolItem | undefined)[])[round];
       if (item !== undefined) {
         items.push(item);
         found = true;
