@@ -2,7 +2,41 @@
 
 import type { ShapeName } from "../shapeCatalog";
 import { SHAPES } from "../shapeCatalog";
-import type { QuotaAnchor, ScenePlacementRules, ShapePlacementRule } from "./types";
+import type {
+  CenterPlacement,
+  DeviceCount,
+  PointPlacement,
+  QuotaAnchor,
+  ScenePlacementRuleMap,
+  ScenePlacementRules,
+  ShapePlacementRule,
+} from "./types";
+
+export const ONE_PER_DEVICE: DeviceCount = { mobile: 1, tablet: 1, laptop: 1 };
+
+export function centerShape(
+  shape: ShapeName,
+  placement: CenterPlacement = {}
+): ScenePlacementRuleMap {
+  return {
+    [shape]: {
+      center: {
+        count: placement.count ?? ONE_PER_DEVICE,
+        xK: placement.xK,
+        yK: placement.yK,
+        scale: placement.scale,
+      },
+    },
+  };
+}
+
+export function pointPlacement(
+  xK: number,
+  yK: number,
+  count?: DeviceCount
+): PointPlacement {
+  return count ? { xK, yK, count } : { xK, yK };
+}
 
 // apply the same rule to multiple shapes, then spread the result into a rules object.
 export function forShapes(

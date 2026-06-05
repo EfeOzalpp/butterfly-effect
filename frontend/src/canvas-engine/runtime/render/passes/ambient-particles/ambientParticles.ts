@@ -51,10 +51,13 @@ function colorForLayer(layer: AmbientParticleLayerSpec, index: number) {
   if (typeof layer.color === "string") {
     return { color: layer.color, alpha: layer.alpha ?? 1 };
   }
+  if (layer.color.length === 0) {
+    return { color: "rgb(255, 255, 255)", alpha: layer.alpha ?? 1 };
+  }
   const choice = layer.color[index % layer.color.length] ?? layer.color[0];
   return {
-    color: choice?.color ?? "rgb(255, 255, 255)",
-    alpha: choice?.alpha ?? layer.alpha ?? 1,
+    color: choice.color,
+    alpha: choice.alpha ?? layer.alpha ?? 1,
   };
 }
 

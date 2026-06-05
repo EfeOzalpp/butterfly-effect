@@ -22,7 +22,7 @@ export function resolvePaddingPolicyVariants(
     return variants[0] ?? paddingByDevice;
   }
 
-  return variants[positiveModulo(spotlightIndex, variants.length)] ?? variants[0] ?? paddingByDevice;
+  return variants[positiveModulo(spotlightIndex, variants.length)];
 }
 
 // Pick the padding spec that matches the current rule width/device band.

@@ -47,7 +47,6 @@ interface VillaPalette extends ShapePalette {
   roof: RGB[];
   door: RGB[];
   window: { lit: RGB; dark: RGB };
-  platform: RGB;
 }
 
 interface WindowProfile {
@@ -68,7 +67,6 @@ interface VillaTuning {
   bodyShape: { frontHMinK: number; frontHMaxK: number; sideHMinK: number; sideHMaxK: number };
   variants: { sideRoofChance: number };
   windows: { marginY: number; frontVert: NumberRange; sideSmall: NumberRange; sideYOffsetK: number };
-  platform: { baseK: number; scaleRange: NumberRange };
   foliage: {
     scaleRange: NumberRange;
     baseWk: number;
@@ -131,10 +129,6 @@ const VILLA: VillaTuning = {
     frontVert: [10, 16],
     sideSmall: [8, 10],
     sideYOffsetK: 0.38,
-  },
-  platform: {
-    baseK: 0.25,
-    scaleRange: [0.0, 1.0]
   },
   foliage: {
     scaleRange: [0.70, 1.15],
@@ -220,8 +214,6 @@ const VILLA_BASE_PALETTE: VillaPalette = {
     lit:  { r: 255, g: 234, b: 148 },
     dark: { r: 120, g: 170, b: 220 },
   },
-
-  platform: { r: 130, g: 134, b: 138 },
 };
 
 const VILLA_DARK_PALETTE: VillaPalette = {
@@ -297,7 +289,6 @@ const VILLA_DARK_PALETTE: VillaPalette = {
     lit:  { r: 255, g: 186, b: 62 },
     dark: { r: 116, g: 128, b: 188 },
   },
-  platform: { r: 82, g: 86, b: 88 },
 };
 
 // Helpers.
@@ -445,24 +436,42 @@ export function drawVilla(
 
   // The depth mask pass paints the stable villa mass: grass, body, and roof.
   // Windows and foliage stay color-only so the depth mask does not stack detail alpha.
-  if (shouldDrawColorDetails) {
-    const baseH  = VILLA.platform.baseK * cell;
-    const s      = clamp01(resolveRangeValue(VILLA.platform.scaleRange, u));
-    const h      = Math.max(0, Math.min(baseH * s, pxH * 0.22));
-    const y      = pxY + pxH - h;
-
-    p.push(); p.noStroke();
-    const plat = applySrgbExposureContrast(pal.platform, ex, ct);
-    fillRgb(p, plat, drawAlpha);
-    p.rect(pxX, y, pxW, h, Math.round(localTile * 0.08));
-    p.pop();
-  }
-
   // grass (two blocks with seeded tall side)
   const blockCount = Math.max(1, f.w);
   const colW = pxW / blockCount;
   const baseGrassH = Math.max(1, Math.min(Math.round(localTileH / 3), Math.round(pxH * 0.10)));
   const tallK = 1.55;
+
+  // At most one side-facing volume. Resolve this before window lighting so
+  // every potential villa window participates in one seeded lit-slot set.
+  const sidePresent = seeded01(seedKey, 'whichSidePresent') < VILLA.variants.sideRoofChance;
+  const sideIndex = sidePresent ? (seeded01(seedKey, 'sideIndex') < 0.5 ? 0 : 1) : -1;
+  const order = sidePresent ? [sideIndex, 1 - sideIndex] : [0, 1];
+
+  const villaWindowSlots: string[] = [];
+  for (let col = 0; col < blockCount; col++) {
+    if (col === sideIndex) {
+      villaWindowSlots.push(`side|${String(col)}|0`, `side|${String(col)}|1`);
+    } else {
+      villaWindowSlots.push(`front|${String(col)}`);
+    }
+  }
+
+  const villaLitRatio = Math.pow(1 - u, WINDOW_OSC.litCurve);
+  const villaLitCount = Math.min(
+    villaWindowSlots.length,
+    Math.round(villaLitRatio * villaWindowSlots.length)
+  );
+  const villaLitSlots = new Set(
+    villaWindowSlots
+      .map((slot) => ({
+        slot,
+        rank: seeded01(seedKey, `lit-slot|${slot}`),
+      }))
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, villaLitCount)
+      .map((entry) => entry.slot)
+  );
 
   const leftIsTaller = seeded01(seedKey, 'grassSide') < 0.5;
 
@@ -518,12 +527,6 @@ export function drawVilla(
     grassTopY[col] = gY;
   }
   if (shouldDrawGrass) p.pop();
-
-  // at most one side-facing
-  const sidePresent = seeded01(seedKey, 'whichSidePresent') < VILLA.variants.sideRoofChance;
-  const sideIndex = sidePresent ? (seeded01(seedKey, 'sideIndex') < 0.5 ? 0 : 1) : -1;
-
-  const order = sidePresent ? [sideIndex, 1 - sideIndex] : [0, 1];
 
   const colMetrics = Array.from({ length: blockCount }, (_, col) => {
     const isSideCol = col === sideIndex;
@@ -679,10 +682,10 @@ export function drawVilla(
       };
       const fCfg = FRONT_WIN[wProfile];
 
-      const frontLitChance = clamp01(Math.pow(1 - u, WINDOW_OSC.litCurve) * 1.08);
-      const frontLit = seeded01(`${String(seedKey)}|col${String(col)}|front-lit`) < frontLitChance;
+      const frontSlot = `front|${String(col)}`;
+      const frontLit = villaLitSlots.has(frontSlot);
       const frontBaseColor = frontLit
-        ? pulseLitWindow(pal.window.lit, `front|${String(col)}`)
+        ? pulseLitWindow(pal.window.lit, frontSlot)
         : pal.window.dark;
       const winColor = applySrgbExposureContrast(frontBaseColor, ex, ct);
 
@@ -720,14 +723,15 @@ export function drawVilla(
       };
       const sCfg = SIDE_WIN[sProfile];
 
-      const sideLitChance = clamp01(Math.pow(1 - u, WINDOW_OSC.litCurve) * 1.18);
-      const sideLit0 = seeded01(`${String(seedKey)}|col${String(col)}|side-lit|0`) < sideLitChance;
-      const sideLit1 = seeded01(`${String(seedKey)}|col${String(col)}|side-lit|1`) < clamp01(sideLitChance - 0.16);
+      const sideSlot0 = `side|${String(col)}|0`;
+      const sideSlot1 = `side|${String(col)}|1`;
+      const sideLit0 = villaLitSlots.has(sideSlot0);
+      const sideLit1 = villaLitSlots.has(sideSlot1);
       const sideBase0 = sideLit0
-        ? pulseLitWindow(pal.window.lit, `side|${String(col)}|0`)
+        ? pulseLitWindow(pal.window.lit, sideSlot0)
         : pal.window.dark;
       const sideBase1 = sideLit1
-        ? pulseLitWindow(pal.window.lit, `side|${String(col)}|1`)
+        ? pulseLitWindow(pal.window.lit, sideSlot1)
         : pal.window.dark;
       const c0 = applySrgbExposureContrast(sideBase0, ex, ct);
       const c1 = applySrgbExposureContrast(sideBase1, ex, ct);
@@ -880,7 +884,7 @@ export function drawVilla(
       // Side foliage triangles (unchanged aside from seeded phase above)
       const F = VILLA.foliage;
       const baseCX = isLeftCol ? (x + colW * 0.20) : (x + colW * 0.80);
-      const baseCY = grassTopY[col];
+      const baseCY = grassTopY[col] + Math.max(1, Math.round(localTileH * 0.05));
 
       const baseTriH  = Math.max(1, localTileH * F.triHk);
       const baseHalfW = Math.max(0.75, localTileW * 0.20);
@@ -922,14 +926,30 @@ export function drawVilla(
       const treeHighlight = mixRgb(treeColor, treeLight.lightColor, 0.32);
       const treeShadow = mixRgb(treeColor, treeLight.shadowColor, 0.22);
       p.noStroke();
-      fillRgb(p, treeColor, opaque);
 
+      {
+        const trunkH = Math.max(1, baseTriH * 0.26);
+        const trunkW = Math.max(1, baseHalfW * 0.24);
+        let trunkColor = pal.door[Math.floor(rDoor * pal.door.length) % pal.door.length];
+        trunkColor = applySrgbExposureContrast(trunkColor, ex, ct);
+        trunkColor = mixRgb(trunkColor, treeLight.shadowColor, 0.12 * treeLight.overallK);
+
+        fillRgb(p, trunkColor, opaque);
+        p.rect(
+          Math.round(baseCX - trunkW / 2),
+          Math.round(baseCY - trunkH * 0.28),
+          Math.round(trunkW),
+          Math.round(trunkH)
+        );
+      }
+
+      fillRgb(p, treeColor, opaque);
       {
         const triH  = baseTriH  * lowRes.scaleY;
         const halfW = baseHalfW * lowRes.scaleX;
 
         p.push();
-        p.translate(lowRes.x, lowRes.y);
+        p.translate(lowRes.x, baseCY);
         p.rotate(lowRes.rotation);
         p.beginShape();
         p.vertex(-halfW, 0);
@@ -958,26 +978,26 @@ export function drawVilla(
       {
         const triH  = baseTriH  * topRes.scaleY;
         const halfW = baseHalfW * 0.75 * topRes.scaleX;
+        const lowerTriH = baseTriH * lowRes.scaleY;
+        const topBaseY = baseCY - Math.round(lowerTriH * 0.52);
 
+        fillRgb(p, treeColor, opaque);
         p.push();
-        p.translate(topRes.x, topRes.y);
+        p.translate(topRes.x, topBaseY);
         p.rotate(topRes.rotation);
-        const midY  = -(baseTriH * s);
-        const baseY = midY + Math.round(triH * 0.40);
-        const tipY  = baseY - Math.round(triH * 0.80);
         p.beginShape();
-        p.vertex(-halfW, baseY);
-        p.vertex( halfW, baseY);
-        p.vertex( 0,     tipY);
+        p.vertex(-halfW, 0);
+        p.vertex( halfW, 0);
+        p.vertex( 0,     -Math.round(triH * 0.82));
         p.endShape(p.CLOSE);
         paintDirectionalTriangleBands(
           p,
           {
             leftX: -halfW,
             rightX: halfW,
-            baseY,
+            baseY: 0,
             apexX: 0,
-            apexY: tipY,
+            apexY: -Math.round(triH * 0.82),
           },
           treeLight,
           {

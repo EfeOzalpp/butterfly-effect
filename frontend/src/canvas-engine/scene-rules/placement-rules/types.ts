@@ -16,17 +16,25 @@ export interface QuotaAnchor {
   pct: number;
 }
 
+export interface CenterPlacement {
+  count?: DeviceCount;
+  xK?: number;
+  yK?: number;
+  scale?: number;
+}
+
+export interface PointPlacement {
+  count?: DeviceCount;
+  xK: number;
+  yK: number;
+}
+
 export interface ShapePlacementRule {
   // 50% means exactly the authored zone count. Default is flat 50%.
   quota?: QuotaAnchor[];
   zones?: PlacementZone[];
-  absolute?: {
-    kind: "center";
-    count: DeviceCount;
-    xK?: number;
-    yK?: number;
-    scale?: number;
-  };
+  center?: CenterPlacement;
+  points?: PointPlacement[];
 }
 
 export type ScenePlacementRuleMap = Partial<Record<ShapeName, ShapePlacementRule>>;

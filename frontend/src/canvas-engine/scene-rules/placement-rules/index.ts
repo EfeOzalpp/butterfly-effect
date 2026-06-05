@@ -12,10 +12,19 @@ export type {
   ProceduralZonePlacementPreset,
   ProceduralZoneShapeRule,
   ProceduralZoneBand,
+  CenterPlacement,
+  PointPlacement,
   QuotaAnchor,
   DeviceCount,
 } from "./types";
-export { forShapes, stableItemId, interpolatePct } from "./helpers";
+export {
+  ONE_PER_DEVICE,
+  centerShape,
+  forShapes,
+  interpolatePct,
+  pointPlacement,
+  stableItemId,
+} from "./helpers";
 
 import { START_PLACEMENTS } from "./start";
 import { CITY_PLACEMENTS } from "./city";

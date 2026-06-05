@@ -373,11 +373,6 @@ export function drawTrees(
   const clampRand = 0.96 + (rFromKey(seedKey, 'clusterClamp') * 0.035); // ~0.96..0.995
   const sClamp = Math.max(clampK0, Math.min(clampK1, clampRand * (0.96 + u * 0.08)));
 
-  const clampTf = applyShapeMods({
-    p, x: anchorX, y: anchorY, r: Math.min(w, h), opts: { timeMs: lifecycle.timeMs, liveAvg: u },
-    mods: { scale2D: { x: sClamp, y: sClamp, anchor: 'bottom-center' } }
-  });
-
   // Ground: grass and asphalt stay untransformed so they never shrink.
   const grassH = h * 0.55;
   const grassY = y0 + h - grassH;
@@ -417,7 +412,9 @@ export function drawTrees(
   let asp = applySrgbExposureContrast(pal.asphalt, ex, ct);
   asp = clampBrightness(asp, resolveRangeValue(TREES.asphalt.min, u), resolveRangeValue(TREES.asphalt.max, u));
   const aspH = grassH * 0.28;
-  const aspY = grassY + (grassH - aspH) / 2;
+  const baseAspY = grassY + (grassH - aspH) / 2;
+  const roadYOffset = Math.max(1, grassH * 0.14);
+  const aspY = Math.min(grassY + grassH - aspH, baseAspY + roadYOffset);
 
   if (shouldDrawColorDetails) {
     // left-anchored X-scale on asphalt
@@ -431,17 +428,13 @@ export function drawTrees(
     p.pop();
   }
 
-  const groundY = aspY + aspH * 0.6;
+  const groundY = baseAspY + aspH * 0.6;
 
   // Trees: appear and scale clamp apply only to the cluster.
   p.push();
   // appear transform
   p.translate(appear.x, appear.y);
   p.scale(appear.scaleX, appear.scaleY);
-  p.translate(-anchorX, -anchorY);
-  // clamp transform (also anchored bottom-center)
-  p.translate(clampTf.x, clampTf.y);
-  p.scale(clampTf.scaleX, clampTf.scaleY);
   p.translate(-anchorX, -anchorY);
 
   // Tree cluster.
@@ -475,6 +468,7 @@ export function drawTrees(
     const rx = rFromKey(k, 'rx');
     const typePick = rFromKey(k, 'type');
     const posJitter = (rFromKey(k, 'jitter') - 0.5) * step * 0.22;
+    const trunkWidthScale = count % 2 === 1 && i === Math.floor(count / 2) ? 0.84 : 1;
 
     const baseX = x0 + sidePad + step * (i + 0.5) + posJitter;
     const baseY = groundY;
@@ -491,10 +485,10 @@ export function drawTrees(
 
     if (typePick < 0.5) {
       /* POPLAR */
-      const fw = (TREES.poplar.baseWk[0] + (TREES.poplar.baseWk[1] - TREES.poplar.baseWk[0]) * rx) * w * 0.95;
-      const fh = (TREES.poplar.baseHk[0] + (TREES.poplar.baseHk[1] - TREES.poplar.baseHk[0]) * rx) * h * scaleBias;
-      const tw = Math.max(1, Math.round(w * (TREES.poplar.trunkWk[0] + (TREES.poplar.trunkWk[1] - TREES.poplar.trunkWk[0]) * rx)));
-      const th = Math.max(2, Math.round(h * (TREES.poplar.trunkHk[0] + (TREES.poplar.trunkHk[1] - TREES.poplar.trunkHk[0]) * rx)));
+      const fw = (TREES.poplar.baseWk[0] + (TREES.poplar.baseWk[1] - TREES.poplar.baseWk[0]) * rx) * w * 0.95 * sClamp;
+      const fh = (TREES.poplar.baseHk[0] + (TREES.poplar.baseHk[1] - TREES.poplar.baseHk[0]) * rx) * h * scaleBias * sClamp;
+      const tw = Math.max(1, Math.round(w * (TREES.poplar.trunkWk[0] + (TREES.poplar.trunkWk[1] - TREES.poplar.trunkWk[0]) * rx) * sClamp * trunkWidthScale));
+      const th = Math.max(2, Math.round(h * (TREES.poplar.trunkHk[0] + (TREES.poplar.trunkHk[1] - TREES.poplar.trunkHk[0]) * rx) * sClamp));
       const treeLight = sampleDirectionalLightRect(
         { x: baseX - fw / 2, y: baseY + heightBoost - th - fh, w: fw, h: fh + th },
         style.lightCtx ?? null
@@ -552,10 +546,10 @@ export function drawTrees(
 
       const baseHalfW = (TREES.conifer.baseHalfWk[0] +
         (TREES.conifer.baseHalfWk[1] - TREES.conifer.baseHalfWk[0]) * rx) *
-        (w * 0.5) * TREES.conifer.overlapWidthBoost;
+        (w * 0.5) * TREES.conifer.overlapWidthBoost * sClamp;
 
       const levelH = (TREES.conifer.levelHk[0] +
-        (TREES.conifer.levelHk[1] - TREES.conifer.levelHk[0]) * rFromKey(k, 'levelH')) * cell * 1.0 * scaleBias;
+        (TREES.conifer.levelHk[1] - TREES.conifer.levelHk[0]) * rFromKey(k, 'levelH')) * cell * 1.0 * scaleBias * sClamp;
 
       const mRoot = applyShapeMods({
         p, x: baseX, y: baseY + heightBoost, r: levelH * levels, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
@@ -565,7 +559,7 @@ export function drawTrees(
           rotationOsc:{ amp: rotAmp, speed: windSpeed, phase }
         }
       });
-      const th = Math.max(2, Math.round(h * (TREES.conifer.trunkHk[0] + (TREES.conifer.trunkHk[1] - TREES.conifer.trunkHk[0]) * rx)));
+      const th = Math.max(2, Math.round(h * (TREES.conifer.trunkHk[0] + (TREES.conifer.trunkHk[1] - TREES.conifer.trunkHk[0]) * rx) * sClamp));
       const treeLight = sampleDirectionalLightRect(
         { x: baseX - baseHalfW, y: baseY + heightBoost - levelH * levels - th, w: baseHalfW * 2, h: levelH * levels + th },
         style.lightCtx ?? null
@@ -581,7 +575,7 @@ export function drawTrees(
       p.rotate(mRoot.rotation);
 
       // trunk
-      const tw = Math.max(1, Math.round(w * (TREES.conifer.trunkWk[0] + (TREES.conifer.trunkWk[1] - TREES.conifer.trunkWk[0]) * rx)));
+      const tw = Math.max(1, Math.round(w * (TREES.conifer.trunkWk[0] + (TREES.conifer.trunkWk[1] - TREES.conifer.trunkWk[0]) * rx) * sClamp * trunkWidthScale));
       p.noStroke();
       fillRgb(p, shapeColorForRenderPass(renderPass, trunkLit, maskColor), isDepthMaskPass ? maskAlpha : 255);
       p.rect(-tw/2, -th, tw, th, 2);

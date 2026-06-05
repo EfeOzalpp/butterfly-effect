@@ -218,10 +218,12 @@ function factorySmokeRowContext(t: number) {
   };
 }
 
-// Factory dominates below 0.35; turbine dominates above 0.65.
+// 0–0.25: always factory | 0.25–0.5: 25% turbine | 0.5–0.75: 75% turbine | 0.75–1: always turbine
 function windProbability(u: number): number {
-  const t = clamp01((u - 0.30) / (0.70 - 0.30));
-  return t * t * (3 - 2 * t); // smoothstep
+  if (u < 0.25) return 0;
+  if (u < 0.5) return 0.25;
+  if (u < 0.75) return 0.75;
+  return 1;
 }
 
 // Seed helpers not tied to footprint or bleed.
@@ -244,12 +246,8 @@ export function resolvePowerVisualKind({
   occurrenceIndex?: number;
 }): PowerVisualKind {
   const u = clamp01(liveAvg);
-  const midpointDist = Math.abs(u - POWER.kindBalance.midpoint);
-  const inMidpointBand = midpointDist <= POWER.kindBalance.midpointBand;
   const rInst = instanceRand01FromKey(`kind|${String(seedKey)}`);
-  const asTurbine = inMidpointBand
-    ? ((occurrenceIndex % 2) === 1)
-    : (rInst < windProbability(u));
+  const asTurbine = rInst < windProbability(u);
 
   return asTurbine ? "windTurbine" : "factory";
 }

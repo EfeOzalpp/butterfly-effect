@@ -163,7 +163,7 @@ export function drawCarAsset(
   const pal = style.palette ?? (darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
   const ex = finiteNumber(style.exposure, 1);
   const ct = finiteNumber(style.contrast, 1);
-  const alpha = finiteNumber(style.alpha, 235);
+  const alpha = finiteNumber(style.alpha, 255);
   const u = clamp01(style.liveAvg ?? 0.5);
   const renderPass = pass.renderPass ?? "color";
   const maskColor = pass.maskColor;
@@ -174,7 +174,7 @@ export function drawCarAsset(
   const isDepthMaskPass = renderPass === "depthMask";
   const shouldDrawMass = shouldDrawInRenderPass(renderPass, true);
   const shouldDrawColorDetails = shouldDrawInRenderPass(renderPass, false);
-  const massAlpha = isDepthMaskPass ? maskAlpha : alpha;
+  const solidAlpha = isDepthMaskPass ? maskAlpha : 255;
 
   const seedKey: ShapeSeed =
     (identity.seedKey ?? identity.seed)
@@ -210,7 +210,7 @@ export function drawCarAsset(
   }
 
   if (shouldDrawColorDetails) {
-    fillRgb(p, pal.wheel, alpha);
+    fillRgb(p, pal.wheel, 255);
     p.circle(cx - w * 0.38, wheelY, wheelR);
     p.circle(cx + w * 0.38, wheelY, wheelR);
   }
@@ -245,12 +245,12 @@ export function drawCarAsset(
 
     if (shouldDrawMass) {
       p.noStroke();
-      fillRgb(p, shapeColorForRenderPass(renderPass, suvTint, maskColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, suvTint, maskColor), solidAlpha);
       p.rect(cx - w / 2, bodyCy - h / 2, w, h, r * 0.42);
     }
     if (shouldDrawColorDetails) {
       paintPixelLightBands(p, bodyRect, bodyLight, {
-        alpha,
+        alpha: 255,
         highlightColor: suvHighlight,
         shadowColor: suvShadow,
         corner: Math.round(r * 0.42),
@@ -259,18 +259,18 @@ export function drawCarAsset(
         shadowK: 0.18,
       });
 
-      fillRgb(p, windowTint, alpha);
+      fillRgb(p, windowTint, 255);
       const winH = h * 0.42;
       const winY = bodyCy - h * 0.18 - winH / 2;
       p.rect(cx - w * 0.30, winY, w * 0.60, winH, r * 0.10);
     }
   } else if (variant === CAR_VARIANTS.sedan) {
     const chassisW = w * 0.94;
-    const chassisH = Math.max(6, r * 0.40);
+    const chassisH = Math.max(1, r * 0.40);
     const chassisCy = wheelY - chassisH * 0.55 + bodyYOffset;
     const cabinBottomW = w * 0.70;
     const cabinTopW = cabinBottomW * 0.84;
-    const cabinH = Math.max(8, r * 1.05);
+    const cabinH = Math.max(1, r * 1.05);
     const chassisTopY = chassisCy - chassisH / 2;
     const cabinBaseY = chassisTopY;
     const cabinTopY = cabinBaseY - cabinH;
@@ -288,10 +288,10 @@ export function drawCarAsset(
 
     if (shouldDrawMass) {
       p.noStroke();
-      fillRgb(p, shapeColorForRenderPass(renderPass, sedanTint, maskColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, sedanTint, maskColor), solidAlpha);
       p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.22);
 
-      fillRgb(p, shapeColorForRenderPass(renderPass, sedanTint, maskColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, sedanTint, maskColor), solidAlpha);
       p.beginShape();
       p.vertex(x0, cabinBaseY);
       p.vertex(x1, cabinBaseY);
@@ -310,7 +310,7 @@ export function drawCarAsset(
       { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
       bodyLight,
       {
-        alpha,
+        alpha: 255,
         highlightColor: sedanHighlight,
         shadowColor: sedanShadow,
         corner: Math.round(r * 0.22),
@@ -323,7 +323,7 @@ export function drawCarAsset(
     const litLeft = bodyLight.leftK >= bodyLight.rightK;
     const sideLitK = Math.max(bodyLight.leftK, bodyLight.rightK);
 
-    p.fill(sedanHighlight.r, sedanHighlight.g, sedanHighlight.b, Math.round(alpha * 0.34 * sideLitK));
+    p.fill(sedanHighlight.r, sedanHighlight.g, sedanHighlight.b, Math.round(255 * 0.34 * sideLitK));
     p.beginShape();
     if (litLeft) {
       p.vertex(x0, cabinBaseY);
@@ -338,7 +338,7 @@ export function drawCarAsset(
     }
     p.endShape(p.CLOSE);
 
-    p.fill(sedanHighlight.r, sedanHighlight.g, sedanHighlight.b, Math.round(alpha * 0.22 * bodyLight.topK));
+    p.fill(sedanHighlight.r, sedanHighlight.g, sedanHighlight.b, Math.round(255 * 0.22 * bodyLight.topK));
     p.beginShape();
     p.vertex(x0 + cabinBottomW * 0.14, cabinBaseY);
     p.vertex(x1 - cabinBottomW * 0.14, cabinBaseY);
@@ -346,7 +346,7 @@ export function drawCarAsset(
     p.vertex(xt0 + cabinTopW * 0.12, cabinTopY + Math.max(1, r * 0.08));
     p.endShape(p.CLOSE);
 
-    p.fill(sedanShadow.r, sedanShadow.g, sedanShadow.b, Math.round(alpha * 0.16 * sideLitK));
+    p.fill(sedanShadow.r, sedanShadow.g, sedanShadow.b, Math.round(255 * 0.16 * sideLitK));
     p.beginShape();
     if (litLeft) {
       p.vertex(x1 - cabinBottomW * 0.18, cabinBaseY);
@@ -361,13 +361,13 @@ export function drawCarAsset(
     }
     p.endShape(p.CLOSE);
 
-    const insetX = Math.max(3, r * 0.25);
-    const insetTop = Math.max(2, r * 0.20);
-    const insetBot = Math.max(3, r * 0.28);
+    const insetX = Math.max(1, r * 0.25);
+    const insetTop = Math.max(1, r * 0.20);
+    const insetBot = Math.max(1, r * 0.28);
 
     const midW = cabinTopW + (cabinBottomW - cabinTopW) * 0.45;
-    const innerW = Math.max(8, midW - insetX * 2);
-    const innerH = Math.max(6, cabinBaseY - cabinTopY - insetTop - insetBot);
+    const innerW = Math.max(1, midW - insetX * 2);
+    const innerH = Math.max(1, cabinBaseY - cabinTopY - insetTop - insetBot);
     const innerX = cx - innerW / 2;
     const innerY = cabinTopY + insetTop;
 
@@ -376,7 +376,7 @@ export function drawCarAsset(
     const eachH = innerH * 0.72;
     const winY = innerY + (innerH - eachH) * 0.35;
 
-    fillRgb(p, windowTint, alpha);
+    fillRgb(p, windowTint, 255);
     p.rect(innerX, winY, eachW, eachH, r * 0.10);
     p.rect(innerX + eachW + gap, winY, eachW, eachH, r * 0.10);
   } else {
@@ -395,7 +395,7 @@ export function drawCarAsset(
 
     if (shouldDrawMass) {
       p.noStroke();
-      fillRgb(p, shapeColorForRenderPass(renderPass, jeepTint, maskColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, jeepTint, maskColor), solidAlpha);
       p.rect(cx - chassisW / 2, chassisCy - chassisH / 2, chassisW, chassisH, r * 0.18);
     }
     if (shouldDrawColorDetails) {
@@ -404,7 +404,7 @@ export function drawCarAsset(
         { x: cx - chassisW / 2, y: chassisCy - chassisH / 2, w: chassisW, h: chassisH },
         bodyLight,
         {
-          alpha,
+          alpha: 255,
           highlightColor: jeepHighlight,
           shadowColor: jeepShadow,
           corner: Math.round(r * 0.18),
@@ -427,7 +427,7 @@ export function drawCarAsset(
       : cx + chassisW / 2 - cabinW - sidePad;
 
     if (shouldDrawMass) {
-      fillRgb(p, shapeColorForRenderPass(renderPass, jeepTint, maskColor), massAlpha);
+      fillRgb(p, shapeColorForRenderPass(renderPass, jeepTint, maskColor), solidAlpha);
       p.rect(cabinX0, cabinTopY, cabinW, cabinH, r * 0.10);
     }
     if (shouldDrawColorDetails) {
@@ -436,7 +436,7 @@ export function drawCarAsset(
         { x: cabinX0, y: cabinTopY, w: cabinW, h: cabinH },
         bodyLight,
         {
-          alpha,
+          alpha: 255,
           highlightColor: jeepHighlight,
           shadowColor: jeepShadow,
           corner: Math.round(r * 0.10),
@@ -456,7 +456,7 @@ export function drawCarAsset(
     const winY = cabinTopY + pad + (innerH - eachH) * 0.30;
 
     if (shouldDrawColorDetails) {
-      fillRgb(p, windowTint, alpha);
+      fillRgb(p, windowTint, 255);
       p.rect(cabinX0 + pad, winY, eachW, eachH, r * 0.08);
       p.rect(cabinX0 + pad + eachW + gap, winY, eachW, eachH, r * 0.08);
     }
@@ -483,7 +483,7 @@ export function drawCar(
   const pal = style.palette ?? (darkMode ? CAR_DARK_PALETTE : CAR_BASE_PALETTE);
   const ex = finiteNumber(style.exposure, 1);
   const ct = finiteNumber(style.contrast, 1);
-  const alpha = finiteNumber(style.alpha, 235);
+  const alpha = finiteNumber(style.alpha, 255);
   const u = clamp01(style.liveAvg ?? 0.5);
   const renderPass = pass.renderPass ?? "color";
   const maskColor = pass.maskColor;

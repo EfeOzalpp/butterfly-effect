@@ -12,7 +12,8 @@ Use the smallest placement feature that matches the scene:
 - Use **multiple zones** when a shape should appear in separate authored bands.
 - Use **quota** when a shape count should respond to `liveAvg`.
 - Use **variants** when a runtime signal should swap whole placement maps.
-- Use **absolute center** when a presentation canvas needs one precisely centered featured shape.
+- Use **points** when a scene needs authored grid-aware placements.
+- Use **center** when a presentation canvas needs one precisely centered featured shape.
 - Use **zone communities** when a scene should author clusters of multiple shapes around shared procedural anchors.
 
 ## Blueprint: Distribute One Shape In A Region
@@ -90,8 +91,7 @@ Use this when a canvas has authored states, such as a Spotlight carousel.
 ```ts
 const CENTERED_VILLA: ScenePlacementRuleMap = {
   villa: {
-    absolute: {
-      kind: "center",
+    center: {
       count: { mobile: 1, tablet: 1, laptop: 1 },
     },
   },
@@ -99,8 +99,7 @@ const CENTERED_VILLA: ScenePlacementRuleMap = {
 
 const CENTERED_BUS: ScenePlacementRuleMap = {
   bus: {
-    absolute: {
-      kind: "center",
+    center: {
       count: { mobile: 1, tablet: 1, laptop: 1 },
     },
   },
@@ -116,6 +115,34 @@ export const SPOTLIGHT_PLACEMENTS: ScenePlacementRules = {
 
 Placement variants are resolved before field composition. Changing the selected variant recomposes the field instead of branching inside the render loop.
 
+## Blueprint: Place Authored Grid Points
+
+Use this when a shape needs one or more intentional locations, but should still participate in normal grid occupancy, depth sorting, and footprint projection.
+
+```ts
+const SKYSCRAPER_RULE: ShapePlacementRule = {
+  points: [
+    {
+      count: { mobile: 0, tablet: 1, laptop: 1 },
+      xK: 0.56,
+      yK: 0.67,
+    },
+    {
+      count: { mobile: 0, tablet: 0, laptop: 1 },
+      xK: 0.72,
+      yK: 0.58,
+    },
+  ],
+};
+```
+
+Points:
+
+- bypass candidate scoring
+- reserve a normal grid footprint
+- skip the item if the target footprint is already occupied
+- draw through normal shape projection/depth order
+
 ## Blueprint: Center One Featured Shape Precisely
 
 Use this for presentation canvases, panels, or previews where grid scoring is too indirect.
@@ -123,15 +150,14 @@ Use this for presentation canvases, panels, or previews where grid scoring is to
 ```ts
 const CENTERED_BUS: ScenePlacementRuleMap = {
   bus: {
-    absolute: {
-      kind: "center",
+    center: {
       count: { mobile: 1, tablet: 1, laptop: 1 },
     },
   },
 };
 ```
 
-Absolute center placement:
+Center placement:
 
 - bypasses grid candidate scoring
 - creates a pixel footprint centered on the canvas
@@ -141,8 +167,7 @@ Absolute center placement:
 Optional precision controls:
 
 ```ts
-absolute: {
-  kind: "center",
+center: {
   count: { mobile: 1, tablet: 1, laptop: 1 },
   xK: 0.5,
   yK: 0.45,
@@ -152,7 +177,7 @@ absolute: {
 
 Use `xK` and `yK` as canvas fractions. Use `scale` to enlarge or shrink the generated pixel footprint while keeping the same shape identity.
 
-Use this sparingly. Normal scene composition should prefer zones; absolute placement is for authored showcase behavior.
+Use this sparingly. Normal scene composition should prefer zones or points; center placement is for authored showcase behavior.
 
 ## Blueprint: Compose Procedural Communities
 
@@ -207,15 +232,16 @@ Overlapping zones naturally compete for the same occupancy grid; placement attem
 ## Field Meanings
 
 - `zones`: one or more allowed regions for normal grid-scored placement.
-- `absolute`: optional direct placement mode outside grid candidate scoring.
+- `points`: optional authored grid-aware centers outside candidate scoring.
+- `center`: optional pixel-projected showcase placement outside grid candidate scoring.
 - `count`: per-device base count.
 - `quota`: optional signal-to-percentage curve.
 - `variants`: optional runtime-selectable placement maps.
 - `verticalK`: `[top, bottom]` viewport fraction.
 - `horizontalK`: optional `[left, right]` viewport fraction.
-- `xK`: absolute horizontal center as a canvas fraction.
-- `yK`: absolute vertical center as a canvas fraction.
-- `scale`: absolute placement pixel-footprint multiplier.
+- `xK`: authored horizontal center as a canvas fraction.
+- `yK`: authored vertical center as a canvas fraction.
+- `scale`: center placement pixel-footprint multiplier.
 - `preset`: optional high-level placement compiler.
 - `band`: horizon-aware vertical mapping for procedural zones.
 - `center`: procedural zone center as canvas fractions.

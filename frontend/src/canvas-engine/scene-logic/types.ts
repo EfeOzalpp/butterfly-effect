@@ -4,7 +4,7 @@ import type { DeviceType } from "../shared/responsiveness";
 import type { GridFootprint } from "../shared/geometry";
 import type { CanvasPaddingPolicy } from "../scene-rules/canvas-padding";
 import type { ShapeName } from "../scene-rules/shapeCatalog";
-import type { Size } from "../scene-rules/conditionFootprints";
+import type { Size } from "../scene-rules/shapeFootprints";
 import type { ScenePlacementRules } from "../scene-rules/placement-rules/index";
 import type { ProceduralZoneBand } from "../scene-rules/placement-rules";
 import type { EngineFieldItem } from "../runtime/engine/field";
@@ -16,8 +16,11 @@ export interface PoolItem {
   shape: ShapeName;
   zoneIndex: number;    // index into the shape's zones array
   size: Size;           // footprint grid dimensions
-  absolute?: {
-    kind: "center";
+  point?: {
+    xK: number;
+    yK: number;
+  };
+  center?: {
     xK: number;
     yK: number;
     scale: number;

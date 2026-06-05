@@ -4,12 +4,22 @@ import { deviceType } from "../shared/responsiveness";
 import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
 import { SHAPES } from "../scene-rules/shapeCatalog";
-import { footprintForShape } from "../scene-rules/conditionFootprints";
+import { footprintForShape } from "../scene-rules/shapeFootprints";
 import { stableItemId, interpolatePct } from "../scene-rules/placement-rules/index";
 
 import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
 import { clamp01, usedRowsFromSpec } from "./math";
 import { placePoolItems } from "./place";
+
+function hasExplicitShapePlacement(
+  rule: ComposeOpts["placements"][keyof ComposeOpts["placements"]]
+): boolean {
+  return !!rule && (
+    "center" in rule ||
+    (Array.isArray(rule.points) && rule.points.length > 0) ||
+    (Array.isArray(rule.zones) && rule.zones.length > 0)
+  );
+}
 
 function buildPresetPool(
   opts: ComposeOpts,
@@ -23,6 +33,8 @@ function buildPresetPool(
 
   preset.zones.forEach((zone, zoneIdx) => {
     for (const shape of SHAPES) {
+      if (hasExplicitShapePlacement(opts.placements[shape])) continue;
+
       const rule = zone.shapes[shape];
       if (!rule) continue;
 
@@ -95,29 +107,50 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>)
     const pct = interpolatePct(rule.quota, t);
     const size = footprintForShape(shape);
 
-    if (rule.absolute) {
+    if (rule.center) {
       const baseCount =
-        rule.absolute.count[device] ??
-        rule.absolute.count.tablet ??
-        rule.absolute.count.mobile ??
-        0;
+        rule.center.count?.[device] ??
+        rule.center.count?.tablet ??
+        rule.center.count?.mobile ??
+        1;
       const count = Math.max(0, Math.round(baseCount * pct / 50));
 
       for (let i = 0; i < count; i++) {
         items.push({
-          id: stableItemId(shape, -1, i),
+          id: stableItemId(shape, -2000, i),
           shape,
-          zoneIndex: -1,
+          zoneIndex: -2000,
           size,
-          absolute: {
-            kind: rule.absolute.kind,
-            xK: rule.absolute.xK ?? 0.5,
-            yK: rule.absolute.yK ?? 0.5,
-            scale: rule.absolute.scale ?? 1,
+          center: {
+            xK: rule.center.xK ?? 0.5,
+            yK: rule.center.yK ?? 0.5,
+            scale: rule.center.scale ?? 1,
           },
         });
       }
     }
+
+    rule.points?.forEach((pointPlacement, pointIdx) => {
+      const baseCount =
+        pointPlacement.count?.[device] ??
+        pointPlacement.count?.tablet ??
+        pointPlacement.count?.mobile ??
+        1;
+      const count = Math.max(0, Math.round(baseCount * pct / 50));
+
+      for (let i = 0; i < count; i++) {
+        items.push({
+          id: stableItemId(shape, -1000 - pointIdx, i),
+          shape,
+          zoneIndex: -1000 - pointIdx,
+          size,
+          point: {
+            xK: pointPlacement.xK,
+            yK: pointPlacement.yK,
+          },
+        });
+      }
+    });
 
     rule.zones?.forEach((zone, zoneIdx) => {
       const baseCount = zone.count[device] ?? zone.count.tablet ?? zone.count.mobile ?? 0;
@@ -138,11 +171,13 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>)
 }
 
 function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
+  const rulePool = buildRulePool(opts, device);
+
   if (opts.placements.preset?.kind === "zone-communities") {
-    return buildPresetPool(opts, device);
+    return [...rulePool, ...buildPresetPool(opts, device)];
   }
 
-  return buildRulePool(opts, device);
+  return rulePool;
 }
 
 export function composeField(opts: ComposeOpts): ComposeResult {

@@ -148,39 +148,72 @@ export function placePoolItems(opts: {
     const { shape, zoneIndex, size } = item;
     const wCell = size.w;
     const hCell = size.h;
+    const ignoreForbidden = shape === "clouds";
+    const itemForbidden = ignoreForbidden ? (() => false) : isForbidden;
+    const targetOcc = shape === "clouds" ? occClouds : occ;
 
-    if (item.absolute?.kind === "center") {
-      const rectW = Math.max(1, wCell * cellW * item.absolute.scale);
-      const rectH = Math.max(1, hCell * cellH * item.absolute.scale);
-      const rectX = canvas.w * item.absolute.xK - rectW / 2;
-      const rectY = canvas.h * item.absolute.yK - rectH / 2;
+    if (item.point) {
+      const rawR0 = Math.max(0, Math.round((usedRows - hCell) * item.point.yK));
+      const boundedR0 = Math.max(0, Math.min(rows - hCell, rawR0));
+      const { refCols } = horizontalReferenceForFootprint(boundedR0, hCell, cols, colsPerRow);
+      const rawC0 = Math.max(0, Math.round((refCols - wCell) * item.point.xK));
+      const boundedC0 = Math.max(0, Math.min(refCols - wCell, rawC0));
+      const rectHit = targetOcc.tryPlaceAt(boundedR0, boundedC0, wCell, hCell);
+
+      if (!rectHit) continue;
+
+      const { x, y } = cellAnchorToPx2(
+        { cellW, cellH, ox, oy, ...metrics },
+        rectHit,
+        "center"
+      );
+
+      item.footprint = rectHit;
+      item.x = x;
+      item.y = y;
+
+      if (shape !== "clouds") {
+        placedAccum.push({ id: item.id, x, y, footprint: rectHit });
+      }
+
+      outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
+      continue;
+    }
+
+    if (item.center) {
+      const rectW = Math.max(1, wCell * cellW * item.center.scale);
+      const rectH = Math.max(1, hCell * cellH * item.center.scale);
+      const rectX = canvas.w * item.center.xK - rectW / 2;
+      const rectY = canvas.h * item.center.yK - rectH / 2;
       const centerX = rectX + rectW / 2;
       const centerY = rectY + rectH / 2;
       const rectHit: FootRect = {
-        r0: Math.max(0, Math.round((usedRows - hCell) * item.absolute.yK)),
-        c0: Math.max(0, Math.round((cols - wCell) * item.absolute.xK)),
+        r0: Math.max(0, Math.round((usedRows - hCell) * item.center.yK)),
+        c0: Math.max(0, Math.round((cols - wCell) * item.center.xK)),
         w: wCell,
         h: hCell,
       };
+      const reservedHit = targetOcc.tryPlaceAt(rectHit.r0, rectHit.c0, rectHit.w, rectHit.h) ?? rectHit;
 
-      item.footprint = rectHit;
+      item.footprint = reservedHit;
       item.pixelFootprint = { x: rectX, y: rectY, w: rectW, h: rectH };
       item.x = centerX;
       item.y = centerY;
+
+      if (shape !== "clouds") {
+        placedAccum.push({ id: item.id, x: centerX, y: centerY, footprint: reservedHit });
+      }
+
       outPlaced.push({
         id: item.id,
         x: centerX,
         y: centerY,
         shape: item.shape,
-        footprint: rectHit,
+        footprint: reservedHit,
         pixelFootprint: item.pixelFootprint,
       });
       continue;
     }
-
-    const ignoreForbidden = shape === "clouds";
-    const itemForbidden = ignoreForbidden ? (() => false) : isForbidden;
-    const targetOcc = shape === "clouds" ? occClouds : occ;
 
     const scoreSource = shape === "clouds" ? [] : placedAccum;
     const placedForScore = scoreSource.map((p) => ({

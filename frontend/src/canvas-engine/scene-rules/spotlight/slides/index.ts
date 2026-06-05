@@ -9,21 +9,21 @@ import { sunSlide } from "./08-sun";
 import { carSlide } from "./09-car";
 import { carFactorySlide } from "./10-car-factory";
 import { treesSlide } from "./11-trees";
-import type { SpotlightSlide } from "./types";
+import type { SpotlightSlide } from "../types";
 
 // File names carry the authored order; this array is the runtime order.
 export const SPOTLIGHT_SLIDES = [
   villaSlide,
   busSlide,
+  powerSlide,
   seaSlide,
+  carFactorySlide,
   cloudsSlide,
+  treesSlide,
+  sunSlide,
   snowSlide,
   houseSlide,
-  powerSlide,
-  sunSlide,
   carSlide,
-  carFactorySlide,
-  treesSlide,
 ] as const satisfies readonly SpotlightSlide[];
 
-export type { SpotlightSlide } from "./types";
+export type { SpotlightSlide } from "../types";
