@@ -56,7 +56,7 @@
 .bottom { position: fixed; pointer-events: none; display: flex; flex-direction: row; align-items: center; }
 .bottom-center { left: 50%; transform: translateX(-50%); z-index: 201; }
 .bottom-left { z-index: 204; }
-.bottom-right { z-index: 202; justify-content: flex-end; }
+.bottom-right { z-index: 205; justify-content: flex-end; }
 .bottom-mobile-right { left: 50%; transform: translateX(-50%); z-index: 201; }
 .bottom-right { right: 1.8rem; }
 
