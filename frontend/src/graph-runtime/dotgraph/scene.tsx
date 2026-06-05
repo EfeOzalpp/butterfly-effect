@@ -58,16 +58,31 @@ export default function DotGraph() {
     personalizationGate.hasPersonalizedInDataset &&
     personalizationGate.shouldShowPersonalized;
 
+  // For non-observer: apply personalized framing as soon as personalizedEntryId
+  // is available from session storage, without waiting for Sanity to confirm.
+  // This ensures the initial zoom is set on first mount rather than on data arrival.
+  const showPersonalizedForZoom = observerMode
+    ? isPersonalizedGraphView
+    : (!!personalizationGate.personalizedEntryId && personalizationGate.shouldShowPersonalized);
+
   const graphViewKey = useMemo(
     () => [
       section,
-      isPersonalizedGraphView
-        ? personalizationGate.personalizedEntryId ?? 'personalized'
-        : 'general',
+      // Non-observer: key on personalizedEntryId directly so it's stable from the
+      // first render (session has the ID) and doesn't flip when Sanity confirms,
+      // preventing a spurious zoom reset on data arrival.
+      // Observer: keep the confirmed-dataset gate so view switches are still detected.
+      !observerMode && personalizationGate.personalizedEntryId && personalizationGate.shouldShowPersonalized
+        ? personalizationGate.personalizedEntryId
+        : isPersonalizedGraphView
+          ? personalizationGate.personalizedEntryId ?? 'personalized'
+          : 'general',
     ].join('|'),
     [
       isPersonalizedGraphView,
+      observerMode,
       personalizationGate.personalizedEntryId,
+      personalizationGate.shouldShowPersonalized,
       section,
     ]
   );
@@ -76,7 +91,7 @@ export default function DotGraph() {
     safeData,
     personalizedEntryId: personalizationGate.personalizedEntryId,
     sectionKey: section,
-    showPersonalized: isPersonalizedGraphView,
+    showPersonalized: showPersonalizedForZoom,
     darkMode,
     wantsSkew: personalizationGate.wantsSkew,
     wantsSoloSkew: mode === 'absolute' && personalizationGate.wantsSkew,
