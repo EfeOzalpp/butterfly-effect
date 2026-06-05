@@ -71,10 +71,10 @@ export default function CanvasInfo() {
 
       <section className="canvas-info__information">
         <div className="canvas-info-div">
-          <h3 className="canvas-info__eyebrow">Sustainability Made Engaging</h3>
+          <h3 className="canvas-info__eyebrow">A custom engine for living scenes.</h3>
           <p className="canvas-info__copy">
-            <span>Butterfly Effect uses Canvas Engine, a custom Canvas2D scene engine for animated web worlds.</span>
-            <span>If you are curious, feel free to try it in your projects, contribute on GitHub, or reach out at efe.ozalp@canvas-engine.com.</span>
+            <span>Butterfly Effect uses a Canvas2D rendering engine built for compositions with depth and motion.</span>
+            <span>Try it out for yourself in your projects, contribute on GitHub or feel free to reach out at efe.ozalp@canvas-engine.com.</span>
           </p>
           <div className="canvas-info__actions">
             <a

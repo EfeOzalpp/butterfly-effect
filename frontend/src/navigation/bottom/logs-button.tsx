@@ -16,8 +16,13 @@ function fmtQs(row: { q1?: number; q2?: number; q3?: number; q4?: number; q5?: n
   return [row.q1, row.q2, row.q3, row.q4, row.q5].map(fmt).join(", ");
 }
 
+const SECTION_DISPLAY: Record<string, string> = {
+  visitor: 'Explorer',
+};
+
 function formatSectionLabel(section?: string): string {
-  return (section ?? "").replace(/-/g, " ");
+  const s = section ?? "";
+  return SECTION_DISPLAY[s] ?? s.replace(/-/g, " ");
 }
 
 function escapeRegExp(value: string): string {

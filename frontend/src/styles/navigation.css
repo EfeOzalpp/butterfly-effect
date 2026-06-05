@@ -8,7 +8,7 @@
   --nav-control-h: 40px;
 }
 
-.navigation { position: absolute; inset: 0 0 auto 0; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; pointer-events: none; z-index: 202; gap: 0.3rem; }
+.navigation { position: absolute; inset: 0 0 auto 0; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between; pointer-events: none; z-index: 202; }
 
 
 .graph-picker { position: absolute; left: 50vw; transform: translateX(calc(-50% + var(--picker-offset, 0px))); pointer-events: all; }
@@ -146,6 +146,7 @@
 /* Desktop */
 @media (min-width: 1025px) {
   .bottom { bottom: 1rem; }
+  .navigation { gap: 0.3rem; }
 }
 
 /* 768 and above */

@@ -313,3 +313,5 @@
 .toggle-button.toggle:hover {
   background: var(--btn-secondary-hover-bg);
 }
+
+.gam-subline { padding-bottom: calc(var(--radius-lg) + var(--radius-md));}

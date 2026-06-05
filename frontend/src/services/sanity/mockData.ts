@@ -31,8 +31,8 @@ const MOCK_SEEDS: [string, number, number, number, number, number][] = [
   ['fine-arts-2d',             0.54, 0.57, 0.51, 0.55, 0.53],   // mid
   ['communication-design',     0.29, 0.33, 0.35, 0.27, 0.31],   // low
   ['communication-design',     0.84, 0.80, 0.82, 0.78, 0.81],   // high
-  ['visitor',                  0.45, 0.48, 0.43, 0.47, 0.46],   // mid-low
-  ['visitor',                  0.63, 0.60, 0.66, 0.58, 0.62],   // mid-high
+  ['visitor',                 0.45, 0.48, 0.43, 0.47, 0.46],   // mid-low
+  ['visitor',                 0.63, 0.60, 0.66, 0.58, 0.62],   // mid-high
   ['academic-resource-center', 0.37, 0.41, 0.39, 0.43, 0.38],   // low
   ['academic-resource-center', 0.57, 0.53, 0.60, 0.55, 0.58],   // mid
   ['industrial-design',        0.34, 0.38, 0.36, 0.40, 0.35],   // low

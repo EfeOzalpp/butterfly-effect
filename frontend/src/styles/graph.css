@@ -50,7 +50,7 @@
 .toggle-button { position: relative; z-index: 10; pointer-events: all; cursor: pointer; align-items: center; justify-content: center; background: var(--ui-bg-surface); border: none; border-radius: var(--radius-lg); color: var(--ui-text); transition: transform 0.1s ease; }
 .toggle-button:hover { transform: none; background: var(--ui-bg-surface-hover); }
 
-.graph-container { position: relative; z-index: 4; background: var(--graph-bg); }
+.graph-container { position: relative; z-index: 4; background: var(--graph-bg); touch-action: none; overscroll-behavior: none; }
 .graph-container canvas { cursor: grab; }
 .graph-container canvas.hovering-shape { cursor: pointer; }
 .graph-container canvas.is-rotating { cursor: grabbing; }
@@ -81,8 +81,10 @@
 .percentage-section, .percentage-indicator { position: absolute; pointer-events: none; }
 .percentage-section { left: 0; right: 0; bottom: 0; z-index: 2; overflow: visible; }
 
+@keyframes sectionExpand { from { height: 0%; } }
+
 @media (prefers-reduced-motion: no-preference) {
-  .percentage-section  { transition: height 0.5s cubic-bezier(.22,.61,.36,1); }
+  .percentage-section  { animation: sectionExpand 0.5s cubic-bezier(.22,.61,.36,1) both; }
   .percentage-indicator { animation: indicatorFadeIn 0.3s ease 0.25s both; }
 }
 

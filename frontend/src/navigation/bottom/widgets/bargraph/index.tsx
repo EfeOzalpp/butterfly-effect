@@ -188,15 +188,10 @@ export default function BarGraph() {
               </span>
 
               <div className="bar-graph-divider">
-                {showMarkerInThisBar && (
+                {showMarkerInThisBar && animationState && animateBars && (
                   <div
                     className="percentage-section"
-                    style={{
-                      height:
-                        animationState && animateBars
-                          ? percentValue(Math.min(normalizedUserPercentage, heightPercentage))
-                          : '0%',
-                    }}
+                    style={{ height: percentValue(Math.min(normalizedUserPercentage, heightPercentage)) }}
                   >
                     <div className="percentage-line" aria-hidden="true" />
                     <div className="percentage-indicator">

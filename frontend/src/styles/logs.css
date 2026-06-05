@@ -98,6 +98,18 @@
 .logs-close-btn:hover { background: var(--ui-bg-surface-hover); }
 .logs-close-btn .ui-close { width: 16px; height: 16px; flex: 0 0 auto; }
 
+@media (max-width: 767px) {
+  .logs-footer { justify-content: flex-end; padding: 0.6rem 0;}
+  .compact-tools-modal .widgets-panel.bar-graph { 
+    padding: 0.5rem 3rem 0.9rem;   
+ }
+ .compact-tools-modal .widgets-panel.bar-graph .bar-graph-container {
+    min-height: 300px;
+    height: min(50svh, 360px);
+    max-height: 360px;
+}
+}
+
 @media (min-width: 768px) and (max-width: 1024px) {
  .logs-table-wrap { min-height: min(58svh, 520px); max-height: min(58svh, 520px); }
  .logs-popover-shell { width: calc(55vw - 1.8rem); }

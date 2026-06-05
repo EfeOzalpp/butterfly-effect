@@ -22,7 +22,7 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
     options: [
       { key: 'A', label: 'On foot',    weight: 1.0  },
       { key: 'B', label: 'Bike',    weight: 0.95 },
-      { key: 'C', label: 'Transit', weight: 0.8 },
+      { key: 'C', label: 'Bus', weight: 0.8 },
       { key: 'D', label: 'Carpool', weight: 0.6 },
       { key: 'E', label: 'Electric',      weight: 0.3 },
       { key: 'F', label: 'Drive',   weight: 0.05 },
@@ -36,7 +36,6 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
       { key: 'B', label: 'Air dry',          weight: 0.75 },
       { key: 'C', label: 'Turn off lights',  weight: 0.7  },
       { key: 'D', label: 'Avoid standby',    weight: 0.6  },
-      { key: 'E', label: 'Unplug devices',   weight: 0.5  },
       { key: 'F', label: 'Not really',       weight: 0.1 },
       { key: 'G', label: 'Don\'t have home', weight: 0.95 },
     ],

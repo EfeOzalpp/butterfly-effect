@@ -113,15 +113,23 @@ export default function ButtonQuestionnaireFlow({
   );
   const selected = answers[question.id] ?? null;
   const isLast = step === BUTTON_QUESTIONS.length - 1;
+  const liveAvg = useMemo(() => {
+    const values = BUTTON_QUESTIONS
+      .slice(0, step + 1)
+      .map((buttonQuestion) => answers[buttonQuestion.id])
+      .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+
+    if (!values.length) return DEFAULT_AVG;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }, [answers, step]);
 
   useEffect(() => {
     onAnswersUpdate?.(answers);
   }, [answers, onAnswersUpdate]);
 
   useEffect(() => {
-    const liveAvg = selected ?? DEFAULT_AVG;
     setLiveAvg(liveAvg);
-  }, [selected, setLiveAvg]);
+  }, [liveAvg, setLiveAvg]);
 
   useEffect(() => {
     setQuestionnaireNav({
