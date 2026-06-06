@@ -1,6 +1,6 @@
 // src/canvas-engine/scene-logic/composeField.ts
 
-import { deviceType } from "../shared/responsiveness";
+import { deviceType, getLandscapeCountScale } from "../shared/responsiveness";
 import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
 import { SHAPES } from "../scene-rules/shapeCatalog";
@@ -23,7 +23,8 @@ function hasExplicitShapePlacement(
 
 function buildPresetPool(
   opts: ComposeOpts,
-  device: ReturnType<typeof deviceType>
+  device: ReturnType<typeof deviceType>,
+  landscapeScale: number
 ): PoolItem[] {
   const preset = opts.placements.preset;
   if (preset?.kind !== "zone-communities") return [];
@@ -44,7 +45,8 @@ function buildPresetPool(
         rule.count.mobile ??
         0;
       const pct = interpolatePct(rule.quota, t);
-      const count = Math.max(0, Math.round(baseCount * pct / 50));
+      const bandScale = zone.band === "sky" ? 1 : landscapeScale;
+      const count = Math.max(0, Math.round(baseCount * pct / 50 * bandScale));
       if (count <= 0) continue;
 
       const size = footprintForShape(shape);
@@ -95,7 +97,7 @@ function buildPresetPool(
   return items;
 }
 
-function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
+function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>, landscapeScale: number): PoolItem[] {
   const { placements, liveAvg } = opts;
   const t = clamp01(liveAvg);
   const items: PoolItem[] = [];
@@ -113,7 +115,7 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>)
         rule.center.count?.tablet ??
         rule.center.count?.mobile ??
         1;
-      const count = Math.max(0, Math.round(baseCount * pct / 50));
+      const count = Math.max(0, Math.round(baseCount * pct / 50 * landscapeScale));
 
       for (let i = 0; i < count; i++) {
         items.push({
@@ -136,7 +138,7 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>)
         pointPlacement.count?.tablet ??
         pointPlacement.count?.mobile ??
         1;
-      const count = Math.max(0, Math.round(baseCount * pct / 50));
+      const count = Math.max(0, Math.round(baseCount * pct / 50 * landscapeScale));
 
       for (let i = 0; i < count; i++) {
         items.push({
@@ -154,7 +156,7 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>)
 
     rule.zones?.forEach((zone, zoneIdx) => {
       const baseCount = zone.count[device] ?? zone.count.tablet ?? zone.count.mobile ?? 0;
-      const count = Math.max(0, Math.round(baseCount * pct / 50));
+      const count = Math.max(0, Math.round(baseCount * pct / 50 * landscapeScale));
 
       for (let i = 0; i < count; i++) {
         items.push({
@@ -170,11 +172,11 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>)
   return items;
 }
 
-function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>): PoolItem[] {
-  const rulePool = buildRulePool(opts, device);
+function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>, landscapeScale: number): PoolItem[] {
+  const rulePool = buildRulePool(opts, device, landscapeScale);
 
   if (opts.placements.preset?.kind === "zone-communities") {
-    return [...rulePool, ...buildPresetPool(opts, device)];
+    return [...rulePool, ...buildPresetPool(opts, device, landscapeScale)];
   }
 
   return rulePool;
@@ -186,6 +188,7 @@ export function composeField(opts: ComposeOpts): ComposeResult {
   const ruleW = Math.round(opts.ruleWidthPx ?? w);
 
   const device = deviceType(ruleW);
+  const landscapeScale = getLandscapeCountScale();
   const spec = resolvePaddingSpec(ruleW, opts.padding);
 
   const { cell, cellW, cellH, ox, oy, rows, cols, metrics } = makeCenteredSquareGrid({
@@ -207,7 +210,7 @@ export function composeField(opts: ComposeOpts): ComposeResult {
       ? opts.salt
       : (rows * 73856093) ^ (cols * 19349663);
 
-  const pool = buildPool(opts, device);
+  const pool = buildPool(opts, device, landscapeScale);
 
   const { placed } = placePoolItems({
     pool,

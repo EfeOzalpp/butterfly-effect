@@ -116,7 +116,12 @@ function closenessDistanceScale(light: SceneLightContext): number {
   const aspect = light.sceneW / Math.max(1, light.sceneH);
   const tabletK = clamp01((1.75 - aspect) / 0.55);
   const aspectBoost = 1.08 + tabletK * 0.34;
-  return light.sceneW * aspectBoost;
+  // On portrait viewports the canvas is taller than wide, so blend the base
+  // toward sceneH to keep vertically-spread shapes out of the "far" band.
+  const portraitK = clamp01(1 - aspect);
+  const base = light.sceneW * (1 - portraitK) + light.sceneH * portraitK;
+  const portraitBoost = 1 + portraitK * 1.1;
+  return base * aspectBoost * portraitBoost;
 }
 
 export function lightClosenessBand(

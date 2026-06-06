@@ -4,6 +4,7 @@ const LOCAL_BACKED_KEYS = new Set([
   "be.myEntryId",
   "be.mySection",
   "be.myRole",
+  "be.myAvg",
   "be.myDoc",
   "be.myEditToken",
   "be.justSubmitted",

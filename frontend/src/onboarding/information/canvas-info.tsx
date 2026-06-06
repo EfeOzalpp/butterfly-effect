@@ -1,7 +1,7 @@
 
 // src/onboarding/information/canvas-info.tsx
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import SpotlightEntry from "../../canvas-instances/SpotlightEntry";
 import PlayPauseIcon from "../../assets/svg/play/PlayPauseIcon";
 import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
@@ -16,8 +16,25 @@ export default function CanvasInfo() {
     toggleSpotlightPaused,
   } = useCanvasRuntime();
 
+  const asideRef = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
+
   useEffect(() => {
-    if (spotlight.paused) return;
+    const el = asideRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => { setInView(entry.isIntersecting); },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => { observer.disconnect(); };
+  }, []);
+
+  useEffect(() => {
+    if (spotlight.paused || !inView) return;
 
     const id = window.setInterval(() => {
       nextSpotlight();
@@ -26,10 +43,10 @@ export default function CanvasInfo() {
     return () => {
       window.clearInterval(id);
     };
-  }, [nextSpotlight, spotlight.index, spotlight.paused]);
+  }, [nextSpotlight, spotlight.index, spotlight.paused, inView]);
 
   return (
-    <aside className="onboarding-info canvas-info" aria-label="Canvas Engine information">
+    <aside ref={asideRef} className="onboarding-info canvas-info" aria-label="Canvas Engine information">
       <section className="canvas-info__slider" aria-label="Canvas Engine preview">
         <div className="canvas-info__spotlight-frame">
           <SpotlightEntry spotlight={spotlight} liveAvg={spotlightLiveAvg} />

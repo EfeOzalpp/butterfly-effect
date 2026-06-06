@@ -16,6 +16,7 @@ import {
 interface ResolvedSurfaceStop {
   k: number;
   left: RGBA;
+  center?: RGBA; // present when leftRgba authored — rgba becomes center, leftRgba becomes left
   right: RGBA;
   blendFromPrevious: boolean;
   blendToNext: boolean;
@@ -40,13 +41,20 @@ function resolveSurfaceStops(
 
   for (const resolved of resolveBackgroundStops(spec.stops, t, anchors)) {
     const { stop, k, order } = resolved;
-    const left = resolveStopRgba(stop.rgba, stop.liveBlend, liveAvg);
+    let leftSource = stop.rgba;
+    let center: RGBA | undefined;
+    if (stop.leftRgba) {
+      leftSource = stop.leftRgba;
+      center = resolveStopRgba(stop.rgba, stop.liveBlend, liveAvg) ?? undefined;
+    }
+    const left = resolveStopRgba(leftSource, stop.liveBlend, liveAvg);
     const right = resolveStopRgba(stop.rightRgba ?? stop.rgba, stop.liveBlend, liveAvg);
     if (!left || !right) return null;
 
     stops.push({
       k,
       left,
+      center: center ?? undefined,
       right,
       blendFromPrevious: stop.blendFromPrevious !== false,
       blendToNext: stop.blendToNext !== false,
@@ -63,7 +71,8 @@ function drawSurfaceBand(
   top: number,
   bottom: number,
   left: RGBA,
-  right: RGBA
+  right: RGBA,
+  center?: RGBA
 ) {
   const y0 = Math.max(0, Math.round(Math.min(top, bottom)));
   const y1 = Math.max(0, Math.round(Math.max(top, bottom)));
@@ -71,6 +80,7 @@ function drawSurfaceBand(
 
   const g = ctx.createLinearGradient(0, 0, width, 0);
   g.addColorStop(0, cssRgba(left));
+  if (center) g.addColorStop(0.5, cssRgba(center));
   g.addColorStop(1, cssRgba(right));
 
   ctx.fillStyle = g;
@@ -90,6 +100,8 @@ function drawBlendedSurfaceSegment(
 
   const y0 = Math.max(0, Math.round(top));
   const y1 = Math.max(0, Math.round(bottom));
+  const aCenter = a.center;
+  const bCenter = b.center;
   for (let y = y0; y < y1; y += 1) {
     const localT = clamp01((y + 0.5 - top) / h);
     drawSurfaceBand(
@@ -98,7 +110,8 @@ function drawBlendedSurfaceSegment(
       y,
       y + 1,
       mixRgba(a.left, b.left, localT),
-      mixRgba(a.right, b.right, localT)
+      mixRgba(a.right, b.right, localT),
+      aCenter && bCenter ? mixRgba(aCenter, bCenter, localT) : undefined
     );
   }
 }
@@ -119,7 +132,7 @@ export function drawLinearStopSurface(
   ctx.globalAlpha = alpha;
 
   const first = stops[0];
-  drawSurfaceBand(ctx, p.width, 0, first.k * p.height, first.left, first.right);
+  drawSurfaceBand(ctx, p.width, 0, first.k * p.height, first.left, first.right, first.center);
 
   for (let i = 0; i < stops.length - 1; i += 1) {
     const a = stops[i];
@@ -131,12 +144,12 @@ export function drawLinearStopSurface(
     if (a.blendToNext && b.blendFromPrevious) {
       drawBlendedSurfaceSegment(ctx, p.width, y0, y1, a, b);
     } else {
-      drawSurfaceBand(ctx, p.width, y0, y1, a.left, a.right);
+      drawSurfaceBand(ctx, p.width, y0, y1, a.left, a.right, a.center);
     }
   }
 
   const last = stops[stops.length - 1];
-  drawSurfaceBand(ctx, p.width, last.k * p.height, p.height, last.left, last.right);
+  drawSurfaceBand(ctx, p.width, last.k * p.height, p.height, last.left, last.right, last.center);
 
   ctx.restore();
   return true;

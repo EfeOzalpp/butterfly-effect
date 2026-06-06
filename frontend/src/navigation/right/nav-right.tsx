@@ -7,6 +7,7 @@ import { getSessionItem } from "../../app/session";
 import { useIdentity } from "../../app/state/identity-context";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
+import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
 import { isDesktopWidth, isTabletWidth } from "../../lib/responsive/breakpoints";
 import { desktopGraphToolsOffsetPx } from "../../lib/responsive/graph-tools-offset";
@@ -35,6 +36,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const { myEntryId, mySection, setMyEntryId, setMySection, setMyRole } = useIdentity();
+  const { setLiveAvg } = useCanvasRuntime();
   const windowWidth = useWindowWidth();
   const [pickerOpen, setPickerOpen] = useState(false);
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
@@ -67,6 +69,11 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
     setMySection(savedSection);
     setMyRole(getSessionItem("be.myRole"));
     setSection(savedSection);
+    const storedAvg = getSessionItem("be.myAvg");
+    if (storedAvg !== null) {
+      const parsed = parseFloat(storedAvg);
+      if (Number.isFinite(parsed)) setLiveAvg(parsed);
+    }
     setCityPanelOpen(!cityPanelOpen);
   };
 

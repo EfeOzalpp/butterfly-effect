@@ -77,6 +77,31 @@ export function EngineHost({
   );
 
   React.useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (!engine.ready.current) return;
+
+    const controls = engine.controls.current;
+    if (!controls) return;
+
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    void import("./runtime/debug/placementAuthoring")
+      .then(({ installPlacementAuthoring }) => {
+        if (cancelled) return;
+        cleanup = installPlacementAuthoring({ hostId: id, controls });
+      })
+      .catch((err: unknown) => {
+        console.warn("[EngineHost] Failed to install placement authoring:", err);
+      });
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [engine.controls, engine.ready, engine.readyTick, id]);
+
+  React.useEffect(() => {
     if (!engine.ready.current) return;
     engine.controls.current?.setInputs({ liveAvg, spotlight });
   }, [engine, liveAvg, spotlight]);

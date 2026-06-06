@@ -88,7 +88,7 @@ export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
     bleed: { top: 0.1, bottom: 0.4, right: 1, left: 1 },
     particles: {
       enabled: true,
-      scaleBoost: { laptop: 1.35, tablet: 1.35, mobile: 1.25 },
+      scaleBoost: { laptop: 1.15, tablet: 1.15, mobile: 1.1 },
     },
   },
   carFactory: {

@@ -54,8 +54,8 @@ const START_BACKGROUND_DARK: BackgroundSpec = {
     ] as const,
   },
   stars: {
-    count: [78, 96],
-    topBandK: 0.45,
+    count: [60, 90],
+    topBandK: 0.5,
     minR: 0.9,
     maxR: 1.6,
     alpha: [[0.5, 1.5], [0.6, 1.6]],

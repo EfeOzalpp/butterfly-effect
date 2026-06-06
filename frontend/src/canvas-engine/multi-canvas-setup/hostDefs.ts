@@ -40,7 +40,7 @@ export const HOST_DEFS = defineHosts({
   questionnaire: {
     mount: "#questionnaire-canvas-root",
     zIndex: 2,
-    dprMode: "cap2",
+    dprMode: "fixed1",
     fpsCap: 60,
     stopOnOpen: ["start"],
     canvasDimensions: { kind: "parent" },

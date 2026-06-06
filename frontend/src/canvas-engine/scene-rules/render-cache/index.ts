@@ -14,8 +14,6 @@ const FAR_SHAPE_BITMAP_ALWAYS_LIVE = [
   "snow",
   "power",
   "sun",
-  "clouds",
-  "house"
 ] as const;
 
 // Depth masks are cache-stable by default. Animated color details keep moving
@@ -39,7 +37,7 @@ export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
     // This avoids one fixed number being too small for desktop or too large for mobile.
     maxPixelsPerCanvasPixel: 5,
     // Missing masks warm in over multiple frames instead of all baking at startup.
-    maxBakesPerFrame: 32,
+    maxBakesPerFrame: 64,
     // Skip nearly invisible overlays. They still cost a mask lookup/blit,
     // and row-count changes can otherwise create sharp performance cliffs.
     minBlend: 0.08,

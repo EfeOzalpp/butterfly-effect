@@ -4,6 +4,7 @@
 import { useCallback, useState } from 'react';
 
 import { DEFAULT_AVG, DEFAULT_SPOTLIGHT_SIGNAL } from './canvas-runtime-context';
+import { getSessionItem } from '../session';
 import type { Place } from '../../canvas-engine/grid-layout/occupancy';
 
 function normalizeAvg(avg: unknown) {
@@ -24,7 +25,12 @@ function sameFootprints(a: Place[], b: Place[]) {
 }
 
 export default function useCanvasRuntimeState() {
-  const [liveAvgState, _setLiveAvgState] = useState<number>(DEFAULT_AVG);
+  const [liveAvgState, _setLiveAvgState] = useState<number>(() => {
+    const stored = getSessionItem('be.myAvg');
+    if (stored === null) return DEFAULT_AVG;
+    const parsed = parseFloat(stored);
+    return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : DEFAULT_AVG;
+  });
   const [spotlightLiveAvgState, _setSpotlightLiveAvgState] = useState<number>(DEFAULT_AVG);
   const [reservedFootprintsState, _setReservedFootprintsState] = useState<Place[]>([]);
   const [spotlightState, setSpotlightState] = useState(DEFAULT_SPOTLIGHT_SIGNAL);

@@ -21,7 +21,8 @@ export interface RgbaStop {
   // nearest authored anchors, so background colors can follow the runtime
   // horizon without hand-tuning every band.
   k?: BackgroundStopK;
-  rgba: string; // color itself
+  rgba: string; // color itself — becomes center when leftRgba is also provided
+  leftRgba?: string; // optional left-edge color; when present rgba becomes center, rightRgba becomes right
   rightRgba?: string; // optional right-edge color for horizontal blends across this band
   oscK?: { amp: number; hz: number }; // oscillates color stops K value up and down for movement.
   liveBlend?: number | readonly [number, number]; // blends the bg stop with the livAvg lerp stops band

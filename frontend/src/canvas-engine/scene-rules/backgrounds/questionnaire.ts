@@ -19,7 +19,6 @@ const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
       { rgba: "rgba(82, 184, 103, 0.97)", liveBlend: [0.02, 0.08] },
       { rgba: "rgba(112, 189, 116, 0.97)" },
       { rgba: "rgba(120, 156, 102, 1)" },
-      { rgba: "rgba(120, 156, 102, 1)" },
     ] as const,
   },
 } as const;

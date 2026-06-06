@@ -11,14 +11,14 @@ export const CITY_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   },
 
   tablet: {
-    rows: 17,
+    rows: 22,
     useTopRatio: 1,
     horizonPos: 0.55,
   },
 
   laptop: {
-    rows: 19,
+    rows: 24,
     useTopRatio: 1,
-    horizonPos: 0.55,
+    horizonPos: 0.52,
   },
 };

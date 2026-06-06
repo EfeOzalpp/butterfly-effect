@@ -49,7 +49,7 @@ interface HousePalette extends ShapePalette {
   door: RGB[];
   window: {
     lit: RGB[];
-    dark: RGB;
+    dark: RGB[];
   };
   solarPanel: RGB;
 }
@@ -197,7 +197,7 @@ const HOUSE_BASE_PALETTE: HousePalette = {
       { r: 255, g: 222, b: 128 },
       { r: 255, g: 241, b: 176 },
     ],
-    dark: { r: 120, g: 170, b: 220 },
+    dark: [{ r: 120, g: 170, b: 220 }],
   },
   solarPanel: { r: 180, g: 205, b: 235 },
 };
@@ -245,7 +245,12 @@ const HOUSE_DARK_PALETTE: HousePalette = {
       { r: 255, g: 214, b: 120 },
       { r: 250, g: 234, b: 166 },
     ],
-    dark: { r: 128, g: 140, b: 205 },
+    dark: [
+      { r: 96,  g: 105, b: 150 },
+      { r: 105, g: 110, b: 160 },
+      { r: 95,  g: 102, b: 170 },
+      { r: 116, g: 128, b: 188 },
+    ],
   },
   solarPanel: { r: 99, g: 129, b: 180 },
 };
@@ -725,11 +730,11 @@ if (shouldDrawColorDetails) {
 if (shouldDrawColorDetails) {
   // lit/dark tints (safe)
   let winLitVariants = Array.isArray(pal.window.lit) ? pal.window.lit : [pal.window.lit];
-  let winDark = pal.window.dark;
+  let winDarkVariants = [...pal.window.dark];
   if (gradientRGB) {
     const k = resolveRangeValue(HOUSE.body.colorBlend, u);
     winLitVariants = winLitVariants.map((c) => blendRGB(c, gradientRGB, k));
-    winDark = blendRGB(winDark, gradientRGB, k);
+    winDarkVariants = winDarkVariants.map((c) => blendRGB(c, gradientRGB, k));
   }
     winLitVariants = winLitVariants.map((c) => {
       let toned = c;
@@ -739,7 +744,7 @@ if (shouldDrawColorDetails) {
       }
       return applySrgbExposureContrast(toned, ex, ct);
     });
-  winDark = applySrgbExposureContrast(winDark, ex, ct);
+  winDarkVariants = winDarkVariants.map((c) => applySrgbExposureContrast(c, ex, ct));
 
   const cellsH = f.h;
   const low = HOUSE.windows.thresholds.low;
@@ -826,7 +831,8 @@ if (shouldDrawColorDetails) {
         const litRand = rand01(hash32(`house-lit|${String(seed)}|${String(rr)}|${String(cc)}|${String(drawn)}`));
         const litIdx = Math.floor(litRand * winLitVariants.length) % winLitVariants.length;
         const isLit = litSlots.has(drawn);
-        let tint = isLit ? winLitVariants[litIdx] : winDark;
+        const darkVariantIdx = Math.floor(rand01(hash32(`house-dark-var|${String(seed)}|${String(rr)}|${String(cc)}|${String(drawn)}`)) * winDarkVariants.length) % winDarkVariants.length;
+        let tint = isLit ? winLitVariants[litIdx] : winDarkVariants[darkVariantIdx];
         if (isLit) {
           const oscSeed = hash32(`house-window-osc|${String(seed)}|${String(rr)}|${String(cc)}|${String(drawn)}`);
           const oscPhase = rand01(oscSeed ^ 0x9e3779b9) * Math.PI * 2;

@@ -150,7 +150,7 @@ const SEA_TUNING = {
 
     fadeInFrac:  0.15,
     fadeOutFrac: 0.35,
-    edgeFadePx:  { left: 2, right: 8, top: 8, bottom: 36 },
+    edgeFadePx:  { left: 2, right: 8, top: 4, bottom: 8 },
 
     coneAccelX:  120,
     spreadAngle: 0.45,
@@ -489,7 +489,79 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     if (wantClip) { ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip(); }
   }
 
-  // SPILL (particle-2) — gated by liveAvg; spills outside tile
+  // 2) BOWL composite (proportional; mobile-safe)
+  if (T.bowl.enable) {
+    const _tEff = bowlThicknessPx;
+    const baseH = bowlBaseH;
+    const baseY = bowlBaseY;
+    const baseX = bowlBaseX;
+    const baseW = bowlBaseW;
+
+    const postsTopY = bowlPostsTopY;
+    const colW = bowlColW;
+    const postR       = Math.max(0, (T.bowl.pieceRadiusPx ?? 0) | 0);
+    const baseOverlap = Math.max(0, T.bowl.baseOverlapPx ?? 2);
+    const postBottomY = baseY + baseOverlap;
+    const postDrawH   = Math.max(1, postBottomY - postsTopY - Math.max(0, T.bowl.postBottomLiftPx ?? Math.ceil(postR)));
+
+    const leftX  = cx + L0;
+    const rightX = cx + L0 + W0 - colW;
+
+    const gb = T.bowl.grassBlend;
+    const blendK = clamp01(resolveRangeValue(gb.colorBlend, u));
+    const [satLo, satHi] = gb.satRange;
+    const [briLo, briHi] = gb.brightRange;
+
+    let bowlRGB = grassPal;
+    if (style.gradientRGB) bowlRGB = blendRGB(bowlRGB, style.gradientRGB, blendK);
+    bowlRGB = clampSaturation(bowlRGB, satLo, satHi, 1);
+    bowlRGB = clampBrightness(bowlRGB, briLo, briHi, 1);
+
+    const bowlFill = shapeColorForRenderPass(renderPass, bowlRGB, maskColor);
+    const aBowl = isDepthMaskPass
+      ? Math.round(255 * depthMaskFactor)
+      : Math.round(255 * clamp01(T.bowl.alphaMul) * appearAlphaK);
+    ctx.fillStyle = rgbaCss(bowlFill, aBowl / 255);
+
+    const rCorner = Math.round(cell * bowlCornerK);
+    {
+      const r = Math.min(rCorner, baseH / 2, baseW / 2);
+      ctx.beginPath();
+      ctx.moveTo(baseX, baseY);
+      ctx.lineTo(baseX + baseW, baseY);
+      ctx.lineTo(baseX + baseW, baseY + baseH - r);
+      ctx.quadraticCurveTo(baseX + baseW, baseY + baseH, baseX + baseW - r, baseY + baseH);
+      ctx.lineTo(baseX + r, baseY + baseH);
+      ctx.quadraticCurveTo(baseX, baseY + baseH, baseX, baseY + baseH - r);
+      ctx.lineTo(baseX, baseY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    roundedRectPath(ctx, leftX,  postsTopY, colW, postDrawH, postR);
+    roundedRectPath(ctx, rightX, postsTopY, colW, postDrawH, postR);
+    ctx.fill();
+  }
+
+  // top border (optional)
+  if (shouldDrawColorDetails && T.topBorder.enable && (T.topBorder.topLinePx > 0)) {
+    const aLine = Math.round(drawAlpha * clamp01(T.topBorder.topLineAlpha));
+    const kMix = clamp01(T.topBorder.topLineMix);
+    const lineRGB = {
+      r: Math.round(topRGB.r + (bottomRGB.r - topRGB.r) * kMix),
+      g: Math.round(topRGB.g + (bottomRGB.g - topRGB.g) * kMix),
+      b: Math.round(topRGB.b + (bottomRGB.b - topRGB.b) * kMix),
+    };
+    p.push();
+    p.noFill();
+    p.stroke(lineRGB.r, lineRGB.g, lineRGB.b, aLine);
+    p.strokeWeight(T.topBorder.topLinePx);
+    p.line(cx + L0, bottomY + Ttop0, cx + L0 + W0, bottomY + Ttop0);
+    p.pop();
+  }
+
+  // SPILL (particle-2) — drawn last so droplets render above the bowl
   if (T.spill.enable && shouldDrawColorDetails) {
     // Remove clip before spill so particles can render into the bleed area (sea has 0.45-tile
     // horizontal bleed on each side — enough for the falling corridors to sit outside the pool).
@@ -519,7 +591,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
 
       const surfaceY = waterTopY;
       const spawnHeightPx = isSprite ? Math.max(5, cell * 0.16) : Math.max(8, cell * 0.35);
-      const bandTopY = isSprite ? surfaceY - spawnHeightPx : surfaceY - cell * 0.06;
+      const bandTopY = isSprite ? surfaceY - spawnHeightPx : surfaceY - cell * 0.18;
       const bandH    = Math.max(1, bottomBound - bandTopY + cell * 0.25);
 
       const spawnFracY = Math.min(1, spawnHeightPx / Math.max(1, bandH));
@@ -611,7 +683,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
           fadeOutFrac:T.spill.fadeOutFrac,
 
           edgeFadePx: isLeft
-            ? { left: T.spill.leftEdgeFadeLeftPx, right: 8, top: 8, bottom: 8 }
+            ? { left: T.spill.leftEdgeFadeLeftPx, right: 8, top: 4, bottom: 8 }
             : T.spill.edgeFadePx,
 
           color: (pr) => {
@@ -629,80 +701,8 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
       runSide('R');
     }
 
-    // re-clip after spill so the bowl and subsequent elements stay within bounds
+    // re-clip after spill
     if (wantClip) { ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip(); }
-  }
-
-  // 2) BOWL composite (proportional; mobile-safe)
-  if (T.bowl.enable) {
-    const _tEff = bowlThicknessPx;
-    const baseH = bowlBaseH;
-    const baseY = bowlBaseY;
-    const baseX = bowlBaseX;
-    const baseW = bowlBaseW;
-
-    const postsTopY = bowlPostsTopY;
-    const colW = bowlColW;
-    const postR       = Math.max(0, (T.bowl.pieceRadiusPx ?? 0) | 0);
-    const baseOverlap = Math.max(0, T.bowl.baseOverlapPx ?? 2);
-    const postBottomY = baseY + baseOverlap;
-    const postDrawH   = Math.max(1, postBottomY - postsTopY - Math.max(0, T.bowl.postBottomLiftPx ?? Math.ceil(postR)));
-
-    const leftX  = cx + L0;
-    const rightX = cx + L0 + W0 - colW;
-
-    const gb = T.bowl.grassBlend;
-    const blendK = clamp01(resolveRangeValue(gb.colorBlend, u));
-    const [satLo, satHi] = gb.satRange;
-    const [briLo, briHi] = gb.brightRange;
-
-    let bowlRGB = grassPal;
-    if (style.gradientRGB) bowlRGB = blendRGB(bowlRGB, style.gradientRGB, blendK);
-    bowlRGB = clampSaturation(bowlRGB, satLo, satHi, 1);
-    bowlRGB = clampBrightness(bowlRGB, briLo, briHi, 1);
-
-    const bowlFill = shapeColorForRenderPass(renderPass, bowlRGB, maskColor);
-    const aBowl = isDepthMaskPass
-      ? Math.round(255 * depthMaskFactor)
-      : Math.round(255 * clamp01(T.bowl.alphaMul) * appearAlphaK);
-    ctx.fillStyle = rgbaCss(bowlFill, aBowl / 255);
-
-    const rCorner = Math.round(cell * bowlCornerK);
-    {
-      const r = Math.min(rCorner, baseH / 2, baseW / 2);
-      ctx.beginPath();
-      ctx.moveTo(baseX, baseY);
-      ctx.lineTo(baseX + baseW, baseY);
-      ctx.lineTo(baseX + baseW, baseY + baseH - r);
-      ctx.quadraticCurveTo(baseX + baseW, baseY + baseH, baseX + baseW - r, baseY + baseH);
-      ctx.lineTo(baseX + r, baseY + baseH);
-      ctx.quadraticCurveTo(baseX, baseY + baseH, baseX, baseY + baseH - r);
-      ctx.lineTo(baseX, baseY);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    ctx.beginPath();
-    roundedRectPath(ctx, leftX,  postsTopY, colW, postDrawH, postR);
-    roundedRectPath(ctx, rightX, postsTopY, colW, postDrawH, postR);
-    ctx.fill();
-  }
-
-  // top border (optional)
-  if (shouldDrawColorDetails && T.topBorder.enable && (T.topBorder.topLinePx > 0)) {
-    const aLine = Math.round(drawAlpha * clamp01(T.topBorder.topLineAlpha));
-    const kMix = clamp01(T.topBorder.topLineMix);
-    const lineRGB = {
-      r: Math.round(topRGB.r + (bottomRGB.r - topRGB.r) * kMix),
-      g: Math.round(topRGB.g + (bottomRGB.g - topRGB.g) * kMix),
-      b: Math.round(topRGB.b + (bottomRGB.b - topRGB.b) * kMix),
-    };
-    p.push();
-    p.noFill();
-    p.stroke(lineRGB.r, lineRGB.g, lineRGB.b, aLine);
-    p.strokeWeight(T.topBorder.topLinePx);
-    p.line(cx + L0, bottomY + Ttop0, cx + L0 + W0, bottomY + Ttop0);
-    p.pop();
   }
 
   if (wantClip) ctx.restore();

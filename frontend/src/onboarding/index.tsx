@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
 import { useIdentity } from "../app/state/identity-context";
+import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
 import "../styles/onboarding.css";
 
 import { ROLE_SECTIONS } from "./section-picker/sections";
@@ -52,6 +53,7 @@ export default function Survey({
   const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey, resetToStart } = useUiFlow();
   const { section, setSection, upsertLocalSurveyRow } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
+  const { setLiveAvg } = useCanvasRuntime();
 
   // Keep questionnaireOpen in sync with our stage (and finished latch).
   // No cleanup: the effect body always computes the correct value on re-run,
@@ -243,6 +245,12 @@ export default function Survey({
     setQuestionnaireOpen(false);
 
     const weights = answersToWeights(answers);
+    const avgValues = Object.values(answers).filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+    if (avgValues.length > 0) {
+      const finalAvg = avgValues.reduce((s, v) => s + v, 0) / avgValues.length;
+      setLiveAvg(finalAvg);
+      setSessionItem('be.myAvg', String(finalAvg));
+    }
     beginUserResponseEditSession();
     const optimistic = createOptimisticUserResponse(surveySection, weights);
     const optimisticRow = savedUserResponseToSurveyRow(optimistic, surveySection);

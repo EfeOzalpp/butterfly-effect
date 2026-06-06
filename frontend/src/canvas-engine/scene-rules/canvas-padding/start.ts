@@ -8,7 +8,7 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   mobile: {
     rows: 26,
     useTopRatio: 1,
-    horizonPos: 0.51,
+    horizonPos: 0.5,
     forbidden: makeRowForbidden(
       Array.from( { length: 26 } , () => ({ ...LR_0}))
     ),
@@ -17,7 +17,7 @@ export const START_PADDING: Record<DeviceType, CanvasPaddingSpec | null> = {
   tablet: {
     rows: 24,
     useTopRatio: 1,
-    horizonPos: 0.54,
+    horizonPos: 0.46,
     forbidden: makeRowForbidden(
       Array.from( { length: 22 }, () => ({ ...LR_0}))
     ),

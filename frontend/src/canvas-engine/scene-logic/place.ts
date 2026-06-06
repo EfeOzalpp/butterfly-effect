@@ -46,16 +46,22 @@ function communityBandRowBounds(
     return { minR0: 0, maxR0 };
   }
 
-  const horizonRow = Math.max(0, Math.min(usedRows, spec.horizonPos * usedRows));
+  // Mirror computeHorizonRowHeights: rows split evenly (floor(n/2)), not by horizonPos fraction.
+  // Using horizonPos * usedRows misplaces the sky/ground boundary when horizonPos ≠ 0.5.
+  const halfRows = Math.floor(usedRows / 2);
+  const topRows = usedRows % 2 === 0
+    ? halfRows
+    : (spec.horizonPos >= 0.5 ? halfRows + 1 : halfRows);
+
   if (band === "sky") {
     return {
       minR0: 0,
-      maxR0: Math.max(0, Math.min(maxR0, Math.floor(horizonRow - hCell))),
+      maxR0: Math.max(0, Math.min(maxR0, topRows - hCell)),
     };
   }
 
   return {
-    minR0: Math.max(0, Math.min(maxR0, Math.ceil(horizonRow))),
+    minR0: Math.max(0, Math.min(maxR0, topRows)),
     maxR0,
   };
 }
