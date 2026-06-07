@@ -235,7 +235,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
         )}
       </div>
       {questionnaireOpen && !vizVisible && questionnaireNav.total > 0 && (
-        <div className={`bottom bottom-right${introActive ? " nav-first-enter" : ""}`}>
+        <div className={`bottom bottom-right${cityPanelOpen ? " is-behind-city-canvas" : ""}${introActive ? " nav-first-enter" : ""}`}>
           <div className="questionnaire-nav-stack">
             <p
               className="q-step-indicator questionnaire-nav-progress"

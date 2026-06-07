@@ -29,6 +29,8 @@ export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
     farSizeK: 0.36,
     // Far-shape bitmap memory scales with the canvas instead of a fixed item count.
     maxPixelsPerCanvasPixel: 3,
+    // Avoid click-time liveAvg changes rebaking every distant desktop shape in one frame.
+    maxBakesPerFrame: 12,
     // These shapes keep moving or emitting particles, so distance caching would freeze them.
     alwaysLiveShapes: FAR_SHAPE_BITMAP_ALWAYS_LIVE,
   },

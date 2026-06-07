@@ -57,6 +57,7 @@
 .bottom-center { left: 50%; transform: translateX(-50%); z-index: 201; }
 .bottom-left { z-index: 204; }
 .bottom-right { z-index: 205; justify-content: flex-end; }
+.bottom-right.is-behind-city-canvas { z-index: 202; pointer-events: none; }
 .bottom-mobile-right { left: 50%; transform: translateX(-50%); z-index: 201; }
 .bottom-right { right: 1.8rem; }
 
@@ -96,7 +97,7 @@
 
 /* Theme wiring: city */
 .city-button, .city-overlay, .city-canvas-host { color: var(--ui-text); }
-.city-overlay { background: var(--ui-bg-surface); border: 1px solid var(--ui-border); }
+.city-overlay { background: var(--ui-bg-surface); border: 0; }
 .city-button { background: var(--ui-bg-surface); }
 
 /* Mobile */

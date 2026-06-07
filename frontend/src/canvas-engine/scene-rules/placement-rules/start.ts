@@ -210,8 +210,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.8, y: 0.75},
         radius: { tiles: 6, xDistort: 6, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(4, 0, 0), quota: START_SHAPE_QUOTAS.clouds },
-          snow: { count: count(2, 0, 0), quota: START_SHAPE_QUOTAS.snow },
+          clouds: { count: count(2, 0, 0), quota: START_SHAPE_QUOTAS.clouds },
+          snow: { count: count(1, 0, 0), quota: START_SHAPE_QUOTAS.snow },
         },
       },
       {

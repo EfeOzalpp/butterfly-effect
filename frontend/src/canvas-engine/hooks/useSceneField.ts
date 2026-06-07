@@ -127,46 +127,56 @@ export function useSceneField(
   useEffect(() => {
     if (!ready.current) return;
 
-    const engineControls = controls.current;
-    if (!engineControls) return;
+    let cancelled = false;
+    const rafId = requestAnimationFrame(() => {
+      if (cancelled || !ready.current) return;
 
-    const sceneState: SceneState = { lookupKey: sceneLookupKey };
-    const profile = ruleset.getProfile(sceneState, { darkMode });
-    const placements = resolveRuntimePlacements(profile.placements, spotlightIndex);
-    const padding = resolvePaddingPolicyVariants(profile.padding, spotlightIndex);
+      const engineControls = controls.current;
+      if (!engineControls) return;
 
-    const canvas = engineControls.canvas;
-    const { w, h } = getCanvasLogicalSize(canvas);
-    const viewportW = getViewportSize().w;
-    // Device-band rules should follow the actual viewport/device, not the
-    // bounded size of a canvas instance such as Spotlight.
-    const ruleWidthPx = viewportW;
+      const sceneState: SceneState = { lookupKey: sceneLookupKey };
+      const profile = ruleset.getProfile(sceneState, { darkMode });
+      const placements = resolveRuntimePlacements(profile.placements, spotlightIndex);
+      const padding = resolvePaddingPolicyVariants(profile.padding, spotlightIndex);
 
-    const result = composeField({
-      padding,
-      placements,
-      liveAvg,
-      reservedFootprints,
-      ruleWidthPx,
-      canvas: { w, h },
+      const canvas = engineControls.canvas;
+      const { w, h } = getCanvasLogicalSize(canvas);
+      const viewportW = getViewportSize().w;
+      // Device-band rules should follow the actual viewport/device, not the
+      // bounded size of a canvas instance such as Spotlight.
+      const ruleWidthPx = viewportW;
+
+      const result = composeField({
+        padding,
+        placements,
+        liveAvg,
+        reservedFootprints,
+        ruleWidthPx,
+        canvas: { w, h },
+      });
+
+      // Let runtime compute forbidden/rows from the current profile padding
+      // and receive the other resolved scene policies as one handoff.
+      const spec = resolvePaddingSpec(ruleWidthPx, padding);
+      engineControls.setSceneProfile({
+        lookupKey: sceneLookupKey,
+        paddingSpec: spec,
+        background: profile.background,
+        ambientParticles: profile.ambientParticles,
+        fog: profile.fog,
+        foliage: profile.foliage,
+        renderCache: profile.renderCache,
+      });
+      engineControls.setFieldStyle({ darkMode, fog, shapeLightSource });
+
+      engineControls.setFieldItems(result.placed);
+      engineControls.setFieldVisible(result.placed.length > 0);
     });
 
-    // Let runtime compute forbidden/rows from the current profile padding
-    // and receive the other resolved scene policies as one handoff.
-    const spec = resolvePaddingSpec(ruleWidthPx, padding);
-    engineControls.setSceneProfile({
-      lookupKey: sceneLookupKey,
-      paddingSpec: spec,
-      background: profile.background,
-      ambientParticles: profile.ambientParticles,
-      fog: profile.fog,
-      foliage: profile.foliage,
-      renderCache: profile.renderCache,
-    });
-    engineControls.setFieldStyle({ darkMode, fog, shapeLightSource });
-
-    engineControls.setFieldItems(result.placed);
-    engineControls.setFieldVisible(result.placed.length > 0);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
   }, [
     ready,
     controls,

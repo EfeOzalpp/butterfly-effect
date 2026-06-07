@@ -146,7 +146,8 @@ export function placePoolItems(opts: {
     occ.tryPlaceAt(reserved.r0, reserved.c0, reserved.w, reserved.h);
   }
 
-  const placedAccum: { id: PoolItem["id"]; x: number; y: number; footprint: FootRect }[] = [];
+  const placedFootprints: FootRect[] = [];
+  const emptyPlacedFootprints: FootRect[] = [];
   const outPlaced: PlacedItem[] = [];
   let cursor = 0;
 
@@ -179,7 +180,7 @@ export function placePoolItems(opts: {
       item.y = y;
 
       if (shape !== "clouds") {
-        placedAccum.push({ id: item.id, x, y, footprint: rectHit });
+        placedFootprints.push(rectHit);
       }
 
       outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
@@ -207,7 +208,7 @@ export function placePoolItems(opts: {
       item.y = centerY;
 
       if (shape !== "clouds") {
-        placedAccum.push({ id: item.id, x: centerX, y: centerY, footprint: reservedHit });
+        placedFootprints.push(reservedHit);
       }
 
       outPlaced.push({
@@ -221,13 +222,7 @@ export function placePoolItems(opts: {
       continue;
     }
 
-    const scoreSource = shape === "clouds" ? [] : placedAccum;
-    const placedForScore = scoreSource.map((p) => ({
-      r0: p.footprint.r0,
-      c0: p.footprint.c0,
-      w: p.footprint.w,
-      h: p.footprint.h,
-    }));
+    const placedForScore = shape === "clouds" ? emptyPlacedFootprints : placedFootprints;
 
     const candidates: { r0: number; c0: number; score: number }[] = [];
 
@@ -308,7 +303,7 @@ export function placePoolItems(opts: {
       item.y = y;
 
       if (shape !== "clouds") {
-        placedAccum.push({ id: item.id, x, y, footprint: rectHit });
+        placedFootprints.push(rectHit);
       }
       outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
       continue;
@@ -389,7 +384,7 @@ export function placePoolItems(opts: {
     item.y = y;
 
     if (shape !== "clouds") {
-      placedAccum.push({ id: item.id, x, y, footprint: rectHit });
+      placedFootprints.push(rectHit);
     }
     outPlaced.push({ id: item.id, x, y, shape: item.shape, footprint: rectHit });
   }

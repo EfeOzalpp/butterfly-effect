@@ -86,8 +86,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.15, y: 0.6 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: Q.clouds },
-          snow: { count: count(1, 1, 1), quota: Q.snow },
+          clouds: { count: count(1, 2, 3), quota: Q.clouds },
+          snow: { count: count(1, 3, 1), quota: Q.snow },
         },
       },
       {
@@ -96,17 +96,17 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.05, y: 0.8 },
         radius: { tiles: 5, xDistort: 4, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 1), quota: Q.clouds },
-          snow: { count: count(1, 1, 3), quota: Q.snow },
+          clouds: { count: count(1, 2, 1), quota: Q.clouds },
+          snow: { count: count(1, 3, 3), quota: Q.snow },
         },
       },
       {
         id: "weather-right-far",
         band: "sky",
         center: { x: 0.8, y: 0.8 },
-        radius: { tiles: 5, xDistort: 3.2, yTiles: 0.65 },
+        radius: { tiles: 4, xDistort: 3.2, yTiles: 0.65 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: Q.clouds },
+          clouds: { count: count(1, 2, 2), quota: Q.clouds },
           snow: { count: count(1, 1, 2), quota: Q.snow },
         },
       },
@@ -116,8 +116,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.45, y: 0.7 },
         radius: { tiles: 4, xDistort: 3.5, yTiles: 0.5 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: Q.clouds },
-          snow: { count: count(1, 1, 1), quota: Q.snow },
+          clouds: { count: count(1, 0, 2), quota: Q.clouds },
+          snow: { count: count(1, 0, 1), quota: Q.snow },
         },
       },
       {
@@ -126,8 +126,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.4, y: 0.6 },
         radius: { tiles: 2, xDistort: 2, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: Q.clouds },
-          snow: { count: count(1, 1, 1), quota: Q.snow },
+          clouds: { count: count(1, 0, 2), quota: Q.clouds },
+          snow: { count: count(1, 0, 1), quota: Q.snow },
         },
       },
       {
@@ -136,8 +136,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.28, y: 0.9 },
         radius: { tiles: 2, xDistort: 2, yTiles: 0.3 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: Q.clouds },
-          snow: { count: count(1, 1, 2), quota: Q.snow },
+          clouds: { count: count(1, 2, 2), quota: Q.clouds },
+          snow: { count: count(1, 1, 1), quota: Q.snow },
         },
       },
       {
@@ -146,8 +146,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.3, y: 0.5 },
         radius: { tiles: 2, xDistort: 2, yTiles: 0.3 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: Q.clouds },
-          snow: { count: count(1, 1, 1), quota: Q.snow },
+          clouds: { count: count(1, 0, 3), quota: Q.clouds },
+          snow: { count: count(1, 0, 1), quota: Q.snow },
         },
       },
       {
@@ -156,8 +156,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.7, y: 0.9 },
         radius: { tiles: 2, xDistort: 2, yTiles: 0.3 },
         shapes: {
-          clouds: { count: count(1, 1, 4), quota: Q.clouds },
-          snow: { count: count(1, 1, 3), quota: Q.snow },
+          clouds: { count: count(1, 0, 2), quota: Q.clouds },
+          snow: { count: count(1, 0, 1), quota: Q.snow },
         },
       },
       {
@@ -166,7 +166,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.65, y: 0.8 },
         radius: { tiles: 2, xDistort: 2, yTiles: 0.3 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: Q.clouds },
+          clouds: { count: count(1, 2, 3), quota: Q.clouds },
           snow: { count: count(1, 1, 2), quota: Q.snow },
         },
       },
@@ -176,8 +176,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.35, y: 0.8 },
         radius: { tiles: 2, xDistort: 2, yTiles: 0.3 },
         shapes: {
-          clouds: { count: count(1, 1, 4), quota: Q.clouds },
-          snow: { count: count(1, 1, 3), quota: Q.snow },
+          clouds: { count: count(1, 3, 2), quota: Q.clouds },
+          snow: { count: count(1, 2, 2), quota: Q.snow },
         },
       },
       {
@@ -186,8 +186,18 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.8, y: 0.1 },
         radius: { tiles: 3, xDistort: 2, yTiles: 0.6 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: Q.clouds },
-          snow: { count: count(1, 1, 1), quota: Q.snow },
+          clouds: { count: count(1, 0, 2), quota: Q.clouds },
+          snow: { count: count(1, 0, 1), quota: Q.snow },
+        },
+      },
+      {
+        id: "weather-right-close-Ipad",
+        band: "sky",
+        center: { x: 0.9, y: 0.4 },
+        radius: { tiles: 3, xDistort: 2, yTiles: 0.6 },
+        shapes: {
+          clouds: { count: count(0, 2, 0), quota: Q.clouds },
+          snow: { count: count(0, 1, 0), quota: Q.snow },
         },
       },
       {
@@ -196,8 +206,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.72, y: 0.2 },
         radius: { tiles: 2, xDistort: 1, yTiles: 0.6 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: Q.clouds },
-          snow: { count: count(1, 1, 0), quota: Q.snow },
+          clouds: { count: count(1, 3, 2), quota: Q.clouds },
+          snow: { count: count(1, 2, 0), quota: Q.snow },
         },
       },
       {
@@ -206,18 +216,48 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 1, y: 0.3 },
         radius: { tiles: 6, xDistort: 5, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 2), quota: Q.clouds },
-          snow: { count: count(1, 1, 1), quota: Q.snow },
+          clouds: { count: count(1, 0, 2), quota: Q.clouds },
+          snow: { count: count(1, 0, 1), quota: Q.snow },
         },
       },
       {
         id: "weather-right-far-2",
         band: "sky",
         center: { x: 0.88, y: 0.6 },
-        radius: { tiles: 6, xDistort: 5, yTiles: 0.4 },
+        radius: { tiles: 4, xDistort: 5, yTiles: 0.4 },
         shapes: {
-          clouds: { count: count(1, 1, 3), quota: Q.clouds },
-          snow: { count: count(1, 1, 2), quota: Q.snow },
+          clouds: { count: count(1, 0, 2), quota: Q.clouds },
+          snow: { count: count(1, 0, 2), quota: Q.snow },
+        },
+      },
+      {
+        id: "weather-right-far-2-Ipad",
+        band: "sky",
+        center: { x: 0.8, y: 0.9 },
+        radius: { tiles: 2, xDistort: 6, yTiles: 0.2 },
+        shapes: {
+          clouds: { count: count(0, 2, 0), quota: Q.clouds },
+          snow: { count: count(0, 3, 0), quota: Q.snow },
+        },
+      },
+      {
+        id: "weather-mid-far-Ipad",
+        band: "sky",
+        center: { x: 0.4, y: 1 },
+        radius: { tiles: 2, xDistort: 6, yTiles: 0.2 },
+        shapes: {
+          clouds: { count: count(0, 2, 0), quota: Q.clouds },
+          snow: { count: count(0, 3, 0), quota: Q.snow },
+        },
+      },
+            {
+        id: "weather-mid-far-Ipad-2",
+        band: "sky",
+        center: { x: 0.92, y: 1 },
+        radius: { tiles: 2, xDistort: 6, yTiles: 0.2 },
+        shapes: {
+          clouds: { count: count(0, 1, 0), quota: Q.clouds },
+          snow: { count: count(0, 2, 0), quota: Q.snow },
         },
       },
 
@@ -332,6 +372,40 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         },
       },
       {
+        id: "mixed-05.7-ipad",
+        band: "ground",
+        center: { x: 0.2, y: 0.5 },
+        radius: { tiles: 6, xDistort: 2, yDistort: 1 },
+        shapes: {
+          trees: { count: count(0, 4, 0), quota: Q.trees },
+        },
+      },
+      {
+        id: "mixed-05.8-ipad",
+        band: "ground",
+        center: { x: 0.4, y: 0.5 },
+        radius: { tiles: 6, xDistort: 2, yDistort: 1 },
+        shapes: {
+          villa: { count: count(0, 2, 0), quota: Q.villa },
+          car: { count: count(0, 2, 0), quota: Q.car },
+          bus: { count: count(0, 2, 0), quota: Q.bus },
+          trees: { count: count(0, 4, 0), quota: Q.trees },
+          carFactory: { count: count(0, 2, 0), quota: Q.carFactory },
+        },
+      },
+      {
+        id: "mixed-05.9-ipad",
+        band: "ground",
+        center: { x: 0.8, y: 0.5 },
+        radius: { tiles: 6, xDistort: 2, yDistort: 1 },
+        shapes: {
+          trees: { count: count(0, 4, 0), quota: Q.trees },
+          villa: { count: count(0, 2, 0), quota: Q.villa },
+          car: { count: count(0, 2, 0), quota: Q.car },
+          bus: { count: count(0, 2, 0), quota: Q.bus },
+        },
+      },
+      {
         id: "mixed-06",
         band: "ground",
         center: { x: 0.95, y: 0.7 },
@@ -356,7 +430,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(1, 1, 1), quota: Q.bus },
           trees: { count: count(1, 3, 4), quota: Q.trees },
-          sea: { count: count(1, 1, 1), quota: Q.sea },
+          sea: { count: count(1, 0, 1), quota: Q.sea },
         },
       },
       {
@@ -369,8 +443,8 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           villa: { count: count(1, 1, 1), quota: Q.villa },
           car: { count: count(1, 1, 3), quota: Q.car },
           bus: { count: count(1, 1, 1), quota: Q.bus },
-          trees: { count: count(1, 5, 6), quota: Q.trees },
-          carFactory: { count: count(1, 1, 1), quota: Q.carFactory },
+          trees: { count: count(1, 4, 6), quota: Q.trees },
+          carFactory: { count: count(1, 2, 1), quota: Q.carFactory },
         },
       },
       {
@@ -383,7 +457,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           villa: { count: count(1, 1, 1), quota: Q.villa },
           car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(1, 1, 2), quota: Q.bus },
-          trees: { count: count(1, 1, 2), quota: Q.trees },
+          trees: { count: count(1, 4, 2), quota: Q.trees },
           power: { count: count(1, 1, 1), quota: Q.power },
           sea: { count: count(1, 1, 1), quota: Q.sea },
         },
@@ -410,7 +484,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           car: { count: count(1, 1, 2), quota: Q.car },
           bus: { count: count(1, 1, 1), quota: Q.bus },
           trees: { count: count(1, 5, 6), quota: Q.trees },
-          sea: { count: count(1, 1, 1), quota: Q.sea },
+          sea: { count: count(1, 0, 1), quota: Q.sea },
         },
       },
       {
@@ -447,10 +521,10 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 4, xDistort: 3, yDistort: 2 },
         shapes: {
           house: { count: count(1, 1, 1), quota: Q.house },
-          villa: { count: count(1, 1, 3), quota: Q.villa },
+          villa: { count: count(1, 2, 3), quota: Q.villa },
           car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(1, 1, 1), quota: Q.bus },
-          trees: { count: count(1, 3, 4), quota: Q.trees },
+          trees: { count: count(1, 4, 4), quota: Q.trees },
           power: { count: count(1, 1, 1), quota: Q.power },
         },
       },

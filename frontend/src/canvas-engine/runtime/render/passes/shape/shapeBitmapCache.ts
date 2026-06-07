@@ -131,12 +131,55 @@ function shapeBitmapCacheKey(args: {
   ].join("|");
 }
 
+function shapeBitmapFallbackKey(args: {
+  item: EngineFieldItem;
+  rEff: number;
+  opts: RuntimeShapeOptions;
+  bounds: ShapeBitmapBounds;
+  dpr: number;
+}) {
+  const { item, rEff, opts, bounds, dpr } = args;
+  const projection = shapeProjection(opts);
+  const style = shapeStyle(opts);
+  const identity = shapeIdentity(opts);
+  return [
+    item.id,
+    item.shape,
+    footprintKey(item),
+    rounded(rEff),
+    rounded(projection.cell),
+    rounded(projection.cellW),
+    rounded(projection.cellH),
+    String(identity.shapeOccurrenceIndex ?? 0),
+    String(style.darkMode ? 1 : 0),
+    rounded(style.exposure),
+    rounded(style.contrast),
+    rounded(style.blend),
+    lightKey(style.lightCtx),
+    rounded(bounds.x),
+    rounded(bounds.y),
+    rounded(bounds.w),
+    rounded(bounds.h),
+    rounded(dpr, 100),
+  ].join("|");
+}
+
 export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCachePolicy) {
   const cache = createOffscreenCache<ShapeBitmapBounds>();
+  const fallbackKeys = new Map<string, string>();
   const bakeOpts: RuntimeShapeOptions = {};
+  let frameTimeMs = Number.NaN;
+  let bakesThisFrame = 0;
 
   function clearCache() {
     cache.clear();
+    fallbackKeys.clear();
+  }
+
+  function syncFrameBudget(timeMs: number) {
+    if (timeMs === frameTimeMs) return;
+    frameTimeMs = timeMs;
+    bakesThisFrame = 0;
   }
 
   function trimCacheToPolicy(p: PLike, policy: FarShapeBitmapCachePolicy) {
@@ -197,13 +240,18 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     if (!isFarCacheCandidate(item, gridMetrics, policy.farSizeK)) return false;
 
     const dpr = canvasDpr(p);
-    cache.syncRenderTarget(p, dpr);
+    const target = cache.syncRenderTarget(p, dpr);
+    if (target.changed) fallbackKeys.clear();
+
+    syncFrameBudget(shapeLifecycle(opts).timeMs ?? performance.now());
+
     const roughBounds = resolveShapeBounds(item, rEff, opts);
     if (!roughBounds) return false;
     const bounds = snapBoundsToDevicePixels(roughBounds, dpr);
 
     trimCacheToPolicy(p, policy);
     const key = shapeBitmapCacheKey({ item, rEff, opts, bounds, dpr });
+    const fallbackKey = shapeBitmapFallbackKey({ item, rEff, opts, bounds, dpr });
     let entry = cache.get(key);
 
     if (!entry) {
@@ -211,12 +259,34 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       const maxPixels = maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel);
       if (bitmapPixels > maxPixels) return false;
 
+      if (bakesThisFrame >= policy.maxBakesPerFrame) {
+        const staleKey = fallbackKeys.get(fallbackKey);
+        const staleEntry = staleKey ? cache.get(staleKey) : undefined;
+        if (staleKey && staleEntry) {
+          cache.touch(staleKey, staleEntry);
+          p.drawingContext.drawImage(
+            staleEntry.canvas,
+            staleEntry.bounds.x,
+            staleEntry.bounds.y,
+            staleEntry.bounds.w,
+            staleEntry.bounds.h
+          );
+          return true;
+        }
+
+        if (staleKey) fallbackKeys.delete(fallbackKey);
+        return false;
+      }
+
       entry = cache.createEntry(bounds, dpr);
+      bakesThisFrame += 1;
       bakeShape({ entry, shapeRegistry, item, rEff, opts, dpr });
       cache.set(key, entry);
+      fallbackKeys.set(fallbackKey, key);
       cache.trim(maxPixels);
     } else {
       cache.touch(key, entry);
+      fallbackKeys.set(fallbackKey, key);
     }
 
     p.drawingContext.drawImage(entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);

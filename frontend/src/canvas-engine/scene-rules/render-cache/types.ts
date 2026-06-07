@@ -4,6 +4,7 @@ export interface FarShapeBitmapCachePolicy {
   enabled: boolean;
   farSizeK: number;
   maxPixelsPerCanvasPixel: number;
+  maxBakesPerFrame: number;
   alwaysLiveShapes: readonly string[];
 }
 

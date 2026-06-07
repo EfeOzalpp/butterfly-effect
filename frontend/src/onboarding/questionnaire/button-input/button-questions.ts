@@ -36,8 +36,8 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
       { key: 'B', label: 'Air dry',          weight: 0.75 },
       { key: 'C', label: 'Turn off lights',  weight: 0.7  },
       { key: 'D', label: 'Avoid standby',    weight: 0.6  },
-      { key: 'F', label: 'Not really',       weight: 0.1 },
-      { key: 'G', label: 'Don\'t have home', weight: 0.95 },
+      { key: 'E', label: 'Not really',       weight: 0.1 },
+      { key: 'F', label: 'Don\'t have home', weight: 0.95 },
     ],
   },
   {

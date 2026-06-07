@@ -65,6 +65,50 @@ function wrap01(value: number) {
   return ((value % 1) + 1) % 1;
 }
 
+function drawDotParticle(args: {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}) {
+  const { ctx, x, y, size, color } = args;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, size, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawRainParticle(args: {
+  ctx: CanvasRenderingContext2D;
+  layer: AmbientParticleLayerSpec;
+  particle: AmbientParticle;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}) {
+  const { ctx, layer, particle, x, y, size, color } = args;
+  const lengthMin = layer.lengthPx?.[0] ?? size * 5;
+  const lengthMax = layer.lengthPx?.[1] ?? size * 9;
+  const slantMin = layer.slantPx?.[0] ?? -size * 1.8;
+  const slantMax = layer.slantPx?.[1] ?? -size * 3;
+  const lineMin = layer.lineWidthPx?.[0] ?? Math.max(0.5, size * 0.45);
+  const lineMax = layer.lineWidthPx?.[1] ?? Math.max(lineMin, size * 0.75);
+
+  const length = mix(lengthMin, lengthMax, particle.sizeK);
+  const slant = mix(slantMin, slantMax, particle.speedXK);
+  const lineWidth = mix(lineMin, lineMax, particle.speedYK);
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + slant, y + length);
+  ctx.stroke();
+}
+
 function drawLayer(args: {
   p: PLike;
   layer: AmbientParticleLayerSpec;
@@ -100,12 +144,15 @@ function drawLayer(args: {
     );
     const size = mix(layer.sizePx[0], layer.sizePx[1], particle.sizeK);
     const { color, alpha } = colorForLayer(layer, particle.colorIndex);
+    const x = xK * p.width;
+    const y = yK * p.height;
 
     ctx.globalAlpha = clamp01(alpha * compositeAlpha);
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(xK * p.width, yK * p.height, size, 0, Math.PI * 2);
-    ctx.fill();
+    if (layer.shape === "rain") {
+      drawRainParticle({ ctx, layer, particle, x, y, size, color });
+    } else {
+      drawDotParticle({ ctx, x, y, size, color });
+    }
   }
   ctx.restore();
 }
