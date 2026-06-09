@@ -66,8 +66,8 @@ const ALLOWED_SECTIONS = new Set<string>(["visitor", ...STUDENT_IDS, ...STAFF_ID
 const QUESTION_WEIGHTS: Record<QuestionKey, readonly number[]> = {
   q1: [1, 0.85, 0.67, 0.45, 0.25],
   q2: [1, 0.95, 0.8, 0.6, 0.3, 0.05],
-  q3: [0.9, 0.75, 0.7, 0.6, 0.5, 0.1, 0.95],
-  q4: [1, 0.8, 0.65, 0.5, 0.2, 0],
+  q3: [0.9, 0.75, 0.7, 0.6, 0.1, 1],
+  q4: [1, 0.75, 0.65, 0.8, 0.25, 0],
   q5: [1, 0.75, 0.5, 0.25, 0],
 };
 
