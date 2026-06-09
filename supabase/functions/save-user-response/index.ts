@@ -399,7 +399,7 @@ function avgWeight(weights: Weights) {
 }
 
 function responseIdFromTokenHash(tokenHash: string) {
-  return `userResponseV4.${tokenHash}`;
+  return `response-${tokenHash}`;
 }
 
 Deno.serve(async (req) => {
@@ -471,12 +471,19 @@ Deno.serve(async (req) => {
 
     let created: SavedResponseDoc;
     try {
-      created = tokenHash
-        ? await sanity.createIfNotExists({
-          _id: responseIdFromTokenHash(tokenHash),
-          ...doc,
-        })
-        : await sanity.create(doc);
+      if (tokenHash) {
+        try {
+          created = await sanity.createIfNotExists({
+            _id: responseIdFromTokenHash(tokenHash),
+            ...doc,
+          });
+        } catch (error) {
+          console.warn("[save-user-response] idempotent Sanity write failed; falling back to create:", error);
+          created = await sanity.create(doc);
+        }
+      } else {
+        created = await sanity.create(doc);
+      }
     } catch (error) {
       console.error("[save-user-response] Sanity write failed:", error);
       return jsonResponse(req, 503, {
