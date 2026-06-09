@@ -49,13 +49,11 @@ const FLAT_QUOTA = [{ t: 0, pct: 50 }, { t: 1, pct: 50 }];
 const housePlacement: ScenePlacementRules = {
   preset: {
     kind: "zone-communities",
-    seed: "house-spotlight-v1",
-    overflow: "skip",
     zones: [
       {
         id: "house",
         band: "ground",
-        center: { x: 0.56, y: 0.6 },
+        center: { x: 0.56, y: 0.7 },
         radius: { tiles: 1, xDistort: 2.5, yDistort: 0.4 },
         shapes: {
           house: { count: { mobile: 5, tablet: 5, laptop: 5 }, quota: FLAT_QUOTA },

@@ -1,4 +1,4 @@
-// src/canvas-engine/scene-rules/render-cache/index.ts
+// src/canvas-engine/runtime/render/cache-policy/index.ts
 
 import type { RenderCachePolicy } from "./types";
 
@@ -14,19 +14,20 @@ const FAR_SHAPE_BITMAP_ALWAYS_LIVE = [
   "snow",
   "power",
   "sun",
+  "house",
 ] as const;
 
 // Depth masks are cache-stable by default. Animated color details keep moving
 // in the live color pass; the depth tint layer should not rebuild every frame.
 const SHAPE_DEPTH_MASK_ALWAYS_LIVE = [
-  "power"
+  "power",
 ] as const;
 
 // Cache policy for runtime-rendered shape bitmaps and depth masks.
 export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
   farShapeBitmap: {
     enabled: true,
-    farSizeK: 0.36,
+    farSizeK: 0.6,
     // Far-shape bitmap memory scales with the canvas instead of a fixed item count.
     maxPixelsPerCanvasPixel: 3,
     // Avoid click-time liveAvg changes rebaking every distant desktop shape in one frame.
@@ -39,7 +40,7 @@ export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
     // This avoids one fixed number being too small for desktop or too large for mobile.
     maxPixelsPerCanvasPixel: 5,
     // Missing masks warm in over multiple frames instead of all baking at startup.
-    maxBakesPerFrame: 64,
+    maxBakesPerFrame: 24,
     // Skip nearly invisible overlays. They still cost a mask lookup/blit,
     // and row-count changes can otherwise create sharp performance cliffs.
     minBlend: 0.08,

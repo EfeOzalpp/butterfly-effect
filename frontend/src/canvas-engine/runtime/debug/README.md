@@ -2,6 +2,9 @@
 
 All tools here are opt-in and have zero cost when disabled. Nothing logs or renders unless you turn it on.
 
+Production builds do not import the placement authoring helper. In dev, `EngineHost`
+installs `window.bePlace` after a canvas is ready.
+
 ---
 
 ## Grid overlay
@@ -18,6 +21,35 @@ engine.controls.current?.setFieldStyle({ debug: { grid: true, gridAlpha: 0.5 } }
 `gridAlpha` controls opacity of the grid lines (0..1, default `1`).
 The used-row boundary is drawn as a separate line at the bottom of the occupied rows.
 Forbidden cells (from the padding spec) are shaded.
+
+---
+
+## Placement authoring
+
+`bePlace` is a browser-console helper for drafting procedural placement zones on top of the live canvas.
+
+Useful commands:
+
+```js
+bePlace.enable({ shapes: "hide" })
+bePlace.use("town", { shapes: { villa: 4, house: 2, trees: 6 } })
+bePlace.resize({ tiles: 6, xDistort: 3, yDistort: 0.4 })
+bePlace.copy()
+```
+
+Interaction shortcuts:
+
+- Click to place a zone center.
+- Drag to author the radius visually.
+- Shift-drag creates a rectangular radius.
+- Ctrl+Z or Backspace undoes the last zone.
+- `[` and `]` shrink/grow tiles.
+- Arrow keys adjust distort values.
+- `R` toggles rect/ellipse radius shape.
+
+`bePlace.copy()` returns a `zones: [...]` snippet for the active host. For `start`
+and `questionnaire`, supported shape quotas are emitted as the existing quota
+constants.
 
 ---
 

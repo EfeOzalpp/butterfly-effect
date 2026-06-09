@@ -33,10 +33,14 @@ const busAmbientParticles = {
 
 ## Fields
 
+- `shape`: `"dot"` by default; use `"rain"` for slanted rain streaks.
 - `count`: Fixed count or `[low, high]` controlled by `liveAvg`.
 - `xRange`: Horizontal normalized range. `0` is left, `1` is right.
 - `yRange`: Vertical normalized range. `0` is top, `1` is bottom.
 - `sizePx`: Particle radius range in pixels.
+- `lengthPx`: Rain streak length range.
+- `slantPx`: Rain streak horizontal slant range. Positive values move down-right; negative values move down-left.
+- `lineWidthPx`: Rain stroke width range.
 - `speedX`: Horizontal motion speed range in pixels per second.
 - `speedY`: Vertical motion speed range in pixels per second.
 - `color`: One color or a rotating list of color stops.

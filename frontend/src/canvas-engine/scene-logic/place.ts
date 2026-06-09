@@ -11,20 +11,6 @@ import { buildFallbackCells } from "./candidates";
 import { cellForbiddenFromSpec, allowedSegmentsForRow, footprintAllowed, horizontalReferenceForFootprint } from "./constraints";
 import { scoreCandidateGeneric } from "./scoring";
 
-function zoneCenterYForSpec(
-  band: NonNullable<PoolItem["communityZone"]>["band"],
-  yK: number,
-  spec: CanvasPaddingSpec
-) {
-  const clampedY = Math.max(0, Math.min(1, yK));
-  if (typeof spec.horizonPos !== "number") return clampedY;
-
-  const horizon = Math.max(0, Math.min(1, spec.horizonPos));
-  if (band === "sky") return clampedY * horizon;
-
-  return horizon + clampedY * (1 - horizon);
-}
-
 function clampZoneCenterRowForFootprint(
   centerRow: number,
   hCell: number,
@@ -66,6 +52,84 @@ function communityBandRowBounds(
   };
 }
 
+function communityBandBottomRowBounds(
+  band: NonNullable<PoolItem["communityZone"]>["band"],
+  spec: CanvasPaddingSpec,
+  usedRows: number,
+  hCell: number
+) {
+  if (typeof spec.horizonPos !== "number") {
+    return {
+      minBottomR: Math.max(0, hCell - 1),
+      maxBottomR: Math.max(0, usedRows - 1),
+    };
+  }
+
+  const halfRows = Math.floor(usedRows / 2);
+  const topRows = usedRows % 2 === 0
+    ? halfRows
+    : (spec.horizonPos >= 0.5 ? halfRows + 1 : halfRows);
+
+  if (band === "sky") {
+    return {
+      minBottomR: Math.max(0, hCell - 1),
+      maxBottomR: Math.max(0, topRows - 1),
+    };
+  }
+
+  return {
+    minBottomR: Math.max(0, Math.min(usedRows - 1, topRows)),
+    maxBottomR: Math.max(0, usedRows - 1),
+  };
+}
+
+function zoneCenterRowForSpec(args: {
+  band: NonNullable<PoolItem["communityZone"]>["band"];
+  yK: number;
+  spec: CanvasPaddingSpec;
+  usedRows: number;
+  hCell: number;
+}) {
+  const { band, yK, spec, usedRows, hCell } = args;
+  const clampedY = Math.max(0, Math.min(1, yK));
+  const rowSpan = Math.max(1, usedRows - 1);
+
+  if (typeof spec.horizonPos !== "number") {
+    return clampedY * rowSpan;
+  }
+
+  if (band === "ground") {
+    const horizon = Math.max(0, Math.min(1, spec.horizonPos));
+    return (horizon + clampedY * (1 - horizon)) * rowSpan;
+  }
+
+  const { minR0, maxR0 } = communityBandRowBounds(band, spec, usedRows, hCell);
+  const minCenter = minR0 + hCell / 2;
+  const maxCenter = maxR0 + hCell / 2;
+  return minCenter + (maxCenter - minCenter) * clampedY;
+}
+
+function clampRow(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function isThinRowZone(zone: NonNullable<PoolItem["communityZone"]>) {
+  return zone.radiusY > 0 && zone.radiusY < 1;
+}
+
+function thinRowR0ForZone(args: {
+  band: NonNullable<PoolItem["communityZone"]>["band"];
+  centerRow: number;
+  spec: CanvasPaddingSpec;
+  usedRows: number;
+  hCell: number;
+}) {
+  const { band, centerRow, spec, usedRows, hCell } = args;
+  const { minBottomR, maxBottomR } = communityBandBottomRowBounds(band, spec, usedRows, hCell);
+  const bottomR = clampRow(Math.round(centerRow), minBottomR, maxBottomR);
+  return clampRow(bottomR - hCell + 1, 0, Math.max(0, usedRows - hCell));
+}
+
 function candidateInCommunityZone(args: {
   item: PoolItem;
   r0: number;
@@ -80,18 +144,35 @@ function candidateInCommunityZone(args: {
   const zone = item.communityZone;
   if (!zone) return false;
 
-  const { minR0, maxR0 } = communityBandRowBounds(zone.band, spec, usedRows, hCell);
-  if (r0 < minR0 || r0 > maxR0) return false;
+  if (isThinRowZone(zone)) {
+    const { minBottomR, maxBottomR } = communityBandBottomRowBounds(zone.band, spec, usedRows, hCell);
+    const bottomR = r0 + hCell - 1;
+    if (bottomR < minBottomR || bottomR > maxBottomR) return false;
+  } else {
+    const { minR0, maxR0 } = communityBandRowBounds(zone.band, spec, usedRows, hCell);
+    if (r0 < minR0 || r0 > maxR0) return false;
+  }
 
-  const rawCenterRow = zoneCenterYForSpec(zone.band, zone.centerY, spec) * Math.max(1, usedRows - 1);
+  const rawCenterRow = zoneCenterRowForSpec({
+    band: zone.band,
+    yK: zone.centerY,
+    spec,
+    usedRows,
+    hCell,
+  });
   const centerRow = clampZoneCenterRowForFootprint(rawCenterRow, hCell, usedRows);
   const centerCol = zone.centerX * Math.max(1, refCols - 1);
   const itemRow = r0 + hCell / 2;
   const itemCol = c0 + wCell / 2;
   const radiusY = Math.max(0.5, zone.radiusY);
   const radiusX = Math.max(0.5, zone.radiusX);
-  const dy = (itemRow - centerRow) / radiusY;
   const dx = (itemCol - centerCol) / radiusX;
+
+  if (isThinRowZone(zone)) {
+    return Math.abs(dx) <= 1;
+  }
+
+  const dy = (itemRow - centerRow) / radiusY;
 
   if (zone.radiusShape === "rect") {
     return Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
@@ -152,7 +233,7 @@ export function placePoolItems(opts: {
   let cursor = 0;
 
   for (const item of pool) {
-    const { shape, zoneIndex, size } = item;
+    const { shape, size } = item;
     const wCell = size.w;
     const hCell = size.h;
     const ignoreForbidden = shape === "clouds";
@@ -233,14 +314,25 @@ export function placePoolItems(opts: {
         usedRows,
         hCell
       );
-      const rawCenterRow = zoneCenterYForSpec(
-        item.communityZone.band,
-        item.communityZone.centerY,
-        spec
-      ) * Math.max(1, usedRows - 1);
+      const rawCenterRow = zoneCenterRowForSpec({
+        band: item.communityZone.band,
+        yK: item.communityZone.centerY,
+        spec,
+        usedRows,
+        hCell,
+      });
       const centerRow = clampZoneCenterRowForFootprint(rawCenterRow, hCell, usedRows);
-      const rMin = Math.max(bandMinR0, Math.floor(centerRow - item.communityZone.radiusY - hCell));
-      const rMax = Math.min(
+      const thinRowR0 = isThinRowZone(item.communityZone)
+        ? thinRowR0ForZone({
+            band: item.communityZone.band,
+            centerRow,
+            spec,
+            usedRows,
+            hCell,
+          })
+        : null;
+      const rMin = thinRowR0 ?? Math.max(bandMinR0, Math.floor(centerRow - item.communityZone.radiusY - hCell));
+      const rMax = thinRowR0 ?? Math.min(
         bandMaxR0,
         Math.ceil(centerRow + item.communityZone.radiusY)
       );
@@ -310,7 +402,9 @@ export function placePoolItems(opts: {
     }
 
     // Resolve zone bounds for this item
-    const zone = placements[shape]?.zones?.[zoneIndex];
+    const zone = typeof item.zoneIndex === "number"
+      ? placements[shape]?.zones?.[item.zoneIndex]
+      : undefined;
     const topK   = zone?.verticalK[0]    ?? 0;
     const botK   = zone?.verticalK[1]    ?? 1;
     const leftK  = zone?.horizontalK?.[0] ?? 0;

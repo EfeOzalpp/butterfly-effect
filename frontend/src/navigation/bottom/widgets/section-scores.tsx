@@ -1,23 +1,47 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSurveyData } from "../../../app/state/survey-data-context";
 import HintBanner from "../../../app/ui/HintBanner";
-import PlayPauseIcon from "../../../assets/svg/play/PlayPauseIcon";
 import { CHOOSE_STAFF, CHOOSE_STUDENT, GO_BACK, useGraphPickerData } from "../../gp-data";
 import { BUTTON_QUESTIONS } from "../../../onboarding/questionnaire/button-input/button-questions";
+import WidgetSectionNav from "./widget-section-nav";
 
 interface LocalSectionState {
   sourceSection: string;
+  sourceSelectionVersion: number;
   value: string;
+}
+
+interface SectionScoresProps {
+  navOutsidePanel?: boolean;
+  panelClassName?: string;
+  paused?: boolean;
+  onPausedChange?: (paused: boolean) => void;
 }
 
 const Q_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
 const AUTOPLAY_MS = 5000;
+const TOUCH_PREVIEW_INDEX = 0;
 
-export default function SectionScores() {
-  const { allRows, section } = useSurveyData();
+function shouldPreviewTouchRow() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(hover: none), (pointer: coarse)").matches
+  );
+}
+
+export default function SectionScores({
+  navOutsidePanel = false,
+  panelClassName,
+  paused,
+  onPausedChange,
+}: SectionScoresProps = {}) {
+  const { allRows, section, sectionSelectionVersion } = useSurveyData();
   const { ALL_LABELS, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS, counts } = useGraphPickerData(section);
-  const [paused, setPaused] = useState(false);
-  const [tooltipIndex, setTooltipIndex] = useState<number | null>(null);
+  const [internalPaused, setInternalPaused] = useState(true);
+  const [tooltipIndex, setTooltipIndex] = useState<number | null>(() =>
+    shouldPreviewTouchRow() ? TOUCH_PREVIEW_INDEX : null
+  );
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,16 +54,41 @@ export default function SectionScores() {
     return () => { document.removeEventListener("pointerdown", handler); };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const query = window.matchMedia("(hover: none), (pointer: coarse)");
+    const syncTouchPreview = () => {
+      if (query.matches) setTooltipIndex((current) => current ?? TOUCH_PREVIEW_INDEX);
+    };
+
+    query.addEventListener("change", syncTouchPreview);
+    return () => {
+      query.removeEventListener("change", syncTouchPreview);
+    };
+  }, []);
+
   const [localSectionState, setLocalSectionState] = useState<LocalSectionState>({
     sourceSection: section,
+    sourceSelectionVersion: sectionSelectionVersion,
     value: section,
   });
   const localSection =
-    localSectionState.sourceSection === section ? localSectionState.value : section;
+    localSectionState.sourceSection === section &&
+    localSectionState.sourceSelectionVersion === sectionSelectionVersion
+      ? localSectionState.value
+      : section;
+
+  const effectivePaused = paused ?? internalPaused;
+
+  const setEffectivePaused = useCallback((nextPaused: boolean) => {
+    if (paused === undefined) setInternalPaused(nextPaused);
+    onPausedChange?.(nextPaused);
+  }, [onPausedChange, paused]);
 
   const setLocalSection = useCallback((value: string) => {
-    setLocalSectionState({ sourceSection: section, value });
-  }, [section]);
+    setLocalSectionState({ sourceSection: section, sourceSelectionVersion: sectionSelectionVersion, value });
+  }, [section, sectionSelectionVersion]);
 
   const cycleSections = useMemo(() => {
     const ordered = [...MAIN_OPTS, ...STUDENT_OPTS, ...STAFF_OPTS]
@@ -54,14 +103,14 @@ export default function SectionScores() {
   }, [ALL_LABELS, MAIN_OPTS, STAFF_OPTS, STUDENT_OPTS, counts, localSection]);
 
   useEffect(() => {
-    if (paused || cycleSections.length <= 1) return;
+    if (effectivePaused || cycleSections.length <= 1) return;
     const timer = window.setInterval(() => {
       const currentIndex = cycleSections.findIndex((item) => item.id === localSection);
       const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % cycleSections.length : 0;
       setLocalSection(cycleSections[nextIndex].id);
     }, AUTOPLAY_MS);
     return () => { window.clearInterval(timer); };
-  }, [cycleSections, paused, localSection, setLocalSection]);
+  }, [cycleSections, effectivePaused, localSection, setLocalSection]);
 
   const rowsForLocalSection = useMemo(() => {
     if (!localSection || localSection === "all") return allRows;
@@ -106,51 +155,47 @@ export default function SectionScores() {
     setLocalSection(cycleSections[nextIndex].id);
   };
 
-  return (
-    <div className="q-scores-panel">
-      <div className="ui-icon-nav q-scores-nav">
-        <button
-          type="button"
-          className="ui-icon-nav-button q-scores-nav-btn"
-          aria-label="Previous section"
-          onClick={() => { stepSection(-1); }}
-        >
-          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 18L9 12L15 6" />
-          </svg>
-        </button>
-        <div className="q-scores-nav-section" title={currentSectionLabel}>{currentSectionLabel}</div>
-        <button
-          type="button"
-          className="ui-icon-nav-button q-scores-nav-btn"
-          aria-label="Next section"
-          onClick={() => { stepSection(1); }}
-        >
-          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M9 18L15 12L9 6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="ui-icon-nav-button q-scores-nav-btn q-scores-nav-btn--pause"
-          aria-pressed={paused}
-          aria-label={paused ? "Resume section autoplay" : "Pause section autoplay"}
-          onClick={() => { setPaused((cur) => !cur); }}
-        >
-          <PlayPauseIcon mode={paused ? "play" : "pause"} className="ui-icon" />
-        </button>
-      </div>
+  const sectionNav = (
+    <WidgetSectionNav
+      title={currentSectionLabel}
+      paused={effectivePaused}
+      onPrevious={() => { stepSection(-1); }}
+      onNext={() => { stepSection(1); }}
+      onTogglePaused={() => { setEffectivePaused(!effectivePaused); }}
+    />
+  );
 
+  const scoresList = (
       <div className="q-scores-list" ref={listRef}>
         {BUTTON_QUESTIONS.map((q, i) => {
           const pct = Math.round(avgs[i] * 100);
           return (
             <div
               key={q.id}
-              className="q-scores-item"
-              onMouseEnter={() => { setTooltipIndex(i); }}
-              onMouseLeave={() => { setTooltipIndex(null); }}
-              onClick={(e) => { e.stopPropagation(); setTooltipIndex((prev) => prev === i ? null : i); }}
+              className={`q-scores-item${tooltipIndex === i ? " is-active" : ""}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${q.prompt}: ${String(pct)}%`}
+              aria-pressed={tooltipIndex === i}
+              onPointerEnter={(e) => {
+                if (e.pointerType !== "touch") setTooltipIndex(i);
+              }}
+              onPointerLeave={(e) => {
+                if (e.pointerType !== "touch") setTooltipIndex(null);
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                if (e.pointerType === "touch") setTooltipIndex(i);
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTooltipIndex(i);
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                setTooltipIndex(i);
+              }}
             >
               <div className="q-scores-item-head">
                 <span className="q-scores-prompt">{q.prompt}</span>
@@ -168,6 +213,25 @@ export default function SectionScores() {
           );
         })}
       </div>
+  );
+
+  if (navOutsidePanel) {
+    return (
+      <>
+        {sectionNav}
+        <div className={panelClassName}>
+          <div className="q-scores-panel">
+            {scoresList}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="q-scores-panel">
+      {sectionNav}
+      {scoresList}
     </div>
   );
 }

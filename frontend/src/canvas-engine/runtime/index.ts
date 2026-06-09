@@ -37,7 +37,7 @@ import { makeP, type RuntimeSurface } from "./p/makeP";
 
 import { clamp01 } from "./util/easing";
 
-import { DEFAULT_RENDER_CACHE_POLICY } from "../scene-rules/render-cache";
+import { DEFAULT_RENDER_CACHE_POLICY } from "./render/cache-policy";
 
 import { resolveBounds } from "./geometry/bounds";
 import { createGridCache, invalidateGridCache, type RuntimeLayoutState } from "./geometry/gridCache";

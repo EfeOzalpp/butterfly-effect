@@ -104,7 +104,7 @@ const SHAPE_COPY: Record<SpriteRenderedKind, ShapeCopyBank> = {
   factory: {
     veryLow: "You're a power plant, a stationary old train. Pre-evolution, you would've made the biggest smoker in the village. We've known how to cook for a while now, so we don't need your smoke anymore.",
     low: "You're a power plant, only working part-time. The smoke comes in patterns now. Operator Joe has been sending love letters to Mary from that village on the hill.",
-    high: "You're a power plant. Contrary to popular belief, you can get sick. When you do, you sneeze bad particles. Right now you're mostly vapor. Still, work on that immune system.",
+    high: "You're a power plant. Contrary to popular belief, you can get sick. When you do, you sneeze bad particles. Right now, it is mostly harmless vapor. Still, work on that immune system.",
   },
   windTurbine: {
     low: "You're a wind turbine, someone picked the wrong location. No wind. Ugh.",

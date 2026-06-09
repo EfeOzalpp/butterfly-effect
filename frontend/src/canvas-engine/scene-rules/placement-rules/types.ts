@@ -66,8 +66,6 @@ export interface ProceduralPlacementZone {
 
 export interface ProceduralZonePlacementPreset {
   kind: "zone-communities";
-  seed?: string;
-  overflow?: "skip";
   zones: readonly ProceduralPlacementZone[];
 }
 

@@ -85,6 +85,7 @@ export default function ButtonQuestionnaireFlow({
     resetQuestionnaireNav,
   } = useUiFlow();
   const [step, setStep] = useState(0);
+  const [initialUiReady, setInitialUiReady] = useState(false);
   const [activeOptionsByQuestion, setActiveOptionsByQuestion] = useState<Record<string, string[]>>({});
   const lastConsumedAdvanceTickRef = useRef(0);
   const {
@@ -126,6 +127,16 @@ export default function ButtonQuestionnaireFlow({
   useEffect(() => {
     onAnswersUpdate?.(answers);
   }, [answers, onAnswersUpdate]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setInitialUiReady(true);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     setLiveAvg(liveAvg);
@@ -206,7 +217,7 @@ export default function ButtonQuestionnaireFlow({
   }, [handleNext, questionnaireAdvanceTick]);
 
   return (
-    <section className="survey survey-step questionnaire">
+    <section className={`survey survey-step questionnaire${initialUiReady ? " is-ui-ready" : " is-ui-delayed"}`}>
       <div className="questions questionnaire-title questionnaire-grid-header">
         <h2 key={question.id} className="q-title questionnaire-question-title">
           {question.prompt}

@@ -12,7 +12,7 @@ Draws the static scene base: base color, gradients, anchors, and cached backgrou
 Draws air-like effects that sit behind scene objects right now: stars and fog washes.
 
 `ambient-particles/`
-Draws scene-level animated particles such as dust, pollen, or wind flecks.
+Draws scene-level animated particles such as dust, pollen, wind flecks, or rain streaks.
 
 `foliage/`
 Draws optional static plant-detail layers from scene rules.

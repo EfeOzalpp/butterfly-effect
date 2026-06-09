@@ -1,15 +1,57 @@
 // src/canvas-engine/scene-logic/composeField.ts
 
-import { deviceType, getLandscapeCountScale } from "../shared/responsiveness";
+import { currentViewportDeviceType, getLandscapeCountScale, type DeviceType } from "../shared/responsiveness";
 import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
 import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
 import { SHAPES } from "../scene-rules/shapeCatalog";
 import { footprintForShape } from "../scene-rules/shapeFootprints";
 import { stableItemId, interpolatePct } from "../scene-rules/placement-rules/index";
+import type { DeviceCount, PlacementZone, PointPlacement } from "../scene-rules/placement-rules/index";
 
 import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
 import { clamp01, usedRowsFromSpec } from "./math";
 import { placePoolItems } from "./place";
+
+const CENTER_PLACEMENT_KEY = -2000;
+
+function resolveDeviceCount(
+  count: DeviceCount | undefined,
+  device: DeviceType,
+  fallbackWhenMissing: number
+) {
+  if (!count) return fallbackWhenMissing;
+  return count[device] ?? 0;
+}
+
+function formatKeyNumber(value: number) {
+  if (!Number.isFinite(value)) return "0";
+  return value.toFixed(4).replace(/\.?0+$/, "");
+}
+
+function occurrenceKey(base: string, seen: Map<string, number>) {
+  const occurrence = seen.get(base) ?? 0;
+  seen.set(base, occurrence + 1);
+  return occurrence === 0 ? base : `${base}#${String(occurrence)}`;
+}
+
+function pointPlacementKey(shape: string, point: PointPlacement) {
+  return [
+    "point",
+    shape,
+    `x:${formatKeyNumber(point.xK)}`,
+    `y:${formatKeyNumber(point.yK)}`,
+  ].join("|");
+}
+
+function zonePlacementKey(shape: string, zone: PlacementZone) {
+  const horizontal = zone.horizontalK ?? [0, 1];
+  return [
+    "zone",
+    shape,
+    `v:${formatKeyNumber(zone.verticalK[0])}-${formatKeyNumber(zone.verticalK[1])}`,
+    `h:${formatKeyNumber(horizontal[0])}-${formatKeyNumber(horizontal[1])}`,
+  ].join("|");
+}
 
 function hasExplicitShapePlacement(
   rule: ComposeOpts["placements"][keyof ComposeOpts["placements"]]
@@ -23,7 +65,7 @@ function hasExplicitShapePlacement(
 
 function buildPresetPool(
   opts: ComposeOpts,
-  device: ReturnType<typeof deviceType>,
+  device: DeviceType,
   landscapeScale: number
 ): PoolItem[] {
   const preset = opts.placements.preset;
@@ -31,19 +73,29 @@ function buildPresetPool(
 
   const t = clamp01(opts.liveAvg);
   const queues: PoolItem[][] = [];
+  const zoneIdCounts = new Map<string, number>();
 
   preset.zones.forEach((zone, zoneIdx) => {
+    let stableZoneKey: string | null = null;
+    const resolveStableZoneKey = () => {
+      if (stableZoneKey) return stableZoneKey;
+
+      const zoneIdBase = zone.id || `zone-${String(zoneIdx)}`;
+      const zoneIdOccurrence = zoneIdCounts.get(zoneIdBase) ?? 0;
+      zoneIdCounts.set(zoneIdBase, zoneIdOccurrence + 1);
+      stableZoneKey = zoneIdOccurrence === 0
+        ? zoneIdBase
+        : `${zoneIdBase}#${String(zoneIdOccurrence)}`;
+      return stableZoneKey;
+    };
+
     for (const shape of SHAPES) {
       if (hasExplicitShapePlacement(opts.placements[shape])) continue;
 
       const rule = zone.shapes[shape];
       if (!rule) continue;
 
-      const baseCount =
-        rule.count[device] ??
-        rule.count.tablet ??
-        rule.count.mobile ??
-        0;
+      const baseCount = resolveDeviceCount(rule.count, device, 0);
       const pct = interpolatePct(rule.quota, t);
       const bandScale = zone.band === "sky" ? 1 : landscapeScale;
       const count = Math.max(0, Math.round(baseCount * pct / 50 * bandScale));
@@ -57,16 +109,13 @@ function buildPresetPool(
 
       for (let i = 0; i < count; i++) {
         queue.push({
-          id: stableItemId(shape, zoneIdx, i),
+          id: stableItemId(shape, resolveStableZoneKey(), i),
           shape,
-          zoneIndex: zoneIdx,
           size,
           communityZone: {
-            id: zone.id,
             band: zone.band,
             centerX: zone.center.x,
             centerY: zone.center.y,
-            radiusTiles: zone.radius.tiles,
             radiusShape,
             radiusX,
             radiusY,
@@ -97,7 +146,7 @@ function buildPresetPool(
   return items;
 }
 
-function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>, landscapeScale: number): PoolItem[] {
+function buildRulePool(opts: ComposeOpts, device: DeviceType, landscapeScale: number): PoolItem[] {
   const { placements, liveAvg } = opts;
   const t = clamp01(liveAvg);
   const items: PoolItem[] = [];
@@ -108,20 +157,17 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>,
 
     const pct = interpolatePct(rule.quota, t);
     const size = footprintForShape(shape);
+    const pointKeyCounts = new Map<string, number>();
+    const zoneKeyCounts = new Map<string, number>();
 
     if (rule.center) {
-      const baseCount =
-        rule.center.count?.[device] ??
-        rule.center.count?.tablet ??
-        rule.center.count?.mobile ??
-        1;
+      const baseCount = resolveDeviceCount(rule.center.count, device, 1);
       const count = Math.max(0, Math.round(baseCount * pct / 50 * landscapeScale));
 
       for (let i = 0; i < count; i++) {
         items.push({
-          id: stableItemId(shape, -2000, i),
+          id: stableItemId(shape, CENTER_PLACEMENT_KEY, i),
           shape,
-          zoneIndex: -2000,
           size,
           center: {
             xK: rule.center.xK ?? 0.5,
@@ -132,19 +178,17 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>,
       }
     }
 
-    rule.points?.forEach((pointPlacement, pointIdx) => {
-      const baseCount =
-        pointPlacement.count?.[device] ??
-        pointPlacement.count?.tablet ??
-        pointPlacement.count?.mobile ??
-        1;
+    rule.points?.forEach((pointPlacement) => {
+      const baseCount = resolveDeviceCount(pointPlacement.count, device, 1);
       const count = Math.max(0, Math.round(baseCount * pct / 50 * landscapeScale));
+      if (count <= 0) return;
+
+      const pointKey = occurrenceKey(pointPlacementKey(shape, pointPlacement), pointKeyCounts);
 
       for (let i = 0; i < count; i++) {
         items.push({
-          id: stableItemId(shape, -1000 - pointIdx, i),
+          id: stableItemId(shape, pointKey, i),
           shape,
-          zoneIndex: -1000 - pointIdx,
           size,
           point: {
             xK: pointPlacement.xK,
@@ -155,12 +199,15 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>,
     });
 
     rule.zones?.forEach((zone, zoneIdx) => {
-      const baseCount = zone.count[device] ?? zone.count.tablet ?? zone.count.mobile ?? 0;
+      const baseCount = resolveDeviceCount(zone.count, device, 0);
       const count = Math.max(0, Math.round(baseCount * pct / 50 * landscapeScale));
+      if (count <= 0) return;
+
+      const zoneKey = occurrenceKey(zonePlacementKey(shape, zone), zoneKeyCounts);
 
       for (let i = 0; i < count; i++) {
         items.push({
-          id: stableItemId(shape, zoneIdx, i),
+          id: stableItemId(shape, zoneKey, i),
           shape,
           zoneIndex: zoneIdx,
           size,
@@ -172,7 +219,7 @@ function buildRulePool(opts: ComposeOpts, device: ReturnType<typeof deviceType>,
   return items;
 }
 
-function buildPool(opts: ComposeOpts, device: ReturnType<typeof deviceType>, landscapeScale: number): PoolItem[] {
+function buildPool(opts: ComposeOpts, device: DeviceType, landscapeScale: number): PoolItem[] {
   const rulePool = buildRulePool(opts, device, landscapeScale);
 
   if (opts.placements.preset?.kind === "zone-communities") {
@@ -187,8 +234,8 @@ export function composeField(opts: ComposeOpts): ComposeResult {
   const h = Math.round(opts.canvas.h);
   const ruleW = Math.round(opts.ruleWidthPx ?? w);
 
-  const device = deviceType(ruleW);
-  const landscapeScale = getLandscapeCountScale();
+  const device = currentViewportDeviceType(ruleW);
+  const landscapeScale = getLandscapeCountScale(device, opts.landscapeCountScale);
   const spec = resolvePaddingSpec(ruleW, opts.padding);
 
   const { cell, cellW, cellH, ox, oy, rows, cols, metrics } = makeCenteredSquareGrid({

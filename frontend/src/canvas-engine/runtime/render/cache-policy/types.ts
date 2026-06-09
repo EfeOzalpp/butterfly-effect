@@ -1,4 +1,4 @@
-// src/canvas-engine/scene-rules/render-cache/types.ts
+// src/canvas-engine/runtime/render/cache-policy/types.ts
 
 export interface FarShapeBitmapCachePolicy {
   enabled: boolean;

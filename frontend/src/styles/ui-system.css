@@ -60,16 +60,16 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
 .ui-icon-nav {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: 0.55rem 0.6rem 0.55rem 0.4rem;
+  gap: var(--space-md);
+  padding: 0.9rem 0.6rem 0.75rem 0.6rem;
 }
 
 .ui-icon-nav-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   padding: 0;
   border: none;
@@ -120,7 +120,8 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
   .hint-banner { transition: opacity 180ms ease, transform 220ms cubic-bezier(.22,.61,.36,1); }
 }
 
-.hint-banner.is-visible { opacity: 1; pointer-events: auto; transform: var(--hint-banner-visible-transform, translateY(0) scale(1)); }
+.hint-banner.is-visible { opacity: 1; transform: var(--hint-banner-visible-transform, translateY(0) scale(1)); }
+.hint-banner.is-visible.is-dismissible { pointer-events: auto; }
 .hint-banner-copy { color: var(--hint-text) !important; }
 
 .hint-banner-close { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0; border: 1px solid var(--hint-border); border-radius: 4px; background: transparent; color: var(--hint-text); line-height: 1; }

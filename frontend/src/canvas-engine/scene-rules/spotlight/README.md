@@ -1,6 +1,6 @@
 # Spotlight Scene Rules
 
-Spotlight is an authored scene-rule preset, not a core runtime primitive. The runtime still consumes normal scene rules: `background`, `placements`, `padding`, `fog`, and render cache policy.
+Spotlight is an authored scene-rule preset, not a core runtime primitive. The runtime still consumes normal scene rules: `background`, `placements`, `padding`, and `fog`, while cache policy stays runtime-owned.
 
 `slides/` centralizes the content-level relationship between a featured shape, its background, and its placement.
 

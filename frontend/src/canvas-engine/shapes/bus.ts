@@ -248,8 +248,10 @@ export function drawBus(
   }
 
   const wheelY = aspY + aspH * 0.25;
-  const designW = cell && f ? tileW : r * 6.4;
-  const designUnit = cell && f ? Math.max(1, tileH / 3.0) : r;
+  const designUnit = cell && f
+    ? Math.max(1, Math.min(tileW / 6.4, tileH / 3.0))
+    : r;
+  const designW = designUnit * 6.4;
   const sidePad = Math.max(2, tileW * 0.08);
   const s = fitScaleToRectWidth(designW, tileW, sidePad, { allowUpscale: sprite.allowUpscale === true });
 

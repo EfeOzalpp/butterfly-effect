@@ -5,7 +5,8 @@ import type { CanvasPaddingPolicy } from "./canvas-padding";
 import type { FogSceneSpec } from "./fog";
 import type { FoliageSceneSpec } from "./foliage";
 import type { ScenePlacementRules } from "./placement-rules";
-import type { RenderCachePolicy } from "./render-cache";
+import type { RenderCachePolicy } from "../runtime/render/cache-policy";
+import type { DeviceCountScale } from "../shared/responsiveness";
 
 // Scene rules own the full visual profile. Hosts select a ruleset; validation
 // checks it; runtime consumes the resolved profile.
@@ -23,6 +24,7 @@ export interface SceneProfile {
   fog: FogSceneSpec | null;
   foliage: FoliageSceneSpec | null;
   renderCache: RenderCachePolicy;
+  landscapeCountScale?: DeviceCountScale;
 }
 
 export interface SceneRuleSet {

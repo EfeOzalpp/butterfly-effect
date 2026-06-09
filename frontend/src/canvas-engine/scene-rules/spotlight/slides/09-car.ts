@@ -85,8 +85,6 @@ const carDarkRainAmbientParticles: AmbientParticlesSceneSpec = {
 const carPlacement: ScenePlacementRules = {
   preset: {
     kind: "zone-communities",
-    seed: "car-spotlight-v1",
-    overflow: "skip",
     zones: [
       {
         id: "car",

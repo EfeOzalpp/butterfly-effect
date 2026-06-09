@@ -1,6 +1,7 @@
 import type { BackgroundSpec } from "../../backgrounds";
 import { rowsByDevice } from "../../canvas-padding/helpers";
 import { centerShape } from "../../placement-rules/helpers";
+import type { FoliageSceneSpec } from "../../foliage";
 import type { SpotlightSlide } from "../types";
 
 const busBackground: BackgroundSpec = {
@@ -31,6 +32,41 @@ const busDarkBackground: BackgroundSpec = {
   },
 } as const;
 
+const busFoliage: FoliageSceneSpec = {
+  layers: [
+    {
+      count: [60, 120],
+      yK: [0, 1],
+      heightPx: [8, 16],
+      widthPx: [4, 12],
+      color: [
+        { color: "#96bf64", alpha: 0.4 },
+        { color: "#cebf83", alpha: 0.4 },
+        { color: "#71b571", alpha: 0.4 },
+      ],
+      seed: 32,
+    },
+  ],
+} as const;
+
+const busDarkFoliage: FoliageSceneSpec = {
+  layers: [
+    {
+      count: [60, 120],
+      yK: [0, 1],
+      heightPx: [8, 16],
+      widthPx: [4, 12],
+      color: [
+        { color: "#8f613c", alpha: 0.3 },
+        { color: "#4a6840", alpha: 0.3 },
+        { color: "#2e454a", alpha: 0.3 },
+        { color: "#639163", alpha: 0.3 },
+      ],
+      seed: 32,
+    },
+  ],
+} as const;
+
 const busPlacement = centerShape("bus");
 
 export const busSlide = {
@@ -38,6 +74,8 @@ export const busSlide = {
   shape: "bus",
   background: busBackground,
   darkBackground: busDarkBackground,
+  foliage: busFoliage,
+  darkFoliage: busDarkFoliage,
   padding: rowsByDevice(3, 2, 2),
   placement: busPlacement,
 } as const satisfies SpotlightSlide;

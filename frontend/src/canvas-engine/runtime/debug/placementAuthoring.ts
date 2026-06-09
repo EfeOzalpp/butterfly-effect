@@ -272,7 +272,7 @@ function shapeRuleSnippet(hostId: HostId, shape: ShapeName, rule: CountInput | B
   const countInput = isBrushShapeRule(rule) ? rule.count : rule;
   const quotaMode = isBrushShapeRule(rule) ? rule.quota ?? fallbackQuota : fallbackQuota;
   const count = deriveCount(countInput);
-  return `{ count: count(${String(count.mobile)}, ${String(count.tablet)}, ${String(count.laptop)}), quota: ${quotaRef(hostId, shape, quotaMode)} }`;
+  return `{ count: count({ mobile: ${String(count.mobile)}, tablet: ${String(count.tablet)}, laptop: ${String(count.laptop)} }), quota: ${quotaRef(hostId, shape, quotaMode)} }`;
 }
 
 function radiusSnippet(radius: DraftZone["radius"]) {

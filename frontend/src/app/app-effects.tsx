@@ -154,13 +154,6 @@ export function DuplicateSurveyBanner() {
     <HintBanner
       visible={visible}
       className="duplicate-survey-banner"
-      closeClassName="duplicate-survey-banner-close"
-      closeLabel="Dismiss survey notice"
-      onDismiss={() => {
-        if (timerRef.current) window.clearTimeout(timerRef.current);
-        timerRef.current = null;
-        setVisible(false);
-      }}
     >
       <>
         You've already taken the survey.

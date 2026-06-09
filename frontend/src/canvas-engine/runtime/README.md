@@ -25,6 +25,7 @@ engine/sceneSurfaceLifecycle.ts
                         first-ready canvas surface appear state
 shape-adapter/types.ts  runtime-safe shape options
 render/cache/*          shared offscreen cache mechanics
+render/cache-policy/*   runtime policy for shape bitmap and depth-mask caching
 render/passes/*         render-pass params local to each render helper
 ```
 
@@ -35,7 +36,7 @@ canvas.
 
 `EngineControls.setSceneProfile()` is the host-to-runtime scene handoff. A
 canvas host resolves its explicit scene lookup key into a padding spec,
-background spec, and render cache policy before runtime receives it. The frame
+background spec, and runtime cache policy before runtime receives it. The frame
 loop receives that same profile through `getProfile()` instead of separate
 scene/padding/background cache getters.
 
@@ -60,7 +61,7 @@ p/
 render/
   Pass-specific drawing code plus shared offscreen cache mechanics. Passes own
   cache keys and bake/draw behavior; render/cache owns canvas entries and
-  eviction.
+  eviction; render/cache-policy owns cache budgets and always-live decisions.
 
 shape-adapter/
   Runtime bridge from EngineFieldItem payloads to shape draw functions. Shape

@@ -13,6 +13,7 @@ interface PerspectiveCameraLike extends Camera {
 export interface UsePixelOffsetsParams {
   groupRef: RefObject<Group | null>;
   camera: Camera;
+  domElement: HTMLElement;
   radius: number;
   xOffset: number;
   yOffset: number;
@@ -29,6 +30,7 @@ const isPerspectiveCameraLike = (camera: Camera): camera is PerspectiveCameraLik
 export default function usePixelOffsets({
   groupRef,
   camera,
+  domElement,
   radius,
   xOffset,
   yOffset,
@@ -76,8 +78,9 @@ export default function usePixelOffsets({
     anim.x += dx * alpha;
     anim.y += dy * alpha;
 
-    const W = window.innerWidth || 1;
-    const H = window.innerHeight || 1;
+    const rect = domElement.getBoundingClientRect();
+    const W = rect.width || domElement.clientWidth || window.innerWidth || 1;
+    const H = rect.height || domElement.clientHeight || window.innerHeight || 1;
 
     const aspect = isPerspectiveCameraLike(camera) ? camera.aspect : W / H;
     const fov = isPerspectiveCameraLike(camera) ? camera.fov : 50;

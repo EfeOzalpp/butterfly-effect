@@ -41,6 +41,7 @@ export default function CompactGraphTools() {
   const { data } = useSurveyData();
   const { open, openDisclosure, closeDisclosure } = useDisclosure(false);
   const [activeTool, setActiveTool] = useState<CompactTool>("logs");
+  const [widgetAutoplayPaused, setWidgetAutoplayPaused] = useState(true);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
 
@@ -83,19 +84,25 @@ export default function CompactGraphTools() {
             )}
 
             {activeTool === "bar" && (
-              <div className="widgets-panel bar-graph compact-tools-widget-panel">
-                <GraphDataProvider data={data}>
-                  <Suspense fallback={null}>
-                    <BarGraph />
-                  </Suspense>
-                </GraphDataProvider>
-              </div>
+              <GraphDataProvider data={data}>
+                <Suspense fallback={null}>
+                  <BarGraph
+                    navOutsidePanel
+                    panelClassName="widgets-panel bar-graph compact-tools-widget-panel"
+                    paused={widgetAutoplayPaused}
+                    onPausedChange={setWidgetAutoplayPaused}
+                  />
+                </Suspense>
+              </GraphDataProvider>
             )}
 
             {activeTool === "questions" && (
-              <div className="widgets-panel q-scores compact-tools-widget-panel">
-                <SectionScores />
-              </div>
+              <SectionScores
+                navOutsidePanel
+                panelClassName="widgets-panel q-scores compact-tools-widget-panel"
+                paused={widgetAutoplayPaused}
+                onPausedChange={setWidgetAutoplayPaused}
+              />
             )}
           </div>
 

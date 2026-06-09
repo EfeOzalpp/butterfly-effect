@@ -246,7 +246,6 @@
   }
 }
 
-@media (max-width: 767px) {
   .svg-lg svg.ui-icon,
   .canvas-info__slider-button svg.ui-icon {
     width: 1.6rem !important;
@@ -264,48 +263,7 @@
     width: 1.2em !important;
     height: 1.2em !important;
   }
-}
-
-@media (min-width: 768px) and (max-width: 1024px) {
-  .svg-lg svg.ui-icon,
-  .canvas-info__slider-button svg.ui-icon {
-    width: 1.6rem !important;
-    height: 1.6rem !important;
-  }
-  .ui-close {
-    width: 1rem !important;
-    height: 1rem !important;
-  }
-  .trigger-chevron svg.ui-icon {
-    width: 1.3em !important;
-    height: 1.3em !important;
-  }
-  .ui-icon, .role-check-icon, .switch-check-icon, .role-indicator-spacer {
-    width: 1.2em !important;
-    height: 1.2em !important;
-  }
-}
-
-@media (min-width: 1025px) {
-  .svg-lg svg.ui-icon,
-  .canvas-info__slider-button svg.ui-icon {
-    width: 1.6rem !important;
-    height: 1.6rem !important;
-  }
-  .ui-close {
-    width: 1rem !important;
-    height: 1rem !important;
-  }
-  .trigger-chevron svg.ui-icon {
-    width: 1.3em !important;
-    height: 1.3em !important;
-  }
-  .ui-icon, .role-check-icon, .switch-check-icon, .role-indicator-spacer {
-    width: 1.2em !important;
-    height: 1.2em !important;
-  }
-}
-
+  
 .ui-close {
   stroke: var(--ui-close-fill);
 }

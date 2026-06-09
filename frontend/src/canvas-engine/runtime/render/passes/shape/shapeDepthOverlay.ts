@@ -3,7 +3,7 @@ import type { PLike } from "../../../p/makeP";
 import { shapeRegistrySupportsRenderPass, type ShapeRegistry } from "../../../shape-adapter/registry";
 import { copyRuntimeShapeOptionsInto } from "../../../shape-adapter/options";
 import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
-import type { ShapeDepthMaskCachePolicy } from "../../../../scene-rules/render-cache";
+import type { ShapeDepthMaskCachePolicy } from "../../cache-policy";
 import type { RGB } from "../../../../shared/math";
 import { footprintToPx } from "../../../../modifiers/index";
 import { clamp01, finiteNumber } from "../../../../shared/math";

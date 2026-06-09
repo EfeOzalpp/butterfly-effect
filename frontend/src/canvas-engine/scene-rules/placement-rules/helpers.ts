@@ -53,10 +53,14 @@ const SHAPE_IDX: Record<string, number> = Object.fromEntries(
   SHAPES.map((s, i) => [s, i])
 );
 
-export function stableItemId(shape: ShapeName, zoneIdx: number, itemIdx: number): string {
-  // keep the old numeric encoding, but runtime tracks items by string id.
-  const encodedId = (SHAPE_IDX[shape] * 65536 + zoneIdx * 256 + itemIdx) | 0;
-  return String(encodedId);
+export function stableItemId(shape: ShapeName, placementKey: number | string, itemIdx: number): string {
+  if (typeof placementKey === "number") {
+    // keep the old numeric encoding, but runtime tracks items by string id.
+    const encodedId = (SHAPE_IDX[shape] * 65536 + placementKey * 256 + itemIdx) | 0;
+    return String(encodedId);
+  }
+
+  return `${shape}|${placementKey}|${String(itemIdx)}`;
 }
 
 // interpolate the authored quota curve at liveAvg t.

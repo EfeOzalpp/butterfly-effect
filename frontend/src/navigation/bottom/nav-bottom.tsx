@@ -40,6 +40,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
   const pickerOffset = isDesktopWidth(windowWidth) ? graphToolsOffsetPx(visibleLogsOpen, visibleWidgetsOpen) * aspectRatio : 0;
   const [activeWidgetView, setActiveWidgetView] = useState<WidgetView>("bar");
+  const [widgetAutoplayPaused, setWidgetAutoplayPaused] = useState(true);
   const widgetsRef = useRef<HTMLDivElement | null>(null);
   const widgetsDialogRef = useRef<HTMLDivElement | null>(null);
   const widgetsTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -169,22 +170,26 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
             >
               <div className="widgets-popover-clip">
                 <div ref={widgetsDialogRef} className="widgets-popover" role="dialog" aria-label="Widgets" aria-modal="true">
-                  <div className="widgets-view">
-                    {activeWidgetView === "bar" && (
-                      <div className="widgets-panel bar-graph">
-                        <GraphDataProvider data={data}>
-                          <Suspense fallback={null}>
-                            <BarGraph />
-                          </Suspense>
-                        </GraphDataProvider>
-                      </div>
-                    )}
-                    {activeWidgetView === "questions" && (
-                      <div className="widgets-panel q-scores">
-                        <SectionScores />
-                      </div>
-                    )}
-                  </div>
+                  {activeWidgetView === "bar" && (
+                    <GraphDataProvider data={data}>
+                      <Suspense fallback={null}>
+                        <BarGraph
+                          navOutsidePanel
+                          panelClassName="widgets-view widgets-panel bar-graph"
+                          paused={widgetAutoplayPaused}
+                          onPausedChange={setWidgetAutoplayPaused}
+                        />
+                      </Suspense>
+                    </GraphDataProvider>
+                  )}
+                  {activeWidgetView === "questions" && (
+                    <SectionScores
+                      navOutsidePanel
+                      panelClassName="widgets-view widgets-panel q-scores"
+                      paused={widgetAutoplayPaused}
+                      onPausedChange={setWidgetAutoplayPaused}
+                    />
+                  )}
                   <div className="widgets-tabs" role="tablist" aria-label="Widgets">
                     <button
                       type="button"

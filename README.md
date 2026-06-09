@@ -56,7 +56,8 @@ Backend/data
 | `frontend/src/app` | App providers, session state, runtime signals, preferences |
 | `frontend/src/onboarding` | Role flow, questionnaire flow, Canvas Engine information section |
 | `frontend/src/canvas-engine` | Canvas runtime, scene rules, placement, render passes, shape drawers |
-| `frontend/src/canvas-engine/scene-rules` | Authored backgrounds, padding, placement, fog, spotlight slides, render-cache policy |
+| `frontend/src/canvas-engine/scene-rules` | Authored backgrounds, padding, placement, fog, spotlight slides |
+| `frontend/src/canvas-engine/runtime/render/cache-policy` | Runtime shape bitmap/depth-mask cache policy |
 | `frontend/src/canvas-engine/runtime/engine/loop.ts` | Main Canvas2D frame pipeline |
 | `frontend/src/graph-runtime` | Results graph, dot graph UI, sprite runtime, visible-row shaping |
 | `frontend/src/graph-runtime/sprites` | Sprite texture generation, quality policy, cache/runtime internals |
@@ -67,7 +68,7 @@ Backend/data
 ## Engineering Highlights
 
 - Built a custom Canvas2D scene engine with multi-canvas hosts, scene profiles, responsive grid projection, authored placement presets, and reusable shape drawers.
-- Added scene-rule contracts for backgrounds, canvas padding, fog, placement, spotlight slides, render cache policy, foliage, and ambient particles.
+- Added scene-rule contracts for backgrounds, canvas padding, fog, placement, spotlight slides, foliage, and ambient particles, with runtime cache policy for shape bitmap/depth-mask reuse.
 - Implemented procedural zone placement so authored communities can spawn multiple shape types around shared anchors while respecting horizon bands and occupancy.
 - Built a Three.js sprite pipeline with quantized visual inputs, texture caching, quality budgets, visible-row limits, and prioritized personalized sprites.
 - Reduced duplicate rendering work by removing stale frozen texture paths and relying on active particle starts plus runtime texture scheduling.
@@ -96,7 +97,7 @@ npm run dev
 ```bash
 cd frontend
 npm run typecheck
-npm run lint
+npm run lint:ci
 npm run build
 ```
 

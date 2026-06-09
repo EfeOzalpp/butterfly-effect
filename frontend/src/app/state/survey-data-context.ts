@@ -5,6 +5,8 @@ export interface SurveyDataState {
   // Active section filter — e.g. 'all', 'all-students', 'fine-arts'
   section: string;
   setSection: (s: string) => void;
+  // Increments on every picker choice, including selecting the current section again.
+  sectionSelectionVersion: number;
   // Response counts keyed by section — includes aggregates: 'all', 'all-students', 'all-staff', 'all-massart'
   counts: Record<string, number>;
   // All rows from Sanity, up to 5,000 — unfiltered

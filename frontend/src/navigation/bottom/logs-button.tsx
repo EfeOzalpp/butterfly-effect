@@ -12,21 +12,62 @@ function fmt(v?: number): string {
   return v != null ? v.toFixed(2) : "--";
 }
 
+function fmtQuestionScore(v?: number): string {
+  return v != null ? String(Math.round(v * 100)) : "--";
+}
+
 function fmtQs(row: { q1?: number; q2?: number; q3?: number; q4?: number; q5?: number }): string {
-  return [row.q1, row.q2, row.q3, row.q4, row.q5].map(fmt).join(", ");
+  return [row.q1, row.q2, row.q3, row.q4, row.q5].map(fmtQuestionScore).join(", ");
 }
 
 const SECTION_DISPLAY: Record<string, string> = {
   visitor: 'Explorer',
 };
 
+function capitalizeFirstWord(value: string): string {
+  return value.replace(/^(\s*)(\p{L})/u, (_match, leading: string, firstLetter: string) =>
+    `${leading}${firstLetter.toLocaleUpperCase()}`
+  );
+}
+
 function formatSectionLabel(section?: string): string {
   const s = section ?? "";
-  return SECTION_DISPLAY[s] ?? s.replace(/-/g, " ");
+  return SECTION_DISPLAY[s] ?? capitalizeFirstWord(s.replace(/-/g, " "));
 }
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function LogsPageArrow({
+  direction,
+  hidden,
+  onClick,
+}: {
+  direction: "previous" | "next";
+  hidden: boolean;
+  onClick: () => void;
+}) {
+  const isPrevious = direction === "previous";
+  const label = isPrevious ? "Previous page" : "Next page";
+  const path = isPrevious ? "M15 18L9 12L15 6" : "M9 18L15 12L9 6";
+
+  if (hidden) {
+    return <span className="ui-icon-nav-button logs-page-arrow logs-page-arrow--placeholder" aria-hidden="true" />;
+  }
+
+  return (
+    <button
+      type="button"
+      className="ui-icon-nav-button logs-page-arrow"
+      onClick={onClick}
+      aria-label={label}
+    >
+      <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path d={path} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
 }
 
 interface LogsPanelProps {
@@ -48,11 +89,52 @@ export function LogsPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterFocused, setFilterFocused] = useState(false);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
+  const tableWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!searchOpen) return;
     filterInputRef.current?.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    const el = tableWrapRef.current;
+    if (!el) return;
+
+    let lastTouchY = 0;
+
+    const onTouchStart = (event: TouchEvent) => {
+      lastTouchY = event.touches.item(0)?.clientY ?? 0;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches.item(0);
+      if (!touch) return;
+
+      const currentY = touch.clientY;
+      const dy = currentY - lastTouchY;
+      lastTouchY = currentY;
+
+      const maxScrollTop = el.scrollHeight - el.clientHeight;
+      if (maxScrollTop <= 0) {
+        if (event.cancelable) event.preventDefault();
+        return;
+      }
+
+      const atTop = el.scrollTop <= 0;
+      const atBottom = el.scrollTop >= maxScrollTop - 1;
+      if ((atTop && dy > 0) || (atBottom && dy < 0)) {
+        if (event.cancelable) event.preventDefault();
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
 
   const sorted = useMemo(() => {
     return [...data].sort((a, b) => {
@@ -130,7 +212,7 @@ export function LogsPanel({
       <div className="logs-header">
         <span className="logs-title">Logs</span>
         <div className="logs-header-tools">
-          {!searchOpen && <span className="ui-label logs-entry-count">{sorted.length} logs</span>}
+          {!searchOpen && <span className="ui-label logs-entry-count">{sorted.length} people</span>}
 
           {searchOpen ? (
             <label
@@ -181,7 +263,7 @@ export function LogsPanel({
         </div>
       </div>
 
-      <div className="logs-table-wrap" onWheel={(e) => { e.stopPropagation(); }}>
+      <div ref={tableWrapRef} className="logs-table-wrap" onWheel={(e) => { e.stopPropagation(); }}>
         <table className="logs-table">
           <thead>
             <tr>
@@ -223,35 +305,19 @@ export function LogsPanel({
 
           {totalPages > 1 && (
           <div className="logs-pagination">
-            <button
-              type="button"
-              className="logs-page-arrow"
-              style={safePage === 0 ? { visibility: "hidden" } : undefined}
-              tabIndex={safePage === 0 ? -1 : undefined}
-              aria-hidden={safePage === 0}
+            <LogsPageArrow
+              direction="previous"
+              hidden={safePage === 0}
               onClick={() => { setPage((p) => p - 1); }}
-              aria-label="Previous page"
-            >
-              <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            />
             <span className="logs-page-label">
               {safePage + 1}<span className="logs-page-sep">/</span>{totalPages}
             </span>
-            <button
-              type="button"
-              className="logs-page-arrow"
-              style={safePage >= totalPages - 1 ? { visibility: "hidden" } : undefined}
-              tabIndex={safePage >= totalPages - 1 ? -1 : undefined}
-              aria-hidden={safePage >= totalPages - 1}
+            <LogsPageArrow
+              direction="next"
+              hidden={safePage >= totalPages - 1}
               onClick={() => { setPage((p) => p + 1); }}
-              aria-label="Next page"
-            >
-              <svg className="ui-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            />
             <input
               id="logs-page-input"
               type="number"

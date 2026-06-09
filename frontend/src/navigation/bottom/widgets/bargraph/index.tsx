@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
 
-import { useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 
 import { usePreferences } from "../../../../app/state/preferences-context";
 import { useUiFlow } from "../../../../app/state/ui-context";
@@ -9,9 +9,10 @@ import { useIdentity } from "../../../../app/state/identity-context";
 import { useSurveyData } from "../../../../app/state/survey-data-context";
 import { useWindowWidth } from "../../../../lib/hooks/useWindowWidth";
 import { viewportBandForWidth } from "../../../../lib/responsive/breakpoints";
+import { useRelativeScores } from "../../../../lib/hooks/useRelativeScore";
 import { avgWeightOf } from "../../../../lib/utils/score";
-import { useSharedGraphData } from "../../../../graph-runtime/GraphDataContext";
-import { useGraphPickerData, titleFromId } from "../../../gp-data";
+import { CHOOSE_STAFF, CHOOSE_STUDENT, GO_BACK, useGraphPickerData, titleFromId } from "../../../gp-data";
+import WidgetSectionNav from "../widget-section-nav";
 
 import EmptyStateArt from "./EmptyArt";
 
@@ -30,24 +31,99 @@ type BarColor = 'red' | 'yellow' | 'green';
 
 type Categories = Record<BarColor, number>;
 
+interface BarGraphProps {
+  navOutsidePanel?: boolean;
+  panelClassName?: string;
+  paused?: boolean;
+  onPausedChange?: (paused: boolean) => void;
+}
+
 const orderedColors: BarColor[] = ['green', 'yellow', 'red'];
 
 const percentValue = (value: number) => `${value.toFixed(4)}%`;
+const AUTOPLAY_MS = 5000;
 
-export default function BarGraph() {
+export default function BarGraph({
+  navOutsidePanel = false,
+  panelClassName,
+  paused,
+  onPausedChange,
+}: BarGraphProps = {}) {
   const { darkMode } = usePreferences();
   const { hasCompletedSurvey } = useUiFlow();
   const { myEntryId } = useIdentity();
-  const { loading, section } = useSurveyData();
+  const { allRows, loading, section, sectionSelectionVersion } = useSurveyData();
   const windowWidth = useWindowWidth();
 
-  const { safeData, dataById, getRelForId } = useSharedGraphData();
-  const { ALL_LABELS } = useGraphPickerData(section);
+  const { ALL_LABELS, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS, counts } = useGraphPickerData(section);
 
   const [animationState, setAnimationState] = useState(false);
   const [animateBars, setAnimateBars] = useState(false);
+  const [internalPaused, setInternalPaused] = useState(true);
+  const [localSectionState, setLocalSectionState] = useState({
+    sourceSection: section,
+    sourceSelectionVersion: sectionSelectionVersion,
+    value: section,
+  });
 
   const barRefs = useRef<Partial<Record<BarColor, HTMLDivElement | null>>>({});
+
+  const localSection =
+    localSectionState.sourceSection === section &&
+    localSectionState.sourceSelectionVersion === sectionSelectionVersion
+      ? localSectionState.value
+      : section;
+
+  const effectivePaused = paused ?? internalPaused;
+
+  const setEffectivePaused = useCallback((nextPaused: boolean) => {
+    if (paused === undefined) setInternalPaused(nextPaused);
+    onPausedChange?.(nextPaused);
+  }, [onPausedChange, paused]);
+
+  const setLocalSection = useCallback((value: string) => {
+    setLocalSectionState({ sourceSection: section, sourceSelectionVersion: sectionSelectionVersion, value });
+  }, [section, sectionSelectionVersion]);
+
+  const cycleSections = useMemo(() => {
+    const ordered = [...MAIN_OPTS, ...STUDENT_OPTS, ...STAFF_OPTS]
+      .filter((opt) => opt.id !== GO_BACK && opt.id !== CHOOSE_STUDENT && opt.id !== CHOOSE_STAFF)
+      .filter((opt, index, arr) => arr.findIndex((item) => item.id === opt.id) === index)
+      .filter((opt) => (counts[opt.id] ?? 0) > 0 || opt.id === localSection);
+
+    if (!ordered.length && localSection) {
+      return [{ id: localSection, label: ALL_LABELS.get(localSection) ?? titleFromId(localSection) }];
+    }
+
+    return ordered;
+  }, [ALL_LABELS, MAIN_OPTS, STAFF_OPTS, STUDENT_OPTS, counts, localSection]);
+
+  const safeData = useMemo(() => {
+    if (!localSection || localSection === "all") return allRows;
+    if (localSection === "all-massart") {
+      const allowed = new Set([...STUDENT_OPTS.map((opt) => opt.id), ...STAFF_OPTS.map((opt) => opt.id)]);
+      return allRows.filter((row) => allowed.has(row.section));
+    }
+    if (localSection === "all-students") {
+      const allowed = new Set(STUDENT_OPTS.map((opt) => opt.id));
+      return allRows.filter((row) => allowed.has(row.section));
+    }
+    if (localSection === "all-staff") {
+      const allowed = new Set(STAFF_OPTS.map((opt) => opt.id));
+      return allRows.filter((row) => allowed.has(row.section));
+    }
+    return allRows.filter((row) => row.section === localSection);
+  }, [STUDENT_OPTS, STAFF_OPTS, allRows, localSection]);
+
+  const dataById = useMemo(() => {
+    const map = new Map<string, (typeof safeData)[number]>();
+    for (const item of safeData) {
+      if (item._id) map.set(item._id, item);
+    }
+    return map;
+  }, [safeData]);
+
+  const { getForId: getRelForId } = useRelativeScores(safeData);
 
   const includesMe = useMemo(
     () => Boolean(myEntryId && dataById.has(myEntryId)),
@@ -81,6 +157,31 @@ export default function BarGraph() {
   }, [safeData]);
 
   const totalCount = safeData.length;
+
+  const currentIndex = cycleSections.findIndex((item) => item.id === localSection);
+  const matchedSection = cycleSections.find((item) => item.id === localSection);
+  const sectionLabel =
+    matchedSection?.label ??
+    ALL_LABELS.get(localSection) ??
+    (localSection ? titleFromId(localSection) : "Everyone");
+
+  const stepSection = (delta: number) => {
+    if (!cycleSections.length) return;
+    const nextIndex = currentIndex >= 0
+      ? (currentIndex + delta + cycleSections.length) % cycleSections.length
+      : 0;
+    setLocalSection(cycleSections[nextIndex].id);
+  };
+
+  useEffect(() => {
+    if (effectivePaused || cycleSections.length <= 1) return;
+    const timer = window.setInterval(() => {
+      const activeIndex = cycleSections.findIndex((item) => item.id === localSection);
+      const nextIndex = activeIndex >= 0 ? (activeIndex + 1) % cycleSections.length : 0;
+      setLocalSection(cycleSections[nextIndex].id);
+    }, AUTOPLAY_MS);
+    return () => { window.clearInterval(timer); };
+  }, [cycleSections, effectivePaused, localSection, setLocalSection]);
 
   const rawYouPercentile = useMemo(() => (canShowYou && myEntryId ? getRelForId(myEntryId) : 0), [
     canShowYou,
@@ -149,11 +250,20 @@ export default function BarGraph() {
   if (!section) return <p className="graph-loading">Pick a section to begin.</p>;
   if (loading) return null;
 
-  const sectionLabel = ALL_LABELS.get(section) ?? titleFromId(section);
+  const sectionNav = (
+    <WidgetSectionNav
+      title={sectionLabel}
+      paused={effectivePaused}
+      className="bar-graph-nav"
+      onPrevious={() => { stepSection(-1); }}
+      onNext={() => { stepSection(1); }}
+      onTogglePaused={() => { setEffectivePaused(!effectivePaused); }}
+    />
+  );
 
   const noData = safeData.length === 0;
   if (noData) {
-    return (
+    const emptyBody = (
       <div className="empty-center">
         <div className={`empty-card ${darkMode ? 'is-dark' : 'is-light'}`}>
           <EmptyStateArt className="empty-icon floaty" />
@@ -161,9 +271,27 @@ export default function BarGraph() {
         </div>
       </div>
     );
+
+    if (navOutsidePanel) {
+      return (
+        <>
+          {sectionNav}
+          <div className={panelClassName}>
+            {emptyBody}
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <>
+        {sectionNav}
+        {emptyBody}
+      </>
+    );
   }
 
-  return (
+  const graphBody = (
     <>
       <div className="bar-graph-container">
         {orderedColors.map((color) => {
@@ -219,6 +347,24 @@ export default function BarGraph() {
           Among <strong>{sectionLabel}</strong>, you are the {ordinalSuffix(youPercentile)} percentile.
         </h4>
       )}
+    </>
+  );
+
+  if (navOutsidePanel) {
+    return (
+      <>
+        {sectionNav}
+        <div className={panelClassName}>
+          {graphBody}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {sectionNav}
+      {graphBody}
     </>
   );
 }

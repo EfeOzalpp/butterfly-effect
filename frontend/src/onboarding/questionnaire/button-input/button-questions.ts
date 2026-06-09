@@ -37,7 +37,7 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
       { key: 'C', label: 'Turn off lights',  weight: 0.7  },
       { key: 'D', label: 'Avoid standby',    weight: 0.6  },
       { key: 'E', label: 'Not really',       weight: 0.1 },
-      { key: 'F', label: 'Don\'t have home', weight: 0.95 },
+      { key: 'F', label: 'Don\'t have home', weight: 1 },
     ],
   },
   {
@@ -45,11 +45,11 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
     prompt: 'When you shop, what feels most like you?',
     options: [
       { key: 'A', label: 'Thrift first', weight: 1.0  },
-      { key: 'B', label: 'Buy to last',  weight: 0.8  },
+      { key: 'B', label: 'Buy to last',  weight: 0.75  },
       { key: 'C', label: 'Shop local',   weight: 0.65 },
-      { key: 'D', label: 'Eco brands',   weight: 0.5  },
-      { key: 'E', label: 'Buy new',      weight: 0.2  },
-      { key: 'F', label: 'Fast fashion', weight: 0.0  },
+      { key: 'D', label: 'Natural materials',   weight: 0.8  },
+      { key: 'E', label: 'Mass-purchase',      weight: 0.25  },
+      { key: 'F', label: 'Synthetic clothes', weight: 0.0  },
     ],
   },
   {

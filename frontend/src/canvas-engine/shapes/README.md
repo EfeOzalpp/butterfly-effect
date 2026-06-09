@@ -120,12 +120,16 @@ owning a shape's art direction details.
 
 ## Render Passes And Lighting
 
-Shapes currently draw two render passes:
+The shape runtime has two render pass names:
 
 ```txt
 color      full authored drawing, including shape-local highlights
 depthMask  stable mass for depth overlays and cached masks
 ```
+
+`depthMask` is optional. Runtime checks `SHAPE_RENDER_PASSES` in `shapes/index.ts`
+before asking a shape to draw that pass, so sky/weather shapes can stay
+color-pass only and handle depth tint inline.
 
 The engine does not automatically compute per-shape highlights. Runtime creates
 `style.lightCtx`; shapes sample their own surfaces with helpers such as

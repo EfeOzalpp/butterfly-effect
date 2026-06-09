@@ -23,9 +23,17 @@ import {
 } from "./ambient-particles";
 import { FOG, FOG_DARK, type FogSceneSpec } from "./fog";
 import { FOLIAGE, FOLIAGE_DARK, type FoliageSceneSpec } from "./foliage";
-import { DEFAULT_RENDER_CACHE_POLICY } from "./render-cache";
+import { DEFAULT_RENDER_CACHE_POLICY } from "../runtime/render/cache-policy";
+import type { DeviceCountScale } from "../shared/responsiveness";
 
 type SceneRules = Pick<SceneProfile, "padding" | "placements">;
+
+const LANDSCAPE_COUNT_SCALE: Record<SceneLookupKey, DeviceCountScale> = {
+  start: { mobile: 1.4, tablet: 1.4 },
+  questionnaire: { mobile: 2, tablet: 0.9 },
+  city: {},
+  spotlight: {},
+};
 
 function rulesForLookupKey(lookupKey: SceneLookupKey): SceneRules {
   if (lookupKey === "start") {
@@ -113,5 +121,6 @@ export function resolveProfile(
     fog: fogForState(state, context),
     foliage: foliageForState(state, context),
     renderCache: DEFAULT_RENDER_CACHE_POLICY,
+    landscapeCountScale: LANDSCAPE_COUNT_SCALE[state.lookupKey],
   };
 }

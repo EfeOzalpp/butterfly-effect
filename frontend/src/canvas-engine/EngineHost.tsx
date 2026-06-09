@@ -73,7 +73,8 @@ export function EngineHost({
     viewportKey,
     spotlight?.index,
     fog,
-    shapeLightSource
+    shapeLightSource,
+    hostDef.initialFieldDelayMs
   );
 
   React.useEffect(() => {

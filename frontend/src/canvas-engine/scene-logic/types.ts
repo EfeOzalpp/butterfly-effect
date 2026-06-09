@@ -8,13 +8,14 @@ import type { Size } from "../scene-rules/shapeFootprints";
 import type { ScenePlacementRules } from "../scene-rules/placement-rules/index";
 import type { ProceduralZoneBand } from "../scene-rules/placement-rules";
 import type { EngineFieldItem } from "../runtime/engine/field";
+import type { DeviceCountScale } from "../shared/responsiveness";
 
 export type FootRect = GridFootprint;
 
 export interface PoolItem {
   id: EngineFieldItem["id"];
   shape: ShapeName;
-  zoneIndex: number;    // index into the shape's zones array
+  zoneIndex?: number;   // explicit per-shape zone lookup only
   size: Size;           // footprint grid dimensions
   point?: {
     xK: number;
@@ -26,11 +27,9 @@ export interface PoolItem {
     scale: number;
   };
   communityZone?: {
-    id: string;
     band: ProceduralZoneBand;
     centerX: number;
     centerY: number;
-    radiusTiles: number;
     radiusShape: "ellipse" | "rect";
     radiusX: number;
     radiusY: number;
@@ -53,6 +52,7 @@ export interface ComposeOpts {
   liveAvg: number | undefined;
   reservedFootprints?: FootRect[];
   ruleWidthPx?: number;
+  landscapeCountScale?: DeviceCountScale;
   canvas: { w: number; h: number };
   salt?: number;
 }

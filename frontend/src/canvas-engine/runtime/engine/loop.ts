@@ -96,6 +96,7 @@ export function createEngineTicker(deps: LoopDeps) {
   let environmentLightItemsSource: EngineFieldItem[] | null = null;
   let environmentLightWidth = 0;
   let environmentLightDarkMode = false;
+  let environmentLightStyleXK: number | null = null;
   let environmentLightSource: FogLightSource | null = null;
 
   function clearRenderCaches() {
@@ -161,12 +162,33 @@ export function createEngineTicker(deps: LoopDeps) {
     };
   }
 
+  function environmentLightSourceFromStyle(): FogLightSource | null {
+    const source = engine.style.shapeLightSource;
+    if (!source) return null;
+
+    const metadata = ENVIRONMENT_LIGHT_SHAPE.sun;
+    if (!metadata) return null;
+
+    const colorHex = engine.style.darkMode && metadata[2] ? metadata[2] : metadata[1];
+    const color = parseHexColor(colorHex);
+    if (!color) return null;
+
+    return {
+      xK: Math.max(0, Math.min(1, source.xK)),
+      color,
+    };
+  }
+
   function findEnvironmentLightSource(items: EngineFieldItem[]): FogLightSource | null {
     const width = Math.max(1, surface.p.width);
+    const styleSourceXK = engine.style.shapeLightSource
+      ? Math.max(0, Math.min(1, engine.style.shapeLightSource.xK))
+      : null;
     if (
       items === environmentLightItemsSource &&
       width === environmentLightWidth &&
-      engine.style.darkMode === environmentLightDarkMode
+      engine.style.darkMode === environmentLightDarkMode &&
+      styleSourceXK === environmentLightStyleXK
     ) {
       return environmentLightSource;
     }
@@ -174,6 +196,7 @@ export function createEngineTicker(deps: LoopDeps) {
     environmentLightItemsSource = items;
     environmentLightWidth = width;
     environmentLightDarkMode = engine.style.darkMode;
+    environmentLightStyleXK = styleSourceXK;
     environmentLightSource = null;
 
     for (const item of items) {
@@ -189,7 +212,9 @@ export function createEngineTicker(deps: LoopDeps) {
       };
       return environmentLightSource;
     }
-    return null;
+
+    environmentLightSource = environmentLightSourceFromStyle();
+    return environmentLightSource;
   }
 
   function positiveModulo(value: number, length: number) {
@@ -219,7 +244,7 @@ export function createEngineTicker(deps: LoopDeps) {
       return variants[0] ?? null;
     }
 
-    return variants[positiveModulo(spotlight.index, variants.length)] ?? variants[0] ?? null;
+    return variants[positiveModulo(spotlight.index, variants.length)] ?? null;
   }
 
   function resolveRuntimeFoliage(foliage: FoliageSceneSpec | null): FoliageSceneSpec | null {
@@ -231,7 +256,7 @@ export function createEngineTicker(deps: LoopDeps) {
       return variants[0] ?? null;
     }
 
-    return variants[positiveModulo(spotlight.index, variants.length)] ?? variants[0] ?? null;
+    return variants[positiveModulo(spotlight.index, variants.length)] ?? null;
   }
 
   function renderOneSandboxed(

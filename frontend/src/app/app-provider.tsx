@@ -60,7 +60,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     toggleSpotlightPaused,
     resetCanvasRuntimeState,
   } = useCanvasRuntimeState();
-  const { section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow, subscribeToSurveyData } = useSurveyDataState({ mySection });
+  const {
+    section,
+    setSection,
+    sectionSelectionVersion,
+    counts,
+    allRows,
+    data,
+    allFilteredRows,
+    loading,
+    upsertLocalSurveyRow,
+    subscribeToSurveyData,
+  } = useSurveyDataState({ mySection });
 
   // Sanity subscription starts once at the app boundary and writes into SurveyDataCtx.
   useEffect(() => {
@@ -204,8 +215,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const surveyDataValue = useMemo<SurveyDataState>(
-    () => ({ section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow }),
-    [section, setSection, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow]
+    () => ({
+      section,
+      setSection,
+      sectionSelectionVersion,
+      counts,
+      allRows,
+      data,
+      allFilteredRows,
+      loading,
+      upsertLocalSurveyRow,
+    }),
+    [section, setSection, sectionSelectionVersion, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow]
   );
 
   return (

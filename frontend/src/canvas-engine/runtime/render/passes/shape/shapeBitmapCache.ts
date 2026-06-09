@@ -4,7 +4,7 @@ import type { ShapeRegistry } from "../../../shape-adapter/registry";
 import { copyRuntimeShapeOptionsInto } from "../../../shape-adapter/options";
 import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
 import type { GridMetrics } from "../../../geometry/gridCache";
-import type { FarShapeBitmapCachePolicy } from "../../../../scene-rules/render-cache";
+import type { FarShapeBitmapCachePolicy } from "../../cache-policy";
 import { footprintToPx } from "../../../../modifiers/index";
 import { finiteNumber } from "../../../../shared/math";
 import {
@@ -213,8 +213,6 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     pass.renderPass = "color";
     pass.maskColor = undefined;
     pass.maskAlpha = undefined;
-    pass.depthTintColor = undefined;
-    pass.depthTintK = undefined;
 
     bitmapP.push();
     bitmapP.translate(-bounds.x, -bounds.y);

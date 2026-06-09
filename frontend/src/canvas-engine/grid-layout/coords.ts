@@ -7,15 +7,6 @@ export type CellSize = BaseCellSize & Partial<GridMetrics>;
 
 function o(v?: number) { return typeof v === "number" && Number.isFinite(v) ? v : 0; }
 
-/** rectangular grid center for a 1x1 cell */
-export function cellCenterToPx2(size: CellSize, r: number, c: number) {
-  const ox = o(size.ox), oy = o(size.oy);
-  return {
-    x: ox + c * size.cellW + size.cellW / 2,
-    y: oy + r * size.cellH + size.cellH / 2,
-  };
-}
-
 /** rectangular rect for occupied block */
 export function cellRectToPx2(
   size: CellSize,

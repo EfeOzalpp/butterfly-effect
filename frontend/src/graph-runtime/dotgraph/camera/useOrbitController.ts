@@ -116,7 +116,7 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
     delayMs = idle.delayMs ?? 2000,
   } = idle;
 
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const groupRef = useRef<Group | null>(null);
 
   const gestureRef = useRef(createGestureState());
@@ -226,6 +226,7 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
   usePixelOffsets({
     groupRef,
     camera,
+    domElement: gl.domElement,
     radius,
     xOffset,
     yOffset,

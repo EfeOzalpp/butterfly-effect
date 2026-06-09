@@ -19,10 +19,16 @@ const noopUnsubscribe: () => void = () => undefined;
 export default function useSurveyDataState({
   mySection,
 }: UseSurveyDataStateParams) {
-  const [section, setSection] = useState<string>(() => mySection ?? 'all');
+  const [section, setSectionValue] = useState<string>(() => mySection ?? 'all');
+  const [sectionSelectionVersion, setSectionSelectionVersion] = useState(0);
   const [allRows, setAllRows] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const localRowsRef = useRef<SurveyRow[]>([]);
+
+  const setSection = useCallback((nextSection: string) => {
+    setSectionValue(nextSection);
+    setSectionSelectionVersion((version) => version + 1);
+  }, []);
 
   const mergeLocalRows = useCallback((rows: SurveyRow[]) => {
     const localRows = localRowsRef.current;
@@ -55,7 +61,7 @@ export default function useSurveyDataState({
     }
 
     removeSessionItems(['be.justSubmitted']);
-  }, [mySection]);
+  }, [mySection, setSection]);
 
   const subscribeToSurveyData = useCallback(() => {
     setLoading(true);
@@ -109,6 +115,7 @@ export default function useSurveyDataState({
   return {
     section,
     setSection,
+    sectionSelectionVersion,
     counts,
     allRows,
     data,

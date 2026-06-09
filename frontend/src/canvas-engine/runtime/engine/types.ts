@@ -4,7 +4,7 @@ import type { BackgroundSpec } from "../../scene-rules/backgrounds";
 import type { AmbientParticlesSceneSpec } from "../../scene-rules/ambient-particles";
 import type { FogSceneSpec } from "../../scene-rules/fog";
 import type { FoliageSceneSpec } from "../../scene-rules/foliage";
-import type { RenderCachePolicy } from "../../scene-rules/render-cache";
+import type { RenderCachePolicy } from "../render/cache-policy";
 import type { EngineLayoutMode } from "../platform/mount";
 import type { DprMode } from "../platform/viewport";
 import type { CanvasBounds } from "../../multi-canvas-setup/hostDefs";

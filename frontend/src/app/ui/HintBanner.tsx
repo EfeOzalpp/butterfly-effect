@@ -27,7 +27,7 @@ export default function HintBanner({
 }: HintBannerProps) {
   return (
     <div
-      className={classes("hint-banner", visible && "is-visible", className)}
+      className={classes("hint-banner", visible && "is-visible", onDismiss && "is-dismissible", className)}
       role="status"
       aria-live="polite"
       aria-hidden={!visible}

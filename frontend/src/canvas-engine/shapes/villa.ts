@@ -658,8 +658,10 @@ export function drawVilla(
       };
       const dCfg = DOOR_PROFILES[dProfile];
 
-      const doorW = Math.max(smallScale ? 2 : 3, Math.round(iColW * dCfg.W_FRAC));
-      const doorH = Math.max(smallScale ? 2 : 4, Math.round(bodyH * dCfg.H_FRAC));
+      const compactDoor = localTile <= 16;
+      const doorDetailK = compactDoor ? clampMinMax(localTile / 16, 0.58, 0.9) : 1;
+      const doorW = Math.max(compactDoor ? 1 : 3, Math.round(iColW * dCfg.W_FRAC * doorDetailK));
+      const doorH = Math.max(compactDoor ? 1 : 4, Math.round(bodyH * dCfg.H_FRAC * doorDetailK));
       const doorOnLeft  = rDoorSide < 0.5;
       const doorMargin  = Math.round(iColW * VILLA.door.sideMarginPxK);
       const doorX       = doorOnLeft ? (ix + doorMargin) : (ix + iColW - doorMargin - doorW);

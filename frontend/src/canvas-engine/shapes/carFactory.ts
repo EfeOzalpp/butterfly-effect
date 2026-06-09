@@ -321,6 +321,7 @@ export function drawCarFactory(
   const localTileW = W / Math.max(1, f.w);
   const localTileH = H / Math.max(1, f.h);
   const localTile = Math.max(1, Math.min(localTileW, localTileH));
+  const detailUnit = localTile;
 
   // appear (bottom-center)
   const anchorX = x0 + W / 2;
@@ -384,9 +385,9 @@ export function drawCarFactory(
   const slabH = Math.min(usableH, Math.round(cell * CF.slabHeightK));
   const slabY = floorY - slabH;
 
-  const gap = CF.gapPx;
+  const gap = Math.max(1, Math.round(Math.min(CF.gapPx, detailUnit * 0.18)));
   const factoryW = Math.max(8, Math.round(W * CF.factoryWFrac));
-  const chimW    = Math.max(6, Math.round(W * CF.chimWFrac));
+  const chimW    = Math.max(Math.round(detailUnit * 0.28), Math.round(W * CF.chimWFrac));
   const totalW   = factoryW + gap + chimW;
 
   const leftStart = x0 + (W - totalW) / 2;
@@ -394,14 +395,14 @@ export function drawCarFactory(
   const bodyX     = sideLeft ? leftStart : (leftStart + chimW + gap);
 
   // slight inward offset to pull chimney toward the body
-  const chimInset = cell * 0.05;
+  const chimInset = detailUnit * 0.05;
   const chimX = sideLeft
     ? (bodyX + factoryW + gap - chimInset)
     : (leftStart + chimInset);
 
   // frame/window pads (larger window)
-  const framePadPx  = Math.round(Math.max(3, Math.min(12, cell * CF.framePadK)));
-  const windowPadPx = Math.round(Math.max(2, Math.min(10, cell * CF.windowPadK)));
+  const framePadPx  = Math.round(Math.max(2, Math.min(12, detailUnit * CF.framePadK)));
+  const windowPadPx = Math.round(Math.max(1, Math.min(10, detailUnit * CF.windowPadK)));
 
   // frame/window rects centered within factory body
   const frameX = bodyX + framePadPx;
@@ -417,7 +418,7 @@ export function drawCarFactory(
   // thinner stroke
   const winStroke = Math.max(
     CF.windowStrokePx[0],
-    Math.min(CF.windowStrokePx[1], cell * 0.025)
+    Math.min(CF.windowStrokePx[1], detailUnit * 0.025)
   );
 
   // liveAvg-lerped clamps — robust for decreasing ranges
@@ -428,7 +429,7 @@ export function drawCarFactory(
   const bodyAnchorX = sideLeft ? bodyX : (bodyX + factoryW);
 
   // Precompute roof rect in WORLD space (so we can draw panels outside body scale group)
-  const roofH = Math.max(3, Math.round(cell * CF.roofHk));
+  const roofH = Math.max(2, Math.round(detailUnit * CF.roofHk));
   const roofOver = Math.round(factoryW * CF.roofOverhangK);
   const roofRx = bodyX - roofOver;               // left X
   const roofRw = factoryW + 2 * roofOver;        // width
@@ -467,8 +468,8 @@ export function drawCarFactory(
   // 1) SMOKE first (so chimney renders on top of it)
   if (shouldDrawColorDetails) {
     // base col dims
-    let colW = Math.max(6, Math.round(cell * CF.smoke.colWk));
-    let colH = Math.max(24, Math.round(cell * 2 * CF.smoke.colHk));
+    let colW = Math.max(3, Math.round(detailUnit * CF.smoke.colWk));
+    let colH = Math.max(Math.round(detailUnit * 1.1), Math.round(detailUnit * 2 * CF.smoke.colHk));
 
     // Sprite path: thicker/taller column so smoke reads after downsampling
     if (isSprite) {
@@ -478,7 +479,7 @@ export function drawCarFactory(
 
     const smokeX = (topLeftX + topRightX) / 2 - colW / 2;
     // spawn a bit above the mouth so top edge-fade doesn’t kill it
-    const smokeY = chimneyTopY - Math.round(cell * (isSprite ? 1.35 : 1.45));
+    const smokeY = chimneyTopY - Math.round(detailUnit * (isSprite ? 1.35 : 1.45));
 
     // base knobs
     const count  = Math.max(4, Math.floor(resolveRangeValue(CF.smoke.count, u)));
@@ -580,9 +581,9 @@ export function drawCarFactory(
     p.endShape(p.CLOSE);
 
     // CAP on the tapered top
-    const capOver  = Math.round(CF.chimCap.overhangPx);
-    const capTh    = Math.max(1, Math.round(CF.chimCap.thicknessPx));
-    const capRad   = Math.max(0, CF.chimCap.radiusPx | 0);
+    const capOver  = Math.max(1, Math.round(Math.min(CF.chimCap.overhangPx, detailUnit * 0.16)));
+    const capTh    = Math.max(1, Math.round(Math.min(CF.chimCap.thicknessPx, detailUnit * 0.34)));
+    const capRad   = Math.max(0, Math.round(Math.min(CF.chimCap.radiusPx, detailUnit * 0.12)));
 
     const capX     = topLeftX - capOver;
     const capW     = (topRightX - topLeftX) + capOver * 2;
@@ -599,7 +600,7 @@ export function drawCarFactory(
     p.rect(capX, capY, capW, capTh, capRad, capRad, capRad, capRad);
 
     if (CF.chimCap.lipPx > 0 && shouldDrawColorDetails) {
-      const lipH = Math.max(1, Math.round(CF.chimCap.lipPx));
+      const lipH = Math.max(1, Math.round(Math.min(CF.chimCap.lipPx, detailUnit * 0.08)));
       const lipRGB = {
         r: Math.min(255, capRGB.r + 18),
         g: Math.min(255, capRGB.g + 18),
@@ -622,7 +623,7 @@ export function drawCarFactory(
     const wallFill = shapeColorForRenderPass(renderPass, wall, maskColor);
     p.noStroke();
     p.fill(wallFill.r, wallFill.g, wallFill.b, massAlpha);
-    p.rect(bodyX, slabY, factoryW, slabH, Math.round(cell * 0.08));
+    p.rect(bodyX, slabY, factoryW, slabH, Math.round(detailUnit * 0.08));
 
     const roofFill = shapeColorForRenderPass(renderPass, roofRGB, maskColor);
     p.noStroke();

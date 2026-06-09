@@ -2,12 +2,15 @@ import { easeOutCubic } from "../util/easing";
 import { normalizeDprTransform } from "../util/transform";
 import type { PLike } from "../p/makeP";
 
-const DEFAULT_SCENE_SURFACE_APPEAR_MS = 500;
+const DEFAULT_SCENE_SURFACE_APPEAR_MS = 260;
 const APPEAR_DONE_ALPHA = 0.999;
+const MAX_APPEAR_FRAME_ADVANCE_MS = 30;
 
 export interface SceneSurfaceLifecycleState {
   appearMs: number;
   startedAtMs: number | null;
+  elapsedMs: number;
+  lastFrameAtMs: number | null;
 }
 
 export interface SceneSurfaceFrame {
@@ -22,6 +25,8 @@ export function createSceneSurfaceLifecycleState(
   return {
     appearMs: Math.max(0, appearMs),
     startedAtMs: null,
+    elapsedMs: 0,
+    lastFrameAtMs: null,
   };
 }
 
@@ -33,13 +38,23 @@ export function resolveSceneSurfaceFrame(
 
   if (!ready) {
     state.startedAtMs = null;
+    state.elapsedMs = 0;
+    state.lastFrameAtMs = null;
     return { ready: false, alpha: 0, appearing: true };
   }
 
-  state.startedAtMs ??= nowMs;
+  if (state.startedAtMs === null) {
+    state.startedAtMs = nowMs;
+    state.lastFrameAtMs = nowMs;
+    state.elapsedMs = 0;
+  } else {
+    const frameDeltaMs = Math.max(0, nowMs - (state.lastFrameAtMs ?? nowMs));
+    state.lastFrameAtMs = nowMs;
+    state.elapsedMs += Math.min(frameDeltaMs, MAX_APPEAR_FRAME_ADVANCE_MS);
+  }
 
   const alpha = state.appearMs > 0
-    ? easeOutCubic((nowMs - state.startedAtMs) / state.appearMs)
+    ? easeOutCubic(state.elapsedMs / state.appearMs)
     : 1;
 
   return {

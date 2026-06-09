@@ -217,7 +217,7 @@
   .picker:hover { max-width: 260px; min-width: 260px; transition: 50ms ease-in;}
   .picker:has(.trigger.is-open) { max-width: 320px; min-width: 320px; }
   .listbox-shell { width: 320px; }
-  .listbox { min-height: 360px; max-height: 410px;}
+  .listbox { min-height: 360px; max-height: 440px;}
 }
 
 @media (min-width: 1025px) {

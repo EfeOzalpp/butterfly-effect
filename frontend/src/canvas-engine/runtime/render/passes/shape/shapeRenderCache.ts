@@ -1,4 +1,4 @@
-import type { RenderCachePolicy } from "../../../../scene-rules/render-cache";
+import type { RenderCachePolicy } from "../../cache-policy";
 import { createFarShapeBitmapRenderer } from "./shapeBitmapCache";
 import { createShapeDepthOverlayRenderer } from "./shapeDepthOverlay";
 

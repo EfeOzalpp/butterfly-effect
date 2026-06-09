@@ -17,6 +17,7 @@ interface HostDefBase {
   zIndex: number;
   dprMode: DprMode;
   fpsCap?: number;
+  initialFieldDelayMs?: number;
   canvasDimensions?: CanvasBounds;
   stopOnOpen?: readonly string[];
   scene?: {
@@ -33,6 +34,7 @@ export const HOST_DEFS = defineHosts({
     zIndex: 2,
     dprMode: "cap2",
     fpsCap: 60,
+    initialFieldDelayMs: 260,
     canvasDimensions: { kind: "parent" },
     scene: { lookupKey: "start", ruleset: SCENE_RULESETS.intro },
   },
@@ -40,9 +42,10 @@ export const HOST_DEFS = defineHosts({
   questionnaire: {
     mount: "#questionnaire-canvas-root",
     zIndex: 2,
-    dprMode: "fixed1",
+    dprMode: "cap2",
     fpsCap: 60,
     stopOnOpen: ["start"],
+    initialFieldDelayMs: 300,
     canvasDimensions: { kind: "parent" },
     scene: { lookupKey: "questionnaire", ruleset: SCENE_RULESETS.intro },
   },
@@ -50,7 +53,7 @@ export const HOST_DEFS = defineHosts({
   city: {
     mount: "#city-canvas-root",
     zIndex: 60,
-    dprMode: "cap1_5",
+    dprMode: "cap2",
     fpsCap: 60,
     canvasDimensions: { kind: "viewport" },
     scene: { lookupKey: "city", ruleset: SCENE_RULESETS.city },

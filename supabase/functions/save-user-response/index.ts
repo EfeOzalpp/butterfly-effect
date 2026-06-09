@@ -24,6 +24,18 @@ interface RateResult {
   resetAt?: string;
 }
 
+type SavedResponseDoc = {
+  _id: string;
+  section?: string;
+  q1?: number;
+  q2?: number;
+  q3?: number;
+  q4?: number;
+  q5?: number;
+  avgWeight?: number;
+  submittedAt?: string;
+};
+
 const MAX_BODY_BYTES = 4096;
 const QUESTION_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
 const TOP_LEVEL_KEYS = new Set([
@@ -386,6 +398,10 @@ function avgWeight(weights: Weights) {
   return round3(sum / QUESTION_KEYS.length);
 }
 
+function responseIdFromTokenHash(tokenHash: string) {
+  return `userResponseV4.${tokenHash}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders(req) });
@@ -453,9 +469,14 @@ Deno.serve(async (req) => {
       submittedAt,
     };
 
-    let created: { _id: string };
+    let created: SavedResponseDoc;
     try {
-      created = await sanity.create(doc);
+      created = tokenHash
+        ? await sanity.createIfNotExists({
+          _id: responseIdFromTokenHash(tokenHash),
+          ...doc,
+        })
+        : await sanity.create(doc);
     } catch (error) {
       console.error("[save-user-response] Sanity write failed:", error);
       return jsonResponse(req, 503, {
@@ -466,10 +487,14 @@ Deno.serve(async (req) => {
 
     return jsonResponse(req, 200, {
       _id: created._id,
-      section: doc.section,
-      ...validation.payload.weights,
-      avgWeight: doc.avgWeight,
-      submittedAt,
+      section: created.section ?? doc.section,
+      q1: typeof created.q1 === "number" ? created.q1 : validation.payload.weights.q1,
+      q2: typeof created.q2 === "number" ? created.q2 : validation.payload.weights.q2,
+      q3: typeof created.q3 === "number" ? created.q3 : validation.payload.weights.q3,
+      q4: typeof created.q4 === "number" ? created.q4 : validation.payload.weights.q4,
+      q5: typeof created.q5 === "number" ? created.q5 : validation.payload.weights.q5,
+      avgWeight: typeof created.avgWeight === "number" ? created.avgWeight : doc.avgWeight,
+      submittedAt: created.submittedAt ?? submittedAt,
     });
   } catch (error) {
     console.error("[save-user-response] failed:", error);

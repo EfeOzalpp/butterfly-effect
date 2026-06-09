@@ -4,6 +4,19 @@ Placement rules describe where each shape type is allowed to appear and how many
 
 The runtime uses these rules during scene composition, before drawing. The output is a list of field items with footprints, positions, and optional projection overrides.
 
+## Authoring Status
+
+The current placement-rule files are manually authored and tuned. They work for the current scenes, but they aren't the ideal long-term authoring workflow.
+
+This should change in future updates, and truly honor procedural, intelligent placement rules.
+
+Use manual edits with caution: small radius, band, count, or padding changes can shift dense scenes in ways that are hard to predict visually.
+
+Until the engine contract stabilizes further, prefer any workflow that can
+generate, preview, or validate zones from visual input before committing them to
+these files. The dev-only `bePlace` helper is one step in that direction, but the
+placement rules should still be treated as hand-tuned scene data.
+
 ## Choose A Placement Blueprint
 
 Use the smallest placement feature that matches the scene:
@@ -187,7 +200,6 @@ Use this when the scene should describe clusters rather than hand-place each sha
 export const START_PLACEMENTS: ScenePlacementRules = {
   preset: {
     kind: "zone-communities",
-    overflow: "skip",
     zones: [
       {
         id: "left-neighborhood",
@@ -214,6 +226,8 @@ Zone communities are resolved during field composition, before runtime drawing. 
 - If a canvas has no `horizonPos`, both bands map `center.y: 0..1` to the full canvas height.
 
 `radius.xTiles` and `radius.yTiles` are explicit radii measured in grid cells. Use `radius.tiles` as shorthand when the zone should use the same radius in both directions. `xDistort` and `yDistort` are multipliers against `tiles`; explicit `xTiles` / `yTiles` take precedence when you need an exact narrow band.
+
+When the resolved vertical radius is below `1` tile, the zone becomes a thin row request. The runtime still guarantees one valid starting row when space exists, using the shape footprint's bottom/depth row for the band clamp. This is useful for single-line neighborhoods, horizon clouds, and tablet layouts where a sub-tile `yDistort` should not make every multi-row shape disappear.
 
 The default radius shape is an ellipse:
 
@@ -249,3 +263,4 @@ Overlapping zones naturally compete for the same occupancy grid; placement attem
 - `radius.shape`: optional radius test. Defaults to `"ellipse"`; use `"rect"` for rectangular bands.
 - `radius.xTiles` / `radius.yTiles`: explicit horizontal and vertical radii in grid cells.
 - `radius.xDistort` / `radius.yDistort`: optional multipliers applied to `radius.tiles` when explicit axis radii are not provided.
+- `radius.yTiles < 1` or `radius.tiles * yDistort < 1`: thin row placement using one valid bottom-row band instead of a multi-row vertical search.
