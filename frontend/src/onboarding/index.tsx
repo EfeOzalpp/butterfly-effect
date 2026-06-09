@@ -20,6 +20,7 @@ import {
   saveUserResponse,
   savedUserResponseToSurveyRow,
 } from "../services/sanity/saveUserResponse";
+import { EdgeFunctionError } from "../services/sanity/edgeFunction";
 import { track } from "../lib/posthog";
 import { getSessionItem, removeSessionItems, setSessionItem } from "../app/session";
 
@@ -283,6 +284,13 @@ export default function Survey({
 
     } catch (err) {
       console.error('[Survey] submit error:', err);
+      const submitErrorMessage = err instanceof EdgeFunctionError
+        ? err.code === 'RATE_LIMITED'
+          ? 'Too many submissions from this network. Please wait a moment and try again.'
+          : err.code === 'INVALID_SURVEY_RESPONSE'
+            ? 'One of the selected answers could not be saved. Please adjust your answer and try again.'
+            : `We could not save your response. (${err.code ?? err.status})`
+        : 'We could not save your response. Please try again.';
       // If saving failed, allow returning to questions
       removeSessionItems([
         'be.myEntryId',
@@ -302,7 +310,7 @@ export default function Survey({
       setSurveyActive(true);
       setQuestionnaireOpen(true);
       setAnimationVisible(false);
-      setError('We could not save your response. Please try again.');
+      setError(submitErrorMessage);
     } finally {
       setSubmitting(false);
     }

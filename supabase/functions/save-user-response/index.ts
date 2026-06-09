@@ -285,15 +285,15 @@ async function buildRateRules(req: Request, payload: ValidPayload): Promise<Rate
   const salt = Deno.env.get("RATE_LIMIT_SALT") ?? "butterfly-effect-save-user-response";
   const ipHash = await sha256(`${salt}:ip:${getClientAddress(req)}`);
   const rules: RateRule[] = [
-    { key: `save-user-response:ip:${ipHash}:10m`, max: 5, windowSeconds: 10 * 60 },
-    { key: `save-user-response:ip:${ipHash}:day`, max: 30, windowSeconds: 24 * 60 * 60 },
+    { key: `save-user-response:ip:${ipHash}:10m`, max: 25, windowSeconds: 10 * 60 },
+    { key: `save-user-response:ip:${ipHash}:day`, max: 200, windowSeconds: 24 * 60 * 60 },
   ];
 
   if (payload.clientId) {
     const clientHash = await sha256(`${salt}:client:${payload.clientId}`);
     rules.push(
-      { key: `save-user-response:client:${clientHash}:1m`, max: 2, windowSeconds: 60 },
-      { key: `save-user-response:client:${clientHash}:day`, max: 12, windowSeconds: 24 * 60 * 60 },
+      { key: `save-user-response:client:${clientHash}:1m`, max: 5, windowSeconds: 60 },
+      { key: `save-user-response:client:${clientHash}:day`, max: 50, windowSeconds: 24 * 60 * 60 },
     );
   }
 
