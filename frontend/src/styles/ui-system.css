@@ -137,6 +137,24 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
   --hint-banner-visible-transform: translateX(-50%) translateY(0) scale(1);
 }
 
+.rate-limit-banner {
+  position: fixed;
+  top: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 1240;
+  --hint-banner-hidden-transform: translateX(-50%) translateY(8px) scale(0.98);
+  --hint-banner-visible-transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.rate-limit-retry-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 1260;
+  --hint-banner-hidden-transform: translateX(-50%) translateY(8px) scale(0.98);
+  --hint-banner-visible-transform: translateX(-50%) translateY(0) scale(1);
+}
+
 .duplicate-survey-banner {
   position: fixed;
   left: 50%;

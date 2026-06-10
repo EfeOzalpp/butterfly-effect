@@ -11,7 +11,7 @@ import { ROLE_SECTIONS } from "./section-picker/sections";
 import type { RoleSection, SectionItem, SectionOption } from "./section-picker/sections";
 import type { RoleValue } from "./role-picker";
 import { ButtonQuestionnaireFlow, BUTTON_QUESTIONS } from "./questionnaire";
-import { showDuplicateSurveyNotice } from "../app/notices";
+import { showDuplicateSurveyNotice, showRateLimitNotice } from "../app/notices";
 
 import {
   beginUserResponseEditSession,
@@ -289,8 +289,14 @@ export default function Survey({
           ? 'Too many submissions from this network. Please wait a moment and try again.'
           : err.code === 'INVALID_SURVEY_RESPONSE'
             ? 'One of the selected answers could not be saved. Please adjust your answer and try again.'
-            : `We could not save your response. (${err.code ?? err.status})`
+            : `We could not save your response. (${String(err.code ?? err.status)})`
         : 'We could not save your response. Please try again.';
+      if (err instanceof EdgeFunctionError && err.code === 'RATE_LIMITED') {
+        showRateLimitNotice({
+          message: submitErrorMessage,
+          resetAt: err.resetAt,
+        });
+      }
       // If saving failed, allow returning to questions
       removeSessionItems([
         'be.myEntryId',
