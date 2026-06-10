@@ -2,6 +2,7 @@ import type { ShapeDrawOptions, ShapeStyleOptions } from "../../shapes/types";
 
 export type RuntimeStyleOptions = Omit<ShapeStyleOptions, "palette"> & {
   palette?: never;
+  gradientRGBOverrideActive?: boolean;
 };
 
 // Runtime creates these options for shape draw functions every frame.

@@ -3,4 +3,5 @@
 // Light pass owns scene-level overlays. Shape-local highlights are not drawn
 // here; runtime passes lightCtx into shapes, and shapes draw their own color-mode
 // light response from that input.
-export { createRowLightCache, drawRowTopLightOverlay } from "./rowLight";
+export { createRowLightCache } from "./cache";
+export { drawRowTopLightOverlay } from "./rowLight";

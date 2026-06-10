@@ -2,14 +2,14 @@
 
 import { currentViewportDeviceType, getLandscapeCountScale, type DeviceType } from "../shared/responsiveness";
 import { resolvePaddingSpec } from "../scene-rules/canvas-padding";
-import { makeCenteredSquareGrid } from "../grid-layout/buildGrid";
+import { makeCenteredSquareGrid, usedRowsFromSpec } from "../grid-layout/buildGrid";
 import { SHAPES } from "../scene-rules/shapeCatalog";
 import { footprintForShape } from "../scene-rules/shapeFootprints";
 import { stableItemId, interpolatePct } from "../scene-rules/placement-rules/index";
 import type { DeviceCount, PlacementZone, PointPlacement } from "../scene-rules/placement-rules/index";
 
 import type { ComposeOpts, ComposeResult, PoolItem } from "./types";
-import { clamp01, usedRowsFromSpec } from "./math";
+import { clamp01 } from "./math";
 import { placePoolItems } from "./place";
 
 const CENTER_PLACEMENT_KEY = -2000;

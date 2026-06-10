@@ -1,1 +1,2 @@
-export { createFoliageLayerCache } from "./foliage";
+export { createFoliageLayerCache } from "./cache";
+export { drawFoliageLayer } from "./foliage";

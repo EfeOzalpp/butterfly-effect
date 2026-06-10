@@ -9,3 +9,6 @@ export type {
 } from './types';
 
 export { composeField } from './composeField';
+export { resolveAuthoredLightSource } from './resolveAuthoredLightSource';
+export { resolveRuntimePlacements } from './resolveRuntimePlacements';
+export type { SceneShapeLightSource } from './shapeLightSource';

@@ -53,12 +53,16 @@ export interface EngineSceneSource {
   getProfile: () => EngineSceneProfile;
 }
 
+export interface EngineSetFieldItemsOptions {
+  replayAppear?: boolean;
+}
+
 export interface EngineControls {
   // inbound signals provided by outside of engine to drive movement on shapes
   setInputs: (args?: EngineInputsPayload) => void;
 
   // field payload
-  setFieldItems: (nextItems?: EngineFieldItem[]) => void;
+  setFieldItems: (nextItems?: EngineFieldItem[], options?: EngineSetFieldItemsOptions) => void;
   setFieldStyle: (args?: EngineFieldStyle) => void;
   setFieldVisible: (v: boolean) => void;
 

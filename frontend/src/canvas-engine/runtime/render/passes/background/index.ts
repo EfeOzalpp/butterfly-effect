@@ -3,4 +3,5 @@
 // Background pass owns the static scene base: base color, gradients, and anchors.
 // Animated atmosphere like stars is exported from the atmosphere pass.
 export { createBackgroundAnchorContext } from "./anchors";
-export { createBgCache, drawBackground } from "./background";
+export { createBgCache } from "./cache";
+export { drawBackground } from "./background";

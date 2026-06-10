@@ -20,6 +20,10 @@ export function resolveShapeDepthColor(darkMode: boolean): RGB {
     : { r: 246, g: 246, b: 248 };
 }
 
+export function resolveShapeDepthMaxBlend(darkMode: boolean): number {
+  return darkMode ? DEPTH_ALPHA_MAX_DARK : DEPTH_ALPHA_MAX_LIGHT;
+}
+
 function rowHeightDepthK(item: EngineFieldItem, gridMetrics: GridMetrics): number | null {
   const f = item.footprint;
   if (!f || gridMetrics.rowHeights.length < 1) return null;
@@ -62,7 +66,7 @@ export function resolveShapeDepthTint(args: {
   if (!gridMetrics || gridMetrics.rowOffsetY.length < 2) return null;
 
   const farK = rowHeightDepthK(item, gridMetrics) ?? fallbackScreenDepthK({ p, item, gridMetrics });
-  const maxBlend = darkMode ? DEPTH_ALPHA_MAX_DARK : DEPTH_ALPHA_MAX_LIGHT;
+  const maxBlend = resolveShapeDepthMaxBlend(darkMode);
   // Keep the closest band visually clean, then ramp depth more quickly toward the horizon.
   const shapedFarK = clamp01((farK - DEPTH_FRONT_CLEAR_K) / (1 - DEPTH_FRONT_CLEAR_K));
   const blend = Math.pow(shapedFarK, DEPTH_ALPHA_CURVE) * maxBlend * clamp01(shapeAlpha / 255);

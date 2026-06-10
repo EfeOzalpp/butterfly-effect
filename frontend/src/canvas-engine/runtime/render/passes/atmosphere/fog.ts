@@ -7,17 +7,11 @@ import type {
 } from "../../../../scene-rules/fog";
 import type { GridMetrics } from "../../../geometry/gridCache";
 import type { PLike } from "../../../p/makeP";
-import {
-  clearOffscreenEntry,
-  createOffscreenCache,
-  drawCanvasLayer,
-  getOrCreateCanvasLayer,
-} from "../../cache/offscreenCache";
 import { resolveHorizonRow } from "../shared/horizon";
 
 // Frame-ready fog layout. The loop should not recalculate these row boundaries
 // unless the grid or theme changes.
-interface FogState {
+export interface FogState {
   isFlat: boolean;
   fogStartY: number;
   fogCanvasH: number;
@@ -63,7 +57,7 @@ function rgbaString(color: FogColor, alpha: number) {
   return `rgba(${String(color.r)},${String(color.g)},${String(color.b)},${String(clamp01(alpha))})`;
 }
 
-function gradientCacheKey(gradientStops: readonly FogGradientStop[] | null | undefined) {
+export function gradientCacheKey(gradientStops: readonly FogGradientStop[] | null | undefined) {
   if (!gradientStops || gradientStops.length === 0) return "none";
   return gradientStops
     .map((stop) => `${String(stop.k)}:${String(stop.color.r)},${String(stop.color.g)},${String(stop.color.b)}`)
@@ -432,59 +426,7 @@ function drawFlatFog(p: PLike, fog: FogState) {
   });
 }
 
-// Offscreen cache for the whole static fog layer. Shape depth now lives in
-// render/passes/shape/shapeDepthOverlay.ts, so this layer can stay behind all scene objects.
-export function createFogLayerCache() {
-  const cache = createOffscreenCache();
-  let cacheKey = "";
-
-  const drawFogLayerCached = function drawFogLayerCached(p: PLike, fog: FogState | null, compositeAlpha = 1) {
-    if (!fog) return;
-
-    const w = p.width;
-    const h = p.height;
-    const { entry, targetChanged } = getOrCreateCanvasLayer(cache, p);
-    if (targetChanged) cacheKey = "";
-
-    const key = [
-      String(w),
-      String(h),
-      fog.fogStartY.toFixed(1),
-      String(fog.horizonRow),
-      fog.skyLayerAlpha.toFixed(4),
-      String(fog.fogLayerAlpha255),
-      String(fog.fogColor.r),
-      String(fog.fogColor.g),
-      String(fog.fogColor.b),
-      gradientCacheKey(fog.skyFogGradient),
-      gradientCacheKey(fog.groundFogGradient),
-      fog.rowOffsetY.join(","),
-      fog.groundFogLayerBoundaries.join(","),
-    ].join("|");
-
-    if (key !== cacheKey) {
-      clearOffscreenEntry(entry);
-      const fakeP = {
-        drawingContext: entry.ctx,
-        width: entry.bounds.w,
-        height: entry.bounds.h,
-      } as unknown as PLike;
-      drawFogLayer(fakeP, fog);
-      cacheKey = key;
-    }
-
-    drawCanvasLayer(p, entry, compositeAlpha);
-  };
-
-  return Object.assign(drawFogLayerCached, {
-    clear() {
-      cache.clear();
-      cacheKey = "";
-    },
-  });
-}
-
-function drawFogLayer(p: PLike, fog: FogState) {
+export function drawFogLayer(p: PLike, fog: FogState) {
   if (fog.isFlat) {
     drawFlatFog(p, fog);
     return;

@@ -102,7 +102,7 @@ export function EngineHost({
     };
   }, [engine.controls, engine.ready, engine.readyTick, id]);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!engine.ready.current) return;
     engine.controls.current?.setInputs({ liveAvg, spotlight });
   }, [engine, liveAvg, spotlight]);

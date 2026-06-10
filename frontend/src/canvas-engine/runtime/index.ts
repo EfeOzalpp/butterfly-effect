@@ -6,6 +6,7 @@ import type {
   EngineInputsPayload,
   EngineSceneSource,
   EngineSceneProfile,
+  EngineSetFieldItemsOptions,
   StartCanvasEngineOpts,
 } from "./engine/types";
 import type { EngineFieldItem } from "./engine/field";
@@ -165,16 +166,25 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     }
   }
 
-  function setFieldItems(nextItems: EngineFieldItem[] = []) {
+  function setFieldItems(nextItems: EngineFieldItem[] = [], options: EngineSetFieldItemsOptions = {}) {
     const safeNextItems = Array.isArray(nextItems) ? nextItems : [];
     const isRefresh = field.items.length > 0 && safeNextItems.length > 0;
+    const shouldReplayAppear = !isRefresh || options.replayAppear !== false;
     reconcileLiveStatesOnFieldUpdate({
       prevItems: field.items,
       nextItems: safeNextItems,
       liveStates,
       nowMs: p.millis(),
-      appearMs: isRefresh ? Math.min(style.appearMs, FIELD_REFRESH_APPEAR_MS) : style.appearMs,
-      appearStaggerMs: isRefresh ? Math.min(style.appearStaggerMs, FIELD_REFRESH_STAGGER_MS) : style.appearStaggerMs,
+      appearMs: isRefresh
+        ? shouldReplayAppear
+          ? Math.min(style.appearMs, FIELD_REFRESH_APPEAR_MS)
+          : 0
+        : style.appearMs,
+      appearStaggerMs: isRefresh
+        ? shouldReplayAppear
+          ? Math.min(style.appearStaggerMs, FIELD_REFRESH_STAGGER_MS)
+          : 0
+        : style.appearStaggerMs,
     });
 
     field.items = safeNextItems;

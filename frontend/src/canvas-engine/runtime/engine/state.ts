@@ -9,12 +9,9 @@ import type { EngineFieldItem } from "./field";
 import type { LiveState } from "./itemLifecycle";
 import type { SceneSurfaceLifecycleState } from "./sceneSurfaceLifecycle";
 import type { SpotlightSignal } from "../../hooks/signals";
+import type { SceneShapeLightSource } from "../../scene-logic/shapeLightSource";
 
-export interface EngineShapeLightSource {
-  xK: number;
-  yK: number;
-  paletteClosenessK?: number;
-}
+export type EngineShapeLightSource = SceneShapeLightSource;
 
 export interface EngineStyle {
   // Base visual knobs. These are changed through controls.setFieldStyle().

@@ -1,5 +1,5 @@
 import type { RenderCachePolicy } from "../../cache-policy";
-import { createFarShapeBitmapRenderer } from "./shapeBitmapCache";
+import { createFarShapeBitmapRenderer } from "./cache";
 import { createShapeDepthOverlayRenderer } from "./shapeDepthOverlay";
 
 export function createShapeRenderCache(getPolicy: () => RenderCachePolicy) {

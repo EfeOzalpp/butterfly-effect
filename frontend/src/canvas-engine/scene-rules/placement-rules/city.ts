@@ -89,7 +89,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
       {
         id: "city-sun-2",
         band: "sky",
-        center: { x: 0.5, y: 0 },
+        center: { x: 0.52, y: 0 },
         radius: { tiles: 2, xDistort: 1.5, yDistort: 0.8 },
         shapes: {
           sun: { count: count(1, 0, 0), quota: FLAT_QUOTA },
@@ -410,7 +410,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 8, xDistort: 4, yTiles: 2 },
         shapes: {
           trees: { count: count(4, 3, 9), quota: C.trees },
-          sea: { count: count(1, 1, 1), quota: C.sea },
+          sea: { count: count(0, 1, 1), quota: C.sea },
         },
       },
       {
@@ -421,7 +421,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         shapes: {
           trees: { count: count(3, 4, 7), quota: C.trees },
           power: { count: count(1, 1, 1), quota: C.power },
-          sea: { count: count(1, 1, 1), quota: C.sea },
+          sea: { count: count(0, 1, 1), quota: C.sea },
         },
       },
       {
@@ -530,7 +530,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.25, y: 0.85 },
         radius: { tiles: 8, xDistort: 4, yTiles: 2 },
         shapes: {
-          trees: { count: count(0, 0, 4), quota: C.trees },
+          trees: { count: count(0, 0, 5), quota: C.trees },
         },
       },
       {
@@ -557,21 +557,21 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
       {
         id: "ground-1",
         band: "ground",
-        center: { x: 0.5, y: 0.6 },
+        center: { x: 0.4, y: 0.6 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.6 },
         shapes: {
           house: { count: count(1, 1, 2), quota: C.house },
-          villa: { count: count(1, 1, 1), quota: C.villa },
+          villa: { count: count(1, 1, 2), quota: C.villa },
         },
       },
       {
         id: "ground-2",
         band: "ground",
-        center: { x: 0.4, y: 0.5 },
+        center: { x: 0.5, y: 0.5 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.6 },
         shapes: {
           house: { count: count(1, 1, 2), quota: C.house },
-          villa: { count: count(1, 1, 1), quota: C.villa },
+          villa: { count: count(1, 1, 2), quota: C.villa },
           car: { count: count(1, 1, 2), quota: C.car },
           carFactory: { count: count(1, 1, 1), quota: C.carFactory },
         },
@@ -582,7 +582,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.6, y: 0.65 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.6 },
         shapes: {
-          house: { count: count(1, 1, 1), quota: C.house },
+          house: { count: count(0, 1, 1), quota: C.house },
           villa: { count: count(1, 1, 2), quota: C.villa },
           car: { count: count(1, 1, 1), quota: C.car },
         },
@@ -590,10 +590,10 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
       {
         id: "ground-4",
         band: "ground",
-        center: { x: 0.4, y: 0.7 },
+        center: { x: 0.35, y: 0.7 },
         radius: { tiles: 4, xDistort: 4, yTiles: 1 },
         shapes: {
-          house: { count: count(1, 0, 2), quota: C.house },
+          house: { count: count(0, 0, 2), quota: C.house },
           villa: { count: count(1, 1, 3), quota: C.villa },
           bus: { count: count(1, 1, 2), quota: C.bus },
         },
@@ -601,7 +601,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
       {
         id: "ground-5",
         band: "ground",
-        center: { x: 0.7, y: 0.75 },
+        center: { x: 0.75, y: 0.75 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.6 },
         shapes: {
           house: { count: count(1, 1, 1), quota: C.house },
@@ -626,7 +626,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
       {
         id: "ground-7",
         band: "ground",
-        center: { x: 0.5, y: 1 },
+        center: { x: 0.55, y: 1 },
         radius: { tiles: 4, xDistort: 4, yTiles: 1 },
         shapes: {
           house: { count: count(0, 1, 0), quota: C.house },
@@ -641,7 +641,7 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.4, y: 0.3 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.6 },
         shapes: {
-          house: { count: count(2, 3, 1), quota: C.house },
+          house: { count: count(0, 3, 1), quota: C.house },
           villa: { count: count(2, 2, 3), quota: C.villa },
           bus: { count: count(1, 1, 1), quota: C.bus },
         },
@@ -649,23 +649,23 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
       {
         id: "ground-4",
         band: "ground",
-        center: { x: 0.6, y: 0.4 },
+        center: { x: 0.55, y: 0.4 },
         radius: { tiles: 4, xDistort: 4, yTiles: 1 },
         shapes: {
-          house: { count: count(2, 1, 2), quota: C.house },
+          house: { count: count(1, 1, 2), quota: C.house },
           villa: { count: count(2, 1, 2), quota: C.villa },
           car: { count: count(1, 1, 1), quota: C.car },
-          carFactory: { count: count(1, 1, 1), quota: C.carFactory },
+          carFactory: { count: count(0, 1, 1), quota: C.carFactory },
         },
       },
       {
         id: "ground-5",
         band: "ground",
-        center: { x: 0.7, y: 0.3 },
+        center: { x: 0.65, y: 0.3 },
         radius: { tiles: 4, xDistort: 4, yTiles: 0.6 },
         shapes: {
-          house: { count: count(2, 1, 1), quota: C.house },
-          villa: { count: count(1, 2, 2), quota: C.villa },
+          house: { count: count(2, 1, 2), quota: C.house },
+          villa: { count: count(1, 2, 3), quota: C.villa },
         },
       },
       {
@@ -674,8 +674,8 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.55, y: 0.2 },
         radius: { tiles: 4, xDistort: 4, yTiles: 1 },
         shapes: {
-          house: { count: count(2, 2, 1), quota: C.house },
-          villa: { count: count(2, 3, 3), quota: C.villa },
+          house: { count: count(1, 1, 1), quota: C.house },
+          villa: { count: count(2, 3, 4), quota: C.villa },
           car: { count: count(1, 1, 1), quota: C.car },
         },
       },
@@ -685,8 +685,8 @@ export const CITY_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.6, y: 0.1 },
         radius: { tiles: 4, xDistort: 4, yTiles: 1 },
         shapes: {
-          house: { count: count(0, 1, 0), quota: C.house },
-          villa: { count: count(1, 2, 2), quota: C.villa },
+          house: { count: count(0, 1, 1), quota: C.house },
+          villa: { count: count(1, 2, 3), quota: C.villa },
           bus: { count: count(1, 1, 1), quota: C.bus },
         },
       },
