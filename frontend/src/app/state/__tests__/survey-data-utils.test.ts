@@ -1,6 +1,7 @@
 import { filterRowsForSection, deriveSectionCounts } from "../survey-data-utils";
+import type { SurveyRow } from "../../../services/sanity/types";
 
-const makeRow = (section: string) => ({
+const makeRow = (section: string): SurveyRow => ({
   _id: `${section}-id`,
   section,
   q1: 0.5, q2: 0.5, q3: 0.5, q4: 0.5, q5: 0.5,
@@ -10,7 +11,7 @@ const makeRow = (section: string) => ({
   weights: { question1: 0.5, question2: 0.5, question3: 0.5, question4: 0.5, question5: 0.5 },
 });
 
-const rows = [
+const rows: SurveyRow[] = [
   makeRow("design"),
   makeRow("design"),
   makeRow("fine-arts"),
@@ -19,35 +20,37 @@ const rows = [
 
 describe("filterRowsForSection", () => {
   test("'all' returns all rows", () => {
-    expect(filterRowsForSection(rows as any, "all")).toHaveLength(4);
+    expect(filterRowsForSection(rows, "all")).toHaveLength(4);
   });
 
   test("empty string returns all rows", () => {
-    expect(filterRowsForSection(rows as any, "")).toHaveLength(4);
+    expect(filterRowsForSection(rows, "")).toHaveLength(4);
   });
 
   test("specific section filters correctly", () => {
-    const result = filterRowsForSection(rows as any, "design");
+    const result = filterRowsForSection(rows, "design");
     expect(result).toHaveLength(2);
-    result.forEach((r) => expect(r.section).toBe("design"));
+    result.forEach((r) => {
+      expect(r.section).toBe("design");
+    });
   });
 
   test("unknown section returns empty array", () => {
-    expect(filterRowsForSection(rows as any, "nonexistent")).toHaveLength(0);
+    expect(filterRowsForSection(rows, "nonexistent")).toHaveLength(0);
   });
 });
 
 describe("deriveSectionCounts", () => {
   test("'all' count equals total rows", () => {
-    const counts = deriveSectionCounts(rows as any);
+    const counts = deriveSectionCounts(rows);
     expect(counts.all).toBe(4);
   });
 
   test("counts per section are correct", () => {
-    const counts = deriveSectionCounts(rows as any);
-    expect(counts["design"]).toBe(2);
+    const counts = deriveSectionCounts(rows);
+    expect(counts.design).toBe(2);
     expect(counts["fine-arts"]).toBe(1);
-    expect(counts["visitor"]).toBe(1);
+    expect(counts.visitor).toBe(1);
   });
 
   test("empty array produces zero counts", () => {
