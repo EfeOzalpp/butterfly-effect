@@ -56,10 +56,10 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
     id: 'q5',
     prompt: 'How do you handle waste at home?',
     options: [
-      { key: 'A', label: 'Compost',        weight: 1.0  },
+      { key: 'A', label: 'Compost often',        weight: 1.0  },
       { key: 'B', label: 'Sort carefully', weight: 0.75 },
-      { key: 'C', label: 'Recycle',        weight: 0.5  },
-      { key: 'D', label: 'Sometimes',      weight: 0.25 },
+      { key: 'C', label: 'Recycle at times',        weight: 0.5  },
+      { key: 'D', label: 'Sometimes do',      weight: 0.25 },
       { key: 'E', label: 'Toss all',       weight: 0.0  },
     ],
   },
