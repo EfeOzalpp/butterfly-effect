@@ -181,8 +181,11 @@ export default function useOrbitController(params: OrbitParams = {}): OrbitRetur
 
   const latestInitialTargetRef = useRef(initialTargetComputed);
   const latestResetZoomTargetRef = useRef(resetZoomTarget);
-  latestInitialTargetRef.current = initialTargetComputed;
-  latestResetZoomTargetRef.current = resetZoomTarget;
+
+  useLayoutEffect(() => {
+    latestInitialTargetRef.current = initialTargetComputed;
+    latestResetZoomTargetRef.current = resetZoomTarget;
+  }, [initialTargetComputed, resetZoomTarget]);
 
   useLayoutEffect(() => {
     camera.position.set(0, 0, radius);

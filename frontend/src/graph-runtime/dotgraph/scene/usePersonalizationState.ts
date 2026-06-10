@@ -39,7 +39,7 @@ interface UsePersonalizationStateParams {
 
 export default function usePersonalizationState({
   personalizedEntryId,
-  sectionKey,
+  sectionKey: _sectionKey,
   bagSeed,
   shapes,
   dataById,

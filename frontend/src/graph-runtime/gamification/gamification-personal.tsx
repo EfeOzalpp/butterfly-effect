@@ -5,6 +5,7 @@ import CloseIcon from '../../assets/svg/close/CloseIcon';
 
 import "../../styles/gamification.css";
 
+import { getSessionItem } from "../../app/session";
 import { useOptionalPreferences } from "../../app/state/preferences-context";
 import { useOptionalUiFlow } from "../../app/state/ui-context";
 import HintBanner from "../../app/ui/HintBanner";
@@ -126,13 +127,25 @@ export default function GamificationPersonalized({
 
   const safePct = Math.max(0, Math.min(100, Math.round(Number(percentage) || 0)));
   const entryId = userData?._id ?? 'me';
+  const editToken = getSessionItem('be.myEditToken');
+  const messageStateKey = editToken ? `edit:${editToken}` : `entry:${entryId}`;
   const sourceSoloMessage = typeof userData?.soloMessage === 'string' ? userData.soloMessage : '';
   const savedSoloMessage =
-    savedMessageOverride?.entryId === entryId ? savedMessageOverride.value : sourceSoloMessage;
-  const draftForEntry = draftState?.entryId === entryId ? draftState : null;
+    savedMessageOverride?.entryId === messageStateKey || savedMessageOverride?.entryId === entryId
+      ? savedMessageOverride.value
+      : sourceSoloMessage;
+  const draftForEntry = draftState?.entryId === messageStateKey || draftState?.entryId === entryId
+    ? draftState
+    : null;
   const messageDraft = draftForEntry?.dirty ? draftForEntry.value : savedSoloMessage;
-  const currentMessageStatus = messageStatus?.entryId === entryId ? messageStatus.state : 'idle';
-  const messageError = messageStatus?.entryId === entryId ? messageStatus.error : '';
+  const currentMessageStatus =
+    messageStatus?.entryId === messageStateKey || messageStatus?.entryId === entryId
+      ? messageStatus.state
+      : 'idle';
+  const messageError =
+    messageStatus?.entryId === messageStateKey || messageStatus?.entryId === entryId
+      ? messageStatus.error
+      : '';
   const normalizedDraft = messageDraft.trim().replace(/\s+/g, ' ');
   const normalizedSavedMessage = savedSoloMessage.trim().replace(/\s+/g, ' ');
   const canSaveSoloMessage = Boolean(
@@ -150,19 +163,18 @@ export default function GamificationPersonalized({
     event.stopPropagation();
     if (saveMessageDisabled) return;
 
-    setMessageStatus({ entryId, state: 'saving', error: '' });
+    setMessageStatus({ entryId: messageStateKey, state: 'saving', error: '' });
     try {
       const updated = await saveSoloMessage(messageDraft);
       const next = updated.soloMessage ?? '';
-      const nextEntryId = updated._id || entryId;
-      setSavedMessageOverride({ entryId: nextEntryId, value: next });
-      setDraftState({ entryId: nextEntryId, value: next, dirty: false });
-      setMessageStatus({ entryId: nextEntryId, state: 'saved', error: '' });
+      setSavedMessageOverride({ entryId: messageStateKey, value: next });
+      setDraftState({ entryId: messageStateKey, value: next, dirty: false });
+      setMessageStatus({ entryId: messageStateKey, state: 'saved', error: '' });
       showSavedNotice();
     } catch (error) {
       console.error('[GamificationPersonalized] save solo message failed:', error);
       setMessageStatus({
-        entryId,
+        entryId: messageStateKey,
         state: 'error',
         error: error instanceof Error ? error.message : 'Message could not be saved.',
       });
@@ -265,13 +277,7 @@ export default function GamificationPersonalized({
       onPointerEnter={onPanelEnter}
       onTouchStart={onPanelEnter}
       onPointerDownCapture={stopGraphEventPropagation}
-      onPointerMoveCapture={stopGraphEventPropagation}
-      onPointerUpCapture={stopGraphEventPropagation}
-      onPointerCancelCapture={stopGraphEventPropagation}
       onTouchStartCapture={stopGraphEventPropagation}
-      onTouchMoveCapture={stopGraphEventPropagation}
-      onTouchEndCapture={stopGraphEventPropagation}
-      onTouchCancelCapture={stopGraphEventPropagation}
       onWheelCapture={stopGraphEventPropagation}
     >
       <div className="personalized-anchor">
@@ -345,8 +351,8 @@ export default function GamificationPersonalized({
                   onClick={(event) => { event.stopPropagation(); }}
                   onKeyDown={handleSoloMessageKeyDown}
                   onChange={(event) => {
-                    setDraftState({ entryId, value: event.currentTarget.value, dirty: true });
-                    setMessageStatus({ entryId, state: 'idle', error: '' });
+                    setDraftState({ entryId: messageStateKey, value: event.currentTarget.value, dirty: true });
+                    setMessageStatus({ entryId: messageStateKey, state: 'idle', error: '' });
                     hideSavedNotice();
                   }}
                 />
