@@ -18,6 +18,16 @@ function itemScreenY(item: EngineFieldItem, gridMetrics?: GridMetrics): number {
   return gridMetrics.rowOffsetY[bottomRow] ?? item.y;
 }
 
+const SEA_OVER_SAME_ROW_SHAPES = new Set(["house", "trees", "villa"]);
+
+function compareSeaSameRowTie(a: EngineFieldItem, b: EngineFieldItem): number {
+  const aSeaOverShape = a.shape === "sea" && SEA_OVER_SAME_ROW_SHAPES.has(b.shape);
+  const bSeaOverShape = b.shape === "sea" && SEA_OVER_SAME_ROW_SHAPES.has(a.shape);
+  if (aSeaOverShape) return 1;
+  if (bSeaOverShape) return -1;
+  return 0;
+}
+
 // Painter order follows projected depth. Screen Y is only a same-depth tie-breaker.
 function compareItemsForRender(
   a: EngineFieldItem,
@@ -31,6 +41,9 @@ function compareItemsForRender(
   const ya = itemScreenY(a, gridMetrics);
   const yb = itemScreenY(b, gridMetrics);
   if (ya !== yb) return ya - yb;
+
+  const seaSameRowTie = compareSeaSameRowTie(a, b);
+  if (seaSameRowTie !== 0) return seaSameRowTie;
 
   return a.id.localeCompare(b.id);
 }
