@@ -1,66 +1,39 @@
 # Ambient Particles
 
-Ambient particles are optional scene-level motion layers. They are for dust,
-pollen, wind flecks, or similar air texture that should not belong to a shape.
+Ambient particle rules define scene-level live particles such as dust, pollen, wind flecks, and rain streaks.
 
-They are intentionally separate from `fog` and `foliage`:
+## Important Files
 
-- `fog` changes the scene atmosphere and light diffusion.
-- `foliage` is currently a static flat decorative layer.
-- `ambient-particles` draws lightweight animated particles over the background.
+- `types.ts` - layer and scene spec contracts.
+- `index.ts` - exports `AMBIENT_PARTICLES` and `AMBIENT_PARTICLES_DARK`.
 
-## Basic Shape
+## Call Tree
 
-```ts
-const busAmbientParticles = {
-  layers: [
-    {
-      count: [18, 34],
-      xRange: [0.08, 0.92],
-      yRange: [0.18, 0.82],
-      sizePx: [1, 2.4],
-      speedX: [4, 10],
-      speedY: [-2, 4],
-      color: [
-        { color: "rgb(255, 255, 230)", alpha: 0.18 },
-        { color: "rgb(190, 220, 200)", alpha: 0.12 },
-      ],
-      seed: 12,
-    },
-  ],
-};
+```txt
+scene-rules/resolver
+  -> AMBIENT_PARTICLES or AMBIENT_PARTICLES_DARK[sceneLookup]
+     -> EngineSceneProfile.ambientParticles
+        -> engine/loop.ts runtime variant resolver
+           -> render/passes/ambient-particles
+              -> live draw every frame
 ```
 
-## Fields
+## Contracts
 
-- `shape`: `"dot"` by default; use `"rain"` for slanted rain streaks.
-- `count`: Fixed count or `[low, high]` controlled by `liveAvg`.
-- `xRange`: Horizontal normalized range. `0` is left, `1` is right.
-- `yRange`: Vertical normalized range. `0` is top, `1` is bottom.
-- `sizePx`: Particle radius range in pixels.
-- `lengthPx`: Rain streak length range.
-- `slantPx`: Rain streak horizontal slant range. Positive values move down-right; negative values move down-left.
-- `lineWidthPx`: Rain stroke width range.
-- `speedX`: Horizontal motion speed range in pixels per second.
-- `speedY`: Vertical motion speed range in pixels per second.
-- `color`: One color or a rotating list of color stops.
-- `alpha`: Optional fallback alpha for string colors.
-- `seed`: Stable authored seed so motion remains deterministic.
-
-## Spotlight Variants
-
-Spotlight slides can own their own ambient particles:
+External lookup:
 
 ```ts
-export const busSlide = {
-  id: "bus",
-  shape: "bus",
-  background,
-  darkBackground,
-  ambientParticles: busAmbientParticles,
-  padding,
-  placement,
-};
+AMBIENT_PARTICLES: Record<SceneLookupKey, AmbientParticlesSceneSpec | null>
+AMBIENT_PARTICLES_DARK: Record<SceneLookupKey, AmbientParticlesSceneSpec | null>
 ```
 
-Slides without `ambientParticles` render none.
+Spec schema:
+
+```ts
+AmbientParticlesSceneSpec {
+  layers: readonly AmbientParticleLayerSpec[]
+  variants?: readonly (AmbientParticlesSceneSpec | null)[]
+}
+```
+
+Rule: ambient particles stay live. Do not route time-based particle movement through offscreen pass caches.

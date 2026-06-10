@@ -1,28 +1,67 @@
 # Render Passes
 
-The engine loop imports from these pass folders so the frame pipeline stays readable.
+Render passes own visual layers. Draw files describe how a layer is made; adjacent `cache.ts` files decide when that layer can be reused.
 
-`../cache/`
-Owns shared offscreen canvas cache mechanics. Pass folders still decide keys, bounds, bake behavior, and draw behavior.
+## Important Files
 
-`background/`
-Draws the static scene base: base color, gradients, anchors, and cached background fills.
+- `background/` - base color, gradients, background anchors, live stars, and background cache. Upstream: `engine/loop.ts`; authored by `scene-rules/backgrounds`.
+- `atmosphere/` - fog state/layer cache and star geometry. Upstream: `engine/loop.ts`; authored by `scene-rules/fog`.
+- `foliage/` - plant-detail draw and cache layer. Upstream: `engine/loop.ts`; authored by `scene-rules/foliage`.
+- `light/` - scene-wide row light overlay and cache. Upstream: `engine/loop.ts`; input: `SceneLightContext`.
+- `shape/` - item order, item lifecycle draw pass, palette cache, shape render cache, and depth overlays. Upstream: `engine/loop.ts`; downstream: `shape-adapter`.
+- `ambient-particles/` - live scene particles. Upstream: `engine/loop.ts`; authored by `scene-rules/ambient-particles`.
+- `shared/` - helpers used by multiple passes.
 
-`atmosphere/`
-Draws air-like effects that sit behind scene objects right now: stars and fog washes.
+## Call Tree
 
-`ambient-particles/`
-Draws scene-level animated particles such as dust, pollen, wind flecks, or rain streaks.
+```txt
+engine/loop.ts
+  -> background/cache.ts
+     hit: blit base layer
+     miss: background.ts draws base/gradient layer once
 
-`foliage/`
-Draws optional static plant-detail layers from scene rules.
+  -> background.drawBackgroundStarsOnly
+     live every frame
 
-`light/`
-Draws scene-wide light overlays. Per-shape light response still belongs inside the shape color pass.
+  -> foliage/cache.ts
+     hit: blit foliage layer
+     miss: foliage.ts draws plant layer once
 
-`shape/`
-Draws scene items. This is where item ordering, the shape gradient cache,
-far-shape bitmap caching, and depth mask overlays live.
+  -> atmosphere/cache.ts
+     hit: blit fog layer
+     miss: fog.ts draws fog bands once
 
-`shared/`
-Small helpers used by multiple passes. These are not a pass by themselves.
+  -> light/cache.ts
+     hit: blit row-light layer
+     miss: rowLight.ts draws row-light overlay once
+
+  -> shape/items.ts
+     receives sorted items from engine
+     adds per-item runtime options
+     asks shape cache or shape adapter to draw each item
+
+  -> ambient-particles
+     live every frame because particle positions are time-based
+```
+
+## Contracts
+
+External API:
+
+```ts
+createBgCache()
+createFogLayerCache()
+createFoliageLayerCache()
+createRowLightCache()
+createShapeRenderCache(getPolicy)
+drawItems(params)
+```
+
+Internal cache contract:
+
+```txt
+cache.ts owns cache key + offscreen reuse
+draw file owns visual construction
+render/cache owns generic canvas storage
+render/cache-policy owns runtime budgets and opt-outs
+```

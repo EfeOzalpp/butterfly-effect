@@ -1,61 +1,49 @@
 # Render Cache Policy
 
-Render cache policy describes what the runtime may cache and what must stay live.
+Cache policy owns runtime knobs for what may cache, how much memory it may use, and how quickly missing entries may bake.
 
-This belongs to runtime because it controls frame cost, cache memory, bake
-budgets, and shape pass reuse. It is not authored scene content like placement,
-backgrounds, fog, or ambient particles.
+## Important Files
 
-## Default Policy
+- `types.ts` - `RenderCachePolicy`, `FarShapeBitmapCachePolicy`, and `ShapeDepthMaskCachePolicy`.
+- `index.ts` - `DEFAULT_RENDER_CACHE_POLICY` and always-live shape lists. Upstream: scene profile resolution; downstream: `shapeRenderCache`.
 
-```ts
-export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
-  farShapeBitmap: {
-    enabled: true,
-    farSizeK: 0.5,
-    maxPixelsPerCanvasPixel: 3,
-    maxBakesPerFrame: 24,
-    alwaysLiveShapes: ["snow", "power", "sun", "house"],
-  },
-  shapeDepthMask: {
-    maxPixelsPerCanvasPixel: 5,
-    maxBakesPerFrame: 32,
-    minBlend: 0.08,
-    alwaysLiveShapes: ["power"],
-  },
-};
+## Call Tree
+
+```txt
+scene-rules/resolver
+  -> SceneProfile.renderCache
+     -> runtime/index.ts setSceneProfile
+        -> engine/loop.ts createShapeRenderCache(() => profile.renderCache)
+           -> farShapeBitmap policy
+           -> shapeDepthMask policy
 ```
 
-## Far Shape Bitmap Cache
+## Contracts
 
-Far-shape bitmap caching freezes small distant shapes after their first stable
-draw.
+External API:
 
-Use it for:
+```ts
+RenderCachePolicy {
+  farShapeBitmap: {
+    enabled
+    farSizeK
+    maxPixelsPerCanvasPixel
+    maxBakesPerFrame
+    alwaysLiveShapes
+  }
+  shapeDepthMask: {
+    maxPixelsPerCanvasPixel
+    maxBakesPerFrame
+    minBlend
+    alwaysLiveShapes
+  }
+}
+```
 
-- tiny background buildings
-- far cars
-- static decorative objects
+Default lookup:
 
-Avoid it for:
+```ts
+DEFAULT_RENDER_CACHE_POLICY
+```
 
-- particle-heavy shapes
-- shapes with visible continuous animation
-- environment lights
-
-## Shape Depth Mask Cache
-
-Depth masks are cached separately from the color pass. That lets animated color
-details keep moving while the depth tint layer avoids rebuilding every frame.
-
-`maxBakesPerFrame` controls warmup pressure. A lower number spreads work over
-more frames; a higher number warms faster but can spike startup or filter
-changes.
-
-## Field Meanings
-
-- `farSizeK`: screen-size threshold for bitmap caching.
-- `maxPixelsPerCanvasPixel`: memory budget scaled by visible canvas size.
-- `maxBakesPerFrame`: per-frame cache bake budget.
-- `alwaysLiveShapes`: opt-out list for shapes that should not be cached by that policy.
-- `minBlend`: skip depth overlays below this visible contribution.
+Rule: policy does not draw and does not build keys. It only tells cache strategies what they are allowed to reuse.

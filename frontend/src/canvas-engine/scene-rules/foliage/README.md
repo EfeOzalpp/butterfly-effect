@@ -1,32 +1,40 @@
-# Foliage Scene Rules
+# Foliage Rules
 
-Foliage rules describe optional background plant detail. They are independent
-from fog: disabling fog should not remove foliage, and adding foliage should not
-add haze or depth wash.
+Foliage rules define optional static plant-detail layers that sit behind/around the scene.
 
-```ts
-const FOLIAGE_START_DARK: FoliageSceneSpec = {
-  layers: [
-    {
-      count: [24, 48],
-      yK: { anchor: "visualHorizon", offset: 0.03 },
-      xRange: [0.05, 0.95],
-      heightPx: [10, 28],
-      widthPx: [3, 7],
-      color: [
-        { color: "rgb(90, 128, 104)", alpha: 0.34 },
-        { color: "rgb(72, 110, 96)", alpha: 0.28 },
-      ],
-      seed: 14,
-    },
-  ],
-};
+## Important Files
+
+- `types.ts` - foliage color, layer, scene, and lookup contracts.
+- `index.ts` - exports authored `FOLIAGE` and `FOLIAGE_DARK` tables.
+
+## Call Tree
+
+```txt
+scene-rules/resolver
+  -> FOLIAGE or FOLIAGE_DARK[sceneLookup]
+     -> EngineSceneProfile.foliage
+        -> engine/loop.ts runtime variant resolver
+           -> render/passes/foliage/cache.ts
+              hit: blit foliage layer
+              miss: foliage.ts redraws plant layer once
 ```
 
-`yK` uses the same anchor syntax as background stops. Use
-`"visualHorizon"` or `{ anchor: "visualHorizon", offset: 0.04 }` when the
-foliage should follow the authored sky/ground split.
+## Contracts
 
-`count` may be fixed or a `[low, high]` range driven by the engine live average.
-The renderer keeps generated positions stable and only changes how many
-precomputed foliage pieces are drawn.
+External lookup:
+
+```ts
+FOLIAGE: Record<SceneLookupKey, FoliageSceneSpec | null>
+FOLIAGE_DARK: Record<SceneLookupKey, FoliageSceneSpec | null>
+```
+
+Spec schema:
+
+```ts
+FoliageSceneSpec {
+  layers: readonly FoliageLayerSpec[]
+  variants?: readonly (FoliageSceneSpec | null)[]
+}
+```
+
+Rule: foliage is authored scene detail. Runtime may cache its rendered layer because the layer is static between scene/theme/anchor/liveAvg changes.

@@ -1,28 +1,77 @@
 # Engine
 
-This folder owns the runtime engine core. It is not the art layer. It should mostly coordinate state, scheduling, lifecycle, and the frame loop.
+Engine owns runtime state, controls contracts, scheduling, lifecycle, and the frame loop. It coordinates rendering but does not own art rules or pass-specific cache strategy.
 
-Files:
+## Important Files
+
+- `types.ts` - public controls and start options. Upstream: `runtime/index.ts`; downstream: host code.
+- `state.ts` - runtime defaults and mutable state shape. Upstream: `runtime/index.ts`; downstream: `loop.ts`.
+- `field.ts` - item payload consumed by render passes.
+- `loop.ts` - per-frame orchestration and pass order.
+- `shapeFrameOptions.ts` - base shape option assembly and shape light item resolution.
+- `environmentLight.ts` - environment light source lookup for fog/atmosphere effects.
+- `runtimeSceneVariants.ts` - spotlight variant selection for runtime scene specs.
+- `itemLifecycle.ts` and `sceneSurfaceLifecycle.ts` - item and scene appear state.
+- `scheduler.ts` - requestAnimationFrame registration and cleanup.
+
+## Call Tree
 
 ```txt
-types.ts            public engine controls and start options
-field.ts            shape item payload consumed by the renderer
-state.ts            engine-owned default state factories
-loop.ts             per-frame orchestration
-scheduler.ts        shared frame scheduling
-itemLifecycle.ts    appear/replay lifecycle for field items
-sceneSurfaceLifecycle.ts
-                    first-ready appear lifecycle for the canvas surface
+createEngineTicker(deps)
+  -> create long-lived caches
+     background, row light, fog, stars, foliage, palette, shape render
+
+tick(now)
+  -> prepareSceneFrame(now)
+     -> resolve scene profile and spotlight variants
+     -> compute/reuse grid metrics
+     -> resolve anchors, environment light, fog state
+
+  -> render scene passes
+     background cache -> live stars -> foliage cache -> fog cache -> debug grid
+
+  -> prepareShapeFrame(sceneFrame)
+     -> resolve gradient color through palette cache
+     -> sort field items only when items/grid metrics changed
+     -> create SceneLightContext
+     -> create base RuntimeShapeOptions
+
+  -> render shape passes
+     row-light cache -> drawItems(sortedItems, baseOpts) -> live ambient particles
 ```
 
-Rule of thumb:
+Shape item path:
 
-Public caller-facing contracts live in `types.ts`.
-The item payload lives in `field.ts`.
-Mutable runtime defaults live in `state.ts`.
-Frame-only helper types can stay local to `loop.ts`. Runtime ownership contracts
-should live with the runtime folder that owns them; `loop.ts` composes those into
-its inbound deps.
-Mount creation and active mount ownership live in `platform/mount.ts`, not here.
+```txt
+drawItems
+  -> append lifecycle, identity, occurrence index, alpha, footprint
+  -> renderOneSandboxed
+     -> ask shape cache to draw/reuse color pass
+     -> if cache declined, call shape-adapter live
+     -> draw/reuse shape depth overlay
+```
 
-If a type is only needed by one helper, keep it in that helper. Move it here only when it becomes part of the engine contract.
+## Contracts
+
+External API:
+
+```ts
+EngineControls {
+  setFieldItems(items, options?)
+  setFieldVisible(visible)
+  setFieldStyle(style)
+  setInputs(inputs)
+  setSceneProfile(profile)
+  resize()
+  destroy()
+}
+```
+
+Internal frame contract:
+
+```ts
+SceneFrameContext -> shared scene/grid/fog/background state
+ShapeFrameContext -> SceneFrameContext + sortedItems + sceneLight + baseOpts
+```
+
+Rule: `loop.ts` should orchestrate prepared state. If a helper owns stable inputs or cache identity, keep that helper outside the loop.
