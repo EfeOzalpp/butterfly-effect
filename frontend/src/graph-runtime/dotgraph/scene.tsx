@@ -68,12 +68,11 @@ export default function DotGraph() {
   const graphViewKey = useMemo(
     () => [
       section,
-      // Non-observer: key on personalizedEntryId directly so it's stable from the
-      // first render (session has the ID) and doesn't flip when Sanity confirms,
-      // preventing a spurious zoom reset on data arrival.
+      // Non-observer: keep personalized framing stable across the pending id ->
+      // saved Sanity id handoff. Section/view changes still reset the camera.
       // Observer: keep the confirmed-dataset gate so view switches are still detected.
       !observerMode && personalizationGate.personalizedEntryId && personalizationGate.shouldShowPersonalized
-        ? personalizationGate.personalizedEntryId
+        ? 'personalized'
         : isPersonalizedGraphView
           ? personalizationGate.personalizedEntryId ?? 'personalized'
           : 'general',
@@ -217,6 +216,8 @@ export default function DotGraph() {
           spriteScale={spriteScale}
           bagSeed={bagSeed}
           myDisplayValue={personalization.myDisplayValue}
+          myScoreValue={personalization.myScoreValue}
+          groupAverageValue={personalization.groupAverageValue}
           mode={mode}
           myStats={personalization.myStats}
           statsLoading={personalization.shouldShowStatsLoading}

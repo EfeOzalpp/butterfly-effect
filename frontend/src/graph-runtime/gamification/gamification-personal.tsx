@@ -31,6 +31,17 @@ function HighlightWord({ children, color }: HighlightWordProps) {
   return <strong style={{ textShadow: `0 0 7px ${color}` }}>{children}</strong>;
 }
 
+function ordinalSuffix(n: number): string {
+  const mod100 = Math.abs(n) % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${String(n)}th`;
+  switch (Math.abs(n) % 10) {
+    case 1: return `${String(n)}st`;
+    case 2: return `${String(n)}nd`;
+    case 3: return `${String(n)}rd`;
+    default: return `${String(n)}th`;
+  }
+}
+
 function stopGraphEventPropagation(event: React.SyntheticEvent<HTMLElement>) {
   event.stopPropagation();
   event.nativeEvent.stopPropagation();
@@ -70,6 +81,8 @@ function classifyBand({ below: b, equal: e, above: a }: { below: number; equal: 
 interface GamificationPersonalizedProps {
   userData: { _id?: string; soloMessage?: string } | null | undefined;
   percentage: number | undefined;
+  score?: number;
+  groupAverage?: number;
   color: string;
   shapeCopy?: string;
   mode?: 'relative' | 'absolute';
@@ -85,6 +98,8 @@ interface GamificationPersonalizedProps {
 export default function GamificationPersonalized({
   userData,
   percentage,
+  score,
+  groupAverage,
   color,
   shapeCopy,
   mode = 'relative',
@@ -126,6 +141,8 @@ export default function GamificationPersonalized({
 
 
   const safePct = Math.max(0, Math.min(100, Math.round(Number(percentage) || 0)));
+  const safeScore = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  const safeGroupAverage = Math.max(0, Math.min(100, Math.round(Number(groupAverage) || 0)));
   const entryId = userData?._id ?? 'me';
   const editToken = getSessionItem('be.myEditToken');
   const messageStateKey = editToken ? `edit:${editToken}` : `entry:${entryId}`;
@@ -318,9 +335,10 @@ export default function GamificationPersonalized({
             {mode === 'relative' ? (
               <>
                 <p className="gam-copy">{relativeLine}</p>
-                <p className="gam-score">
-                  {safePct}
-                  /100
+                <p className="gam-team-story">
+                  Your result is <strong>{safeScore}</strong>. The current group averages{' '}
+                  <strong>{safeGroupAverage}</strong>, placing you in the{' '}
+                  <strong>{ordinalSuffix(safePct)} percentile</strong>.
                 </p>
               </>
             ) : null}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 
 import { sampleStops, rgbString } from '../../../lib/utils/color-and-interpolation';
+import { avgWeightOf } from '../../../lib/utils/score';
 import { getTieStats } from '../../gamification/rankLogic';
 import {
   resolveSpriteIdentity,
@@ -155,6 +156,17 @@ export default function usePersonalizationState({
     getAbsForValue,
   ]);
 
+  const myScoreValue = useMemo(() => {
+    if (!effectiveMyEntry) return 0;
+    return Math.round(avgWeightOf(effectiveMyEntry) * 100);
+  }, [effectiveMyEntry]);
+
+  const groupAverageValue = useMemo(() => {
+    if (!fullData.length) return 0;
+    const total = fullData.reduce((sum, entry) => sum + avgWeightOf(entry), 0);
+    return Math.round((total / fullData.length) * 100);
+  }, [fullData]);
+
   const myStats: DotGraphTieStats =
     effectiveMyEntry && myEntry?._id
       ? getTieStats({ data: fullData, targetId: myEntry._id })
@@ -183,6 +195,8 @@ export default function usePersonalizationState({
     personalSpriteAssignment: personalSprite?.assignment,
     personalSpriteIdentity: personalSprite?.identity,
     myDisplayValue,
+    myScoreValue,
+    groupAverageValue,
     myStats,
     shouldShowStatsLoading,
     shouldRenderPersonalUI,

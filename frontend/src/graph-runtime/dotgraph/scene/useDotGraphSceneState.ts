@@ -26,8 +26,8 @@ interface UseDotGraphSceneStateParams {
   zoomResetKey?: string | number;
 }
 
-const MOBILE_PANEL_X_OFFSET_PX = -112;
-const SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX = -112;
+const MOBILE_PANEL_X_OFFSET_PX = -200;
+const SOLO_MOBILE_PANEL_EXTRA_X_OFFSET_PX = -60;
 const GRAPH_MIN_RADIUS_MOBILE = 2;
 const GRAPH_MIN_RADIUS_DESKTOP = 20;
 const GRAPH_MAX_RADIUS_TOUCH = 800;

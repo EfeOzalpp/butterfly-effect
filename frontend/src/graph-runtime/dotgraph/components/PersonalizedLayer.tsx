@@ -36,6 +36,8 @@ interface PersonalizedLayerProps {
   spriteScale: number;
   bagSeed: string;
   myDisplayValue: number;
+  myScoreValue: number;
+  groupAverageValue: number;
   mode: "absolute" | "relative";
   myStats: DotGraphTieStats;
   statsLoading: boolean;
@@ -222,6 +224,8 @@ export default function PersonalizedLayer({
   spriteScale,
   bagSeed,
   myDisplayValue,
+  myScoreValue,
+  groupAverageValue,
   mode,
   myStats,
   statsLoading,
@@ -299,6 +303,8 @@ export default function PersonalizedLayer({
             <GamificationPersonalized
               userData={effectiveMyEntry}
               percentage={myDisplayValue}
+              score={myScoreValue}
+              groupAverage={groupAverageValue}
               color={effectiveMyShape.color}
               shapeCopy={personalSpriteIdentity?.copy}
               mode={mode}
