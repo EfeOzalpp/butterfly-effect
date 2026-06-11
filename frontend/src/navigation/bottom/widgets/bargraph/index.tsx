@@ -1,14 +1,12 @@
 // ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────
 
-import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { usePreferences } from "../../../../app/state/preferences-context";
 import { useUiFlow } from "../../../../app/state/ui-context";
 import { useIdentity } from "../../../../app/state/identity-context";
 import { useSurveyData } from "../../../../app/state/survey-data-context";
-import { useWindowWidth } from "../../../../lib/hooks/useWindowWidth";
-import { viewportBandForWidth } from "../../../../lib/responsive/breakpoints";
 import { useRelativeScores } from "../../../../lib/hooks/useRelativeScore";
 import { avgWeightOf } from "../../../../lib/utils/score";
 import { CHOOSE_STAFF, CHOOSE_STUDENT, GO_BACK, useGraphPickerData, titleFromId } from "../../../gp-data";
@@ -43,6 +41,40 @@ const orderedColors: BarColor[] = ['green', 'yellow', 'red'];
 const percentValue = (value: number) => `${value.toFixed(4)}%`;
 const AUTOPLAY_MS = 5000;
 
+function colorForScore(score: number): BarColor {
+  if (score <= 50) return 'red';
+  if (score <= 66) return 'yellow';
+  return 'green';
+}
+
+function markerFractionInBucket(rank: number, categories: Categories) {
+  const greenEnd = categories.green;
+  const yellowEnd = greenEnd + categories.yellow;
+
+  if (rank <= greenEnd) {
+    const count = Math.max(1, categories.green);
+    return {
+      color: 'green' as const,
+      fraction: Math.max(0, Math.min(1, (greenEnd - rank + 0.5) / count)),
+    };
+  }
+
+  if (rank <= yellowEnd) {
+    const count = Math.max(1, categories.yellow);
+    return {
+      color: 'yellow' as const,
+      fraction: Math.max(0, Math.min(1, (yellowEnd - rank + 0.5) / count)),
+    };
+  }
+
+  const count = Math.max(1, categories.red);
+  const totalEnd = yellowEnd + categories.red;
+  return {
+    color: 'red' as const,
+    fraction: Math.max(0, Math.min(1, (totalEnd - rank + 0.5) / count)),
+  };
+}
+
 export default function BarGraph({
   navOutsidePanel = false,
   panelClassName,
@@ -53,7 +85,6 @@ export default function BarGraph({
   const { hasCompletedSurvey } = useUiFlow();
   const { myEntryId } = useIdentity();
   const { allRows, loading, section, sectionSelectionVersion } = useSurveyData();
-  const windowWidth = useWindowWidth();
 
   const { ALL_LABELS, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS, counts } = useGraphPickerData(section);
 
@@ -65,8 +96,6 @@ export default function BarGraph({
     sourceSelectionVersion: sectionSelectionVersion,
     value: section,
   });
-
-  const barRefs = useRef<Partial<Record<BarColor, HTMLDivElement | null>>>({});
 
   const localSection =
     localSectionState.sourceSection === section &&
@@ -123,7 +152,7 @@ export default function BarGraph({
     return map;
   }, [safeData]);
 
-  const { getForId: getRelForId } = useRelativeScores(safeData);
+  const { getForId: getRelForId, getCountForId: getBelowCountForId } = useRelativeScores(safeData);
 
   const includesMe = useMemo(
     () => Boolean(myEntryId && dataById.has(myEntryId)),
@@ -198,43 +227,21 @@ export default function BarGraph({
   const youRank = useMemo(() => {
     if (!canShowYou || totalCount === 0) return null;
     if (totalCount === 1) return 1;
-    return Math.max(1, Math.min(totalCount, Math.round((1 - youPercentile / 100) * (totalCount - 1)) + 1));
-  }, [canShowYou, youPercentile, totalCount]);
+    const below = myEntryId ? getBelowCountForId(myEntryId) : 0;
+    return Math.max(1, Math.min(totalCount, totalCount - below));
+  }, [canShowYou, getBelowCountForId, myEntryId, totalCount]);
 
   const youAbsoluteBar: BarColor | null = useMemo(() => {
     if (!canShowYou) return null;
     const me = myEntryId ? dataById.get(myEntryId) : null;
-    const score = me ? Math.round(avgWeightOf(me) * 100) : 0;
-    if (score <= 33) return 'red';
-    if (score <= 60) return 'yellow';
-    return 'green';
+    const score = me ? Math.floor(avgWeightOf(me) * 100) : 0;
+    return colorForScore(score);
   }, [canShowYou, dataById, myEntryId]);
 
-  const normalizeDivisor = useMemo(() => {
-    const band = viewportBandForWidth(windowWidth);
-    if (band === "mobile") return 100 / 71;
-    if (band === "tablet") return 100 / 80;
-    return 100 / 78;
-  }, [windowWidth]);
-
-  useLayoutEffect(() => {
-    orderedColors.forEach((color) => {
-      const ref = barRefs.current[color];
-      if (!ref) return;
-
-      if (!canShowYou) {
-        ref.style.setProperty('--user-percentage', '0%');
-        return;
-      }
-
-      const parentH = Math.max(1, ref.parentElement?.offsetHeight ?? 0);
-      const heightPercentage = (ref.offsetHeight / parentH) * 100;
-      const raw = (youPercentile / 100) * heightPercentage;
-      const normalized = raw / normalizeDivisor;
-
-      ref.style.setProperty('--user-percentage', percentValue(normalized));
-    });
-  }, [youPercentile, animateBars, canShowYou, normalizeDivisor]);
+  const rankMarker = useMemo(
+    () => (youRank === null ? null : markerFractionInBucket(youRank, categories)),
+    [categories, youRank]
+  );
 
   useEffect(() => {
     if (animationState) return;
@@ -298,18 +305,19 @@ export default function BarGraph({
           const count = categories[color];
           const heightPercentage = count > 0 ? (count / totalCount) * 100 : 0;
 
-          const showMarkerInThisBar = canShowYou && youAbsoluteBar === color;
-
-          const userPercentage = (youPercentile / 100) * heightPercentage;
-          const normalizedUserPercentage = userPercentage / normalizeDivisor;
+          const markerHeightPercentage =
+            rankMarker?.color === color
+              ? heightPercentage * rankMarker.fraction
+              : 0;
+          const showMarkerInThisBar =
+            canShowYou &&
+            (rankMarker?.color ?? youAbsoluteBar) === color &&
+            markerHeightPercentage > 0;
 
           return (
             <div
               className="bar-graph-bar"
               key={color}
-              ref={(el) => {
-                barRefs.current[color] = el;
-              }}
             >
               <span className="bar-graph-label">
                 <p>{count === 0 ? '-' : count === 1 ? '1 Person' : `${String(count)} People`}</p>
@@ -319,7 +327,7 @@ export default function BarGraph({
                 {showMarkerInThisBar && animationState && animateBars && (
                   <div
                     className="percentage-section"
-                    style={{ height: percentValue(Math.min(normalizedUserPercentage, heightPercentage)) }}
+                    style={{ height: percentValue(Math.min(markerHeightPercentage, heightPercentage)) }}
                   >
                     <div className="percentage-line" aria-hidden="true" />
                     <div className="percentage-indicator">
