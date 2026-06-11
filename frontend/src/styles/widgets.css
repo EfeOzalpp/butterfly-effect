@@ -29,10 +29,6 @@
   transition: background 0.12s ease;
 }
 
-.compact-tools-button:hover {
-  background: var(--btn-secondary-hover-bg);
-}
-
 .compact-tools-button:focus-visible,
 .compact-tools-close:focus-visible {
   outline: 2px solid var(--ui-border-strong);
@@ -189,7 +185,6 @@
   flex-shrink: 0;
 }
 
-.widgets-close-strip:hover { background: var(--ui-bg-surface-hover); }
 .widgets-close-strip .ui-close { width: 16px; height: 16px; flex: 0 0 auto; }
 
 .compact-tools-root {
@@ -237,7 +232,6 @@
   color: var(--ui-text);
 }
 
-.compact-tools-close:hover { background: var(--btn-tertiary-hover-bg); }
 .compact-tools-close .ui-close { width: 16px; height: 16px; }
 .compact-tools-content { padding-top: 2.5rem; }
 .compact-tools-modal .logs-popover { border: none; border-radius: 0; box-shadow: none; }
@@ -250,6 +244,12 @@
 
 .compact-tools-tabs {
   padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compact-tools-button:hover { background: var(--btn-secondary-hover-bg); }
+  .widgets-close-strip:hover { background: var(--ui-bg-surface-hover); }
+  .compact-tools-close:hover { background: var(--btn-tertiary-hover-bg); }
 }
 
 @media (max-width: 768px) {

@@ -20,19 +20,6 @@
 }
 @keyframes floaty { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
 @keyframes indicatorFadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes graphLoadingTint {
-  0%, 100% { color: var(--ui-text-secondary); }
-  50%       { color: var(--ui-text); }
-}
-@keyframes graphLoadingDotStep {
-  0%, 100% { opacity: 0; }
-  25%       { opacity: 1; }
-}
-@keyframes graphLoadingDotJump {
-  0%, 100% { transform: translateY(0); }
-  12%       { transform: translateY(-0.14rem); }
-  24%       { transform: translateY(0); }
-}
 
 /* ── Animation classes + reduced-motion ─────────────────────────── */
 .green-animation  { animation: greenFluctuation 3.6s ease-in-out infinite; }
@@ -130,13 +117,6 @@
 
 /* ── Loading states ─────────────────────────────────────────────── */
 .graph-loading { width: 100%; }
-.graph-loading-card { display: inline-flex; align-items: center; justify-content: center; gap: 0.1rem; min-height: 48px; padding: 0.85rem 1rem; border-radius: var(--radius-lg); background: var(--ui-bg-surface-glass); color: var(--ui-text); letter-spacing: 0.01em; white-space: nowrap; }
-.graph-loading-card.loading-dots { color: var(--ui-text-secondary); }
 .graph-loading-word, .stats-loading-word { animation: bePulse 1.6s ease-in-out infinite; }
 .graph-loading-word  { margin: 0; padding: 0.6rem 0.9rem; color: var(--ui-text); }
 .stats-loading-word  { display: inline-block; padding: 0.1rem 0.25rem; color: inherit; }
-.graph-loading-text  { animation: graphLoadingTint 1.6s ease-in-out infinite; }
-.graph-loading-ellipsis { display: inline-flex; min-width: 1.6em; justify-content: flex-start; }
-.graph-loading-dot { opacity: 0; transform: translateY(0); animation: graphLoadingDotStep 1.2s steps(1, end) infinite, graphLoadingDotJump 1.2s ease-in-out infinite; }
-.graph-loading-dot:nth-child(2) { animation-delay: 0.2s; }
-.graph-loading-dot:nth-child(3) { animation-delay: 0.4s; }

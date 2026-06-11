@@ -22,14 +22,11 @@
 
 .logs-filter-trigger { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--ui-border); border-radius: var(--radius-md); background: var(--ui-bg-surface); color: var(--ui-text-muted); cursor: pointer; transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease; }
 
-.logs-filter-trigger:hover { background: var(--ui-bg-surface-hover); color: var(--ui-text); }
-
 .logs-filter-trigger .ui-icon { width: 16px; height: 16px; stroke: currentColor; }
 
 .logs-filter-field { display: inline-flex; align-items: center; gap: var(--space-sm); width: 160px; height: 36px; padding: 0 0.8rem; border: 1px solid var(--ui-border); border-radius: var(--radius-md); background: var(--ui-bg-text-input); transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease; }
 
 .logs-filter-field.is-focused, .logs-filter-field:focus-within { border-color: var(--ui-border-strong); }
-.logs-filter-field:hover { background: var(--ui-bg-text-input-hover); }
 
 .logs-filter-field .ui-icon { flex: 0 0 auto; stroke: var(--ui-text-muted); }
 
@@ -62,9 +59,6 @@
 .logs-th--avg { text-align: left; }
 .logs-th--rank { text-align: left; }
 
-.logs-row:hover { background: var(--ui-bg-surface-hover); }
-.logs-row--empty:hover { background: transparent; }
-
 .logs-td { font-size: var(--type-label-size); color: var(--ui-text); text-align: right; padding: 0.7rem 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .logs-td--section { text-align: left; color: var(--ui-text-secondary); }
@@ -91,7 +85,6 @@
 .logs-page-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
 .logs-page-input:focus { border-color: var(--ui-border-strong); }
-.logs-page-input:hover { background: var(--ui-bg-text-input-hover); }
 .logs-page-input::placeholder { color: var(--ui-text-muted); }
 
 .logs-page-arrow {
@@ -105,8 +98,16 @@
 
 .logs-close-btn { display: inline-flex; align-items: center; gap: var(--space-md); padding: 0.75rem 1rem 0.75rem 1.2rem; border: none; border-radius: 0; background: transparent; color: var(--ui-text); font-size: var(--type-label-size); cursor: pointer; transition: background 0.12s ease; flex-shrink: 0; }
 
-.logs-close-btn:hover { background: var(--ui-bg-surface-hover); }
 .logs-close-btn .ui-close { width: 16px; height: 16px; flex: 0 0 auto; }
+
+@media (hover: hover) and (pointer: fine) {
+  .logs-filter-trigger:hover { background: var(--ui-bg-surface-hover); color: var(--ui-text); }
+  .logs-filter-field:hover { background: var(--ui-bg-text-input-hover); }
+  .logs-row:hover { background: var(--ui-bg-surface-hover); }
+  .logs-row--empty:hover { background: transparent; }
+  .logs-page-input:hover { background: var(--ui-bg-text-input-hover); }
+  .logs-close-btn:hover { background: var(--ui-bg-surface-hover); }
+}
 
 @media (max-width: 767px) {
   .logs-footer { justify-content: flex-end; padding: 0.6rem 0;}

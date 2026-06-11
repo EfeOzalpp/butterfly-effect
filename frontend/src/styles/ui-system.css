@@ -53,9 +53,12 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
   transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
 }
 
-.ui-toggle-option:hover        { background: var(--ui-bg-surface-hover); color: var(--ui-text); }
 .ui-toggle-option.is-active    { background: var(--ui-bg-surface-selected); color: var(--ui-text); }
-.ui-toggle-option.is-active:hover { background: var(--ui-bg-surface-selected); color: var(--ui-text); }
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-toggle-option:hover { background: var(--ui-bg-surface-hover); color: var(--ui-text); }
+  .ui-toggle-option.is-active:hover { background: var(--ui-bg-surface-selected); color: var(--ui-text); }
+}
 
 .ui-icon-nav {
   display: flex;
@@ -201,9 +204,12 @@ button.section-continue-button:hover,
 button.solo-message-save:hover,
 button.city-button:hover,
 .observe-results:hover,
-.logs-button:hover,
-.widgets-button:hover,
 .canvas-engine-link:hover { padding: 0; background: transparent; }
+
+@media (hover: hover) and (pointer: fine) {
+  .logs-button:hover,
+  .widgets-button:hover { padding: 0; background: transparent; }
+}
 
 /* Primary button colors */
 button.begin-button,
@@ -389,11 +395,17 @@ button.city-button::before {
 
 button.city-button:hover .city-button__inner,
 .observe-results:hover .observe-results__inner,
-.logs-button:hover .logs-button__inner,
-.widgets-button:hover .widgets-button__inner,
 .canvas-engine-link:hover .canvas-engine-link__inner {
   padding: var(--btn-secondary-padding-hover);
   background: var(--btn-secondary-hover-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .logs-button:hover .logs-button__inner,
+  .widgets-button:hover .widgets-button__inner {
+    padding: var(--btn-secondary-padding-hover);
+    background: var(--btn-secondary-hover-bg);
+  }
 }
 
 /* ── Tertiary button ──────────────────────────────────────────────── */
@@ -447,8 +459,7 @@ button.city-button:focus-visible .city-button__inner,
 }
 
 .ui-toggle-option:focus-visible,
-.widgets-close-strip:focus-visible,
-.q-scores-nav-btn:focus-visible {
+.widgets-close-strip:focus-visible {
   outline: 2px solid var(--ui-border-strong);
   outline-offset: 2px;
 }
