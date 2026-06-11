@@ -51,18 +51,21 @@ export default function CanvasInfo() {
         <div className="canvas-info__spotlight-frame">
           <SpotlightEntry spotlight={spotlight} liveAvg={spotlightLiveAvg} />
           <div className="ui-icon-nav canvas-info__slider-controls" aria-label="Canvas Engine preview controls">
-            <input
-              className="canvas-info__liveavg-slider"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={spotlightLiveAvg}
-              aria-label="Preview intensity"
-              onChange={(event) => {
-                setSpotlightLiveAvg(Number(event.currentTarget.value));
-              }}
-            />
+            <div className="canvas-info__liveavg-control">
+              <div className="canvas-info__liveavg-track" aria-hidden="true" />
+              <input
+                className="canvas-info__liveavg-slider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={spotlightLiveAvg}
+                aria-label="Preview intensity"
+                onChange={(event) => {
+                  setSpotlightLiveAvg(Number(event.currentTarget.value));
+                }}
+              />
+            </div>
             <button type="button" className="ui-icon-nav-button canvas-info__slider-button" aria-label="Previous preview" onClick={previousSpotlight}>
               <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M15 18L9 12L15 6" />
