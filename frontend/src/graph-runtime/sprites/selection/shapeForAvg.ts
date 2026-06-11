@@ -88,6 +88,10 @@ function weightsToSlots(pool: { shape: ShapeKey; w: number }[]) {
   }));
 }
 
+function weightedSequenceLength(pool: { shape: ShapeKey; w: number }[]) {
+  return weightsToSlots(pool).reduce((sum, entry) => sum + entry.slots, 0);
+}
+
 function buildWeightedSequence(
   pool: { shape: ShapeKey; w: number }[],
   seedStr: string
@@ -162,7 +166,8 @@ export function sampleShapeForAvg(
 
   if (typeof orderIndex === 'number' && Number.isFinite(orderIndex)) {
     const idx = Math.max(0, Math.floor(orderIndex));
-    const batchSeed = `${seedStr}:weighted:b${String(Math.floor(idx / Math.max(1, pool.length)))}`;
+    const batchSize = Math.max(1, weightedSequenceLength(pool));
+    const batchSeed = `${seedStr}:weighted:b${String(Math.floor(idx / batchSize))}`;
     const sequence = buildWeightedSequence(pool, batchSeed);
     return sequence[idx % sequence.length] ?? FALLBACK_SHAPE;
   }
