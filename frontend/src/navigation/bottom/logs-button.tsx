@@ -35,6 +35,12 @@ function formatSectionLabel(section?: string): string {
   return SECTION_DISPLAY[s] ?? capitalizeFirstWord(s.replace(/-/g, " "));
 }
 
+function rowSubmittedTime(row: { submittedAt?: string; _createdAt?: string }): number {
+  const raw = row.submittedAt ?? row._createdAt;
+  const timestamp = raw ? Date.parse(raw) : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -138,9 +144,10 @@ export function LogsPanel({
 
   const sorted = useMemo(() => {
     return [...data].sort((a, b) => {
-      const da = a.submittedAt ?? a._createdAt;
-      const db = b.submittedAt ?? b._createdAt;
-      return da < db ? -1 : da > db ? 1 : 0;
+      const da = rowSubmittedTime(a);
+      const db = rowSubmittedTime(b);
+      if (da !== db) return db - da;
+      return b._id.localeCompare(a._id);
     });
   }, [data]);
 
