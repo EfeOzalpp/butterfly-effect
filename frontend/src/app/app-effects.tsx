@@ -88,7 +88,6 @@ export function AppBrowserPolicies({
     if (typeof window === "undefined" || !vizVisible) return;
     // When users leave the graph, the onboarding canvas is likely next.
     return scheduleIdle(() => {
-      void import("../canvas-instances/OnboardingEntry");
       void import("../canvas-instances/QuestionnaireEntry");
     });
   }, [vizVisible]);
