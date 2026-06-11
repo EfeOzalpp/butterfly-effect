@@ -24,3 +24,12 @@ export const STAFF_IDS = [
 ];
 
 export const NON_VISITOR_MASSART = Array.from(new Set([...STUDENT_IDS, ...STAFF_IDS]));
+
+const STUDENT_ID_SET = new Set(STUDENT_IDS);
+const STAFF_ID_SET = new Set(STAFF_IDS);
+
+export function parentAggregateForSection(section: string) {
+  if (STUDENT_ID_SET.has(section)) return 'all-students';
+  if (STAFF_ID_SET.has(section)) return 'all-staff';
+  return null;
+}

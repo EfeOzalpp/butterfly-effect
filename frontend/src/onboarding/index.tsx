@@ -21,6 +21,7 @@ import {
   savedUserResponseToSurveyRow,
 } from "../services/sanity/saveUserResponse";
 import { EdgeFunctionError } from "../services/sanity/edgeFunction";
+import { parentAggregateForSection } from "../services/sanity/sections";
 import { track } from "../lib/posthog";
 import { getSessionItem, removeSessionItems, setSessionItem } from "../app/session";
 
@@ -52,7 +53,7 @@ export default function Survey({
   const prevCompletedRef = useRef(false);
 
   const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey, resetToStart } = useUiFlow();
-  const { section, setSection, upsertLocalSurveyRow } = useSurveyData();
+  const { section, setSection, counts, upsertLocalSurveyRow } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
   const { setLiveAvg } = useCanvasRuntime();
 
@@ -255,10 +256,15 @@ export default function Survey({
     beginUserResponseEditSession();
     const optimistic = createOptimisticUserResponse(surveySection, weights);
     const optimisticRow = savedUserResponseToSurveyRow(optimistic, surveySection);
+    const sectionCountBeforeSubmit = counts[surveySection] ?? 0;
+    const parentAggregate = parentAggregateForSection(surveySection);
+    const postSubmitSection = parentAggregate && sectionCountBeforeSubmit === 0
+      ? parentAggregate
+      : surveySection;
 
     persistUserResponseSession(optimistic, surveySection);
     upsertLocalSurveyRow(optimisticRow);
-    setSection(surveySection);
+    setSection(postSubmitSection);
     setMySection(surveySection);
     setMyEntryId(optimistic._id);
     setMyRole(audience || null);
@@ -275,7 +281,7 @@ export default function Survey({
         optimistic._id
       );
 
-      setSection(surveySection);
+      setSection(postSubmitSection);
       setMySection(surveySection);
       setMyEntryId(created._id);
       setMyRole(audience || null);

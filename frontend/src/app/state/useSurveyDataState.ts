@@ -4,6 +4,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { getSessionItem, removeSessionItems, setSessionItem } from '../session';
+import { parentAggregateForSection } from '../../services/sanity/sections';
 import type { SurveyRow } from '../../services/sanity/types';
 import { deriveSectionCounts, filterRowsForSection, upsertSurveyRow } from './survey-data-utils';
 
@@ -13,7 +14,7 @@ interface UseSurveyDataStateParams {
 
 const ALL_ROWS_LIMIT = 5000;
 const VISIBLE_ROWS_LIMIT = 300;
-const SMALL_SECTION_THRESHOLD = 5;
+const FIRST_SECTION_SUBMISSION_COUNT = 1;
 const noopUnsubscribe: () => void = () => undefined;
 
 export default function useSurveyDataState({
@@ -53,10 +54,11 @@ export default function useSurveyDataState({
       return;
     }
 
-    const n = nextCounts[effectiveMySection] ?? 0;
-    if (n < SMALL_SECTION_THRESHOLD) {
-      // Tiny non-visitor sections redirect to the MassArt pool so the user's dot has context.
-      setSection('all-massart');
+    const sectionCount = nextCounts[effectiveMySection] ?? 0;
+    const parentAggregate = parentAggregateForSection(effectiveMySection);
+    if (parentAggregate && sectionCount <= FIRST_SECTION_SUBMISSION_COUNT) {
+      // First entries in a specific section open the nearest useful aggregate for context.
+      setSection(parentAggregate);
       setSessionItem('be.openPersonalOnNext', '1');
     }
 
