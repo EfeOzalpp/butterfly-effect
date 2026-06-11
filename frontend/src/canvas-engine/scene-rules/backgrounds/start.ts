@@ -49,8 +49,8 @@ const START_BACKGROUND_DARK: BackgroundSpec = {
       { rgba: "rgb(147, 236, 210)", rightRgba: "rgb(220, 210, 155)", liveBlend: [0.08, 0.10] },
       { rgba: "rgb(138, 215, 176)", rightRgba: "rgb(210, 196, 160)", liveBlend: [0.08, 0.12] },
       { k: 0.98, rgba: "rgb(125, 201, 148)", rightRgba: "rgb(205, 185, 158)", liveBlend: [0.08, 0.10] },
-      { k: 0.98, rgba: "#222329" },
-      { rgba: "#222329" },
+      { k: 0.98, rgba: "#373330" },
+      { rgba: "#373330" },
     ] as const,
   },
   stars: {
