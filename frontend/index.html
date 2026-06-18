@@ -38,6 +38,10 @@
 
     <link rel="manifest" href="/manifest.json" />
 
+    <!-- Preload fonts used in LCP text so they're fetched in parallel with the CSS -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/roboto/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/src/assets/fonts/libre-baskerville/kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNZaxM.woff2" />
+
     <style>
       :root {
         color-scheme: light dark;

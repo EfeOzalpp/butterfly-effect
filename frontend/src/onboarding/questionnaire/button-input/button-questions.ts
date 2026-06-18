@@ -22,7 +22,7 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
     options: [
       { key: 'A', label: 'On foot',    weight: 1.0  },
       { key: 'B', label: 'Bike',    weight: 0.95 },
-      { key: 'C', label: 'Bus', weight: 0.8 },
+      { key: 'C', label: 'Public Transportation', weight: 0.8 },
       { key: 'D', label: 'Rideshare', weight: 0.6 },
       { key: 'E', label: 'Electric',      weight: 0.3 },
       { key: 'F', label: 'Drive',   weight: 0.05 },

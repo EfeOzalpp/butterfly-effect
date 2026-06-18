@@ -5,7 +5,8 @@ import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
 import { useIdentity } from "../app/state/identity-context";
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
-import "../styles/onboarding.css";
+import "../styles/onboarding-info.css";
+import "../styles/section-questionnaire.css";
 
 import { ROLE_SECTIONS } from "./section-picker/sections";
 import type { RoleSection, SectionItem, SectionOption } from "./section-picker/sections";

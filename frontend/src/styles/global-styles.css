@@ -246,8 +246,7 @@
   }
 }
 
-  .svg-lg svg.ui-icon,
-  .canvas-info__slider-button svg.ui-icon {
+  .svg-lg svg.ui-icon {
     width: 1.6rem !important;
     height: 1.6rem !important;
   }
@@ -259,7 +258,7 @@
     width: 1.3em !important;
     height: 1.3em !important;
   }
-  .ui-icon, .role-check-icon, .switch-check-icon, .role-indicator-spacer {
+  .ui-icon, .switch-check-icon {
     width: 1.2em !important;
     height: 1.2em !important;
   }
@@ -280,7 +279,6 @@
   fill: var(--ui-trigger-chevron-fill);
 }
 
-.role-check-icon [fill],
 .switch-check-icon [fill] {
   fill: var(--btn-primary-icon);
   color: var(--btn-primary-icon);
