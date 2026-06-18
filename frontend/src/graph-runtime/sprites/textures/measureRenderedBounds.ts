@@ -1,7 +1,17 @@
-import { createParticleStore } from '../../../canvas-engine/modifiers/particles';
 import { makeCanvasFacade } from './canvasFacade';
+
+function createParticleStore() {
+  const particleEmitters = new Map<string, unknown>();
+  const puffEmitters = new Map<string, unknown>();
+  return {
+    particleEmitters,
+    puffEmitters,
+    clear() { particleEmitters.clear(); puffEmitters.clear(); },
+  };
+}
 import { makeSpritePaletteLightContext } from './spriteLight';
 import type { DrawerFn } from '../selection/drawers';
+import type { SpriteBleed, SpriteFootprint } from '../types';
 
 export interface RenderedShapeBounds {
   width: number;
@@ -12,8 +22,8 @@ export interface RenderedShapeBounds {
 
 interface MeasureRenderedBoundsArgs {
   drawer: DrawerFn;
-  footprint: { w: number; h: number };
-  bleed?: { top?: number; right?: number; bottom?: number; left?: number };
+  footprint: SpriteFootprint;
+  bleed?: SpriteBleed;
   seedKey?: string | number;
   liveAvg?: number;
   blend?: number;

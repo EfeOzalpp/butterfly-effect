@@ -4,10 +4,11 @@ import {
   ClampToEdgeWrapping,
   LinearFilter,
   SRGBColorSpace,
-} from 'three';
+} from '../../three';
 import { makeCanvasFacade } from './canvasFacade';
 import { makeSpritePaletteLightContext } from './spriteLight';
 import type { DrawerFn } from '../selection/drawers';
+import type { SpriteBleed, SpriteFootprint } from '../types';
 import {
   createParticleStore,
   type ParticleStore,
@@ -16,9 +17,6 @@ import {
 // Static bridge: run a canvas-engine drawer into an offscreen canvas, then hand
 // that canvas to Three as a CanvasTexture.
 type Drawer = DrawerFn;
-
-export interface Footprint { w: number; h: number }
-export interface BleedFrac { top?: number; right?: number; bottom?: number; left?: number }
 
 export function makeTextureFromDrawer({
   drawer,
@@ -46,8 +44,8 @@ export function makeTextureFromDrawer({
   gradientRGB?: { r: number; g: number; b: number };
   liveAvg?: number;
   blend?: number;
-  footprint?: Footprint;
-  bleed?: BleedFrac;
+  footprint?: SpriteFootprint;
+  bleed?: SpriteBleed;
   timeMs?: number;
   dtSec?: number;
   seedKey?: string | number;

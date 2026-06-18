@@ -2,9 +2,8 @@
 // Consumes a UI spotlight request and turns it into a synthetic hover event.
 
 import { useEffect, useRef } from "react";
-import { useThree } from "@react-three/fiber";
-import { Frustum, Matrix4, Vector3 } from "three";
-import type { Group } from "three";
+import { useThree } from "../../r3f";
+import { Frustum, Matrix4, Vector3, type Group } from "../../three";
 import type { RefObject } from "react";
 import { useOptionalUiFlow } from "../../../app/state/ui-context";
 import { resolveSpriteVisual } from "../../sprites/entry";

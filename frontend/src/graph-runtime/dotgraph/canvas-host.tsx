@@ -2,13 +2,15 @@
 // App-facing host for mounting the DotGraph scene and cleaning up WebGL resources.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { AdaptiveDpr, AdaptiveEvents, Preload } from '@react-three/drei';
+import { Canvas } from '../r3f';
+import { AdaptiveDpr } from '@react-three/drei/core/AdaptiveDpr';
+import { AdaptiveEvents } from '@react-three/drei/core/AdaptiveEvents';
+import { Preload } from '@react-three/drei/core/Preload';
 import {
   ACESFilmicToneMapping,
   SRGBColorSpace,
   type WebGLRenderer,
-} from 'three';
+} from '../three';
 
 import DotGraph from "./scene";
 

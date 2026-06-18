@@ -45,6 +45,18 @@ function scheduleIdle(callback: () => void, timeout = 1500) {
   };
 }
 
+export function DeferredGraphPreloader() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scheduleIdle(() => {
+        void import('../graph-runtime/dotgraph/data-boundary');
+      });
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, []);
+  return null;
+}
+
 export function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
 

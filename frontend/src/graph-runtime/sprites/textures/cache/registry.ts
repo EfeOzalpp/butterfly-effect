@@ -2,9 +2,10 @@
 import {
   LinearFilter,
   type CanvasTexture,
-} from 'three';
+} from '../../../three';
 import { makeTextureFromDrawer } from '../makeTextureFromDrawer';
 import type { DrawerFn } from '../../selection/drawers';
+import type { SpriteBleed, SpriteFootprint } from '../../types';
 
 const isMobileDevice =
   typeof window !== 'undefined' &&
@@ -29,8 +30,8 @@ export interface MakeArgs {
   gradientRGB?: { r: number; g: number; b: number };
   liveAvg: number;
   blend: number;
-  footprint: { w: number; h: number };
-  bleed?: { top?: number; right?: number; bottom?: number; left?: number };
+  footprint: SpriteFootprint;
+  bleed?: SpriteBleed;
   seedKey: string;
   prio?: number;
   background?: boolean;

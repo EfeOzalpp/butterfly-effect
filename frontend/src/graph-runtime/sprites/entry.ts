@@ -1,8 +1,6 @@
 // graph-runtime/sprites/entry.ts
 // Public sprite boundary. Dotgraph should import from here instead of reaching into
 // texture/runtime internals directly.
-export { SpriteShape } from './internal/spriteShape';
-
 export * from './types';
 export * from './api/visual';
 export * from './api/prewarm';

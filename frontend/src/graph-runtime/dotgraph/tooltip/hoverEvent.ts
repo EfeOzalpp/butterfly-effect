@@ -1,5 +1,4 @@
-import { Vector3, type Camera } from "three";
-import type { Sprite } from "three";
+import { Vector3, type Camera, type Sprite } from "../../three";
 import type { DotGraphHoverEvent } from "../types";
 import type { SpriteVisualLayout } from "../../sprites/types";
 import {

@@ -1,16 +1,29 @@
-import type { ShapeAssignment } from "./internal/spritePolicy";
 import type { ShapeKey } from "./selection/types";
 
 // Contracts shared between dotgraph and sprites. This is the shape of the boundary,
 // while the texture/cache details stay inside the sprites folder.
 export type { ShapeKey };
 
-export type SpriteAssignment = ShapeAssignment;
 export type SpriteVec3 = [number, number, number];
 
 export interface SpriteFootprint {
   w: number;
   h: number;
+}
+
+export interface SpriteBleed {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
+export interface SpriteAssignment {
+  shape: ShapeKey;
+  variant: number;
+  bucketId: number;
+  bucketAvg: number;
+  sourceAvg?: number;
 }
 
 export type SpriteBoundsPaddingValue = number | [far: number, near: number];
@@ -55,7 +68,7 @@ export interface SpriteVisual {
 // Props accepted by the Three sprite component. Most callers should still go
 // through the public helpers so shape assignment stays consistent.
 export interface SpriteShapeProps {
-  avg: number;
+  avg?: number;
   seed?: string | number;
   orderIndex?: number;
   position?: SpriteVec3;

@@ -1,6 +1,6 @@
 // graph-runtime/sprites/internal/spritePolicy.ts
 import { sampleShapeForAvg } from '../selection/shapeForAvg';
-import type { ShapeKey } from '../selection/types';
+import type { ShapeKey, SpriteAssignment, SpriteBleed, SpriteFootprint } from '../types';
 import {
   forcedSpriteAvg,
   forcedSpriteAvgCacheKey,
@@ -93,8 +93,8 @@ export function makeStaticKey(args: {
   variant: number;
   darkMode?: boolean;
   pixelScaleBoost?: number;
-  footprint?: { w: number; h: number };
-  bleed?: { top?: number; right?: number; bottom?: number; left?: number };
+  footprint?: SpriteFootprint;
+  bleed?: SpriteBleed;
 }) {
   const { shape, tileSize, dpr, alpha, bucketId, variant, darkMode, pixelScaleBoost, footprint, bleed } = args;
   const boostSuffix = pixelScaleBoost !== undefined && pixelScaleBoost !== 1
@@ -132,15 +132,7 @@ export function chooseShape(args: { avg: number; seed?: string | number; orderIn
   return sampleShapeForAvg(t, args.seed ?? t, args.orderIndex);
 }
 
-export interface ShapeAssignment {
-  shape: ShapeKey;
-  variant: number;
-  bucketId: number;
-  bucketAvg: number;
-  sourceAvg?: number;
-}
-
-const _assignmentCache = new Map<string, ShapeAssignment>();
+const _assignmentCache = new Map<string, SpriteAssignment>();
 
 // Cache by respondent + section so the same entry does not shapeshift during rerenders.
 export function getOrAssignShapeEntry(
@@ -150,7 +142,7 @@ export function getOrAssignShapeEntry(
   seed: string | number,
   orderIndex: number,
   variantSlots = DEFAULT_VARIANT_SLOTS
-): ShapeAssignment {
+): SpriteAssignment {
   const cacheKey = `${entryId}|${sectionKey}|${forcedSpriteShapeCacheKey()}|${forcedSpriteAvgCacheKey()}`;
   const hit = _assignmentCache.get(cacheKey);
   if (hit) {
@@ -165,7 +157,7 @@ export function getOrAssignShapeEntry(
   const vSeed = `${shape}|B${String(bucketId)}|${String(seed)}|${String(orderIndex)}`;
   const variant = pickVariantSlot(vSeed, Math.max(1, variantSlots));
 
-  const assignment: ShapeAssignment = { shape, variant, bucketId, bucketAvg, sourceAvg: clamp01(effectiveAvg) };
+  const assignment: SpriteAssignment = { shape, variant, bucketId, bucketAvg, sourceAvg: clamp01(effectiveAvg) };
   _assignmentCache.set(cacheKey, assignment);
   return assignment;
 }

@@ -1,5 +1,5 @@
 // Runtime debug switches can be flipped from DevTools without changing source.
-import type { Texture } from 'three';
+import type { Texture } from '../three';
 import type { ShapeKey } from '../sprites/selection/types';
 
 const SHAPE_ALIASES: Record<string, ShapeKey> = {

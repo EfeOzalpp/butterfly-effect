@@ -1,4 +1,4 @@
-import type { Texture } from "three";
+import type { Texture } from "../three";
 import type { ShapeKey } from "../sprites/selection/types";
 import type { SpriteCacheMetrics } from "./spriteCacheMetrics";
 import type { GraphZoomMetrics } from "./zoomMetrics";

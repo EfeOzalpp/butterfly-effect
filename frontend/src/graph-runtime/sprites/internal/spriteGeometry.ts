@@ -1,5 +1,4 @@
-import type { ShapeKey, SpriteVec3 } from '../types';
-import type { ShapeAssignment } from './spritePolicy';
+import type { ShapeKey, SpriteAssignment, SpriteVec3 } from '../types';
 import {
   getShapeProfile,
   SPRITE_FOOTPRINT_WORLD_SCALE,
@@ -9,7 +8,7 @@ import { measureRenderedShapeBounds } from '../textures/measureRenderedBounds';
 import { makeSpriteSeedKey } from './spritePolicy';
 
 export interface SpriteWorldGeometry {
-  scale: [number, number, number];
+  scale: SpriteVec3;
   position: SpriteVec3;
   center: [number, number];
   width: number;
@@ -27,7 +26,7 @@ export function computeSpriteWorldGeometry({
   basePosition: SpriteVec3;
   scale: number;
   applyVisualOffsets?: boolean;
-  assignment?: ShapeAssignment;
+  assignment?: SpriteAssignment;
 }): SpriteWorldGeometry {
   const profile = getShapeProfile(shape);
   const shapeScaleK = profile.visualScale ?? 1;

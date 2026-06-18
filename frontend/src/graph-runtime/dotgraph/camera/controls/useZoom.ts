@@ -1,6 +1,6 @@
 // src/graph-runtime/dotgraph/camera/controls/useZoom.ts
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame } from '../../../r3f';
 import type { MutableRefObject } from 'react';
 import { bumpZoomMetric } from '../../../debug/zoomMetrics';
 

@@ -1,7 +1,7 @@
 // src/graph-runtime/dotgraph/camera/useOrbitController.ts
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import { useThree, useFrame } from '@react-three/fiber';
-import type { Group } from 'three';
+import { useThree, useFrame } from '../../r3f';
+import type { Group } from '../../three';
 import type { Vec3 } from '../types';
 
 import useActivity from './controls/useActivity';

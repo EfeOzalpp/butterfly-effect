@@ -1,9 +1,8 @@
 // src/graph-runtime/dotgraph/camera/controls/useRotation.ts
 import { useEffect, useRef } from 'react';
-import { useThree, useFrame } from '@react-three/fiber';
+import { useThree, useFrame } from '../../../r3f';
 import type { RefObject } from 'react';
-import { Quaternion, Vector3, Frustum, Matrix4 } from 'three';
-import type { Group } from 'three';
+import { Quaternion, Vector3, Frustum, Matrix4, type Group } from '../../../three';
 import type { Vec3 } from '../../types';
 
 // Scratch objects reused every frame to avoid GC pressure.

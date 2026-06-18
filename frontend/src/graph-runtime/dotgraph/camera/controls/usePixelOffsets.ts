@@ -1,8 +1,8 @@
 // src/graph-runtime/dotgraph/camera/controls/usePixelOffsets.ts
 import { useEffect, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame } from '../../../r3f';
 import type { RefObject } from 'react';
-import type { Camera, Group } from 'three';
+import type { Camera, Group } from '../../../three';
 import { pauseSpriteTextureQueue, resumeSpriteTextureQueue } from '../../../sprites/entry';
 
 interface PerspectiveCameraLike extends Camera {

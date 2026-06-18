@@ -11,8 +11,17 @@ function loadPostHog() {
     mod.default.init(key, {
       api_host: host,
       person_profiles: "identified_only",
+
+      // Core metrics: referrer/UTM source, bounce rate, session duration, retention
       capture_pageview: true,
       capture_pageleave: true,
+
+      // Disable everything else
+      autocapture: false,
+      disable_session_recording: true,
+      enable_heatmaps: false,
+      disable_surveys: true,
+      disable_web_experiments: true,
     });
     return mod.default;
   });

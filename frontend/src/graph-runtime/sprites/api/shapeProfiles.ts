@@ -1,15 +1,8 @@
-import { deviceType, getViewportSize, type DeviceType } from '../../../canvas-engine/shared/responsiveness';
-import type { ShapeKey, SpriteBoundsPaddingSpec, SpriteFootprint } from '../types';
+﻿import { deviceType, getViewportSize, type DeviceType } from '../../../canvas-engine/shared/responsiveness';
+import type { ShapeKey, SpriteBleed, SpriteBoundsPaddingSpec, SpriteFootprint } from '../types';
 
 // Per-shape sprite facts. Keep object/texture geometry here; camera-specific
 // interaction behavior belongs in dotgraph/interaction.
-export interface SpriteBleed {
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-}
-
 export interface SpriteParticleProfile {
   enabled?: boolean;
   scaleBoost?: Partial<Record<DeviceType, number>>;
@@ -155,3 +148,4 @@ export const TOOLTIP_ANCHOR_BIAS_Y = Object.fromEntries(
     .filter((shape) => SHAPE_PROFILES[shape].tooltipAnchorBiasY !== undefined)
     .map((shape) => [shape, SHAPE_PROFILES[shape].tooltipAnchorBiasY])
 ) as Partial<Record<ShapeKey, number>>;
+

@@ -1,7 +1,7 @@
 import {
   SpriteMaterial,
   type CanvasTexture,
-} from 'three';
+} from '../../three';
 
 export const PLACEHOLDER_MATERIAL = new SpriteMaterial({
   transparent: true,

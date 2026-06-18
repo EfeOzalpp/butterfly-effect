@@ -1,11 +1,10 @@
 // src/graph-runtime/dotgraph/components/ShapesLayer.tsx
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { useThree, useFrame } from "@react-three/fiber";
-import { Vector2, Vector3 } from "three";
-import type { Sprite } from "three";
+import { useThree, useFrame } from "../../r3f";
+import { Vector2, Vector3, type Sprite } from "../../three";
+import { SpriteShape } from "../../sprites/internal/spriteShape";
 import {
-  SpriteShape,
   pauseSpriteEpochScheduler,
   pauseSpriteQualityUpgradeScheduler,
   pauseSpriteTextureQueue,

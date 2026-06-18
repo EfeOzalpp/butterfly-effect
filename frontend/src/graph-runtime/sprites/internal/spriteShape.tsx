@@ -9,12 +9,12 @@ import {
   type CanvasTexture,
   type Sprite,
   type SpriteMaterial,
-} from 'three';
-import { useFrame } from '@react-three/fiber';
+} from '../../three';
+import { useFrame } from '../../r3f';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
-import type { ShapeKey, SpriteShapeProps } from '../types';
+import type { ShapeKey, SpriteShapeProps, SpriteVec3 } from '../types';
 import {
   chooseShape,
   quantizeAvgWithDownshift,
@@ -412,8 +412,8 @@ export function SpriteShape({
     };
   }, [displayTex, opacity, material, materialCacheDisabled]);
 
-  const basePosition: [number, number, number] = Array.isArray(position)
-    ? ([...position] as [number, number, number])
+  const basePosition: SpriteVec3 = Array.isArray(position)
+    ? ([...position] as SpriteVec3)
     : [0, 0, 0];
   const spriteGeometry = computeSpriteWorldGeometry({
     shape,

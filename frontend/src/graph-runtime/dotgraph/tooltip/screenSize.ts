@@ -1,4 +1,4 @@
-import { Vector3, type Camera } from "three";
+import { Vector3, type Camera } from "../../three";
 import type { SpriteVisualLayout } from "../../sprites/types";
 
 interface HitboxScreenHalfSizeArgs {

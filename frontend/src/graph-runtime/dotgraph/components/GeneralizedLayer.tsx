@@ -1,9 +1,9 @@
 // src/graph-runtime/dotgraph/components/GeneralizedLayer.tsx
 
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
-import { Vector3, type Group } from "three";
+import { Html } from "@react-three/drei/web/Html";
+import { useFrame, useThree } from "../../r3f";
+import { Vector3, type Group } from "../../three";
 import GamificationGeneral from "../../gamification/gamification-general";
 import { avgWeightOf } from "../../../lib/utils/score";
 import { getTieStats, classifyPosition } from "../../gamification/rankLogic";

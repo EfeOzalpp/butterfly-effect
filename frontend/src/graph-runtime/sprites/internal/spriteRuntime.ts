@@ -1,5 +1,5 @@
 // graph-runtime/sprites/internal/spriteRuntime.ts
-import type { CanvasTexture } from 'three';
+import type { CanvasTexture } from '../../three';
 
 import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
 
@@ -191,3 +191,4 @@ export function requestStaticTexture(args: MakeArgs, onReady: (tex: CanvasTextur
     if (retryTimer !== undefined) clearTimeout(retryTimer);
   };
 }
+

@@ -1,4 +1,4 @@
-import type { CanvasTexture } from 'three';
+import type { CanvasTexture } from '../../../three';
 
 // Global tracker for shared textures that need one route-level cleanup pass.
 const __GLOBAL_TEX = new Set<CanvasTexture>();
