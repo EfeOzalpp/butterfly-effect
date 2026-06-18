@@ -38,6 +38,6 @@ export const seaSlide = {
   shape: "sea",
   background: seaBackground,
   darkBackground: seaDarkBackground,
-  padding: rowsByDevice(3, 2, 2),
+  padding: rowsByDevice(3, 3, 2),
   placement: seaPlacement,
 } as const satisfies SpotlightSlide;

@@ -67,7 +67,7 @@ const CITY_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
       xRange: [0.0, 1.0],
       yRange: [0.1, 0.85],
       sizePx: [1, 2],
-      speedX: [8, 14],
+      speedX: [2, 5],
       speedY: [-0.5, 1.5],
       color: [
         { color: "rgb(200, 230, 255)", alpha: 0.35 },
@@ -81,7 +81,7 @@ const CITY_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
       xRange: [0.0, 1.0],
       yRange: [0.2, 0.75],
       sizePx: [2, 3.5],
-      speedX: [5, 9],
+      speedX: [1, 4],
       speedY: [-0.5, 1.0],
       color: [
         { color: "rgb(180, 215, 245)", alpha: 0.2 },
@@ -99,7 +99,7 @@ const CITY_DARK_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
       xRange: [0.0, 1.0],
       yRange: [0.1, 0.85],
       sizePx: [1, 2],
-      speedX: [8, 14],
+      speedX: [2, 5],
       speedY: [-0.5, 1.5],
       color: [
         { color: "rgb(180, 210, 160)", alpha: 0.2 },
@@ -113,7 +113,7 @@ const CITY_DARK_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
       xRange: [0.0, 1.0],
       yRange: [0.2, 0.75],
       sizePx: [1.5, 3],
-      speedX: [5, 9],
+      speedX: [1, 4],
       speedY: [-0.5, 1.0],
       color: [
         { color: "rgb(160, 195, 145)", alpha: 0.15 },

@@ -2,7 +2,7 @@ import { easeOutCubic } from "../util/easing";
 import { normalizeDprTransform } from "../util/transform";
 import type { PLike } from "../p/makeP";
 
-const DEFAULT_SCENE_SURFACE_APPEAR_MS = 260;
+const DEFAULT_SCENE_SURFACE_APPEAR_MS = 20;
 const APPEAR_DONE_ALPHA = 0.999;
 const MAX_APPEAR_FRAME_ADVANCE_MS = 30;
 

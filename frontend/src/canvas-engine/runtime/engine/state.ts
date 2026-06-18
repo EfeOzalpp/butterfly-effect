@@ -70,7 +70,7 @@ export const ENGINE_STYLE_DEFAULT: EngineStyle = {
   // A slight default lift keeps the world from reading muddy under fog and scene overlays.
   exposure: 1.08,
   contrast: 1.03,
-  appearMs: 300,
+  appearMs: 200,
   appearStaggerMs: 520,
   darkMode: false,
   fog: true,

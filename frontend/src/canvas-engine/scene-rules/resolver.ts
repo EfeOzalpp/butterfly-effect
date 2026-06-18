@@ -28,9 +28,10 @@ import type { DeviceCountScale } from "../shared/responsiveness";
 
 type SceneRules = Pick<SceneProfile, "padding" | "placements">;
 
+// quota multiplier for smaller device landscape modes for continued visual fidelity at small desktops and horizontal mobile.
 const LANDSCAPE_COUNT_SCALE: Record<SceneLookupKey, DeviceCountScale> = {
-  start: { mobile: 1.4, tablet: 1.4 },
-  questionnaire: { mobile: 2, tablet: 0.9 },
+  start: { mobile: 1.6, tablet: 1.4 },
+  questionnaire: { mobile: 2, tablet: 0.8 },
   city: {},
   spotlight: {},
 };

@@ -201,6 +201,25 @@ function resolveShapeRect(item: EngineFieldItem, rEff: number, opts: RuntimeShap
     : { x: item.x - rEff, y: item.y - rEff, w: rEff * 2, h: rEff * 2 };
 }
 
+function blitWithAppear(
+  ctx: CanvasRenderingContext2D,
+  appearK: number,
+  canvas: HTMLCanvasElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+): void {
+  if (appearK >= 0.999) {
+    ctx.drawImage(canvas, x, y, w, h);
+    return;
+  }
+  const prev = ctx.globalAlpha;
+  ctx.globalAlpha = prev * appearK;
+  ctx.drawImage(canvas, x, y, w, h);
+  ctx.globalAlpha = prev;
+}
+
 export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCachePolicy) {
   const cache = createOffscreenCache<ShapeBitmapBounds>();
   const treeStampCache = createOffscreenCache<ShapeBitmapBounds>();
@@ -811,11 +830,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       return true;
     }
 
-    if ((shapeLifecycle(opts).rootAppearK ?? 1) < 0.995) {
-      debug.markSkippedAppear();
-      updateDebugState();
-      return false;
-    }
+    const appearK = shapeLifecycle(opts).rootAppearK ?? 1;
 
     const key = shapeBitmapCacheKey({ item, rEff, opts, bounds, dpr });
     const fallbackKey = shapeBitmapFallbackKey({ item, rEff, opts, bounds, dpr });
@@ -838,13 +853,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
           cache.touch(staleKey, staleEntry);
           debug.markGenericStaleDrawn();
           debug.markGenericDrawn();
-          p.drawingContext.drawImage(
-            staleEntry.canvas,
-            staleEntry.bounds.x,
-            staleEntry.bounds.y,
-            staleEntry.bounds.w,
-            staleEntry.bounds.h
-          );
+          blitWithAppear(p.drawingContext, appearK, staleEntry.canvas, staleEntry.bounds.x, staleEntry.bounds.y, staleEntry.bounds.w, staleEntry.bounds.h);
           updateDebugState();
           return true;
         }
@@ -870,7 +879,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       fallbackKeys.set(fallbackKey, key);
     }
 
-    p.drawingContext.drawImage(entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
+    blitWithAppear(p.drawingContext, appearK, entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
     debug.markGenericDrawn();
     updateDebugState();
     return true;

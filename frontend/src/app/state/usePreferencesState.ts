@@ -8,8 +8,6 @@ import {
   readStoredDarkMode,
   setSessionItem,
 } from '../session';
-import { invalidateSpriteTexturesForThemeChange } from '../../graph-runtime/sprites/theme';
-
 export default function usePreferencesState() {
   const [darkMode, setDarkMode] = useState<boolean>(() => readStoredDarkMode(true));
   const didInitThemeRef = useRef(false);
@@ -22,12 +20,13 @@ export default function usePreferencesState() {
       return;
     }
 
-    try {
-      // Theme swaps change sprite colors, so old textures should not be reused.
-      invalidateSpriteTexturesForThemeChange();
-    } catch (err) {
-      console.warn('[usePreferencesState] sprite texture invalidation failed:', err);
-    }
+    void import('../../graph-runtime/sprites/theme').then(({ invalidateSpriteTexturesForThemeChange }) => {
+      try {
+        invalidateSpriteTexturesForThemeChange();
+      } catch (err) {
+        console.warn('[usePreferencesState] sprite texture invalidation failed:', err);
+      }
+    });
   }, [darkMode]);
 
   return {

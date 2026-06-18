@@ -1,29 +1,34 @@
 // src/canvas-engine/grid-layout/horizonRowHeights.ts
 
+import type { GridMetrics } from "./gridMetrics";
+
 const MIN_WEIGHT = 0.15; // row closest to horizon (smallest)
 const MAX_WEIGHT = 3.0;  // row farthest from horizon (largest)
 
-export interface HorizonRowHeightsResult {
-  rowHeights: number[];
-  rowOffsetY: number[];
-  horizonRowH: number;  // reference tile height: avg of the two rows flanking the horizon
-  horizonRowIdx: number; // index of the last top-half row (just above the horizon)
-  colsPerRow: number[];
-  cellWPerRow: number[];
+export interface HorizonRowHeightsResult extends GridMetrics {
+  horizonRowH: number;
+  horizonRowIdx: number;
 }
 
-/**
- * Computes non-uniform row heights for a two-sided perspective grid.
- *
- * The horizon is a physical position (horizonPos * totalH pixels from the top).
- * Rows are split into a top half (canvas top → horizon) and a bottom half
- * (horizon → canvas bottom). Within each half, rows compress toward the horizon
- * and expand away from it, producing a vanishing-point perspective effect.
- *
- * Odd row counts allocate the extra row to whichever side is taller.
- *
- * @param horizonPos - 0..1 fraction of totalH where the horizon sits
- */
+// Resolves the row heights based on min-max weight clamp number of rows
+// normalizes it to pixel budget (totalH) and adjusts the order of row-heights
+// based on sky or ground via reversed
+// is invoked by computeHorizonRowHeights. 
+function perspectiveHeights(n: number, totalH: number, reversed: boolean): number[] {
+  if (n === 1) return [totalH];
+  const weights = new Array<number>(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    // reversed=true  (top half): MAX_WEIGHT at i=0 (top), MIN_WEIGHT at i=n-1 (horizon)
+    // reversed=false (bot half): MIN_WEIGHT at i=0 (horizon), MAX_WEIGHT at i=n-1 (bottom)
+    weights[i] = reversed
+      ? MIN_WEIGHT + (MAX_WEIGHT - MIN_WEIGHT) * (1 - t)
+      : MIN_WEIGHT + (MAX_WEIGHT - MIN_WEIGHT) * t;
+  }
+  const totalW = weights.reduce((a: number, b: number) => a + b, 0);
+  return weights.map((wt: number) => (wt / totalW) * totalH);
+}
+
 export function computeHorizonRowHeights(
   totalH: number,
   rows: number,
@@ -94,17 +99,3 @@ export function computeHorizonRowHeights(
   return { rowHeights, rowOffsetY, horizonRowH, horizonRowIdx, colsPerRow, cellWPerRow };
 }
 
-function perspectiveHeights(n: number, totalH: number, reversed: boolean): number[] {
-  if (n === 1) return [totalH];
-  const weights = new Array<number>(n);
-  for (let i = 0; i < n; i++) {
-    const t = i / (n - 1);
-    // reversed=true  (top half): MAX_WEIGHT at i=0 (top), MIN_WEIGHT at i=n-1 (horizon)
-    // reversed=false (bot half): MIN_WEIGHT at i=0 (horizon), MAX_WEIGHT at i=n-1 (bottom)
-    weights[i] = reversed
-      ? MIN_WEIGHT + (MAX_WEIGHT - MIN_WEIGHT) * (1 - t)
-      : MIN_WEIGHT + (MAX_WEIGHT - MIN_WEIGHT) * t;
-  }
-  const totalW = weights.reduce((a: number, b: number) => a + b, 0);
-  return weights.map((wt: number) => (wt / totalW) * totalH);
-}

@@ -13,6 +13,7 @@ import CityOverlay from "../canvas-instances/CityEntry";
 
 import {
   AppBrowserPolicies,
+  DeferredGraphPreloader,
   DeferredGamificationPreloader,
   DuplicateSurveyBanner,
   MockReadBanner,
@@ -42,6 +43,7 @@ const AppInner: React.FC = () => {
         </Suspense>
       )}
 
+      <DeferredGraphPreloader />
       <DeferredGamificationPreloader />
       <Navigation />
 

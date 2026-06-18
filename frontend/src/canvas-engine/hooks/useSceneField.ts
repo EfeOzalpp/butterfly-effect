@@ -172,13 +172,30 @@ export function useSceneField(
     };
 
     if (fieldDelayMs > 0) {
+      // Compute layout now (during commit) so the RAF only applies the result,
+      // not computes it — avoids a heavy synchronous task inside the animation loop.
+      const precomputed = composeField({
+        padding: fieldArgs.padding,
+        placements: fieldArgs.placements,
+        liveAvg,
+        reservedFootprints,
+        landscapeCountScale: fieldArgs.landscapeCountScale,
+        ruleWidthPx: fieldArgs.ruleWidthPx,
+        canvas: fieldArgs.canvas,
+      });
       engineControls.setFieldVisible(false);
       fieldTimerId = window.setTimeout(() => {
         fieldTimerId = null;
         fieldRafId = requestAnimationFrame(() => {
           fieldRafId = null;
           if (cancelled) return;
-          composeAndApplyField(engineControls, fieldArgs);
+          engineControls.setFieldItems(precomputed.placed, { replayAppear: true });
+          engineControls.setFieldVisible(precomputed.placed.length > 0);
+          fieldApplyStateRef.current = {
+            liveAvg,
+            signature: fieldArgs.refreshSignature,
+            itemCount: precomputed.placed.length,
+          };
         });
       }, fieldDelayMs);
       return;

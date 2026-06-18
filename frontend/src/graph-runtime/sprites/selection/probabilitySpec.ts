@@ -26,59 +26,15 @@ export function getProbAt(curve: readonly ProbAnchor[], avg: number): number {
 // Art-direction table: each shape gets more or less likely as the score changes.
 // The sampler turns these curves into a stable shape pick per respondent.
 export const SHAPE_PROBABILITY_SPEC: ShapeProbSpec = {
-  clouds: [
-    { t: 0, prob: 0.6 },
-    { t: 0.45, prob: 0.82 },
-    { t: 1, prob: 0.94 },
-  ],
-  snow: [
-    { t: 0, prob: 0.38 },
-    { t: 0.45, prob: 0.56 },
-    { t: 1, prob: 0.76 },
-  ],
-  house: [
-    { t: 0, prob: 0.52 },
-    { t: 0.7, prob: 0.85 },
-    { t: 1, prob: 0.62 },
-  ],
-  power: [
-    { t: 0, prob: 0.62 },
-    { t: 0.5, prob: 0.65 },
-    { t: 1, prob: 0.62 },
-  ],
-  sun: [
-    { t: 0, prob: 0.28 },
-    { t: 0.5, prob: 0.60 },
-    { t: 1, prob: 0.95 },
-  ],
-  villa: [
-    { t: 0, prob: 0.18 },
-    { t: 0.5, prob: 0.50 },
-    { t: 1, prob: 0.92 },
-  ],
-  car: [
-    { t: 0, prob: 0.92 },
-    { t: 0.5, prob: 0.58 },
-    { t: 1, prob: 0.20 },
-  ],
-  sea: [
-    { t: 0, prob: 0.62 },
-    { t: 0.5, prob: 0.65 },
-    { t: 1, prob: 0.63 },
-  ],
-  carFactory: [
-    { t: 0, prob: 0.95 },
-    { t: 0.45, prob: 0.62 },
-    { t: 1, prob: 0.18 },
-  ],
-  bus: [
-    { t: 0, prob: 0.22 },
-    { t: 0.5, prob: 0.56 },
-    { t: 1, prob: 0.94 },
-  ],
-  trees: [
-    { t: 0, prob: 0.30 },
-    { t: 0.5, prob: 0.65 },
-    { t: 1, prob: 1.0 },
-  ],
+  clouds: [],
+  snow: [],
+  house: [],
+  power: [],
+  sun: [],
+  villa: [],
+  car: [],
+  sea: [],
+  carFactory: [],
+  bus: [],
+  trees: [],
 };

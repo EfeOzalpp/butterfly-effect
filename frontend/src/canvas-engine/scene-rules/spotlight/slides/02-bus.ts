@@ -76,6 +76,6 @@ export const busSlide = {
   darkBackground: busDarkBackground,
   foliage: busFoliage,
   darkFoliage: busDarkFoliage,
-  padding: rowsByDevice(3, 2, 2),
+  padding: rowsByDevice(3, 3, 2),
   placement: busPlacement,
 } as const satisfies SpotlightSlide;

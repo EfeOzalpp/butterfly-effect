@@ -18,8 +18,8 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(`[ErrorBoundary${this.props.name ? ` "${this.props.name}"` : ""}] Uncaught error:`, error, info.componentStack);
     void import("../lib/sentry")
-      .then(({ Sentry }) => {
-        Sentry.captureException(error, {
+      .then(({ captureException }) => {
+        captureException(error, {
           contexts: { react: { componentStack: info.componentStack ?? "" } },
           tags: { boundary: this.props.name ?? "unknown" },
         });
