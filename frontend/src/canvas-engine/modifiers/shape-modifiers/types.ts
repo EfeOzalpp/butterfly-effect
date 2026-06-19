@@ -1,5 +1,3 @@
-// Shape modifier config contracts.
-// These are declarative knobs that shapes pass into applyShapeMods before drawing.
 import type { Anchor } from "../../shared/geometry";
 
 interface Scale2D {
@@ -57,7 +55,6 @@ export interface ShapeMods {
   // the standard root appear unless a shape provides overrides or disables it.
   appear?: AppearMod | false;
 
-  // Size and motion modifiers. Shapes decide which configs they support.
   scale?: Scale;
   scale2D?: Scale2D;
   sizeOsc?: SizeOsc;

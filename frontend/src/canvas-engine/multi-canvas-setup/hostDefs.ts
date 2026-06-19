@@ -38,7 +38,6 @@ export const HOST_DEFS = defineHosts({
     zIndex: 2,
     dprMode: "cap2",
     fpsCap: 60,
-    initialFieldDelayMs: 100,
     canvasDimensions: { kind: "parent" },
     scene: { lookupKey: "start", ruleset: SCENE_RULESETS.intro },
   },

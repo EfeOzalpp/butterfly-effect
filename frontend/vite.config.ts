@@ -32,7 +32,7 @@ export default defineConfig({
       resolveDependencies: (_filename, deps) =>
         deps.filter(dep => !/three-(core|module|vendor)/.test(dep)),
     },
-    rolldownOptions: {
+    rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/three/build/three.core.js')) {

@@ -116,7 +116,7 @@
 
 @media (min-width: 768px) {
   .survey-section:has(.survey.survey-step.role-select) { height: 100%; }
-  .survey.survey-step.role-select .onboarding { padding: 2.6rem 0 3.2rem; min-width: 520px; max-width: 520px; }
+  .survey.survey-step.role-select .onboarding { padding: 3.2rem 0 2.4rem; min-width: 520px; max-width: 520px; }
   .welcome-title, .welcome-text { text-align: center; }
   .welcome-title { white-space: nowrap; padding: 2.4rem 0 3.2rem; }
   .radio-group { min-width: 260px; max-width: 260px; }
