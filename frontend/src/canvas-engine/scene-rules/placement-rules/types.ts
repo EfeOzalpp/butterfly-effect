@@ -7,9 +7,9 @@ import type { RuntimePreset } from "../runtimePreset";
 export type DeviceCount = Partial<Record<DeviceType, number>>;
 
 export interface PlacementZone {
-  verticalK: [top: number, bottom: number]; // vertical fraction of viewport height
-  horizontalK?: [left: number, right: number]; // horizontal fraction of viewport width
-  count: DeviceCount; // base count per device at liveAvg = 0.5
+  verticalK: [top: number, bottom: number];
+  horizontalK?: [left: number, right: number];
+  count: DeviceCount;
 }
 
 export interface QuotaAnchor {
@@ -72,6 +72,5 @@ export interface ProceduralZonePlacementPreset {
 
 export type ScenePlacementRules = ScenePlacementRuleMap & {
   preset?: ProceduralZonePlacementPreset;
-  // Optional runtime-selected placement maps.
   runtimePreset?: RuntimePreset<ScenePlacementRuleMap>;
 };

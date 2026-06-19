@@ -22,8 +22,7 @@ export interface EngineInputsPayload {
   spotlight?: SpotlightSignal;
 }
 
-// Style patch accepted from outside the runtime.
-// The full default style lives in engine/state.ts; this is only the public update shape.
+// Partial style updates; defaults live in engine/state.ts.
 export interface EngineFieldStyle {
   r?: number;
   gradientRGBOverride?: RGB | null;
@@ -58,10 +57,7 @@ export interface EngineSetFieldItemsOptions {
 }
 
 export interface EngineControls {
-  // inbound signals provided by outside of engine to drive movement on shapes
   setInputs: (args?: EngineInputsPayload) => void;
-
-  // field payload
   setFieldItems: (nextItems?: EngineFieldItem[], options?: EngineSetFieldItemsOptions) => void;
   setFieldStyle: (args?: EngineFieldStyle) => void;
   setFieldVisible: (v: boolean) => void;

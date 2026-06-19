@@ -1,6 +1,6 @@
 import { easeOutCubic } from "../util/easing";
 
-const DEFAULT_SCENE_SURFACE_APPEAR_MS = 20;
+const DEFAULT_SCENE_SURFACE_APPEAR_MS = 600;
 const APPEAR_DONE_ALPHA = 0.999;
 const MAX_APPEAR_FRAME_ADVANCE_MS = 30;
 

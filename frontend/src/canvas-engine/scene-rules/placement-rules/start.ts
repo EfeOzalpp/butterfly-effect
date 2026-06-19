@@ -640,7 +640,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
           house: { count: count(0, 1, 0), quota: S.house },
           bus: { count: count(0, 0, 1), quota: S.bus },
           carFactory: { count: count(1, 1, 1), quota: S.carFactory },
-          sea: { count: count(1, 0, 1), quota: FLAT_QUOTA },
+          sea: { count: count(0, 0, 1), quota: FLAT_QUOTA },
         },
       },
       {
@@ -801,7 +801,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.1, y: 0.7 },
         radius: { tiles: 6, xDistort: 3, yDistort: 1 },
         shapes: {
-          sea: { count: count(1, 0, 1), quota: FLAT_QUOTA },
+          sea: { count: count(0, 0, 1), quota: FLAT_QUOTA },
           house: { count: count(0, 0, 2), quota: S.house },
           villa: { count: count(0, 2, 3), quota: S.villa },
           trees: { count: count(1, 0, 4), quota: S.trees },
@@ -853,7 +853,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.4, y: 0.5 },
         radius: { tiles: 5, xDistort: 2, yDistort: 1 },
         shapes: {
-          sea: { count: count(1, 1, 1), quota: FLAT_QUOTA },
+          sea: { count: count(0, 1, 1), quota: FLAT_QUOTA },
           carFactory: { count: count(1, 1, 1), quota: FLAT_QUOTA },
           house: { count: count(0, 0, 0), quota: S.house },
           villa: { count: count(2, 1, 4), quota: S.villa },

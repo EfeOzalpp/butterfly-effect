@@ -70,11 +70,11 @@ export const ENGINE_STYLE_DEFAULT: EngineStyle = {
   // A slight default lift keeps the world from reading muddy under fog and scene overlays.
   exposure: 1.08,
   contrast: 1.03,
-  appearMs: 200,
+  appearMs: 300,
   // First field population is the cold path: shape code, masks, and bitmap
   // caches may all be warming. A longer initial stagger spreads that work
   // across frames; runtime refreshes are separately capped in runtime/index.ts.
-  appearStaggerMs: 1400,
+  appearStaggerMs: 1000,
   darkMode: false,
   fog: true,
   shapeLightSource: null,

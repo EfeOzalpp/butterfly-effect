@@ -8,8 +8,6 @@ import type { ScenePlacementRules } from "./placement-rules";
 import type { RenderCachePolicy } from "../runtime/render/cache-policy";
 import type { DeviceCountScale } from "../shared/responsiveness";
 
-// Scene rules own the full visual profile. Hosts select a ruleset; validation
-// checks it; runtime consumes the resolved profile.
 export interface SceneProfileContext {
   darkMode: boolean;
 }
