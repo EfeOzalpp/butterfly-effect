@@ -65,6 +65,9 @@
 .logs-td--qs { text-align: left; color: var(--ui-text-muted); letter-spacing: 0.01em; }
 .logs-td--avg { font-weight: var(--fw-bold); text-align: left; }
 .logs-td--rank { color: var(--ui-text-muted); text-align: left; }
+.logs-row { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.logs-row.is-active { background: var(--ui-bg-surface-hover); }
+.logs-row:focus-visible { outline: 2px solid var(--ui-border-strong); outline-offset: -2px; }
 
 .logs-empty { padding: 1rem 0.75rem; color: var(--ui-text-muted); font-size: var(--type-label-size); text-align: center; }
 

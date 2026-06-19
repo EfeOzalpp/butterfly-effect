@@ -255,7 +255,6 @@ export default function BarGraph({
   }, [animationState]);
 
   if (!section) return <p className="graph-loading">Pick a section to begin.</p>;
-  if (loading) return null;
 
   const sectionNav = (
     <WidgetSectionNav
@@ -268,10 +267,48 @@ export default function BarGraph({
     />
   );
 
+  if (loading) {
+    const loadingBody = (
+      <div className="bar-graph-container bar-graph-placeholder" aria-hidden="true">
+        {orderedColors.map((color, index) => (
+          <div className="bar-graph-bar" key={color}>
+            <span className="bar-graph-label">
+              <p>-</p>
+            </span>
+            <div className="bar-graph-divider">
+              <div
+                className="bar-graph-fill bar-graph-fill-placeholder"
+                style={{ height: `${String([62, 42, 24][index])}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+
+    if (navOutsidePanel) {
+      return (
+        <>
+          {sectionNav}
+          <div className={panelClassName}>
+            {loadingBody}
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <>
+        {sectionNav}
+        {loadingBody}
+      </>
+    );
+  }
+
   const noData = safeData.length === 0;
   if (noData) {
     const emptyBody = (
-      <div className="empty-center">
+      <div className="empty-center bar-graph-empty">
         <div className={`empty-card ${darkMode ? 'is-dark' : 'is-light'}`}>
           <EmptyStateArt className="empty-icon floaty" />
           <h4>Nothing yet...</h4>
