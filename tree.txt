@@ -1,5 +1,5 @@
 Folder PATH listing for volume Windows-SSD
-Volume serial number is 00000049 8829:2B60
+Volume serial number is 000000D7 8829:2B60
 C:.
 |   index.tsx
 |   tree.txt
@@ -28,10 +28,10 @@ C:.
 |   |   |   useSurveyDataState.ts
 |   |   |   useUiState.ts
 |   |   |   
-|   |   +---__tests__
+|   |   \---__tests__
 |   |           survey-data-utils.test.ts
 |   |           
-|   +---ui
+|   \---ui
 |           HintBanner.tsx
 |           
 +---assets
@@ -114,7 +114,7 @@ C:.
 |   |   |       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMawCUBGEe.woff2
 |   |   |       KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMaxKUBGEe.woff2
 |   |   |       
-|   |   +---roboto-serif
+|   |   \---roboto-serif
 |   |           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-w0kpEzi.woff2
 |   |           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-w8kpEzi.woff2
 |   |           R705jywflP6FLr3gZx7K8UyEVQnyR1E7VN-f51xYuGCQepO9CRLLcmv0wCOC-wIkpA (1).woff2
@@ -136,7 +136,7 @@ C:.
 |   |       tree2.json
 |   |       tree3.json
 |   |       
-|   +---svg
+|   \---svg
 |       +---check
 |       |       check.svg
 |       |       CheckIcon.tsx
@@ -161,7 +161,7 @@ C:.
 |       +---shared
 |       |       rawSvg.ts
 |       |       
-|       +---theme
+|       \---theme
 |               dark_mode.svg
 |               light_mode.svg
 |               ThemeIcon.tsx
@@ -180,10 +180,11 @@ C:.
 |   |   |   horizonRowHeights.ts
 |   |   |   index.ts
 |   |   |   occupancy.ts
+|   |   |   README.md
 |   |   |   resolveCols.ts
 |   |   |   uiPlacement.ts
 |   |   |   
-|   |   +---__tests__
+|   |   \---__tests__
 |   |           buildGrid.test.ts
 |   |           horizonRowHeights.test.ts
 |   |           resolveCols.test.ts
@@ -195,7 +196,7 @@ C:.
 |   |   |   useSceneField.ts
 |   |   |   useViewportKey.ts
 |   |   |   
-|   |   +---signals
+|   |   \---signals
 |   |           index.ts
 |   |           types.ts
 |   |           
@@ -227,7 +228,7 @@ C:.
 |   |   |   |   types.ts
 |   |   |   |   utils.ts
 |   |   |   |   
-|   |   |   +---perspective
+|   |   |   \---perspective
 |   |   |           index.ts
 |   |   |           particlePerspective.ts
 |   |   |           rowHeightBuckets.ts
@@ -235,7 +236,7 @@ C:.
 |   |   +---projection
 |   |   |       index.ts
 |   |   |       
-|   |   +---shape-modifiers
+|   |   \---shape-modifiers
 |   |           appear.ts
 |   |           apply.ts
 |   |           displacement.ts
@@ -266,7 +267,6 @@ C:.
 |   |   |       README.md
 |   |   |       
 |   |   +---engine
-|   |   |       environmentLight.ts
 |   |   |       field.ts
 |   |   |       itemLifecycle.ts
 |   |   |       loop.ts
@@ -274,7 +274,6 @@ C:.
 |   |   |       runtimeSceneVariants.ts
 |   |   |       sceneSurfaceLifecycle.ts
 |   |   |       scheduler.ts
-|   |   |       shapeFrameOptions.ts
 |   |   |       state.ts
 |   |   |       types.ts
 |   |   |       
@@ -293,6 +292,8 @@ C:.
 |   |   |       viewport.ts
 |   |   |       
 |   |   +---render
+|   |   |   |   surface.ts
+|   |   |   |   
 |   |   |   +---cache
 |   |   |   |       offscreenCache.ts
 |   |   |   |       README.md
@@ -302,7 +303,7 @@ C:.
 |   |   |   |       README.md
 |   |   |   |       types.ts
 |   |   |   |       
-|   |   |   +---passes
+|   |   |   \---passes
 |   |   |       |   README.md
 |   |   |       |   
 |   |   |       +---ambient-particles
@@ -322,6 +323,11 @@ C:.
 |   |   |       |       index.ts
 |   |   |       |       surface.ts
 |   |   |       |       
+|   |   |       +---depth
+|   |   |       |       index.ts
+|   |   |       |       shapeDepthOverlay.ts
+|   |   |       |       shapeDepthStyle.ts
+|   |   |       |       
 |   |   |       +---foliage
 |   |   |       |       cache.ts
 |   |   |       |       foliage.ts
@@ -329,26 +335,25 @@ C:.
 |   |   |       |       
 |   |   |       +---light
 |   |   |       |       cache.ts
+|   |   |       |       environmentLight.ts
 |   |   |       |       index.ts
 |   |   |       |       rowLight.ts
 |   |   |       |       
 |   |   |       +---shape
+|   |   |       |   |   frameOptions.ts
 |   |   |       |   |   index.ts
 |   |   |       |   |   itemOrder.ts
 |   |   |       |   |   items.ts
 |   |   |       |   |   palette.ts
-|   |   |       |   |   shapeDepthOverlay.ts
-|   |   |       |   |   shapeDepthStyle.ts
 |   |   |       |   |   shapeRenderCache.ts
 |   |   |       |   |   
-|   |   |       |   +---cache
+|   |   |       |   \---cache
 |   |   |       |           bitmapKeys.ts
 |   |   |       |           farShapeBitmap.ts
-|   |   |       |           index.ts
 |   |   |       |           policy.ts
 |   |   |       |           README.md
 |   |   |       |           
-|   |   |       +---shared
+|   |   |       \---shared
 |   |   |               color.ts
 |   |   |               horizon.ts
 |   |   |               
@@ -359,7 +364,7 @@ C:.
 |   |   |       registry.ts
 |   |   |       types.ts
 |   |   |       
-|   |   +---util
+|   |   \---util
 |   |           easing.ts
 |   |           transform.ts
 |   |           
@@ -381,6 +386,7 @@ C:.
 |   |   |   README.md
 |   |   |   registry.ts
 |   |   |   resolver.ts
+|   |   |   runtimePreset.ts
 |   |   |   shapeCatalog.ts
 |   |   |   shapeFootprints.ts
 |   |   |   
@@ -429,11 +435,11 @@ C:.
 |   |   |       start.ts
 |   |   |       types.ts
 |   |   |       
-|   |   +---spotlight
+|   |   \---spotlight
 |   |       |   README.md
 |   |       |   types.ts
 |   |       |   
-|   |       +---slides
+|   |       \---slides
 |   |               01-villa.ts
 |   |               02-bus.ts
 |   |               03-sea.ts
@@ -471,10 +477,10 @@ C:.
 |   |   |   math.ts
 |   |   |   responsiveness.ts
 |   |   |   
-|   |   +---__tests__
+|   |   \---__tests__
 |   |           hash32.test.ts
 |   |           
-|   +---validation
+|   \---validation
 |           defineRuleSet.ts
 |           index.ts
 |           invariant.ts
@@ -489,7 +495,9 @@ C:.
 +---graph-runtime
 |   |   GraphDataContext.tsx
 |   |   index.tsx
+|   |   r3f.ts
 |   |   README.md
+|   |   three.ts
 |   |   useGraphData.ts
 |   |   
 |   +---debug
@@ -519,7 +527,7 @@ C:.
 |   |   |   |       useRotation.ts
 |   |   |   |       useZoom.ts
 |   |   |   |       
-|   |   |   +---shared
+|   |   |   \---shared
 |   |   |           sharedGesture.ts
 |   |   |           
 |   |   +---components
@@ -550,7 +558,7 @@ C:.
 |   |   |       placement.ts
 |   |   |       screenSize.ts
 |   |   |       
-|   |   +---utils
+|   |   \---utils
 |   |           dotPoints.ts
 |   |           math.ts
 |   |           positions.ts
@@ -560,10 +568,10 @@ C:.
 |   |   |   gamification-personal.tsx
 |   |   |   rankLogic.ts
 |   |   |   
-|   |   +---__tests__
+|   |   \---__tests__
 |   |           rankLogic.test.ts
 |   |           
-|   +---sprites
+|   \---sprites
 |       |   entry.ts
 |       |   theme.ts
 |       |   types.ts
@@ -580,7 +588,6 @@ C:.
 |       |       visual.ts
 |       |       
 |       +---internal
-|       |       debug-flags.ts
 |       |       epochScheduler.ts
 |       |       qualityUpgradeScheduler.ts
 |       |       spriteGeometry.ts
@@ -591,25 +598,28 @@ C:.
 |       |       spriteShape.tsx
 |       |       
 |       +---selection
-|       |       drawers.ts
-|       |       probabilitySpec.ts
-|       |       shapeForAvg.ts
-|       |       types.ts
-|       |       
-|       +---textures
+|       |   |   drawers.ts
+|       |   |   probabilitySpec.ts
+|       |   |   shapeForAvg.ts
+|       |   |   types.ts
+|       |   |   
+|       |   \---__tests__
+|       |           shapeForAvg.test.ts
+|       |           
+|       \---textures
 |           |   canvasFacade.ts
 |           |   makeTextureFromDrawer.ts
 |           |   measureRenderedBounds.ts
 |           |   queue.ts
 |           |   spriteLight.ts
-|           |   useQueueProgress.ts
 |           |   
-|           +---cache
+|           \---cache
 |                   registry.ts
 |                   textureTracker.ts
 |                   
 +---lib
 |   |   posthog.ts
+|   |   sentry-replay.ts
 |   |   sentry.ts
 |   |   
 |   +---hooks
@@ -629,14 +639,14 @@ C:.
 |   |       breakpoints.ts
 |   |       graph-tools-offset.ts
 |   |       
-|   +---utils
+|   \---utils
 |       |   color-and-interpolation.ts
 |       |   live-average.ts
 |       |   quantize-average.ts
 |       |   score.ts
 |       |   session-cache.ts
 |       |   
-|       +---__tests__
+|       \---__tests__
 |               live-average.test.ts
 |               quantize-average.test.ts
 |               
@@ -651,12 +661,12 @@ C:.
 |   |   |   mode-toggle.tsx
 |   |   |   nav-bottom.tsx
 |   |   |   
-|   |   +---widgets
+|   |   \---widgets
 |   |       |   compact-graph-tools.tsx
 |   |       |   section-scores.tsx
 |   |       |   widget-section-nav.tsx
 |   |       |   
-|   |       +---bargraph
+|   |       \---bargraph
 |   |               EmptyArt.tsx
 |   |               index.tsx
 |   |               
@@ -664,7 +674,7 @@ C:.
 |   |       logo.tsx
 |   |       nav-left.tsx
 |   |       
-|   +---right
+|   \---right
 |           color-toggle.tsx
 |           nav-right.tsx
 |           system-color.tsx
@@ -672,7 +682,6 @@ C:.
 +---onboarding
 |   |   index.tsx
 |   |   README.md
-|   |   types.ts
 |   |   
 |   +---information
 |   |       canvas-info.tsx
@@ -680,27 +689,24 @@ C:.
 |   +---questionnaire
 |   |   |   index.ts
 |   |   |   
-|   |   +---button-input
+|   |   \---button-input
 |   |           button-layouts.ts
 |   |           button-questions.ts
-|   |           index.tsx
 |   |           questionnaire-flow.tsx
-|   |           types.ts
-|   |           useLiveAvgButtons.ts
 |   |           useQuestionnaireGridLayout.ts
 |   |           
 |   +---role-picker
 |   |       index.tsx
 |   |       role-step.tsx
 |   |       
-|   +---section-picker
+|   \---section-picker
 |           index.tsx
 |           sections.ts
 |           
 +---services
 |   |   README.md
 |   |   
-|   +---sanity
+|   \---sanity
 |       |   api.ts
 |       |   client.ts
 |       |   config.ts
@@ -712,10 +718,10 @@ C:.
 |       |   sections.ts
 |       |   types.ts
 |       |   
-|       +---__tests__
+|       \---__tests__
 |               normalizeSurveyRow.test.ts
 |               
-+---styles
+\---styles
         fonts.css
         gamification.css
         global-styles.css
@@ -723,10 +729,11 @@ C:.
         graph.css
         logs.css
         navigation.css
-        onboarding.css
+        onboarding-info.css
+        section-questionnaire.css
         ui-system.css
         widgets.css
-
+        
 +---Sanity
 |   |   
 |   +---schemaTypes
