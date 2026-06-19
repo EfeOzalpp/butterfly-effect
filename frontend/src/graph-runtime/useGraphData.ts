@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useAbsoluteScore } from "../lib/hooks/useAbsoluteScore";
 import { useRelativeScores } from "../lib/hooks/useRelativeScore";
 
-export interface GraphDatum {
+interface GraphDatum {
   _id?: string;
   avgWeight?: number;
   weights?: Record<string, number>;

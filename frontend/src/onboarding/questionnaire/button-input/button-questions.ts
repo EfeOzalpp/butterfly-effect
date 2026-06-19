@@ -1,4 +1,4 @@
-export interface ButtonQuestion {
+interface ButtonQuestion {
   id: string;
   prompt: string;
   options: { key: string; label: string; weight: number }[];

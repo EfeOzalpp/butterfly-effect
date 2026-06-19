@@ -36,7 +36,7 @@ export function makeP(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D):
     lineWidth: number;
   }[] = [];
 
-  // simple css→rgb parser using canvas
+  // simple css->rgb parser using canvas
   const scratchContext = document.createElement("canvas").getContext("2d");
   if (!scratchContext) throw new Error("2D canvas context not available");
   const _scratch = scratchContext;

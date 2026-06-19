@@ -5,7 +5,7 @@ import { gradientColor } from "./gradient";
 import { applyExposureContrast } from "./effects";
 import { VIVID_COLOR_STOPS } from "./stops";
 
-export interface VisualStyle {
+interface VisualStyle {
   rgb: { r: number; g: number; b: number };
   alpha: number;
   blend: number;

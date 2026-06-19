@@ -1,4 +1,4 @@
-import type { BackgroundSpec, QuestionnaireBackgroundsByMode } from "./types";
+import type { BackgroundSpec } from "./types";
 
 const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
   base: "rgb(158, 222, 248)",
@@ -23,7 +23,7 @@ const QUESTIONNAIRE_BACKGROUND: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_QUESTIONNAIRE: QuestionnaireBackgroundsByMode = {
+export const BACKGROUNDS_QUESTIONNAIRE: Record<"questionnaire", BackgroundSpec> = {
   questionnaire: QUESTIONNAIRE_BACKGROUND,
 } as const;
 
@@ -56,6 +56,6 @@ const QUESTIONNAIRE_BACKGROUND_DARK: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_QUESTIONNAIRE_DARK: QuestionnaireBackgroundsByMode = {
+export const BACKGROUNDS_QUESTIONNAIRE_DARK: Record<"questionnaire", BackgroundSpec> = {
   questionnaire: QUESTIONNAIRE_BACKGROUND_DARK,
 } as const;

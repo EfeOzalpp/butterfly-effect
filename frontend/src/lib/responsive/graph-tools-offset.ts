@@ -5,7 +5,7 @@ const GRAPH_TOOL_OFFSETS = {
   widgets: 50,
 } as const;
 
-// Tablet panels open from the bottom — shift graph center up to fill the
+// Tablet panels open from the bottom - shift graph center up to fill the
 // remaining visible area above the panel.
 const TABLET_TOOL_Y_OFFSETS = {
   logs: -170,

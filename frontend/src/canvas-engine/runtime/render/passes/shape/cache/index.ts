@@ -1,1 +1,0 @@
-export { createFarShapeBitmapRenderer } from "./farShapeBitmap";

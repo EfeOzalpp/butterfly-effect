@@ -38,11 +38,8 @@ export {
   shapeHash32,
 } from "./shape-modifiers";
 export { resolveRangeValue } from "./shape-modifiers";
-// Legacy aliases kept for older callers; new shape code should prefer
-// resolveRangeValue() and lerpNumber().
-export { val, mix } from "./shape-modifiers";
 export { applyShapeMods } from "./shape-modifiers";
-export type { Anchor, ShapeMods, ApplyShapeModsOpts, NumberRange } from "./shape-modifiers";
+export type { ShapeMods, NumberRange } from "./shape-modifiers";
 export { clampMinMax, finiteNumber, smoothstep01 } from "../shared/math";
 export {
   applyDepthTint,
@@ -69,7 +66,6 @@ export {
   lightClosenessBand,
   pickLightBandValue,
   sampleDirectionalLightRect,
-  paintEdgeGradientRect,
   paintDirectionalTriangleBands,
   paintPixelLightBands,
 } from "./lighting";

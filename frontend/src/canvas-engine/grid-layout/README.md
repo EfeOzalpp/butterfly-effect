@@ -17,7 +17,6 @@ placement rules
 
 placed footprint
   -> coords.cellAnchorToPx2 / cellRectToPx2
-  -> footprint.pointInFootprint
   -> uiPlacement.uiGridPlacementToPx
   -> downstream pixel rects, anchors, and draw positions
 ```
@@ -31,9 +30,8 @@ placed footprint
 - `forbidden.ts` converts authored blocked regions into per-cell predicates. It supports fractional rectangles, custom forbidden functions, and row trimming rules.
 - `occupancy.ts` tracks which footprint bottom-row cells are blocked or already used. Multi-row shapes still keep their full footprint for sizing, but occupancy reserves the ground row.
 - `coords.ts` converts grid cells and footprint anchors into pixels. It understands both uniform grids and horizon grids with per-row metrics.
-- `footprint.ts` turns a footprint into a pixel rect or point inside that rect using anchors, sub-cells, fractions, and pixel offsets.
 - `uiPlacement.ts` resolves UI placement specs into grid rectangles and pixel rectangles. Questionnaire buttons use this so UI can align to the same grid as shapes.
-- `index.ts` is the public barrel. It groups exports by math, primitives, and grid assembly.
+- `index.ts` is the narrow folder-level public API used by questionnaire layout code. Engine internals import submodules directly.
 
 ## What Gets Created
 
@@ -90,7 +88,19 @@ Pixel conversion creates rects and anchors:
 
 ## Downstream API
 
-Scene logic imports:
+Folder-level imports use:
+
+```ts
+makeCenteredSquareGrid
+usedRowsFromSpec
+resolveUiGridPlacement
+uiGridPlacementToPx
+justifyContentForUiPlacement
+CellSize
+UiGridPlacementInput
+```
+
+Scene logic imports submodules directly:
 
 ```ts
 makeCenteredSquareGrid
@@ -101,7 +111,7 @@ cellAnchorToPx2
 GridMetrics
 ```
 
-Runtime imports:
+Runtime imports submodules directly:
 
 ```ts
 makeCenteredSquareGrid
@@ -109,17 +119,16 @@ GridMetrics
 metricsDepth
 ```
 
-Questionnaire UI imports:
+Questionnaire UI imports from the barrel:
 
 ```ts
 resolveUiGridPlacement
 uiGridPlacementToPx
 justifyContentForUiPlacement
 UiGridPlacementInput
-Place
 ```
 
-App and canvas host state import `Place` as the shared reserved-footprint type.
+App, canvas host state, and questionnaire flow import `Place` directly from `occupancy.ts` as the shared reserved-footprint type.
 
 ## Contract
 

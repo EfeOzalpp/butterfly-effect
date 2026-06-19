@@ -669,4 +669,3 @@ export function drawTrees(
   p.pop(); // end cluster transform
 }
 
-export default drawTrees;

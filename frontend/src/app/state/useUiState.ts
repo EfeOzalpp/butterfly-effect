@@ -23,13 +23,13 @@ function sameQuestionnaireNav(a: QuestionnaireNavState, b: QuestionnaireNavState
 }
 
 export default function useUiState() {
-  // ── Survey shell ───────────────────────────────────────────────────────────
-  // isSurveyActive: survey shell is mounted (role → section → questions).
+  // -- Survey shell -----------------------------------------------------------
+  // isSurveyActive: survey shell is mounted (role -> section -> questions).
   // Distinct from questionnaireOpen, which is narrower (only the 'questions' stage).
   const [isSurveyActive, setSurveyActive] = useState<boolean>(false);
   const [hasCompletedSurvey, setHasCompletedSurvey] = useState<boolean>(false);
 
-  // ── Questionnaire sub-state ────────────────────────────────────────────────
+  // -- Questionnaire sub-state ------------------------------------------------
   const [questionnaireOpen, _setQuestionnaireOpen] = useState<boolean>(false);
   const questionnaireOpenRef = useRef(false);
   // Tracks whether the graph was opened while the questionnaire was active so
@@ -67,7 +67,7 @@ export default function useUiState() {
     }
   }, [resetQuestionnaireNav]);
 
-  // ── Graph visibility ───────────────────────────────────────────────────────
+  // -- Graph visibility -------------------------------------------------------
   const [observerMode, setObserverMode] = useState<boolean>(false);
   const [vizVisible, _setVizVisible] = useState<boolean>(false);
   const vizVisibleRef = useRef(false);
@@ -107,13 +107,13 @@ export default function useUiState() {
     setWidgetsOpen(false);
   }, [setVizVisible]);
 
-  // ── Other overlays ─────────────────────────────────────────────────────────
+  // -- Other overlays ---------------------------------------------------------
   const [animationVisible, setAnimationVisible] = useState(false);
   const [openPersonalized, setOpenPersonalized] = useState(false);
   const [personalPanelOpen, setPersonalPanelOpen] = useState(true);
   const [spotlightRequest, setSpotlightRequest] = useState<SpotlightRequest | null>(null);
 
-  // ── Persisted preferences ──────────────────────────────────────────────────
+  // -- Persisted preferences --------------------------------------------------
   const [mode, setMode] = useState<Mode>(() => readStoredMode('absolute'));
   useEffect(() => {
     setSessionItem('be.mode', mode);
@@ -124,7 +124,7 @@ export default function useUiState() {
     setSessionItem('be.radarMode', radarMode ? '1' : '0');
   }, [radarMode]);
 
-  // ── Survey reset ───────────────────────────────────────────────────────────
+  // -- Survey reset -----------------------------------------------------------
   const [surveyResetKey, setSurveyResetKey] = useState(0);
   const incrementSurveyResetKey = useCallback(() => { setSurveyResetKey((k) => k + 1); }, []);
 

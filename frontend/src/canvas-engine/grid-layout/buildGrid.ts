@@ -4,8 +4,8 @@ import { resolveCols } from "./resolveCols";
 import { computeHorizonRowHeights } from "./horizonRowHeights";
 import type { GridMetrics } from "./gridMetrics";
 
-export interface Pt { x: number; y: number }
-export interface MakeCenteredGridOpts {
+interface Pt { x: number; y: number }
+interface MakeCenteredGridOpts {
   w: number;
   h: number;
   rows: number;
@@ -16,7 +16,7 @@ export interface MakeCenteredGridOpts {
 // h: total vertical space
 // rows: authoritative vertical density
 // useTopRatio: vertical cropping (top portion only)
-// horizonPos: 0..1 fraction — rows split at this height, each half compressed toward horizon
+// horizonPos: 0..1 fraction - rows split at this height, each half compressed toward horizon
 
 export function makeCenteredSquareGrid(opts: MakeCenteredGridOpts) {
   const { w, h, rows, useTopRatio = 1, horizonPos } = opts;

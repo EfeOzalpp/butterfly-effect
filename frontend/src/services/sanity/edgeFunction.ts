@@ -1,4 +1,4 @@
-export interface SupabaseEdgeConfig {
+interface SupabaseEdgeConfig {
   url: string;
   publishableKey: string;
 }

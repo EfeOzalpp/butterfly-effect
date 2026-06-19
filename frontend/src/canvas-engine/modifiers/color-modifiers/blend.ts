@@ -15,15 +15,3 @@ export function blendRGBGamma(base: RGB, gradientRGB?: RGB, blend = 0.5): RGB {
   const k = clamp01(blend);
   return mixRGBGamma(base, gradientRGB, k);
 }
-
-// Convenience helper when the caller wants to choose the blend mode at runtime.
-export function blendRGBSmart(
-  base: RGB,
-  gradientRGB?: RGB,
-  blend = 0.5,
-  opts?: { gamma?: boolean }
-): RGB {
-  return (opts?.gamma ?? true)
-    ? blendRGBGamma(base, gradientRGB, blend)
-    : blendRGB(base, gradientRGB, blend);
-}

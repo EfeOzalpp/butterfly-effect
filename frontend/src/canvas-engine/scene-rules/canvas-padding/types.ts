@@ -1,6 +1,7 @@
 // src/canvas-engine/scene-rules/canvas-padding/types.ts
 
 import type { DeviceType } from "../../shared/responsiveness";
+import type { RuntimePreset } from "../runtimePreset";
 
 export interface CanvasPaddingSpec {
   rows: number;
@@ -12,5 +13,5 @@ export interface CanvasPaddingSpec {
 export type CanvasPaddingPolicyByDevice = Record<DeviceType, CanvasPaddingSpec | null>;
 
 export type CanvasPaddingPolicy = CanvasPaddingPolicyByDevice & {
-  variants?: readonly CanvasPaddingPolicyByDevice[];
+  runtimePreset?: RuntimePreset<CanvasPaddingPolicyByDevice>;
 };

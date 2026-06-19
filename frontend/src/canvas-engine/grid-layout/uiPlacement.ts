@@ -3,18 +3,18 @@
 import { cellAnchorToPx2, cellRectToPx2 } from "./coords";
 import type { CellSize } from "./coords";
 
-export interface UiGridRect {
+interface UiGridRect {
   r0: number;
   c0: number;
   w: number;
   h: number;
 }
 
-export type UiGridPlacement = UiGridRect & {
+type UiGridPlacement = UiGridRect & {
   anchor?: "topleft" | "center";
 };
 
-export interface UiGridBandPlacement {
+interface UiGridBandPlacement {
   verticalK: [top: number, bottom: number];
   horizontalK?: [left: number, right: number];
   w: number;
@@ -26,14 +26,14 @@ export interface UiGridBandPlacement {
 
 export type UiGridPlacementInput = UiGridPlacement | UiGridBandPlacement;
 
-export interface UiGridResolver {
+interface UiGridResolver {
   rows: number;
   cols: number;
   usedRows?: number;
   colsPerRow?: number[];
 }
 
-export interface UiGridPlacementPx {
+interface UiGridPlacementPx {
   left: number;
   top: number;
   width: number;

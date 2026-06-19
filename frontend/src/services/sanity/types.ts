@@ -43,17 +43,4 @@ export interface RawSurveyRow extends SurveyWeights {
   submittedAt?: string;
 }
 
-export type NormalizedSurveyRow = SurveyRow;
-
 export type Unsubscribe = () => void;
-
-export interface SubscribeSurveyDataArgs {
-  section: string;
-  limit?: number;
-  onData: (rows: SurveyRow[]) => void;
-}
-
-export interface QueryAndParams {
-  query: string;
-  params: Record<string, unknown>;
-}

@@ -4,7 +4,7 @@ import type { RGB, Stop } from "./utils";
 import { clamp01 } from "./utils";
 import { mixRGB } from "./colorspace";
 
-export function rgbToCss(c: RGB): string {
+function rgbToCss(c: RGB): string {
   return `rgb(${String(c.r)}, ${String(c.g)}, ${String(c.b)})`;
 }
 

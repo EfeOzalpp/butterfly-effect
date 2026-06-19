@@ -1,7 +1,7 @@
 // Shared transform math for shape modifiers.
 // Kept separate from apply.ts so anchor and easing behavior has one owner.
 import { clamp01 } from "./ranges";
-import type { Anchor } from "./types";
+import type { Anchor } from "../../shared/geometry";
 
 export function applyAnchorShiftForScale(
   anchor: Anchor,

@@ -1,6 +1,6 @@
 // src/canvas-engine/hooks/useSceneField.ts
 
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import {
   composeField,
@@ -12,6 +12,7 @@ import { HOST_DEFS } from "../multi-canvas-setup/hostDefs";
 import type { CanvasEngineControls } from "../runtime";
 import type { EngineShapeLightSource } from "../runtime/engine/state";
 import { fieldRefreshSignature } from "./sceneFieldSignature";
+import type { useCanvasEngine } from "./useCanvasEngine";
 import { getCanvasLogicalSize, useCanvasLogicalSizeTick } from "./useCanvasLogicalSize";
 
 import type { SceneLookupKey, SceneState } from "../scene-state";
@@ -23,11 +24,7 @@ import { getViewportSize, type DeviceCountScale } from "../shared/responsiveness
 import { usePreferences } from "../../app/state/preferences-context";
 import type { Place } from "../grid-layout/occupancy";
 
-interface Engine {
-  ready: RefObject<boolean>;
-  controls: RefObject<CanvasEngineControls | null>;
-  readyTick?: number;
-}
+type Engine = ReturnType<typeof useCanvasEngine>;
 
 
 export function useSceneField(
@@ -63,7 +60,7 @@ export function useSceneField(
     let fieldRafId: number | null = null;
     let fieldTimerId: number | null = null;
 
-    const readyGeneration = readyTick ?? 0;
+    const readyGeneration = readyTick;
     const nowMs = typeof performance !== "undefined" ? performance.now() : Date.now();
     let fieldDelayMs = 0;
     if (initialFieldDelayMs > 0) {
@@ -173,7 +170,7 @@ export function useSceneField(
 
     if (fieldDelayMs > 0) {
       // Compute layout now (during commit) so the RAF only applies the result,
-      // not computes it — avoids a heavy synchronous task inside the animation loop.
+      // rather than doing heavy synchronous work inside the animation loop.
       const precomputed = composeField({
         padding: fieldArgs.padding,
         placements: fieldArgs.placements,

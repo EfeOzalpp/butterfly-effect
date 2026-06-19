@@ -1,6 +1,4 @@
 import { easeOutCubic } from "../util/easing";
-import { normalizeDprTransform } from "../util/transform";
-import type { PLike } from "../p/makeP";
 
 const DEFAULT_SCENE_SURFACE_APPEAR_MS = 20;
 const APPEAR_DONE_ALPHA = 0.999;
@@ -62,13 +60,4 @@ export function resolveSceneSurfaceFrame(
     alpha,
     appearing: alpha < APPEAR_DONE_ALPHA,
   };
-}
-
-export function clearSceneSurfaceToUnderpaint(p: PLike) {
-  const ctx = p.drawingContext;
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
-  ctx.restore();
-  normalizeDprTransform(p);
 }

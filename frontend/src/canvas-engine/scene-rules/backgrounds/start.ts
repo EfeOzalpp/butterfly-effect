@@ -1,4 +1,4 @@
-import type { BackgroundSpec, StartBackgroundsByMode } from "./types";
+import type { BackgroundSpec } from "./types";
 
 // light scene
 const START_BACKGROUND: BackgroundSpec = {
@@ -27,7 +27,7 @@ const START_BACKGROUND: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_LIGHT: StartBackgroundsByMode = {
+export const BACKGROUNDS_LIGHT: Record<"start", BackgroundSpec> = {
   start: START_BACKGROUND,
 } as const;
 
@@ -63,6 +63,6 @@ const START_BACKGROUND_DARK: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_START_DARK: StartBackgroundsByMode = {
+export const BACKGROUNDS_START_DARK: Record<"start", BackgroundSpec> = {
   start: START_BACKGROUND_DARK,
 } as const;

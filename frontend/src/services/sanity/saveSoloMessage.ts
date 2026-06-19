@@ -10,7 +10,7 @@ import {
 } from './edgeFunction';
 import { updateMockSoloMessage } from './mockData';
 
-export interface SavedSoloMessage {
+interface SavedSoloMessage {
   _id: string;
   soloMessage?: string;
   soloMessageUpdatedAt?: string;

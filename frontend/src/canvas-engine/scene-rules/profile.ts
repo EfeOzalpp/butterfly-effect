@@ -10,14 +10,12 @@ import type { DeviceCountScale } from "../shared/responsiveness";
 
 // Scene rules own the full visual profile. Hosts select a ruleset; validation
 // checks it; runtime consumes the resolved profile.
-export type PaddingPolicyByDevice = CanvasPaddingPolicy;
-
 export interface SceneProfileContext {
   darkMode: boolean;
 }
 
 export interface SceneProfile {
-  padding: PaddingPolicyByDevice;
+  padding: CanvasPaddingPolicy;
   placements: ScenePlacementRules;
   background: BackgroundSpec;
   ambientParticles: AmbientParticlesSceneSpec | null;

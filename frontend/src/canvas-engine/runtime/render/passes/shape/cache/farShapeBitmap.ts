@@ -21,7 +21,7 @@ import {
   shapeStyle,
 } from "../../../../../shapes/options";
 import { drawItemFromRegistry } from "../../../../shape-adapter/draw";
-import { resolveShapeDepthColor, resolveShapeDepthMaxBlend } from "../shapeDepthStyle";
+import { resolveShapeDepthColor, resolveShapeDepthMaxBlend } from "../../depth";
 import {
   liveAvgBucketAvg,
   liveAvgBucketId,

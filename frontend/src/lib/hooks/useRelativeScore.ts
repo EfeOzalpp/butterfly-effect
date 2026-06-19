@@ -3,7 +3,7 @@ import { avgWeightOf, type WithWeights } from '../utils/score';
 
 // src/lib/hooks/useRelativeScore.ts
 
-export type TiePolicy = 'strict' | 'lte';
+type TiePolicy = 'strict' | 'lte';
 
 interface RelativeScoreOptions<TItem extends WithWeights> {
   accessor?: (item: TItem) => number;

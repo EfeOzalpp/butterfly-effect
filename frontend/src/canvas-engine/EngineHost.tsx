@@ -10,7 +10,7 @@ import type { Place } from "./grid-layout/occupancy";
 import type { SpotlightSignal } from "./hooks/signals";
 import type { EngineShapeLightSource } from "./runtime/engine/state";
 
-import { HOST_DEFS, type CanvasBounds, type HostDef, type HostId } from "./multi-canvas-setup/hostDefs";
+import { getHostDef, HOST_DEFS, type CanvasBounds, type HostId } from "./multi-canvas-setup/hostDefs";
 
 export function EngineHost({
   id,
@@ -31,7 +31,7 @@ export function EngineHost({
   fog?: boolean;
   shapeLightSource?: EngineShapeLightSource | null;
 }) {
-  const hostDef = React.useMemo<HostDef>(() => HOST_DEFS[id], [id]);
+  const hostDef = React.useMemo(() => getHostDef(id), [id]);
 
   const stopOnOpenMounts = React.useMemo(() => {
     const ids = hostDef.stopOnOpen ?? [];

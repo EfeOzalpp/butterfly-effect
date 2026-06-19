@@ -8,8 +8,6 @@ Engine owns runtime state, controls contracts, scheduling, lifecycle, and the fr
 - `state.ts` - runtime defaults and mutable state shape. Upstream: `runtime/index.ts`; downstream: `loop.ts`.
 - `field.ts` - item payload consumed by render passes.
 - `loop.ts` - per-frame orchestration and pass order.
-- `shapeFrameOptions.ts` - base shape option assembly and shape light item resolution.
-- `environmentLight.ts` - environment light source lookup for fog/atmosphere effects.
 - `runtimeSceneVariants.ts` - spotlight variant selection for runtime scene specs.
 - `itemLifecycle.ts` and `sceneSurfaceLifecycle.ts` - item and scene appear state.
 - `scheduler.ts` - requestAnimationFrame registration and cleanup.
@@ -25,7 +23,7 @@ tick(now)
   -> prepareSceneFrame(now)
      -> resolve scene profile and spotlight variants
      -> compute/reuse grid metrics
-     -> resolve anchors, environment light, fog state
+     -> resolve anchors, light source, fog state
 
   -> render scene passes
      background cache -> live stars -> foliage cache -> fog cache -> debug grid
@@ -48,7 +46,7 @@ drawItems
   -> renderOneSandboxed
      -> ask shape cache to draw/reuse color pass
      -> if cache declined, call shape-adapter live
-     -> draw/reuse shape depth overlay
+     -> draw/reuse depth overlay
 ```
 
 ## Contracts

@@ -16,7 +16,7 @@ import {
 interface ResolvedSurfaceStop {
   k: number;
   left: RGBA;
-  center?: RGBA; // present when leftRgba authored — rgba becomes center, leftRgba becomes left
+  center?: RGBA; // present when leftRgba authored - rgba becomes center, leftRgba becomes left
   right: RGBA;
   blendFromPrevious: boolean;
   blendToNext: boolean;

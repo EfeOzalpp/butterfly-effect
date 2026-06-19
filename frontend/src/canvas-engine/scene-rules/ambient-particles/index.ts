@@ -1,12 +1,13 @@
 import { SPOTLIGHT_SLIDES, type SpotlightSlide } from "../spotlight/slides";
-import type { AmbientParticlesSceneSpec, AmbientParticlesSpecsByMode } from "./types";
+import type { SceneLookupKey } from "../../scene-state";
+import type { AmbientParticlesSceneSpec } from "./types";
 
 export type {
-  AmbientParticleColorStop,
   AmbientParticleLayerSpec,
   AmbientParticlesSceneSpec,
-  AmbientParticlesSpecsByMode,
 } from "./types";
+
+type AmbientParticlesByMode = Record<SceneLookupKey, AmbientParticlesSceneSpec | null>;
 
 const spotlightSlides: readonly SpotlightSlide[] = SPOTLIGHT_SLIDES;
 
@@ -50,14 +51,20 @@ const START_DARK_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
 
 const SPOTLIGHT_AMBIENT_PARTICLES = {
   layers: [],
-  variants: spotlightSlides.map((slide) => slide.ambientParticles ?? null),
+  runtimePreset: {
+    selector: "spotlightIndex",
+    entries: spotlightSlides.map((slide) => slide.ambientParticles ?? null),
+  },
 } as const;
 
 const SPOTLIGHT_DARK_AMBIENT_PARTICLES = {
   layers: [],
-  variants: spotlightSlides.map(
-    (slide) => slide.darkAmbientParticles ?? slide.ambientParticles ?? null
-  ),
+  runtimePreset: {
+    selector: "spotlightIndex",
+    entries: spotlightSlides.map(
+      (slide) => slide.darkAmbientParticles ?? slide.ambientParticles ?? null
+    ),
+  },
 } as const;
 
 const CITY_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
@@ -124,14 +131,14 @@ const CITY_DARK_AMBIENT_PARTICLES: AmbientParticlesSceneSpec = {
   ],
 };
 
-export const AMBIENT_PARTICLES: AmbientParticlesSpecsByMode = {
+export const AMBIENT_PARTICLES: AmbientParticlesByMode = {
   start: START_AMBIENT_PARTICLES,
   questionnaire: START_AMBIENT_PARTICLES,
   city: CITY_AMBIENT_PARTICLES,
   spotlight: SPOTLIGHT_AMBIENT_PARTICLES,
 } as const;
 
-export const AMBIENT_PARTICLES_DARK: AmbientParticlesSpecsByMode = {
+export const AMBIENT_PARTICLES_DARK: AmbientParticlesByMode = {
   start: START_DARK_AMBIENT_PARTICLES,
   questionnaire: START_DARK_AMBIENT_PARTICLES,
   city: CITY_DARK_AMBIENT_PARTICLES,

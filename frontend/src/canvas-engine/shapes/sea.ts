@@ -561,10 +561,10 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     p.pop();
   }
 
-  // SPILL (particle-2) — drawn last so droplets render above the bowl
+  // SPILL (particle-2) - drawn last so droplets render above the bowl
   if (T.spill.enable && shouldDrawColorDetails) {
     // Remove clip before spill so particles can render into the bleed area (sea has 0.45-tile
-    // horizontal bleed on each side — enough for the falling corridors to sit outside the pool).
+    // horizontal bleed on each side - enough for the falling corridors to sit outside the pool).
     if (wantClip) ctx.restore();
 
     const gGate = T.spill.liveGate;

@@ -13,7 +13,7 @@ Foliage rules define optional static plant-detail layers that sit behind/around 
 scene-rules/resolver
   -> FOLIAGE or FOLIAGE_DARK[sceneLookup]
      -> EngineSceneProfile.foliage
-        -> engine/loop.ts runtime variant resolver
+        -> engine/loop.ts runtime spotlight preset resolver
            -> render/passes/foliage/cache.ts
               hit: blit foliage layer
               miss: foliage.ts redraws plant layer once
@@ -33,7 +33,7 @@ Spec schema:
 ```ts
 FoliageSceneSpec {
   layers: readonly FoliageLayerSpec[]
-  variants?: readonly (FoliageSceneSpec | null)[]
+  runtimePreset?: { selector: "spotlightIndex"; entries: readonly (FoliageSceneSpec | null)[] }
 }
 ```
 

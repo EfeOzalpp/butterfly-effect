@@ -1,8 +1,8 @@
 import { normalizeSurveyRow } from './normalizeSurveyRow';
 import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from './sections';
-import type { NormalizedSurveyRow, SurveyWeights, Unsubscribe } from './types';
+import type { SurveyRow, SurveyWeights, Unsubscribe } from './types';
 
-export interface MockRow {
+interface MockRow {
   _id: string;
   _type: 'userResponseV4';
   _createdAt: string;
@@ -100,11 +100,10 @@ const STAFF_SECTIONS = new Set(STAFF_IDS);
 interface SurveySubscriber {
   section: string;
   limit: number;
-  onData: (rows: NormalizedSurveyRow[]) => void;
+  onData: (rows: SurveyRow[]) => void;
 }
 
 const surveySubscribers = new Set<SurveySubscriber>();
-const countSubscribers = new Set<(counts: Record<string, number>) => void>();
 
 const sortNewestFirst = (a: MockRow, b: MockRow) =>
   Date.parse(b.submittedAt) - Date.parse(a.submittedAt);
@@ -158,7 +157,7 @@ function allRows() {
   return [...BASE_ROWS, ...readStoredRows()].sort(sortNewestFirst);
 }
 
-function filterRows(section: string, limit: number): NormalizedSurveyRow[] {
+function filterRows(section: string, limit: number): SurveyRow[] {
   let rows = allRows();
   if (section && section !== 'all') {
     if (section === 'all-massart') {
@@ -174,31 +173,9 @@ function filterRows(section: string, limit: number): NormalizedSurveyRow[] {
   return rows.slice(0, limit).map(normalizeSurveyRow);
 }
 
-function buildCounts(rows: MockRow[]) {
-  const bySection: Partial<Record<string, number>> = {};
-  for (const row of rows) {
-    bySection[row.section] = (bySection[row.section] ?? 0) + 1;
-  }
-  const sum = (matcher: (section: string) => boolean) =>
-    Object.entries(bySection).reduce((acc, [section, count]) => acc + (matcher(section) ? count ?? 0 : 0), 0);
-
-  return {
-    all: rows.length,
-    'all-massart': sum((section) => section !== 'visitor'),
-    'all-students': sum((section) => STUDENT_SECTIONS.has(section)),
-    'all-staff': sum((section) => STAFF_SECTIONS.has(section)),
-    ...bySection,
-    visitor: bySection.visitor ?? 0,
-  };
-}
-
 function notifyAllSubscribers() {
   surveySubscribers.forEach(({ section, limit, onData }) => {
     onData(filterRows(section, limit));
-  });
-  const counts = buildCounts(allRows());
-  countSubscribers.forEach((onData) => {
-    onData(counts);
   });
 }
 
@@ -209,7 +186,7 @@ export function subscribeMockSurveyData({
 }: {
   section: string;
   limit?: number;
-  onData: (rows: NormalizedSurveyRow[]) => void;
+  onData: (rows: SurveyRow[]) => void;
 }): Unsubscribe {
   const subscriber: SurveySubscriber = { section, limit, onData };
   surveySubscribers.add(subscriber);
@@ -219,29 +196,6 @@ export function subscribeMockSurveyData({
   return () => {
     window.clearTimeout(timer);
     surveySubscribers.delete(subscriber);
-  };
-}
-
-export function fetchMockSurveyData(
-  callback: (rows: NormalizedSurveyRow[]) => void,
-  { limit = 300 }: { limit?: number } = {}
-): Unsubscribe {
-  const timer = window.setTimeout(() => {
-    callback(filterRows('all', limit));
-  }, 0);
-  return () => {
-    window.clearTimeout(timer);
-  };
-}
-
-export function subscribeMockSectionCounts({ onData }: { onData: (counts: Record<string, number>) => void }) {
-  countSubscribers.add(onData);
-  const timer = window.setTimeout(() => {
-    onData(buildCounts(allRows()));
-  }, 0);
-  return () => {
-    window.clearTimeout(timer);
-    countSubscribers.delete(onData);
   };
 }
 
@@ -309,15 +263,4 @@ export function updateMockSoloMessage(responseId: string, message: string) {
     soloMessage: updated.soloMessage,
     soloMessageUpdatedAt: updated.soloMessageUpdatedAt,
   };
-}
-
-export function clearMockSurveyState() {
-  if (typeof window !== 'undefined') {
-    try {
-      sessionStorage.removeItem(MOCK_STORAGE_KEY);
-    } catch (error: unknown) {
-      console.warn('[mockData] Failed to clear mock rows:', error);
-    }
-  }
-  notifyAllSubscribers();
 }

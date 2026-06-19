@@ -11,8 +11,8 @@ import {
   type FogState,
 } from "./fog";
 
-// Offscreen cache for the whole static fog layer. Shape depth lives in
-// render/passes/shape/shapeDepthOverlay.ts, so this layer stays behind scene objects.
+// Offscreen cache for the whole static fog layer. Depth lives in
+// render/passes/depth, so this layer stays behind scene objects.
 export function createFogLayerCache() {
   const cache = createOffscreenCache();
   let cacheKey = "";

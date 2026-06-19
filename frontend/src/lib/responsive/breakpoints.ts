@@ -21,8 +21,5 @@ export const isMobileWidth = (width: number): boolean =>
 export const isTabletWidth = (width: number): boolean =>
   viewportBandForWidth(width) === "tablet";
 
-export const isCompactWidth = (width: number): boolean =>
-  width <= VIEWPORT_BREAKPOINTS.tabletMax;
-
 export const isDesktopWidth = (width: number): boolean =>
   width >= VIEWPORT_BREAKPOINTS.desktopMin;

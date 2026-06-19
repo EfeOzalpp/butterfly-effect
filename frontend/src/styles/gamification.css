@@ -281,11 +281,11 @@
 .personal-close-btn .ui-close { width: 16px; height: 16px; flex: 0 0 auto; }
 
 /* additional */
-/* Color cascades down from root — inner elements inherit */
+/* Color cascades down from root - inner elements inherit */
 .personalized-root {
   color: var(--ui-text);
 }
-/* Toggle button — separate interactive element */
+/* Toggle button - separate interactive element */
 .toggle-button.toggle {
   width: 32px;
   height: 32px;

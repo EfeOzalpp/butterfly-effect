@@ -7,7 +7,7 @@ describe("rand01FromString", () => {
     ["California"],
     ["LifeIsLife"],
     ["thiscanbeinteresting"],
-    ["½{[[$#"],
+    ["1/2{[[$#"],
     ["/)/68406fg,ssaf"],
   ])("%s", (input) => {
     const result = rand01FromString(input);
@@ -23,7 +23,7 @@ describe("phaseFromIndex", () => {
     [2046743, 12467],
     [68953, 0],
     [-1, 0],
-  ])("idx=%s seed=%s stays in [0, 2π]", (idx, seed) => {
+  ])("idx=%s seed=%s stays in [0, 2pi]", (idx, seed) => {
     const result = phaseFromIndex(idx, seed);
     expect(result).toBeGreaterThanOrEqual(0);
     expect(result).toBeLessThanOrEqual(Math.PI * 2);

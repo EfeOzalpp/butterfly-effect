@@ -49,7 +49,7 @@ interface FarShapeCacheStats {
   lastUpdatedMs: number;
 }
 
-export interface FarShapeCacheDebugTracker {
+interface FarShapeCacheDebugTracker {
   markCall(): void;
   markSkippedDisabled(): void;
   markSkippedPolicy(): void;

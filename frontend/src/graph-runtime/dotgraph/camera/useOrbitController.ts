@@ -13,7 +13,7 @@ import { createGestureState } from './shared/sharedGesture';
 
 import { computeInitialZoomTarget } from './compute/zoomTarget';
 
-export interface OrbitLayout {
+interface OrbitLayout {
   useDesktopLayout?: boolean;
   isSmallScreen?: boolean;
   isTabletLike?: boolean;
@@ -25,25 +25,25 @@ export interface OrbitLayout {
   yOffsetPx?: number;
 }
 
-export interface OrbitBounds {
+interface OrbitBounds {
   minRadius?: number;
   maxRadius?: number;
 }
 
-export interface OrbitIdle {
+interface OrbitIdle {
   startOnLoad?: boolean;
   delayMs?: number;
   speed?: number;
   horizontalOnly?: boolean;
 }
 
-export interface OrbitThresholds {
+interface OrbitThresholds {
   mobile: number;
   tablet: number;
   desktop: number;
 }
 
-export interface OrbitParams {
+interface OrbitParams {
   layout?: OrbitLayout;
   bounds?: OrbitBounds;
 
@@ -72,7 +72,7 @@ export interface OrbitParams {
   zoomResetKey?: string | number;
 }
 
-export interface OrbitReturn {
+interface OrbitReturn {
   groupRef: React.MutableRefObject<Group | null>;
   radius: number;
   isPinchingRef: React.RefObject<boolean>;

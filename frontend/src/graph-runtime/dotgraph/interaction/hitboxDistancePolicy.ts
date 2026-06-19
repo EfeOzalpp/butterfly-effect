@@ -5,7 +5,7 @@ import type {
   SpriteVisualLayout,
 } from "../../sprites/types";
 
-export interface ResolvedHitboxDistance {
+interface ResolvedHitboxDistance {
   visible: boolean;
   scale: [number, number, number];
   center: [number, number];

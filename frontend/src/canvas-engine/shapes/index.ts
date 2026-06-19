@@ -38,7 +38,7 @@ export const SHAPE_RENDER_PASSES: Record<string, readonly ShapeRenderPass[]> = {
   sea: ["depthMask"],
 };
 
-export type EnvironmentLightShape = readonly ["lightShape", `#${string}`, `#${string}`?];
+type EnvironmentLightShape = readonly ["lightShape", `#${string}`, `#${string}`?];
 
 // Environment light metadata lets runtime-level effects, such as fog gradients,
 // follow the authored light object without shape-specific branches. Use a

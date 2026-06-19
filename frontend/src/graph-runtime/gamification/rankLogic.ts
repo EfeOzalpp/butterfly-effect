@@ -7,7 +7,7 @@ import type {
   DotGraphTieStats,
 } from "../dotgraph/types";
 
-export interface TieStatsParams<TEntry extends DotGraphEntry = DotGraphEntry> {
+interface TieStatsParams<TEntry extends DotGraphEntry = DotGraphEntry> {
   data?: TEntry[];
   targetId?: string;
   targetDisplay?: number;
@@ -88,26 +88,4 @@ export function classifyPosition({
   if (below > above) return { position: 'middle-above', tieContext: 'none' };
   if (above > below) return { position: 'middle-below', tieContext: 'none' };
   return { position: 'middle', tieContext: 'none' };
-}
-
-export function buildTieBuckets<TEntry extends DotGraphEntry = DotGraphEntry>(
-  data: TEntry[],
-  displayPercentOf?: (item: TEntry) => number
-): Map<number, string[]> {
-  const map = new Map<number, string[]>();
-  if (!data.length) return map;
-
-  for (const entry of data) {
-    if (!entry._id) continue;
-    const key = keyOf(entry, displayPercentOf);
-    const bucket = map.get(key) ?? [];
-    bucket.push(entry._id);
-    map.set(key, bucket);
-  }
-
-  for (const [key, bucket] of map) {
-    if (bucket.length <= 1) map.delete(key);
-  }
-
-  return map;
 }

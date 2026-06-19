@@ -20,7 +20,7 @@ export function resolveStopKValue(k: BackgroundStopK, anchors?: BackgroundAnchor
   return typeof k === "number" ? clamp01(k) : resolveAnchorK(k, anchors);
 }
 
-export interface ResolvedBackgroundStop {
+interface ResolvedBackgroundStop {
   stop: RgbaStop;
   k: number;
   order: number;

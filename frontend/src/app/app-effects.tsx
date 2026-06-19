@@ -52,7 +52,9 @@ export function DeferredGraphPreloader() {
         void import('../graph-runtime/dotgraph/data-boundary');
       });
     }, 6000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
   return null;
 }
@@ -61,9 +63,12 @@ export function DeferredGamificationPreloader() {
   const [start, setStart] = useState<boolean>(false);
 
   useEffect(() => {
-    return scheduleIdle(() => {
+    const cancelIdle = scheduleIdle(() => {
       setStart(true);
     });
+    return () => {
+      cancelIdle?.();
+    };
   }, []);
 
   return start ? (

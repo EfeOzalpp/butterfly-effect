@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useThree, useFrame } from "../../r3f";
 import { Vector2, Vector3, type Sprite } from "../../three";
-import { SpriteShape } from "../../sprites/internal/spriteShape";
 import {
   pauseSpriteEpochScheduler,
   pauseSpriteQualityUpgradeScheduler,
@@ -12,6 +11,7 @@ import {
   resumeSpriteEpochScheduler,
   resumeSpriteQualityUpgradeScheduler,
   resumeSpriteTextureQueue,
+  SpriteShape,
 } from "../../sprites/entry";
 import {
   makeCenteredTooltipEvent,

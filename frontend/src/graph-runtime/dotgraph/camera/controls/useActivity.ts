@@ -2,18 +2,18 @@
 import { useRef, useCallback } from 'react';
 import type { RefObject } from 'react';
 
-export interface UseActivityParams {
+interface UseActivityParams {
   startOnLoad?: boolean;
   delayMs?: number;
 }
 
-export interface IsIdleArgs {
+interface IsIdleArgs {
   userInteracting: boolean;
   hasInteractedRef?: RefObject<boolean>;
   lastActivityRef?: RefObject<number>;
 }
 
-export interface UseActivityReturn {
+interface UseActivityReturn {
   hasInteractedRef: RefObject<boolean>;
   lastActivityRef: RefObject<number>;
   markActivity: () => void;

@@ -8,8 +8,6 @@ import type {
 } from "../modifiers/index";
 import type { ParticleStore } from "../modifiers/particles";
 
-export type { ShapeRenderPass, ShapeRenderPassOptions } from "../modifiers/index";
-
 export type ShapeCanvas = CanvasDrawSurface;
 export type ShapeSeed = string | number;
 

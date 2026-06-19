@@ -7,5 +7,8 @@ const SPOTLIGHT_PADDING_VARIANTS = SPOTLIGHT_SLIDES.map(
 
 export const SPOTLIGHT_PADDING: CanvasPaddingPolicy = {
   ...SPOTLIGHT_SLIDES[0].padding,
-  variants: SPOTLIGHT_PADDING_VARIANTS,
+  runtimePreset: {
+    selector: "spotlightIndex",
+    entries: SPOTLIGHT_PADDING_VARIANTS,
+  },
 };

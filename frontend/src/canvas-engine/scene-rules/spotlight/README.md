@@ -1,6 +1,6 @@
 # Spotlight Rules
 
-Spotlight rules define slide-authored scene variants for the spotlight canvas: background, particles, foliage, and dark-mode counterparts.
+Spotlight rules define slide-authored scene presets for the spotlight canvas: background, particles, foliage, and dark-mode counterparts.
 
 ## Important Files
 
@@ -13,8 +13,8 @@ Spotlight rules define slide-authored scene variants for the spotlight canvas: b
 ```txt
 spotlight scene profile
   -> backgrounds/spotlight.ts
-     -> variants from SPOTLIGHT_SLIDES backgrounds
-  -> ambient-particles and foliage variants
+     -> runtimePreset selector "spotlightIndex" from SPOTLIGHT_SLIDES backgrounds
+  -> ambient-particles and foliage runtimePreset entries
      -> runtimeSceneVariants picks slide by spotlight.index
         -> render passes receive the active slide specs
 ```
@@ -42,4 +42,4 @@ SpotlightSlide {
 }
 ```
 
-Rule: slide files author content. Runtime only selects a variant by spotlight signal; it does not know slide-specific art decisions.
+Rule: slide files author content. Runtime only selects a preset entry by spotlight signal; it does not know slide-specific art decisions.

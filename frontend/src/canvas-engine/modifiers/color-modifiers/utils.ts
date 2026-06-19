@@ -12,7 +12,7 @@ export interface Stop {
 }
 
 // Small p5-like surface used when a shape hands us a CSS color string.
-export interface CanvasColorAdapter {
+interface CanvasColorAdapter {
   color(css: string): unknown;
   red(color: unknown): number;
   green(color: unknown): number;

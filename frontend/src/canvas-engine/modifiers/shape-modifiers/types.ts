@@ -2,15 +2,13 @@
 // These are declarative knobs that shapes pass into applyShapeMods before drawing.
 import type { Anchor } from "../../shared/geometry";
 
-export type { Anchor };
-
-export interface Scale2D {
+interface Scale2D {
   x?: number;
   y?: number;
   anchor?: Anchor;
 }
 
-export interface Scale2DOsc {
+interface Scale2DOsc {
   mode?: "relative" | "absolute";
   biasX?: number;
   ampX?: number;
@@ -26,7 +24,7 @@ export interface Scale2DOsc {
   anchor?: Anchor;
 }
 
-export interface AppearMod {
+interface AppearMod {
   scaleFrom?: number;
   alphaFrom?: number;
   anchor?: Anchor;
@@ -34,21 +32,21 @@ export interface AppearMod {
   backOvershoot?: number;
 }
 
-export interface TranslateClampX {
+interface TranslateClampX {
   min?: number;
   max?: number;
 }
-export interface TranslateClampY {
+interface TranslateClampY {
   min?: number;
   max?: number;
 }
 
-export interface TranslateOscX {
+interface TranslateOscX {
   amp?: number;
   speed?: number;
   phase?: number;
 }
-export interface TranslateOscY {
+interface TranslateOscY {
   amp?: number;
   speed?: number;
   phase?: number;
@@ -75,12 +73,12 @@ export interface ShapeMods {
   translateOscY?: TranslateOscY;
 }
 
-export interface Scale {
+interface Scale {
   value?: number;
   anchor?: Anchor;
 }
 
-export interface SizeOsc {
+interface SizeOsc {
   speed?: number;
   phase?: number;
   anchor?: Anchor;
@@ -93,43 +91,26 @@ export interface SizeOsc {
   ampAbs?: number;
 }
 
-export interface OpacityOsc {
+interface OpacityOsc {
   amp?: number;
   speed?: number;
   phase?: number;
 }
 
-export interface Rotation {
+interface Rotation {
   speed?: number;
   phase?: number;
 }
 
-export interface RotationOsc {
+interface RotationOsc {
   amp?: number;
   speed?: number;
   phase?: number;
 }
 
-export interface SaturationOsc {
+interface SaturationOsc {
   amp?: number;
   speed?: number;
   phase?: number;
 }
 
-export interface ShapeModifierClock {
-  millis(): number;
-}
-
-export interface ApplyShapeModsOpts {
-  p: ShapeModifierClock;
-  x: number;
-  y: number;
-  r: number;
-  opts?: {
-    alpha?: number;
-    timeMs?: number;
-    liveAvg?: number;
-    rootAppearK?: number;
-  };
-  mods?: ShapeMods;
-}

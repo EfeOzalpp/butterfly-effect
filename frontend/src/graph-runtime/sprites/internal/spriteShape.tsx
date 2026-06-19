@@ -248,7 +248,7 @@ export function SpriteShape({
       prevTexShapeRef.current = shape;
     }
   }, [tex, shape]);
-  // Only reuse prev texture if it's the same shape — cross-shape fallback shows the wrong sprite
+  // Only reuse prev texture if it's the same shape - cross-shape fallback shows the wrong sprite
   const displayTex = tex ?? (prevTexShapeRef.current === shape ? prevTexRef.current : null);
 
   // Reset texture when dark mode changes so we request a new dark/light variant
@@ -292,7 +292,7 @@ export function SpriteShape({
     // IMPORTANT: epoch textures must NOT go through track()/setIfAlive because
     // __GLOBAL_TEX would pin them in memory forever. Instead we manage their
     // lifecycle manually via epochTexRef so the canvas 2D context slot is released
-    // on each cycle (Chrome hard-caps at ~300 contexts → GPU process crash otherwise).
+    // on each cycle (Chrome hard-caps at ~300 contexts -> GPU process crash otherwise).
     if (refreshEpoch > 0) {
       const prevEpochTex = epochTexRef.current;
       try {
@@ -340,7 +340,7 @@ export function SpriteShape({
         });
         if (isParticleShape) epochParticleTimeRef.current = nowMs;
         epochTexRef.current = newTex;
-        // Bypass track() — set state directly so this texture is NOT pinned in __GLOBAL_TEX
+        // Bypass track() - set state directly so this texture is NOT pinned in __GLOBAL_TEX
         setTexState({ key, tex: newTex });
         // Dispose prev after the next frame (GPU has already uploaded it; zeroing the
         // canvas releases the 2D context slot without affecting the rendered output)

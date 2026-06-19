@@ -1,10 +1,10 @@
-import type { SceneLightContext } from "../../modifiers";
-import type { ParticleStore } from "../../modifiers/particles";
-import type { RGB } from "../../shared/math";
-import type { GridMetrics } from "../geometry/gridCache";
-import type { RuntimeShapeOptions } from "../shape-adapter/types";
-import type { EngineFieldItem } from "./field";
-import type { EngineShapeLightSource, EngineStyle } from "./state";
+import type { SceneLightContext } from "../../../../modifiers";
+import type { ParticleStore } from "../../../../modifiers/particles";
+import type { RGB } from "../../../../shared/math";
+import type { GridMetrics } from "../../../geometry/gridCache";
+import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
+import type { EngineFieldItem } from "../../../engine/field";
+import type { EngineShapeLightSource, EngineStyle } from "../../../engine/state";
 
 interface RuntimeShapeLightFallback {
   x: number;
@@ -12,7 +12,7 @@ interface RuntimeShapeLightFallback {
   paletteClosenessK?: number;
 }
 
-export type RuntimeShapeLightItem = EngineFieldItem | RuntimeShapeLightFallback | null;
+type RuntimeShapeLightItem = EngineFieldItem | RuntimeShapeLightFallback | null;
 
 function findVisibleLightItem(items: EngineFieldItem[]): EngineFieldItem | null {
   for (const item of items) {

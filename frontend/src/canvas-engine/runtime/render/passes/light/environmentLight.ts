@@ -1,7 +1,7 @@
-import { ENVIRONMENT_LIGHT_SHAPE } from "../../shapes";
-import type { FogLightSource } from "../render/passes/atmosphere/fog";
-import type { EngineFieldItem } from "./field";
-import type { EngineStyle } from "./state";
+import { ENVIRONMENT_LIGHT_SHAPE } from "../../../../shapes";
+import type { EngineFieldItem } from "../../../engine/field";
+import type { EngineStyle } from "../../../engine/state";
+import type { FogLightSource } from "../atmosphere/fog";
 
 interface EnvironmentLightCacheState {
   itemsSource: EngineFieldItem[] | null;
@@ -92,4 +92,3 @@ export function createEnvironmentLightResolver() {
     return cache.source;
   };
 }
-

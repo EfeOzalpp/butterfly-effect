@@ -3,14 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFrame } from '../../../r3f';
 import type { MutableRefObject } from 'react';
 import { bumpZoomMetric } from '../../../debug/zoomMetrics';
+import type { GestureState } from '../shared/sharedGesture';
 
-export interface GestureState {
-  pinching: boolean;
-  touchCount: number;
-  pinchCooldownUntil: number;
-}
-
-export interface UseZoomParams {
+interface UseZoomParams {
   minRadius: number;
   maxRadius: number;
   initialTarget?: number;
@@ -18,7 +13,7 @@ export interface UseZoomParams {
   gestureRef?: MutableRefObject<GestureState>;
 }
 
-export interface UseZoomReturn {
+interface UseZoomReturn {
   radius: number;
   zoomTargetRef: MutableRefObject<number | null>;
   zoomVelRef: MutableRefObject<number>;
@@ -73,7 +68,7 @@ export default function useZoom({
   useEffect(() => {
     // Proportional zoom: each wheel notch scales radius by a fixed % regardless of zoom level.
     // WHEEL_SCALE_PER_PX: radius multiplier per normalised pixel of scroll.
-    // At 120px/notch (typical mouse) → ~14% zoom per notch; trackpad sends 2-5px per event → smooth.
+    // At 120px/notch (typical mouse) -> ~14% zoom per notch; trackpad sends 2-5px per event -> smooth.
     const WHEEL_SCALE_PER_PX = 0.0012;
     const CTRL_ZOOM_GAIN = 3.0;
     const PINCH_GAIN = 1.4;
@@ -109,7 +104,7 @@ export default function useZoom({
       const gain = event.ctrlKey ? CTRL_ZOOM_GAIN : 1.0;
       // Clamp per-event factor so one large event can't jump more than 35%
       const factor = 1 + clamp(dy * WHEEL_SCALE_PER_PX * gain, -0.35, 0.35);
-      // positive deltaY (wheel down) => zoom OUT (radius ↑)
+      // positive deltaY (wheel down) => zoom OUT (radius up)
       const next = clamp(current * factor, minRadius, maxRadius);
       zoomTargetRef.current = next;
     };

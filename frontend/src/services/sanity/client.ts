@@ -8,7 +8,7 @@ const config = {
 } as const;
 
 // IMPORTANT: derive the type from createClient
-export type SanityLiveClient = ReturnType<typeof createClient>;
+type SanityLiveClient = ReturnType<typeof createClient>;
 
 export const cdnClient: SanityLiveClient = createClient({ ...config, useCdn: true });
 export const liveReadClient: SanityLiveClient = createClient({ ...config, useCdn: false });

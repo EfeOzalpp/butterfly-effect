@@ -13,7 +13,7 @@ import { makeSpritePaletteLightContext } from './spriteLight';
 import type { DrawerFn } from '../selection/drawers';
 import type { SpriteBleed, SpriteFootprint } from '../types';
 
-export interface RenderedShapeBounds {
+interface RenderedShapeBounds {
   width: number;
   height: number;
   centerX: number;

@@ -4,17 +4,10 @@ import type { SceneLookupKey } from "../../scene-state";
 import type { ScenePlacementRules } from "./types";
 
 export type {
-  ScenePlacementRuleMap,
   ScenePlacementRules,
-  ShapePlacementRule,
   PlacementZone,
-  ProceduralPlacementZone,
-  ProceduralZonePlacementPreset,
-  ProceduralZoneShapeRule,
   ProceduralZoneBand,
-  CenterPlacement,
   PointPlacement,
-  QuotaAnchor,
   DeviceCount,
 } from "./types";
 export {

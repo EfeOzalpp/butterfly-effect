@@ -14,11 +14,11 @@ export function computeInitialZoomTarget(params: {
   const clampedCount = Math.max(1, Math.min(300, count));
   const t = (clampedCount - 1) / 299;
 
-  // Front-loaded curve: going from 1→50 shapes triggers most of the pullback;
-  // 50→300 adds a gradual further zoom-out. Power < 1 makes the curve concave.
+  // Front-loaded curve: going from 1->50 shapes triggers most of the pullback;
+  // 50->300 adds a gradual further zoom-out. Power < 1 makes the curve concave.
   const curved = Math.pow(t, 0.4);
 
-  // Mobile stays noticeably closer throughout — tighter near + far bounds.
+  // Mobile stays noticeably closer throughout - tighter near + far bounds.
   const near = isSmallScreen ? 80 : isTabletLike ? 92 : 108;
   const far  = isSmallScreen ? 270 : isTabletLike ? 325 : 392;
 

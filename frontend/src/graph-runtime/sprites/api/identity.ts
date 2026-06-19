@@ -3,9 +3,9 @@ import { resolvePowerVisualKind, type PowerVisualKind } from '../../../canvas-en
 import { makeSpriteSeedKey } from '../internal/spritePolicy';
 import type { ShapeKey, SpriteAssignment, SpriteShapeProps } from '../types';
 
-export type SunVisualKind = 'sun' | 'moon';
+type SunVisualKind = 'sun' | 'moon';
 
-export type SpriteRenderedKind = Exclude<ShapeKey, 'power' | 'sun'> | PowerVisualKind | SunVisualKind;
+type SpriteRenderedKind = Exclude<ShapeKey, 'power' | 'sun'> | PowerVisualKind | SunVisualKind;
 
 export interface SpriteIdentity {
   shape: ShapeKey;
@@ -35,14 +35,14 @@ const SHAPE_COPY: Record<SpriteRenderedKind, ShapeCopyBank> = {
   clouds: {
     veryLow: "You're a cloud. People can't predict you; one moment you pour like there's no tomorrow, next it's all sunshine and rainbows.",
     low: "You're a cloud that used to rain at the right moment. These days it's more of a guess fed by ever-changing conditions; you give a reason to discuss weather.",
-    high: "You're a cloud, doing cloudy deeds. You rain and feed the soil—just leave before the plants have had enough.",
+    high: "You're a cloud, doing cloudy deeds. You rain and feed the soil - just leave before the plants have had enough.",
     veryHigh: "You're a well-behaved cloud, moving slowly, raining steadily, and people think the soil smells good when you rain.",
   },
   snow: {
     veryLow: "You're a snow cloud, but you don't snow enough for a snowman.",
-    low: "You're a snow cloud—enough snow to make a backdrop for a romance movie, not enough to support ecosystems.",
+    low: "You're a snow cloud - enough snow to make a backdrop for a romance movie, not enough to support ecosystems.",
     high: "You're a snow cloud. You would stop schools for a day in the South, but you'd likely stay in the North.",
-    veryHigh: "You're a snow cloud, a snow cloud from the 1950s—a nostalgic one, days of steady snow type.",
+    veryHigh: "You're a snow cloud, a snow cloud from the 1950s - a nostalgic one, days of steady snow type.",
   },
   house: {
     veryLow: "You're a house, and it seems Santa won't be able to use the chimney. At least, burglars will stay away too.",
@@ -70,7 +70,7 @@ const SHAPE_COPY: Record<SpriteRenderedKind, ShapeCopyBank> = {
   },
   car: {
     veryLow: "You're a car with a generous footprint. Your engine roars. You're a cheap thrill, but at least you are cooler than the world you left behind.",
-    low: "You're a car for a working-class person who landed an onsite job with a not-so-ideal commute, but they landed a job in 2026 — that's all that matters!",
+    low: "You're a car for a working-class person who landed an onsite job with a not-so-ideal commute, but they landed a job in 2026 - that's all that matters!",
     high: "You're a car, built with sensibility, but you have to consume diesel to stay alive and you get sluggish when it's cold outside.",
     veryHigh: "You're a car. Your driver is retired and prefers a yacht, so you get to stay in the parking lot most days. At least you've got some other cars to hang out with.",
   },
@@ -95,7 +95,7 @@ const SHAPE_COPY: Record<SpriteRenderedKind, ShapeCopyBank> = {
   trees: {
     veryLow: "You're a resilient tree grove facing drought, scorching asphalt, and a beating sun. You're turning yellow, but the fact that you're holding on is remarkable.",
     low: "You're a somewhat unlucky tree grove. There is a new road being paved right next to you, and you can't exactly pack up and leave. But deep down, you know you'll survive as you always do.",
-    high: "You're a tree grove that someone started watering again. You still have that road next door, but you aren't interested in going through that door—not that you can anyway.",
+    high: "You're a tree grove that someone started watering again. You still have that road next door, but you aren't interested in going through that door - not that you can anyway.",
     veryHigh: "You're a green tree grove with no roads cutting through your roots. People come to sit under your canopy, and animals love you.",
   },
   factory: {

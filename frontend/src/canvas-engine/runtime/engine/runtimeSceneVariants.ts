@@ -11,41 +11,43 @@ export function resolveRuntimeBackground(
   background: BackgroundSpec | null,
   spotlight: SpotlightSignal | null
 ): BackgroundSpec | null {
-  const variants = background?.variants;
-  if (!variants?.length) return background;
+  const runtimePreset = background?.runtimePreset;
+  if (!runtimePreset?.entries.length) return background;
+  const entries = runtimePreset.entries;
 
   if (!spotlight) {
-    return variants[0] ?? null;
+    return entries[0] ?? null;
   }
 
-  return variants[positiveModulo(spotlight.index, variants.length)];
+  return entries[positiveModulo(spotlight.index, entries.length)];
 }
 
 export function resolveRuntimeAmbientParticles(
   ambientParticles: AmbientParticlesSceneSpec | null,
   spotlight: SpotlightSignal | null
 ): AmbientParticlesSceneSpec | null {
-  const variants = ambientParticles?.variants;
-  if (!variants?.length) return ambientParticles;
+  const runtimePreset = ambientParticles?.runtimePreset;
+  if (!runtimePreset?.entries.length) return ambientParticles;
+  const entries = runtimePreset.entries;
 
   if (!spotlight) {
-    return variants[0] ?? null;
+    return entries[0] ?? null;
   }
 
-  return variants[positiveModulo(spotlight.index, variants.length)] ?? null;
+  return entries[positiveModulo(spotlight.index, entries.length)] ?? null;
 }
 
 export function resolveRuntimeFoliage(
   foliage: FoliageSceneSpec | null,
   spotlight: SpotlightSignal | null
 ): FoliageSceneSpec | null {
-  const variants = foliage?.variants;
-  if (!variants?.length) return foliage;
+  const runtimePreset = foliage?.runtimePreset;
+  if (!runtimePreset?.entries.length) return foliage;
+  const entries = runtimePreset.entries;
 
   if (!spotlight) {
-    return variants[0] ?? null;
+    return entries[0] ?? null;
   }
 
-  return variants[positiveModulo(spotlight.index, variants.length)] ?? null;
+  return entries[positiveModulo(spotlight.index, entries.length)] ?? null;
 }
-

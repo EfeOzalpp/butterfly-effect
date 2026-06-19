@@ -1,4 +1,5 @@
-import type { FogLightGradientSpec, FogSceneSpec, FogSpecsByMode } from "./types";
+import type { SceneLookupKey } from "../../scene-state";
+import type { FogLightGradientSpec, FogSceneSpec } from "./types";
 
 export type {
   FogColor,
@@ -6,7 +7,6 @@ export type {
   FogLightGradientSpec,
   FogModeSpec,
   FogSceneSpec,
-  FogSpecsByMode,
 } from "./types";
 
 function darkLightGradient(args: {
@@ -41,14 +41,14 @@ export const DEFAULT_DARK_FOG: FogSceneSpec = {
   },
 } as const;
 
-export const FOG: FogSpecsByMode = {
+export const FOG: Record<SceneLookupKey, FogSceneSpec | null> = {
   start: DEFAULT_FOG,
   questionnaire: DEFAULT_FOG,
   city: DEFAULT_FOG,
   spotlight: null,
 } as const;
 
-export const FOG_DARK: FogSpecsByMode = {
+export const FOG_DARK: Record<SceneLookupKey, FogSceneSpec | null> = {
   start: DEFAULT_DARK_FOG,
   questionnaire: DEFAULT_DARK_FOG,
   city: DEFAULT_DARK_FOG,

@@ -3,7 +3,7 @@
 import { gradientColor, VIVID_COLOR_STOPS } from "../../../../modifiers/index";
 import type { RGB } from "../../../../shared/math";
 
-export interface PaletteCache {
+interface PaletteCache {
   lastU: number;
   cachedGradient: RGB | null;
 }

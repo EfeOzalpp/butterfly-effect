@@ -123,13 +123,13 @@ const mulberry32 = (seed: number): (() => number) => {
 const tangentBasis = (n: Vec3): [Vec3, Vec3] => {
   const [nx, ny, nz] = n;
   const up: Vec3 = Math.abs(nz) < 0.9 ? [0, 0, 1] : [0, 1, 0];
-  // u = normalize(up × n)
+  // u = normalize(up x n)
   let ux = up[1] * nz - up[2] * ny;
   let uy = up[2] * nx - up[0] * nz;
   let uz = up[0] * ny - up[1] * nx;
   const len = Math.hypot(ux, uy, uz) || 1;
   ux /= len; uy /= len; uz /= len;
-  // v = n × u
+  // v = n x u
   const vx = ny * uz - nz * uy;
   const vy = nz * ux - nx * uz;
   const vz = nx * uy - ny * ux;
@@ -256,7 +256,7 @@ export const generatePositions = (
   const tightMaxAlpha    = opts.tightMaxAlpha    ?? 0.85;
   const tightCurve       = opts.tightCurve       ?? 1.25;
 
-  // Tightness factor: 1 at very small N → 0 by tightRefN
+  // Tightness factor: 1 at very small N -> 0 by tightRefN
   const tightT = Math.pow(clamp01(1 - n / tightRefN), tightCurve);
 
   // Effective base radius shrinks when N is small

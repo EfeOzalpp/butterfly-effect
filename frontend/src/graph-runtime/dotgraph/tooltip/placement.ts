@@ -3,8 +3,8 @@
 import { isMobileWidth } from "../../../lib/responsive/breakpoints";
 import type { SpriteVisualLayout } from "../../sprites/types";
 
-export type TooltipVerticalPlacement = "top" | "middle" | "bottom";
-export type TooltipHorizontalPlacement = "left" | "mid" | "right";
+type TooltipVerticalPlacement = "top" | "middle" | "bottom";
+type TooltipHorizontalPlacement = "left" | "mid" | "right";
 
 export interface TooltipPlacement {
   vertical: TooltipVerticalPlacement;
@@ -12,7 +12,7 @@ export interface TooltipPlacement {
   className: string;
 }
 
-export interface TooltipViewportParams {
+interface TooltipViewportParams {
   x: number;
   y: number;
   width: number;

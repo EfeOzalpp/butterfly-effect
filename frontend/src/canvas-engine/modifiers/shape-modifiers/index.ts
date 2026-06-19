@@ -16,8 +16,8 @@ export {
   shapeHash32,
 } from "./random";
 
-export { clamp01, lerpNumber, mix, resolveRangeValue, val } from "./ranges";
+export { clamp01, lerpNumber, resolveRangeValue } from "./ranges";
 export type { NumberRange } from "./ranges";
 
 export { applyShapeMods } from "./apply";
-export type { Anchor, ApplyShapeModsOpts, ShapeMods } from "./types";
+export type { ShapeMods } from "./types";

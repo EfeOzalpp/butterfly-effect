@@ -48,7 +48,7 @@ export function scoreCandidateGeneric(opts: {
   const dCenter2 = (cx - gridCx) ** 2 + (cy - usedCy) ** 2;
   const centerTerm = -0.08 * dCenter2;
 
-  // spread — prefer positions far from the nearest already-placed shape
+  // spread - prefer positions far from the nearest already-placed shape
   let spreadTerm = 0;
   if (placed.length > 0) {
     let minDist2 = Infinity;

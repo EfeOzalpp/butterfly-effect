@@ -8,7 +8,7 @@ import type {
   DotGraphHoverStart,
 } from '../types';
 
-export interface UseHoverBubbleArgs {
+interface UseHoverBubbleArgs {
   useDesktopLayout: boolean;
   isPinchingRef?: React.RefObject<boolean>;
   isTouchRotatingRef?: React.RefObject<boolean>;

@@ -1,11 +1,11 @@
 /* Graph skeleton */
 
-/* ── Visibility ─────────────────────────────────────────────────── */
+/* -- Visibility --------------------------------------------------- */
 .graph-wrapper { opacity: 0; transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; pointer-events: none; position: relative; z-index: 2; width: 100%; min-height: 100svh; background: var(--graph-bg); }
 .graph-wrapper.visible { opacity: 1; pointer-events: all; display: block; }
 .graph-wrapper.hidden { display: none; }
 
-/* ── Keyframes ──────────────────────────────────────────────────── */
+/* -- Keyframes ---------------------------------------------------- */
 @keyframes greenFluctuation {
   0%, 100% { background-color: rgb(var(--graph-green-lo-rgb)); }
   50%       { background-color: rgb(var(--graph-green-hi-rgb)); }
@@ -21,7 +21,7 @@
 @keyframes floaty { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
 @keyframes indicatorFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* ── Animation classes + reduced-motion ─────────────────────────── */
+/* -- Animation classes + reduced-motion --------------------------- */
 .green-animation  { animation: greenFluctuation 3.6s ease-in-out infinite; }
 .yellow-animation { animation: yellowFluctuation 3.6s ease-in-out infinite; }
 .red-animation    { animation: redFluctuation 3.6s ease-in-out infinite; }
@@ -31,7 +31,7 @@
   .green-animation, .yellow-animation, .red-animation, .floaty { animation: none !important; }
 }
 
-/* ── Layout structure ───────────────────────────────────────────── */
+/* -- Layout structure --------------------------------------------- */
 .toggle-button, .toggle-icon, .graph-container, .bar-graph-divider, .bar-graph-container, .bar-graph-bar, .empty-card { display: flex; }
 
 .toggle-button { position: relative; z-index: 10; pointer-events: all; cursor: pointer; align-items: center; justify-content: center; background: var(--ui-bg-surface); border: none; border-radius: var(--radius-lg); color: var(--ui-text); transition: transform 0.1s ease; }
@@ -65,7 +65,7 @@
   .toggle-button { width: 40px; height: 40px; }
 }
 
-/* ── Percentage section ─────────────────────────────────────────── */
+/* -- Percentage section ------------------------------------------- */
 .percentage-section, .percentage-indicator { position: absolute; pointer-events: none; }
 .percentage-section { left: 0; right: 0; bottom: 0; z-index: 2; overflow: visible; }
 
@@ -111,11 +111,11 @@
 .percentage-indicator-title { font-size: var(--type-label-size); line-height: var(--type-tight-line); opacity: 0.86; }
 .percentage-indicator-score { font-size: clamp(0.86rem, 1vw, 0.96rem); line-height: 1.1; font-weight: 700; margin-top: 0.14rem; }
 
-/* ── Empty state ────────────────────────────────────────────────── */
+/* -- Empty state -------------------------------------------------- */
 .empty-center { display: flex; justify-content: center; height: 100%; }
 .empty-card   { justify-content: center; align-items: center; flex-direction: column; }
 
-/* ── Loading states ─────────────────────────────────────────────── */
+/* -- Loading states ----------------------------------------------- */
 .graph-loading { width: 100%; }
 .graph-loading-word, .stats-loading-word { animation: bePulse 1.6s ease-in-out infinite; }
 .graph-loading-word  { margin: 0; padding: 0.6rem 0.9rem; color: var(--ui-text); }

@@ -1,6 +1,6 @@
 # Background Rules
 
-Background rules define base colors, gradient overlays, animated star specs, and spotlight variants for each scene lookup key.
+Background rules define base colors, gradient overlays, animated star specs, and spotlight presets for each scene lookup key.
 
 ## Important Files
 
@@ -14,7 +14,7 @@ Background rules define base colors, gradient overlays, animated star specs, and
 scene-rules/resolver
   -> BACKGROUNDS or BACKGROUNDS_DARK[sceneLookup]
      -> EngineSceneProfile.background
-        -> engine/loop.ts runtime variant resolver
+        -> engine/loop.ts runtime spotlight preset resolver
            -> render/passes/background/cache.ts
               -> background.ts draws base/overlay
            -> live star pass draws stars
@@ -36,7 +36,7 @@ BackgroundSpec {
   base: string
   overlay?: radial | linear | solid
   stars?: StarSpec
-  variants?: readonly BackgroundSpec[]
+  runtimePreset?: { selector: "spotlightIndex"; entries: readonly BackgroundSpec[] }
 }
 ```
 

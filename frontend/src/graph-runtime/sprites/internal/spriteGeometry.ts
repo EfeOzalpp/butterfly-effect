@@ -7,7 +7,7 @@ import { DRAWERS } from '../selection/drawers';
 import { measureRenderedShapeBounds } from '../textures/measureRenderedBounds';
 import { makeSpriteSeedKey } from './spritePolicy';
 
-export interface SpriteWorldGeometry {
+interface SpriteWorldGeometry {
   scale: SpriteVec3;
   position: SpriteVec3;
   center: [number, number];

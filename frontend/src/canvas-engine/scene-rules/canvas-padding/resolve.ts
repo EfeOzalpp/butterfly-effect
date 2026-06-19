@@ -15,14 +15,15 @@ export function resolvePaddingPolicyVariants(
   paddingByDevice: CanvasPaddingPolicy,
   spotlightIndex: number | undefined
 ): CanvasPaddingPolicyByDevice {
-  const variants = paddingByDevice.variants;
-  if (!variants?.length) return paddingByDevice;
+  const runtimePreset = paddingByDevice.runtimePreset;
+  if (!runtimePreset?.entries.length) return paddingByDevice;
+  const entries = runtimePreset.entries;
 
   if (typeof spotlightIndex !== "number") {
-    return variants[0] ?? paddingByDevice;
+    return entries[0] ?? paddingByDevice;
   }
 
-  return variants[positiveModulo(spotlightIndex, variants.length)];
+  return entries[positiveModulo(spotlightIndex, entries.length)];
 }
 
 // Pick the padding spec that matches the current rule width/device band.

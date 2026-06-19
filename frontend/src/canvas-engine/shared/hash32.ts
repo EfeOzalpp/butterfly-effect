@@ -38,7 +38,7 @@ export function rand01(tag: string, id: number, salt = 0): number {
 }
 
 /**
- * Deterministic 32-bit hash -> pseudo-random phase (0..2π)
+ * Deterministic 32-bit hash -> pseudo-random phase (0..2pi)
  * Kept for visual stability in geom/osc wobble.
  */
 export function phaseFromIndex(idx: number, seed = 0): number {

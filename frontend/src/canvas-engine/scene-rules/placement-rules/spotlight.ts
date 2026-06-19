@@ -7,5 +7,8 @@ const SPOTLIGHT_PLACEMENT_VARIANTS = SPOTLIGHT_SLIDES.map(
 
 export const SPOTLIGHT_PLACEMENTS: ScenePlacementRules = {
   ...SPOTLIGHT_SLIDES[0].placement,
-  variants: SPOTLIGHT_PLACEMENT_VARIANTS,
+  runtimePreset: {
+    selector: "spotlightIndex",
+    entries: SPOTLIGHT_PLACEMENT_VARIANTS,
+  },
 };

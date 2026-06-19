@@ -218,7 +218,7 @@ function factorySmokeRowContext(t: number) {
   };
 }
 
-// 0–0.25: always factory | 0.25–0.5: 25% turbine | 0.5–0.75: 75% turbine | 0.75–1: always turbine
+// 0-0.25: always factory | 0.25-0.5: 25% turbine | 0.5-0.75: 75% turbine | 0.75-1: always turbine
 function windProbability(u: number): number {
   if (u < 0.25) return 0;
   if (u < 0.5) return 0.25;
@@ -782,4 +782,3 @@ export function drawPower(
   p.pop(); // appear transform
 }
 
-export default drawPower;

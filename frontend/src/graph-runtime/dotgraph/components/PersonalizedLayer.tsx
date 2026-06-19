@@ -4,10 +4,10 @@ import React, { useCallback, useLayoutEffect, useMemo, useRef, useState, type CS
 import { Html } from "@react-three/drei/web/Html";
 import { useFrame, useThree } from "../../r3f";
 import { Vector3, type Group } from "../../three";
-import { SpriteShape } from "../../sprites/internal/spriteShape";
 import {
   PERSONALIZED_SPRITE_TILE_SIZE,
   resolveSpriteVisual,
+  SpriteShape,
   type SpriteAssignment,
   type SpriteIdentity,
   type SpriteVisualLayout,

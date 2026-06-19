@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { avgWeightOf, toScore100, type WithWeights } from '../utils/score';
 
-export interface AbsoluteOpts<TItem extends WithWeights = WithWeights> {
+interface AbsoluteOpts<TItem extends WithWeights = WithWeights> {
   accessor?: (item: TItem) => number;
   idOf?: (item: TItem) => string | undefined;
   decimals?: number;

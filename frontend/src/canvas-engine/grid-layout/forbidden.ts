@@ -1,13 +1,11 @@
 // src/canvas-engine/grid-layout/forbidden.ts
 
-export interface GridRectFrac { top: number; left: number; bottom: number; right: number }
+interface GridRectFrac { top: number; left: number; bottom: number; right: number }
 
-export interface ForbiddenSpec {
+interface ForbiddenSpec {
   forbiddenRects?: GridRectFrac[];
   forbidden?: (r: number, c: number, rows: number, cols: number) => boolean;
 }
-
-export interface CellRC { r: number; c: number }
 
 export function rectFracToCellRange(
   rect: GridRectFrac,
@@ -49,7 +47,7 @@ export function makeCellForbidden(spec: ForbiddenSpec, rows: number, cols: numbe
   };
 }
 
-export interface RowRule {
+interface RowRule {
   left?: number | `${number}%`;
   right?: number | `${number}%`;
   center?: number | `${number}%`;

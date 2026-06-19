@@ -1,4 +1,8 @@
-import type { BackgroundSpec } from "../../../../scene-rules/backgrounds";
+import {
+  BACKGROUNDS,
+  type BackgroundSpec,
+} from "../../../../scene-rules/backgrounds";
+import type { SceneLookupKey } from "../../../../scene-state";
 import type { PLike } from "../../../p/makeP";
 import { clamp01 } from "../../../../shared/math";
 import { mix } from "../shared/color";
@@ -167,5 +171,30 @@ export function drawStars(
     ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.restore();
+}
+
+function resolveBackgroundSpec(
+  sceneLookup: SceneLookupKey,
+  override: BackgroundSpec | null
+): BackgroundSpec {
+  return override ?? BACKGROUNDS[sceneLookup];
+}
+
+// Live star pass. The background cache skips stars because their alpha changes every frame.
+export function drawBackgroundStarsOnly(
+  p: PLike,
+  sceneLookup: SceneLookupKey,
+  override: BackgroundSpec | null = null,
+  alpha = 1,
+  liveAvg = 0.5,
+  getStars: ReturnType<typeof createStarGeometryCache>
+) {
+  const spec = resolveBackgroundSpec(sceneLookup, override);
+  if (!spec.stars) return;
+  const ctx = p.drawingContext;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  drawStars(p, ctx, spec.stars, liveAvg, getStars);
   ctx.restore();
 }

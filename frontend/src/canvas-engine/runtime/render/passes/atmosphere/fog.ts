@@ -84,7 +84,7 @@ function resolveLightGradient(
   const centerK = clamp01(lightSource.xK);
   const centerColor = lightSource.color;
   const innerRadiusK = Math.max(0.01, Math.min(0.5, fallbackRadiusK ?? spec.innerRadiusK ?? 0.13));
-  // Natural fade width beyond the inner glow — fixed so the falloff looks the
+  // Natural fade width beyond the inner glow - fixed so the falloff looks the
   // same regardless of where the sun sits. When the sun is near an edge, the
   // outer fade extends past the viewport boundary; the boundary color is
   // computed by interpolating mid-fade rather than snapping to the edge color.
@@ -293,8 +293,8 @@ function computeFogState(args: {
   const fogStartY = metrics.rowOffsetY[horizonRow];
   if (!Number.isFinite(fogStartY)) return null;
 
-  // Ground fog still uses row boundaries, but it is now one cached background
-  // atmosphere pass. Shape depth is handled by the per-shape depth mask overlay.
+  // Ground fog still uses row boundaries, but it is one cached atmosphere pass.
+  // Per-shape depth is handled by the depth mask overlay.
   const fogCanvasH = p.height;
   const groundFogLayerBoundaries = [
     ...metrics.rowOffsetY.slice(horizonRow + 1),

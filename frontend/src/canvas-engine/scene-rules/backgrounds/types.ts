@@ -1,15 +1,13 @@
-import type { SceneLookupKey } from "../../scene-state";
+import type { RuntimePreset } from "../runtimePreset";
 
 // named vertical anchors that let authored backgrounds follow runtime layout
 // instead of hardcoding every stop as a raw 0..1 number.
-export type BackgroundStopAnchor = "visualHorizon";
-
 // k is the vertical position of a stop. it can be a direct fraction, one of the
 // engine anchors, or an anchored value with a small offset for nudging.
 export type BackgroundStopK =
   | number
-  | BackgroundStopAnchor
-  | { anchor: BackgroundStopAnchor; offset?: number };
+  | "visualHorizon"
+  | { anchor: "visualHorizon"; offset?: number };
 
 export interface BackgroundAnchorContext {
   // authored sky/ground split for this canvas instance.
@@ -21,7 +19,7 @@ export interface RgbaStop {
   // nearest authored anchors, so background colors can follow the runtime
   // horizon without hand-tuning every band.
   k?: BackgroundStopK;
-  rgba: string; // color itself — becomes center when leftRgba is also provided
+  rgba: string; // color itself - becomes center when leftRgba is also provided
   leftRgba?: string; // optional left-edge color; when present rgba becomes center, rightRgba becomes right
   rightRgba?: string; // optional right-edge color for horizontal blends across this band
   oscK?: { amp: number; hz: number }; // oscillates color stops K value up and down for movement.
@@ -45,7 +43,7 @@ export interface LinearGradientSpec {
   stops: readonly RgbaStop[];
 }
 
-export interface SolidBackgroundSpec {
+interface SolidBackgroundSpec {
   kind: "solid";
   color: string; // css color
 }
@@ -55,9 +53,9 @@ export interface BackgroundSpec {
   // optional overlay drawn over the base. most scenes use this for the actual
   // sky/ground mood, while base stays as the cheap clear color.
   overlay?: RadialGradientSpec | LinearGradientSpec | SolidBackgroundSpec;
-  // Optional runtime-selectable backgrounds. The engine chooses one by a
-  // SpotlightSignal index, wrapping after the final entry.
-  variants?: readonly BackgroundSpec[];
+  // Optional runtime-selected backgrounds. The current selector is SpotlightSignal.index,
+  // wrapping after the final entry.
+  runtimePreset?: RuntimePreset<BackgroundSpec>;
   // stars are authored here because they are part of the sky mood, but runtime
   // still resolves/draws them in the atmosphere pass.
   stars?: {
@@ -70,10 +68,3 @@ export interface BackgroundSpec {
   };
 }
 
-// background lookups are keyed by the scene key the runtime is currently using.
-export type BackgroundsByMode = Record<SceneLookupKey, BackgroundSpec>;
-
-export type StartBackgroundsByMode = Record<Extract<SceneLookupKey, "start">, BackgroundSpec>;
-export type QuestionnaireBackgroundsByMode = Record<Extract<SceneLookupKey, "questionnaire">, BackgroundSpec>;
-export type CityBackgroundsByMode = Record<Extract<SceneLookupKey, "city">, BackgroundSpec>;
-export type SpotlightBackgroundsByMode = Record<Extract<SceneLookupKey, "spotlight">, BackgroundSpec>;

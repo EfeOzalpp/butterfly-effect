@@ -10,7 +10,7 @@ interface HitboxScreenHalfSizeArgs {
   layout: SpriteVisualLayout;
 }
 
-export interface HitboxScreenHalfSize {
+interface HitboxScreenHalfSize {
   width: number;
   height: number;
 }

@@ -1,7 +1,10 @@
 // Shared entry animation envelope for root shape draws.
-import type { ShapeMods, AppearMod } from "./types";
+import type { ShapeMods } from "./types";
 
-export const ROOT_APPEAR_DEFAULT: Required<AppearMod> = {
+type AppearConfig = Exclude<ShapeMods["appear"], false | undefined>;
+type ResolvedAppear = Required<AppearConfig>;
+
+const ROOT_APPEAR_DEFAULT: ResolvedAppear = {
   scaleFrom: 0,
   alphaFrom: 0,
   anchor: "bottom-center",
@@ -12,7 +15,7 @@ export const ROOT_APPEAR_DEFAULT: Required<AppearMod> = {
 export function resolveAppear(
   appear: ShapeMods["appear"],
   rootAppearEnabled: boolean
-): Required<AppearMod> | undefined {
+): ResolvedAppear | undefined {
   if (appear === false) return undefined;
   if (!rootAppearEnabled && !appear) return undefined;
   return { ...ROOT_APPEAR_DEFAULT, ...(appear ?? {}) };

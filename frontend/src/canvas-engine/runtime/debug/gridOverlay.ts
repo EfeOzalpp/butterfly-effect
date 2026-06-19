@@ -4,7 +4,7 @@ import type { PLike } from "../p/makeP";
 import type { GridMetrics } from "../geometry/gridCache";
 import type { CanvasPaddingSpec } from "../../scene-rules/canvas-padding";
 
-export interface GridOverlayParams {
+interface GridOverlayParams {
   cellW: number;
   cellH: number;
   ox: number;
@@ -15,7 +15,7 @@ export interface GridOverlayParams {
   metrics: GridMetrics;
 }
 
-export interface GridOverlayDebug {
+interface GridOverlayDebug {
   enabled: boolean;
   gridAlpha?: number;
   forbiddenAlpha?: number;
@@ -49,7 +49,7 @@ export function drawGridOverlay(
   ctx.lineWidth = 1;
   ctx.strokeStyle = lineColor;
 
-  // verticals — per row, since each row may have different column counts
+  // Verticals per row, since each row may have different column counts.
   for (let r = 0; r < rows; r++) {
     const rCols = rowCols(r);
     const rCellW = rowCellW(r);

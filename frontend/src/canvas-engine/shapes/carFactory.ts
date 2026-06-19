@@ -177,7 +177,7 @@ const CF: CarFactoryTuning = {
   // Body: X-only clamp (lerped by liveAvg)
   bodyScaleXRange: [1, 1.33],
 
-  // Chimney: Y-only clamp (lerped by liveAvg) — decreasing range
+  // Chimney: Y-only clamp (lerped by liveAvg) - decreasing range
   chimScaleYRange: [1, 0],
 
   // Roof
@@ -391,7 +391,7 @@ export function drawCarFactory(
   const totalW   = factoryW + gap + chimW;
 
   const leftStart = x0 + (W - totalW) / 2;
-  const sideLeft  = ((f.c0 + f.r0) % 2) === 0; // true → factory left, chimney right
+  const sideLeft  = ((f.c0 + f.r0) % 2) === 0; // true -> factory left, chimney right
   const bodyX     = sideLeft ? leftStart : (leftStart + chimW + gap);
 
   // slight inward offset to pull chimney toward the body
@@ -421,11 +421,11 @@ export function drawCarFactory(
     Math.min(CF.windowStrokePx[1], detailUnit * 0.025)
   );
 
-  // liveAvg-lerped clamps — robust for decreasing ranges
+  // liveAvg-lerped clamps - robust for decreasing ranges
   const bodyScaleX = clampLerped(CF.bodyScaleXRange, u);
   const chimScaleY = clampLerped(CF.chimScaleYRange, u);
 
-  // body anchor flips by side — left-anchored if component is on the left
+  // body anchor flips by side - left-anchored if component is on the left
   const bodyAnchorX = sideLeft ? bodyX : (bodyX + factoryW);
 
   // Precompute roof rect in WORLD space (so we can draw panels outside body scale group)
@@ -453,7 +453,7 @@ export function drawCarFactory(
   p.scale(env.scaleX, env.scaleY);
   p.translate(-anchorX, -anchorY);
 
-  // NOTE: DO NOT clip to (x0,y0,W,H) here — it cuts off smoke in the bleed.
+  // NOTE: DO NOT clip to (x0,y0,W,H) here - it cuts off smoke in the bleed.
   // If you *really* want a clip, prefer the full canvas bounds (when available):
   // if (isSprite && p.width && p.height) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, p.width, p.height); ctx.clip(); }
 
@@ -478,7 +478,7 @@ export function drawCarFactory(
     }
 
     const smokeX = (topLeftX + topRightX) / 2 - colW / 2;
-    // spawn a bit above the mouth so top edge-fade doesn’t kill it
+    // spawn a bit above the mouth so top edge-fade doesn't kill it
     const smokeY = chimneyTopY - Math.round(detailUnit * (isSprite ? 1.35 : 1.45));
 
     // base knobs
@@ -613,7 +613,7 @@ export function drawCarFactory(
     p.pop();
   }
 
-  // 3–8) FACTORY BODY & CONTENT — X-only scale, anchored by side
+  // 3-8) FACTORY BODY & CONTENT - X-only scale, anchored by side
   p.push();
   if (shouldDrawMass) {
     p.translate(bodyAnchorX, 0);
@@ -637,7 +637,7 @@ export function drawCarFactory(
       p.rect(frameX, frameY, frameW, frameH, CF.frameRadiusPx);
     }
 
-    // 6) CAR in window — ignore body scale via inverse transform
+    // 6) CAR in window - ignore body scale via inverse transform
     if (shouldDrawColorDetails) {
       const cx = winX + winW / 2;
       const bottomPad = Math.max(2, Math.round(winH * 0.10));
@@ -733,7 +733,7 @@ export function drawCarFactory(
       ctx2.restore();
     }
 
-    // 8) GLASS pane — smaller stroke, even less opaque
+    // 8) GLASS pane - smaller stroke, even less opaque
     if (shouldDrawColorDetails) {
       const strokeRGB = {
         r: Math.round(wall.r * 0.82),
@@ -748,9 +748,9 @@ export function drawCarFactory(
   }
   p.pop();
 
-  // 9) SOLAR PANELS — scale anchored to the roof (bottom-center), tilt flips with side
+  // 9) SOLAR PANELS - scale anchored to the roof (bottom-center), tilt flips with side
   {
-    const sPanels = clamp01(u); // 0 → hidden, 1 → full
+    const sPanels = clamp01(u); // 0 -> hidden, 1 -> full
     if (sPanels > 0.001) {
       const panelTint0 = applySrgbExposureContrast(pal.solarPanel, ex, ct);
       const count = CF.panels.count;
@@ -817,9 +817,8 @@ export function drawCarFactory(
   }
 
   // If you added a canvas-wide clip above, remember to ctx.restore() here.
-  // (We didn’t enable one by default.)
+  // (We didn't enable one by default.)
 
   p.pop();
 }
 
-export default drawCarFactory;

@@ -19,7 +19,7 @@ interface DepthMaskDebugStats {
   lastLogMs: number;
 }
 
-export interface DepthMaskDebugTracker {
+interface DepthMaskDebugTracker {
   markCall(): void;
   markSkippedUnsupported(): void;
   markSkippedAppear(): void;

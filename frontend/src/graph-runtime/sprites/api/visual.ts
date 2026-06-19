@@ -121,7 +121,7 @@ function resolveSpriteVisualLayout(args: {
   // Each footprint tile = finalScale world units, matching SpriteShape's scale convention.
   const totalW = resolveBoundedSize(baseW, boundsPadding.left, boundsPadding.right);
   const totalH = resolveBoundedSize(baseH, boundsPadding.top, boundsPadding.bottom);
-  // Base sizes used for offset/anchor — hitboxScale must not drift the center
+  // Base sizes used for offset/anchor - hitboxScale must not drift the center
   const sxBase = finalScale * totalW;
   const syBase = finalScale * totalH;
   const measuredOffsetX = finalScale * (baseCenterX - footprint.w / 2);

@@ -1,7 +1,6 @@
 // src/canvas-engine/runtime/render/passes/background/index.ts
 
 // Background pass owns the static scene base: base color, gradients, and anchors.
-// Animated atmosphere like stars is exported from the atmosphere pass.
+// Animated stars are exported from the atmosphere pass.
 export { createBackgroundAnchorContext } from "./anchors";
 export { createBgCache } from "./cache";
-export { drawBackground } from "./background";

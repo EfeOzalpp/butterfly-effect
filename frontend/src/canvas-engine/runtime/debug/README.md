@@ -20,7 +20,7 @@ engine/loop.ts
 EngineHost dev mode
   -> install bePlace after canvas is ready
 
-shapeDepthOverlay
+render/passes/depth/shapeDepthOverlay
   -> createDepthMaskDebugTracker()
 
 shape/cache/farShapeBitmap

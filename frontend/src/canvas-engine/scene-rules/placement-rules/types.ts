@@ -2,6 +2,7 @@
 
 import type { DeviceType } from "../../shared/responsiveness";
 import type { ShapeName } from "../shapeCatalog";
+import type { RuntimePreset } from "../runtimePreset";
 
 export type DeviceCount = Partial<Record<DeviceType, number>>;
 
@@ -71,7 +72,6 @@ export interface ProceduralZonePlacementPreset {
 
 export type ScenePlacementRules = ScenePlacementRuleMap & {
   preset?: ProceduralZonePlacementPreset;
-  // Optional runtime-selectable placement maps. The Spotlight signal currently
-  // drives this list, wrapping after the final entry.
-  variants?: readonly ScenePlacementRuleMap[];
+  // Optional runtime-selected placement maps.
+  runtimePreset?: RuntimePreset<ScenePlacementRuleMap>;
 };

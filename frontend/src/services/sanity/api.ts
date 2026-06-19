@@ -13,10 +13,8 @@ import { subscribeMockSurveyData } from './mockData';
 import { normalizeSurveyRow } from './normalizeSurveyRow';
 import { NON_VISITOR_MASSART, STAFF_IDS, STUDENT_IDS } from './sections';
 import type {
-  NormalizedSurveyRow,
-  QueryAndParams,
   RawSurveyRow,
-  SubscribeSurveyDataArgs,
+  SurveyRow,
   Unsubscribe,
 } from './types';
 
@@ -42,6 +40,17 @@ interface ResilientListenParams {
   onReconnect?: () => void;
   onError?: (error: unknown) => 'stop' | undefined;
   poller?: Poller;
+}
+
+interface SubscribeSurveyDataArgs {
+  section: string;
+  limit?: number;
+  onData: (rows: SurveyRow[]) => void;
+}
+
+interface QueryAndParams {
+  query: string;
+  params: Record<string, unknown>;
 }
 
 function makePoller(fn: () => void, intervalMs = 6000): Poller {
@@ -156,25 +165,25 @@ function resilientListen({
   };
 }
 
-const newestTimestampOf = (row: NormalizedSurveyRow) => {
+const newestTimestampOf = (row: SurveyRow) => {
   const raw = row.submittedAt ?? row._createdAt;
   const ts = Date.parse(raw);
   return Number.isFinite(ts) ? ts : 0;
 };
 
-const sortNewestFirst = (a: NormalizedSurveyRow, b: NormalizedSurveyRow) =>
+const sortNewestFirst = (a: SurveyRow, b: SurveyRow) =>
   newestTimestampOf(b) - newestTimestampOf(a);
 
 const upsertSortedLimited = (
-  rows: NormalizedSurveyRow[],
-  nextRow: NormalizedSurveyRow,
+  rows: SurveyRow[],
+  nextRow: SurveyRow,
   limit: number
 ) => {
   const filtered = rows.filter((row) => row._id !== nextRow._id);
   return [...filtered, nextRow].sort(sortNewestFirst).slice(0, limit);
 };
 
-const removeById = (rows: NormalizedSurveyRow[], id: string) =>
+const removeById = (rows: SurveyRow[], id: string) =>
   rows.filter((row) => row._id !== id);
 
 const noop: Unsubscribe = () => {
@@ -233,7 +242,7 @@ export function subscribeSurveyData({
   }
 
   const { query, params } = buildQueryAndParams(section, limit);
-  let currentRows: NormalizedSurveyRow[] = [];
+  let currentRows: SurveyRow[] = [];
   let mockUnsub: Unsubscribe | null = null;
   let unsub: Unsubscribe = noop;
   let closed = false;
@@ -327,5 +336,3 @@ export function subscribeSurveyData({
     poller.disable();
   };
 }
-
-export { STUDENT_IDS, STAFF_IDS, NON_VISITOR_MASSART };

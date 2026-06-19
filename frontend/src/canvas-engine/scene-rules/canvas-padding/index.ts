@@ -3,7 +3,7 @@
 import type { SceneLookupKey } from '../../scene-state';
 import type { CanvasPaddingPolicy } from './types';
 
-export type { CanvasPaddingPolicy, CanvasPaddingPolicyByDevice, CanvasPaddingSpec } from './types';
+export type { CanvasPaddingPolicy, CanvasPaddingSpec } from './types';
 export { uniformRows } from "./helpers";
 export { resolvePaddingPolicyVariants, resolvePaddingSpec } from "./resolve";
 

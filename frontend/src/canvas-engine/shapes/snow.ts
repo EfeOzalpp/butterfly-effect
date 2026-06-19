@@ -483,4 +483,3 @@ export function drawSnow(
   p.pop();
 }
 
-export default drawSnow;

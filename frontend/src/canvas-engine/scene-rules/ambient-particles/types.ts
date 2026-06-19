@@ -1,6 +1,6 @@
-import type { SceneLookupKey } from "../../scene-state";
+import type { RuntimePreset } from "../runtimePreset";
 
-export interface AmbientParticleColorStop {
+interface AmbientParticleColorStop {
   color: string;
   alpha?: number;
 }
@@ -23,7 +23,5 @@ export interface AmbientParticleLayerSpec {
 
 export interface AmbientParticlesSceneSpec {
   layers: readonly AmbientParticleLayerSpec[];
-  variants?: readonly (AmbientParticlesSceneSpec | null)[];
+  runtimePreset?: RuntimePreset<AmbientParticlesSceneSpec | null>;
 }
-
-export type AmbientParticlesSpecsByMode = Record<SceneLookupKey, AmbientParticlesSceneSpec | null>;

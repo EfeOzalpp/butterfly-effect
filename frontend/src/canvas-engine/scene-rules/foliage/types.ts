@@ -1,7 +1,7 @@
-import type { SceneLookupKey } from "../../scene-state";
 import type { BackgroundStopK } from "../backgrounds";
+import type { RuntimePreset } from "../runtimePreset";
 
-export interface FoliageColorStop {
+interface FoliageColorStop {
   color: string;
   alpha?: number;
 }
@@ -20,7 +20,5 @@ export interface FoliageLayerSpec {
 
 export interface FoliageSceneSpec {
   layers: readonly FoliageLayerSpec[];
-  variants?: readonly (FoliageSceneSpec | null)[];
+  runtimePreset?: RuntimePreset<FoliageSceneSpec | null>;
 }
-
-export type FoliageSpecsByMode = Record<SceneLookupKey, FoliageSceneSpec | null>;

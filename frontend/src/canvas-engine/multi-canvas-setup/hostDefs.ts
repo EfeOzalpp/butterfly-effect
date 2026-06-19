@@ -5,13 +5,11 @@ import type { SceneRuleSet } from "../scene-rules/profile";
 import type { SceneLookupKey } from "../scene-state";
 import type { DprMode } from "../runtime/platform/viewport";
 
-// give the canvas the size you want
 export type CanvasBounds =
   | { kind: "viewport" }
   | { kind: "parent" }
   | { kind: "fixed"; w: number; h: number };
 
-// Base shape
 interface HostDefBase {
   mount: string;
   zIndex: number;
@@ -26,7 +24,13 @@ interface HostDefBase {
   };
 }
 
-const defineHosts = <T extends Record<string, HostDefBase>>(t: T) => t;
+type HostDefs<T extends Record<string, HostDefBase>> = {
+  [K in keyof T]: Omit<T[K], "stopOnOpen"> & {
+    stopOnOpen?: readonly (keyof T & string)[];
+  };
+};
+
+const defineHosts = <T extends Record<string, HostDefBase>>(t: T & HostDefs<T>) => t;
 
 export const HOST_DEFS = defineHosts({
   start: {
@@ -70,10 +74,12 @@ export const HOST_DEFS = defineHosts({
   },
 } as const);
 
-// Now it's safe to derive HostId
 export type HostId = keyof typeof HOST_DEFS;
 
-// Public type: tighten stopOnOpen for consumers
-export type HostDef = Omit<HostDefBase, "stopOnOpen"> & {
+type HostDef = Omit<HostDefBase, "stopOnOpen"> & {
   stopOnOpen?: readonly HostId[];
 };
+
+export function getHostDef(id: HostId): HostDef {
+  return HOST_DEFS[id];
+}

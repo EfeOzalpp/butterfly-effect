@@ -3,8 +3,26 @@
 
 import { clamp01 } from "./ranges";
 import { resolveAppear } from "./appear";
-import type { ApplyShapeModsOpts } from "./types";
+import type { ShapeMods } from "./types";
 import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./transformMath";
+
+interface ShapeModifierClock {
+  millis(): number;
+}
+
+interface ApplyShapeModsOpts {
+  p: ShapeModifierClock;
+  x: number;
+  y: number;
+  r: number;
+  opts?: {
+    alpha?: number;
+    timeMs?: number;
+    liveAvg?: number;
+    rootAppearK?: number;
+  };
+  mods?: ShapeMods;
+}
 
 function finiteOr(value: number | undefined, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;

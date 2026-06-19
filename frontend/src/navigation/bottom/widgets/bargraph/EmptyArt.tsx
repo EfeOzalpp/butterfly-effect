@@ -1,9 +1,7 @@
-// ─────────────────────────────────────────────────────────────
+// -------------------------------------------------------------
 // navigation/bottom/widgets/bargraph/EmptyArt.tsx
 // Simple decorative empty-state SVG
-// ─────────────────────────────────────────────────────────────
-
-import React from 'react';
+// -------------------------------------------------------------
 
 interface EmptyDustProps {
   className?: string;

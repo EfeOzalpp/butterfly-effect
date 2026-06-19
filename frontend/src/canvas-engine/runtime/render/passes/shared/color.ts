@@ -6,7 +6,6 @@
 import { gradientColor, VIVID_COLOR_STOPS } from "../../../../modifiers/index";
 import { clamp01, mixRgb } from "../../../../shared/math";
 
-export type { RGB } from "../../../../shared/math";
 export interface RGBA { r: number; g: number; b: number; a: number }
 
 export function mix(a: number, b: number, t: number) {

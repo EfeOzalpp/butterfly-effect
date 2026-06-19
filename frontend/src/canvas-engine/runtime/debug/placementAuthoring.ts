@@ -31,7 +31,7 @@ interface BrushShapeRule {
 
 type BrushShapes = Partial<Record<ShapeName, CountInput | BrushShapeRule>>;
 
-export interface PlacementBrush {
+interface PlacementBrush {
   idPrefix?: string;
   band?: ProceduralZoneBand;
   radius?: BrushRadius;
@@ -79,7 +79,7 @@ interface LastZonePatch {
   quota?: QuotaMode;
 }
 
-export interface PlacementAuthoringApi {
+interface PlacementAuthoringApi {
   enable: (options?: EnableOptions) => PlacementAuthoringApi;
   disable: () => PlacementAuthoringApi;
   host: (hostId: HostId) => PlacementAuthoringApi;

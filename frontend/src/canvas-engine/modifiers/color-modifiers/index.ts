@@ -1,25 +1,19 @@
 // Public color modifier surface. Import from here unless a deeper file owns your exact use case.
 
-export { clamp01, lerp, cssToRgbViaCanvas } from "./utils";
-export type { CanvasColorAdapter, RGB, Stop } from "./utils";
+export { cssToRgbViaCanvas } from "./utils";
+export type { RGB, Stop } from "./utils";
 
 export {
   hslToRgb,
-  linToSrgb,
-  mixRGB,
-  mixRGBGamma,
   rgbToHsl,
-  srgbToLin,
 } from "./colorspace";
 
-export { blendRGB, blendRGBGamma, blendRGBSmart } from "./blend";
+export { blendRGB, blendRGBGamma } from "./blend";
 
 export {
-  applyExposureContrast,
   applySrgbExposureContrast,
   clampBrightness,
   clampSaturation,
-  driveBrightness,
   driveSaturation,
   oscillateBrightness,
   oscillateSaturation,
@@ -28,7 +22,5 @@ export {
 
 export { fillRgb, rgbaCss, strokeRgb } from "./canvas";
 export { fogifyPalette } from "./fog";
-export { gradientColor, rgbToCss } from "./gradient";
+export { gradientColor } from "./gradient";
 export { VIVID_COLOR_STOPS } from "./stops";
-export { computeVisualStyle } from "./style";
-export type { VisualStyle } from "./style";

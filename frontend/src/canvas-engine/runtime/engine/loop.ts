@@ -17,37 +17,34 @@ import {
 } from "../render/passes/atmosphere";
 import { createFoliageLayerCache } from "../render/passes/foliage";
 import { drawAmbientParticles } from "../render/passes/ambient-particles";
-import { createRowLightCache } from "../render/passes/light";
+import {
+  createEnvironmentLightResolver,
+  createRowLightCache,
+} from "../render/passes/light";
+import { clearSceneSurfaceToUnderpaint } from "../render/surface";
 import { drawGridOverlay } from "../debug";
 import {
   createPaletteCache,
+  createRuntimeShapeBaseOptions,
   createShapeRenderCache,
   drawItems,
   getGradientRGB,
-  resolveShapeDepthTint,
+  resolveShapeLightItem,
   sortItemsForRenderInto,
 } from "../render/passes/shape";
+import { resolveShapeDepthTint } from "../render/passes/depth";
 import { createSceneLightContext } from "../../modifiers/index";
 
 import { drawItemFromRegistry } from "../shape-adapter/draw";
 import type { RuntimeShapeServices } from "../shape-adapter/registry";
 import type { RuntimeShapeOptions } from "../shape-adapter/types";
 import type { RuntimeSurface } from "../p/makeP";
-import { createEnvironmentLightResolver } from "./environmentLight";
 import {
   resolveRuntimeAmbientParticles,
   resolveRuntimeBackground,
   resolveRuntimeFoliage,
 } from "./runtimeSceneVariants";
-import {
-  clearSceneSurfaceToUnderpaint,
-  resolveSceneSurfaceFrame,
-} from "./sceneSurfaceLifecycle";
-import {
-  createRuntimeShapeBaseOptions,
-  resolveShapeLightItem,
-} from "./shapeFrameOptions";
-
+import { resolveSceneSurfaceFrame } from "./sceneSurfaceLifecycle";
 import type { EngineFieldItem } from "./field";
 import type { EngineEffectState, EngineRuntimeState } from "./state";
 import type { EngineSceneSource } from "./types";

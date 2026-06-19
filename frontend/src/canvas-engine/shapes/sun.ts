@@ -57,7 +57,7 @@ const SUN = {
   rayLenK:         [0.80, 0.52],
   rayThickK:       [0.06, 0.04],
 
-  // “base” core diameter and the older anchor (kept so visuals stay familiar)
+  // "base" core diameter and the older anchor (kept so visuals stay familiar)
   coreDiamK:       [0.6, 0.45],
   rayAnchorDiamK:  [0.46, 0.28],
 } satisfies Record<string, NumberRange>;
@@ -141,7 +141,7 @@ function drawCrescentMoon(
   // Crescent drawn as two-arc path:
   // outer arc  = moon circle (the lit limb)
   // inner arc  = shadow circle of equal radius, offset along +X
-  // d = 0.7R  →  "almost half moon, slightly crescent" appearance
+  // d = 0.7R  ->  "almost half moon, slightly crescent" appearance
   const R = m.r / 2;           // m.r is p5 circle diameter, convert to radius
   const d = R * 0.7;           // shadow circle offset (0=full dark, 2R=full moon)
   const ix = d / 2;            // x-coord of intersection points
@@ -216,7 +216,7 @@ export function drawSun(
     x = cx; y = cy; r = diam;
   }
 
-  // Dark mode → crescent moon instead of sun
+  // Dark mode -> crescent moon instead of sun
   if (darkMode) {
     drawCrescentMoon(p, x, y, r, opts, t, ex, ct);
     return;

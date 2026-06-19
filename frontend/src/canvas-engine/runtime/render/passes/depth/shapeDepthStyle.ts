@@ -9,7 +9,7 @@ const DEPTH_ALPHA_CURVE = 1.85;
 const DEPTH_ALPHA_MAX_DARK = 0.78;
 const DEPTH_ALPHA_MAX_LIGHT = 0.68;
 
-export interface ShapeDepthTint {
+interface ShapeDepthTint {
   color: RGB;
   blend: number;
 }

@@ -10,7 +10,7 @@ interface PerspectiveCameraLike extends Camera {
   fov: number;
 }
 
-export interface UsePixelOffsetsParams {
+interface UsePixelOffsetsParams {
   groupRef: RefObject<Group | null>;
   camera: Camera;
   domElement: HTMLElement;

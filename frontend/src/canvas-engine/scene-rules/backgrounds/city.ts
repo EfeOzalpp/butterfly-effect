@@ -1,6 +1,6 @@
 // src/canvas-engine/scene-rules/backgrounds/city.ts
 
-import type { BackgroundSpec, CityBackgroundsByMode } from "./types";
+import type { BackgroundSpec } from "./types";
 
 // light scene
 const CITY_BACKGROUND: BackgroundSpec = {
@@ -25,7 +25,7 @@ const CITY_BACKGROUND: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_CITY: CityBackgroundsByMode = {
+export const BACKGROUNDS_CITY: Record<"city", BackgroundSpec> = {
   city: CITY_BACKGROUND,
 } as const;
 
@@ -59,6 +59,6 @@ const CITY_BACKGROUND_DARK: BackgroundSpec = {
   },
 } as const;
 
-export const BACKGROUNDS_CITY_DARK: CityBackgroundsByMode = {
+export const BACKGROUNDS_CITY_DARK: Record<"city", BackgroundSpec> = {
   city: CITY_BACKGROUND_DARK,
 } as const;

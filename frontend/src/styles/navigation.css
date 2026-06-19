@@ -32,7 +32,7 @@
 .observe-results, .svg-lg { cursor: pointer; }
 .system-color.is-dark { opacity: 0.95; }
 
-/* Bottom mode toggle — lives inside .bottom */
+/* Bottom mode toggle - lives inside .bottom */
 .mode-toggle-wrap { display: flex; align-items: center; pointer-events: all; user-select: none; }
 
 .mode-toggle-switch { display: flex; align-items: stretch; outline: none; }

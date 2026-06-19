@@ -1,28 +1,35 @@
-import type { FoliageSpecsByMode } from "./types";
+import type { SceneLookupKey } from "../../scene-state";
+import type { FoliageSceneSpec } from "./types";
 import { SPOTLIGHT_SLIDES, type SpotlightSlide } from "../spotlight/slides";
 
 export type {
-  FoliageColorStop,
   FoliageLayerSpec,
   FoliageSceneSpec,
-  FoliageSpecsByMode,
 } from "./types";
+
+type FoliageByMode = Record<SceneLookupKey, FoliageSceneSpec | null>;
 
 const spotlightSlides: readonly SpotlightSlide[] = SPOTLIGHT_SLIDES;
 
 const SPOTLIGHT_FOLIAGE = {
   layers: [],
-  variants: spotlightSlides.map((slide) => slide.foliage ?? null),
+  runtimePreset: {
+    selector: "spotlightIndex",
+    entries: spotlightSlides.map((slide) => slide.foliage ?? null),
+  },
 } as const;
 
 const SPOTLIGHT_DARK_FOLIAGE = {
   layers: [],
-  variants: spotlightSlides.map((slide) => slide.darkFoliage ?? slide.foliage ?? null),
+  runtimePreset: {
+    selector: "spotlightIndex",
+    entries: spotlightSlides.map((slide) => slide.darkFoliage ?? slide.foliage ?? null),
+  },
 } as const;
 
 const _FOLIAGE = {
   layers: [
-    // farthest — tiny, very subtle, near horizon
+    // farthest - tiny, very subtle, near horizon
     {
       count: [50, 90] as const,
       yK: [0.5, 0.62] as const,
@@ -36,7 +43,7 @@ const _FOLIAGE = {
       ],
       seed: 41,
     },
-    // upper-mid — small
+    // upper-mid - small
     {
       count: [36, 60] as const,
       yK: [0.60, 0.72] as const,
@@ -64,7 +71,7 @@ const _FOLIAGE = {
       ],
       seed: 67,
     },
-    // close — larger, still soft
+    // close - larger, still soft
     {
       count: [16, 28] as const,
       yK: [0.80, 0.95] as const,
@@ -140,14 +147,14 @@ const DARK_FOLIAGE = {
   ],
 } as const;
 
-export const FOLIAGE: FoliageSpecsByMode = {
+export const FOLIAGE: FoliageByMode = {
   start: _FOLIAGE,
   questionnaire: _FOLIAGE,
   city: _FOLIAGE,
   spotlight: SPOTLIGHT_FOLIAGE,
 } as const;
 
-export const FOLIAGE_DARK: FoliageSpecsByMode = {
+export const FOLIAGE_DARK: FoliageByMode = {
   start: DARK_FOLIAGE,
   questionnaire: DARK_FOLIAGE,
   city: DARK_FOLIAGE,

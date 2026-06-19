@@ -4,6 +4,7 @@ import { useThree, useFrame } from '../../../r3f';
 import type { RefObject } from 'react';
 import { Quaternion, Vector3, Frustum, Matrix4, type Group } from '../../../three';
 import type { Vec3 } from '../../types';
+import type { GestureState } from '../shared/sharedGesture';
 
 // Scratch objects reused every frame to avoid GC pressure.
 const _rotQ = new Quaternion();
@@ -65,7 +66,7 @@ const getDragTuning = ({
 }) => {
   const zoomRatio = Math.pow(getZoomRatio(radius, minRadius, maxRadius), 0.85);
   // Desktop sensitivity scales with how close the nearest dot is to the camera.
-  // Near dot → low sensitivity (precision); far dots → full speed.
+  // Near dot -> low sensitivity (precision); far dots -> full speed.
   const distRatio = clamp01(closestDist / maxRadius);
   const zoomReleaseRatio = Math.pow(zoomRatio, TOUCH_SENSITIVITY_RELEASE_CURVE);
   const sensitivityRatio = isTouch ? Math.max(distRatio, zoomReleaseRatio) : distRatio;
@@ -86,13 +87,7 @@ declare global {
   }
 }
 
-export interface GestureState {
-  pinching: boolean;
-  touchCount: number;
-  pinchCooldownUntil: number; // ms timestamp
-}
-
-export interface UseRotationParams {
+interface UseRotationParams {
   groupRef: RefObject<Group | null>;
   useDesktopLayout: boolean;
   isTabletLike: boolean;
@@ -104,7 +99,7 @@ export interface UseRotationParams {
   dotPositions?: readonly Vec3[];
 }
 
-export interface UseRotationReturn {
+interface UseRotationReturn {
   isPinchingRef: RefObject<boolean>;
   isTouchRotatingRef: RefObject<boolean>;
   effectiveDraggingRef: RefObject<boolean>;

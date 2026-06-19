@@ -16,7 +16,7 @@ describe("quantizeAvg", () => {
     expect(quantizeAvg(2)).toBe(1);
   });
 
-  test("NaN falls back to 0.5 before quantizing — result is in [0, 1]", () => {
+  test("NaN falls back to 0.5 before quantizing - result is in [0, 1]", () => {
     const result = quantizeAvg(NaN);
     expect(result).toBeGreaterThanOrEqual(0);
     expect(result).toBeLessThanOrEqual(1);

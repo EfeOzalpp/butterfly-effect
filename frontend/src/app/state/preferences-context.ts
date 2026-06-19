@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 
 export interface PreferencesState {
-  // Dark or light theme — persisted to sessionStorage, applied to document root via data-theme
+  // Dark or light theme - persisted to sessionStorage, applied to document root via data-theme
   darkMode: boolean;
   setDarkMode: (v: boolean) => void;
 };

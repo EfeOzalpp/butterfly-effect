@@ -167,7 +167,7 @@ p span, li span, label span { font-family: var(--font-body); font-size: var(--ty
   --hint-banner-visible-transform: translateX(-50%) translateY(0) scale(1);
 }
 
-/* ── Button base ──────────────────────────────────────────────────── */
+/* -- Button base ---------------------------------------------------- */
 
 button { pointer-events: auto; cursor: pointer; }
 
@@ -226,7 +226,7 @@ button.city-button,
 .widgets-button,
 .canvas-engine-link { color: var(--btn-secondary-text); font-weight: var(--btn-font-weight); }
 
-/* ── Primary ghost (hidden spacer that reserves hover width) ──────── */
+/* -- Primary ghost (hidden spacer that reserves hover width) -------- */
 
 .begin-button__ghost,
 .questionnaire__ghost,
@@ -271,7 +271,7 @@ button.section-continue-button::before {
   padding: var(--btn-primary-padding-hover);
 }
 
-/* ── Primary inner (the visible pill) ────────────────────────────── */
+/* -- Primary inner (the visible pill) ------------------------------ */
 
 .begin-button__inner,
 .questionnaire__inner,
@@ -322,7 +322,7 @@ button.solo-message-save:disabled:hover .solo-message-save__inner {
   box-shadow: none;
 }
 
-/* ── Secondary before / ghost (reserves hover width) ─────────────── */
+/* -- Secondary before / ghost (reserves hover width) --------------- */
 
 button.city-button::before {
   content: attr(data-label);
@@ -374,7 +374,7 @@ button.city-button::before {
   line-height: 1;
 }
 
-/* ── Secondary inner (the visible pill) ──────────────────────────── */
+/* -- Secondary inner (the visible pill) ---------------------------- */
 
 .city-button__inner,
 .observe-results__inner,
@@ -408,7 +408,7 @@ button.city-button:hover .city-button__inner,
   }
 }
 
-/* ── Tertiary button ──────────────────────────────────────────────── */
+/* -- Tertiary button ------------------------------------------------ */
 
 .svg-lg {
   display: inline-flex;
@@ -423,7 +423,7 @@ button.city-button:hover .city-button__inner,
 
 .system-color:hover  { background: var(--btn-tertiary-hover-bg); }
 
-/* ── Responsive overrides ─────────────────────────────────────────── */
+/* -- Responsive overrides ------------------------------------------- */
 
 button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4rem; }
 .hint-banner-close  { width: 20px !important; height: 20px !important; }
@@ -432,7 +432,7 @@ button.begin-button { width: fit-content; box-sizing: border-box; margin: 0 0.4r
 @media (min-width: 768px) and (max-width: 1024px) { .svg-lg { max-height: 52px; max-width: 52px; min-height: 52px; min-width: 52px; } }
 @media (min-width: 1025px)                     { .svg-lg { max-height: 48px; max-width: 48px; min-height: 48px; min-width: 48px; } }
 
-/* ── Focus visible — WCAG 2.4.7 / 2.4.11 ─────────────────────────── */
+/* -- Focus visible - WCAG 2.4.7 / 2.4.11 --------------------------- */
 
 button.begin-button:focus-visible .begin-button__inner,
 button.questionnaire:focus-visible .questionnaire__inner,

@@ -7,10 +7,10 @@ import type {
   ShapePalette,
   ShapeParticleOptions,
   ShapeProjectionOptions,
-  ShapeRenderPassOptions,
   ShapeSpriteOptions,
   ShapeStyleOptions,
 } from "./types";
+import type { ShapeRenderPassOptions } from "../modifiers/index";
 
 // Shared empty groups let shape code read optional groups without allocating a
 // fallback object on every draw call. Treat them as read-only.

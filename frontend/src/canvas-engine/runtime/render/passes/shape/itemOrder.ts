@@ -61,6 +61,3 @@ export function sortItemsForRenderInto(
   return target;
 }
 
-export function renderDepthOfItem(item: EngineFieldItem, gridMetrics?: GridMetrics): number {
-  return itemDepth(item, gridMetrics);
-}

@@ -9,22 +9,9 @@ interface Job {
   onCancel?: () => void;
 }
 
-interface QueueCounts {
-  pending: number;
-  inflight: number;
-  paused: boolean;
-  backgroundPending: number;
-  backgroundInflight: number;
-}
-
 let Q: Job[] = [];
 let pumping = false;
 let paused = false;
-let inflight = 0;
-let backgroundPendingCount = 0;
-let backgroundInflightCount = 0;
-const listeners = new Set<() => void>();
-let snapshot: QueueCounts = { pending: 0, inflight: 0, paused: false, backgroundPending: 0, backgroundInflight: 0 };
 
 // Generation invalidates stale jobs when a graph/theme reset makes old texture
 // requests irrelevant.
@@ -44,44 +31,6 @@ const scheduleIdle: (callback: IdleRequestCallback) => number =
             timeRemaining: () => 0,
           });
         }, 16);
-
-function refreshSnapshot() {
-  const nextPending = Q.length;
-  const nextInflight = inflight;
-  const nextPaused = paused;
-  const nextBgPending = backgroundPendingCount;
-  const nextBgInflight = backgroundInflightCount;
-
-  if (
-    snapshot.pending === nextPending &&
-    snapshot.inflight === nextInflight &&
-    snapshot.paused === nextPaused &&
-    snapshot.backgroundPending === nextBgPending &&
-    snapshot.backgroundInflight === nextBgInflight
-  ) {
-    return false;
-  }
-
-  snapshot = {
-    pending: nextPending,
-    inflight: nextInflight,
-    paused: nextPaused,
-    backgroundPending: nextBgPending,
-    backgroundInflight: nextBgInflight,
-  };
-  return true;
-}
-
-function notify() {
-  if (!refreshSnapshot()) return;
-  for (const listener of listeners) {
-    try {
-      listener();
-    } catch {
-      // Keep one bad listener from breaking queue progress updates.
-    }
-  }
-}
 
 function maxJobsPerIdleSlice() {
   return isTouchDevice ? 1 : 2;
@@ -106,8 +55,6 @@ function step(deadline?: IdleDeadline) {
 
   while (Q.length && done < maxJobs && (done === 0 || hasTime())) {
     const job = takeNextJob();
-    if (job.background) backgroundPendingCount--;
-    notify();
     if (job.gen !== GEN) {
       try {
         job.onCancel?.();
@@ -117,15 +64,7 @@ function step(deadline?: IdleDeadline) {
       continue;
     }
 
-    inflight++;
-    if (job.background) backgroundInflightCount++;
-    notify();
     try { job.run(); } catch (err) { console.warn('[queue] job failed:', err); }
-    finally {
-      inflight--;
-      if (job.background) backgroundInflightCount--;
-      notify();
-    }
     done++;
     if (job.background) break;
   }
@@ -139,31 +78,22 @@ function step(deadline?: IdleDeadline) {
 
 export function enqueueTexture(run: () => void, prio = 0, background = false, onCancel?: () => void) {
   const gen = GEN;
-  if (background) backgroundPendingCount++;
   Q.push({ run, prio, gen, background, onCancel });
   // Higher priority textures are usually visible sooner, so they move first.
   Q.sort((a, b) => b.prio - a.prio);
-  notify();
   if (!pumping && !paused) {
     pumping = true;
     scheduleIdle(step);
   }
 }
 
-export function getQueueCounts() {
-  refreshSnapshot();
-  return snapshot;
-}
-
 export function pauseQueue() {
   paused = true;
-  notify();
 }
 
 export function resumeQueue() {
   if (!paused) return;
   paused = false;
-  notify();
   if (Q.length && !pumping) {
     pumping = true;
     scheduleIdle(step);
@@ -179,26 +109,16 @@ function cancelAllJobs() {
     }
   }
   Q = [];
-  backgroundPendingCount = 0;
   pumping = false;
-  notify();
 }
 
 export function resetQueue() {
   cancelAllJobs();
   paused = false;
-  notify();
 }
 
 export function bumpGeneration() {
   GEN++;
   cancelAllJobs();
-}
-
-export function subscribeQueue(listener: () => void) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
 }
 

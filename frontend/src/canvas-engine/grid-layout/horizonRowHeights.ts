@@ -5,7 +5,7 @@ import type { GridMetrics } from "./gridMetrics";
 const MIN_WEIGHT = 0.15; // row closest to horizon (smallest)
 const MAX_WEIGHT = 3.0;  // row farthest from horizon (largest)
 
-export interface HorizonRowHeightsResult extends GridMetrics {
+interface HorizonRowHeightsResult extends GridMetrics {
   horizonRowH: number;
   horizonRowIdx: number;
 }
@@ -59,7 +59,7 @@ export function computeHorizonRowHeights(
   }
 
   // Compute the larger side freely first, then pin the smaller side's horizon row
-  // to match — so the two rows flanking the horizon have the same height.
+  // to match - so the two rows flanking the horizon have the same height.
   let topHeights: number[], botHeights: number[];
 
   if (topH >= botH) {

@@ -161,7 +161,6 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
   }
 
   function bakeMask(args: {
-    // Upstream params: cache-miss draw data from drawShapeDepthOverlay.
     entry: CachedMask;
     shapeRegistry: ShapeRegistry;
     item: EngineFieldItem;
@@ -170,7 +169,6 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     color: RGB;
     timeMs: number;
     dpr: number;
-    // End params.
   }) {
     const { entry, shapeRegistry, item, rEff, opts, color, timeMs, dpr } = args;
     const { ctx, p: maskP, bounds, canvas } = entry;
@@ -205,14 +203,12 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
   }
 
   const drawShapeDepthOverlay = function drawShapeDepthOverlay(args: {
-    // Upstream params: item draw result from engine/loop.ts after the color pass.
     p: PLike;
     shapeRegistry: ShapeRegistry;
     item: EngineFieldItem;
     rEff: number;
     opts: RuntimeShapeOptions;
     shapeWasDrawnLive: boolean;
-    // End params.
   }) {
     const { p, shapeRegistry, item, rEff, opts, shapeWasDrawnLive } = args;
     const policy = getPolicy();

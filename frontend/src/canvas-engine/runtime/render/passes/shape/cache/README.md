@@ -28,7 +28,7 @@ engine/loop.ts renderOneSandboxed
         bitmap miss without budget: use stale compatible bitmap or return false
 
   -> if false, shape-adapter invokes live shape draw
-  -> shapeDepthOverlay draws or reuses depth mask
+  -> depth pass draws or reuses depth mask
 ```
 
 ## Contracts

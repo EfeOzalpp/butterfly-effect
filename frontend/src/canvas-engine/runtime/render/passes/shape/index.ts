@@ -5,5 +5,8 @@ export {
   sortItemsForRenderInto,
 } from "./itemOrder";
 export { createShapeRenderCache } from "./shapeRenderCache";
-export { resolveShapeDepthTint, type ShapeDepthTint } from "./shapeDepthStyle";
-export { createPaletteCache, getGradientRGB, type PaletteCache } from "./palette";
+export {
+  createRuntimeShapeBaseOptions,
+  resolveShapeLightItem,
+} from "./frameOptions";
+export { createPaletteCache, getGradientRGB } from "./palette";

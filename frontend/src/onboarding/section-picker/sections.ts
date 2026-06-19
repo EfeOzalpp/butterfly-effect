@@ -19,7 +19,7 @@ export interface SectionOption extends RoleSection {
 
 export type SectionItem = SectionHeader | SectionOption;
 
-export interface RoleSectionCatalog {
+interface RoleSectionCatalog {
   student: RoleSection[];
   staff: RoleSection[];
 }
@@ -69,7 +69,7 @@ export const ROLE_SECTIONS: RoleSectionCatalog = {
     { value: 'admissions', label: 'Admissions' },
     { value: 'artward-bound', label: 'Artward Bound' },
     { value: 'bookstore', label: 'Bookstore' },
-    { value: 'bursar', label: 'Bursar’s Office' },
+    { value: 'bursar', label: "Bursar's Office" },
     { value: 'career-development', label: 'Career Development', aliases: ['career'] },
     { value: 'center-art-community', label: 'Center for Art & Community Partnerships', aliases: ['cacp'] },
     { value: 'community-health', label: 'Community Health & Well-being' },
@@ -92,10 +92,10 @@ export const ROLE_SECTIONS: RoleSectionCatalog = {
     { value: 'marketing-communications', label: 'Marketing & Communications', aliases: ['marcom'] },
     { value: 'maam', label: 'MassArt Art Museum', aliases: ['maam'] },
     { value: 'foundation', label: 'MassArt Foundation' },
-    { value: 'president-office', label: 'President’s Office' },
+    { value: 'president-office', label: "President's Office" },
     { value: 'pce', label: 'Professional & Continuing Education', aliases: ['pce'] },
     { value: 'public-safety', label: 'Public Safety' },
-    { value: 'registrar', label: 'Registrar’s Office' },
+    { value: 'registrar', label: "Registrar's Office" },
     { value: 'student-development', label: 'Student Development' },
     { value: 'student-engagement', label: 'Student Engagement' },
     { value: 'student-financial-assistance', label: 'Student Financial Assistance' },

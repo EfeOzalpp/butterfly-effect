@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
 
-export interface HitboxScreenSize {
+interface HitboxScreenSize {
   width: number;
   height: number;
 }
 
-export type TooltipHitboxCssVars = CSSProperties & {
+type TooltipHitboxCssVars = CSSProperties & {
   "--hitbox-width-px": string;
   "--hitbox-height-px": string;
   "--hitbox-half-width-px": string;

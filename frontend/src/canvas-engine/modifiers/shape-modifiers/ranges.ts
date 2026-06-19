@@ -7,14 +7,6 @@ export type NumberRange = [number, number];
 
 export { clamp01, lerpNumber };
 
-export function mix(a: number, b: number, t: number): number {
-  return lerpNumber(a, b, t);
-}
-
 export function resolveRangeValue(v: number | NumberRange, u: number): number {
   return Array.isArray(v) ? lerpNumber(v[0], v[1], clamp01(u)) : v;
 }
-
-// Backward-compatible aliases. New shape code should prefer resolveRangeValue()
-// for ranges and lerpNumber() for plain numeric interpolation.
-export const val = resolveRangeValue;

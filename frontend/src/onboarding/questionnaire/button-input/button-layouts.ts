@@ -1,7 +1,7 @@
 import type { PlacementZone } from "../../../canvas-engine/scene-rules/placement-rules";
 import type { DeviceType } from "../../../canvas-engine/shared/responsiveness";
 
-export type QuestionButtonPlacement = Omit<PlacementZone, "count"> & {
+type QuestionButtonPlacement = Omit<PlacementZone, "count"> & {
   w: number;
   h: number;
   rowAlign?: "start" | "center" | "end";

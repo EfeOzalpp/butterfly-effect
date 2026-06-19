@@ -324,4 +324,3 @@ export function drawBus(
   p.pop();
 }
 
-export default drawBus;

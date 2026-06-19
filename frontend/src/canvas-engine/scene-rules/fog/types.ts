@@ -1,5 +1,3 @@
-import type { SceneLookupKey } from "../../scene-state";
-
 export interface FogColor {
   r: number;
   g: number;
@@ -30,5 +28,3 @@ export interface FogSceneSpec {
   sky?: FogModeSpec | null;
   ground?: FogModeSpec | null;
 }
-
-export type FogSpecsByMode = Record<SceneLookupKey, FogSceneSpec | null>;

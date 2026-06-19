@@ -97,7 +97,7 @@
   --hint-border: rgba(100, 116, 139, 0.22);
   --hint-svg: var(--hint-text);
 
-  /* graph signal colors — RGB triplets for rgba() composition in keyframes */
+  /* graph signal colors - RGB triplets for rgba() composition in keyframes */
   --graph-green-hi-rgb: 0, 220, 60;
   --graph-green-lo-rgb: 140, 220, 110;
   --graph-yellow-hi-rgb: 255, 203, 70;
@@ -186,7 +186,7 @@
   --hint-border: rgba(255, 255, 255, 0.1);
   --hint-svg: var(--hint-text);
 
-  /* graph signal colors — blue-shifted for dark bg */
+  /* graph signal colors - blue-shifted for dark bg */
   --graph-green-hi-rgb: 35, 195, 115;
   --graph-green-lo-rgb: 70, 178, 135;
   --graph-yellow-hi-rgb: 195, 188, 90;
@@ -196,7 +196,7 @@
   --graph-bar-border: rgba(70, 75, 90, 0.7);
 }
 
-/* ── Responsive tokens ───────────────────────────────────────────── */
+/* -- Responsive tokens --------------------------------------------- */
 
 @media (max-width: 767px) {
   :root {

@@ -1,14 +1,10 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { CanvasEngineControls } from "../runtime";
 import { getCanvasMeta } from "../runtime/p/canvasMeta";
 import { getViewportSize } from "../shared/responsiveness";
+import type { useCanvasEngine } from "./useCanvasEngine";
 
-interface Engine {
-  ready: RefObject<boolean>;
-  controls: RefObject<CanvasEngineControls | null>;
-  readyTick?: number;
-}
+type Engine = ReturnType<typeof useCanvasEngine>;
 
 export function getCanvasLogicalSize(canvas: HTMLCanvasElement | undefined | null) {
   if (!canvas) {
@@ -87,4 +83,3 @@ export function useCanvasLogicalSizeTick(engine: Engine) {
 
   return canvasResizeTick;
 }
-

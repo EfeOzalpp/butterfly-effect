@@ -2,8 +2,6 @@
 
 import type { Stop } from "./utils";
 
-export type { Stop } from "./utils";
-
 // Main score gradient. Shapes decide how strongly to blend toward this color.
 export const VIVID_COLOR_STOPS: Stop[] = [
   { stop: 0.00, color: { r: 210, g:   10, b:  25 } },

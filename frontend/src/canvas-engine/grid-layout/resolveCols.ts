@@ -1,6 +1,6 @@
 // src/canvas-engine/grid-layout/resolveCols.ts
 
-export interface ResolveColsOpts {
+interface ResolveColsOpts {
   rows: number;
   widthPx: number;
   heightPx: number;

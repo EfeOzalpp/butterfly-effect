@@ -13,7 +13,7 @@ Ambient particle rules define scene-level live particles such as dust, pollen, w
 scene-rules/resolver
   -> AMBIENT_PARTICLES or AMBIENT_PARTICLES_DARK[sceneLookup]
      -> EngineSceneProfile.ambientParticles
-        -> engine/loop.ts runtime variant resolver
+        -> engine/loop.ts runtime spotlight preset resolver
            -> render/passes/ambient-particles
               -> live draw every frame
 ```
@@ -32,7 +32,7 @@ Spec schema:
 ```ts
 AmbientParticlesSceneSpec {
   layers: readonly AmbientParticleLayerSpec[]
-  variants?: readonly (AmbientParticlesSceneSpec | null)[]
+  runtimePreset?: { selector: "spotlightIndex"; entries: readonly (AmbientParticlesSceneSpec | null)[] }
 }
 ```
 

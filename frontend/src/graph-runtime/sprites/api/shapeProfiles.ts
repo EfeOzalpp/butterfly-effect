@@ -3,12 +3,12 @@ import type { ShapeKey, SpriteBleed, SpriteBoundsPaddingSpec, SpriteFootprint } 
 
 // Per-shape sprite facts. Keep object/texture geometry here; camera-specific
 // interaction behavior belongs in dotgraph/interaction.
-export interface SpriteParticleProfile {
+interface SpriteParticleProfile {
   enabled?: boolean;
   scaleBoost?: Partial<Record<DeviceType, number>>;
 }
 
-export interface ShapeProfile {
+interface ShapeProfile {
   footprint: SpriteFootprint;
   // Visual-only texture padding. Use interactionPadding for hitboxes.
   bleed?: SpriteBleed;
@@ -23,7 +23,7 @@ export interface ShapeProfile {
 
 export const SPRITE_FOOTPRINT_WORLD_SCALE = 1 / 2;
 
-export const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
+const SHAPE_PROFILES: Record<ShapeKey, ShapeProfile> = {
   clouds: {
     footprint: { w: 2, h: 3 },
     bleed: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 },
@@ -131,21 +131,4 @@ export const BLEED = Object.fromEntries(
     .map((shape) => [shape, SHAPE_PROFILES[shape].bleed])
 ) as Partial<Record<ShapeKey, SpriteBleed>>;
 
-export const VISUAL_SCALE = Object.fromEntries(
-  (Object.keys(SHAPE_PROFILES) as ShapeKey[])
-    .filter((shape) => SHAPE_PROFILES[shape].visualScale !== undefined)
-    .map((shape) => [shape, SHAPE_PROFILES[shape].visualScale])
-) as Partial<Record<ShapeKey, number>>;
-
-export const ANCHOR_BIAS_Y = Object.fromEntries(
-  (Object.keys(SHAPE_PROFILES) as ShapeKey[])
-    .filter((shape) => SHAPE_PROFILES[shape].anchorBiasY !== undefined)
-    .map((shape) => [shape, SHAPE_PROFILES[shape].anchorBiasY])
-) as Partial<Record<ShapeKey, number>>;
-
-export const TOOLTIP_ANCHOR_BIAS_Y = Object.fromEntries(
-  (Object.keys(SHAPE_PROFILES) as ShapeKey[])
-    .filter((shape) => SHAPE_PROFILES[shape].tooltipAnchorBiasY !== undefined)
-    .map((shape) => [shape, SHAPE_PROFILES[shape].tooltipAnchorBiasY])
-) as Partial<Record<ShapeKey, number>>;
 

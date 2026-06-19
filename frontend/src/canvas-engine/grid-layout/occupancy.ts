@@ -4,7 +4,7 @@ import type { GridFootprint } from "../shared/geometry";
 
 export type Place = GridFootprint;
 
-export type CellForbidden = (r: number, c: number) => boolean;
+type CellForbidden = (r: number, c: number) => boolean;
 
 /**
  * Tracks the bottom row of placed footprints.

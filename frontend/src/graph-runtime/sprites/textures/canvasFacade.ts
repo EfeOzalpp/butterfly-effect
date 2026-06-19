@@ -4,7 +4,7 @@ import {
   type OffscreenShapeSurface,
 } from '../../../canvas-engine/offscreen-shape-surface';
 
-export type CanvasFacade = OffscreenShapeSurface;
+type CanvasFacade = OffscreenShapeSurface;
 
 // Sprite textures reuse canvas-engine drawers by giving them the same p-style
 // facade they receive in the main Canvas 2D runtime.

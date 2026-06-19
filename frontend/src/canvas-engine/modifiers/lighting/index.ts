@@ -3,8 +3,6 @@ import type { RGB } from "../../shared/math";
 import { footprintToPx } from "../projection";
 import type { GridFootprint, PixelRect, ProjectionContext } from "../projection";
 
-export type { RGB } from "../../shared/math";
-
 interface LightItem {
   x: number;
   y: number;
@@ -53,21 +51,6 @@ export interface LightBreakpoints {
   near: number;
 }
 
-interface LightCanvas2D {
-  beginPath(): void;
-  rect(x: number, y: number, w: number, h: number): void;
-  roundRect?: (x: number, y: number, w: number, h: number, radius: number) => void;
-  moveTo(x: number, y: number): void;
-  lineTo(x: number, y: number): void;
-  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
-  createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient;
-  save(): void;
-  clip(): void;
-  fillStyle: string | CanvasGradient | CanvasPattern;
-  fillRect(x: number, y: number, w: number, h: number): void;
-  restore(): void;
-}
-
 interface ShapeLightCanvas {
   CLOSE: unknown;
   push(): void;
@@ -107,7 +90,7 @@ interface TriangleBandOptions {
 const PIXEL_LIGHT_BAND_ALPHA_BOOST = 1.22;
 const TRIANGLE_LIGHT_BAND_ALPHA_BOOST = 1.24;
 
-export const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS: LightBreakpoints = {
+const DEFAULT_LIGHT_CLOSENESS_BREAKPOINTS: LightBreakpoints = {
   mid: 0.52,
   near: 0.74,
 };
@@ -144,45 +127,10 @@ export function pickLightBandValue<T>(
   return byLight?.[band] ?? base;
 }
 
-function addRoundedRectPath(
-  ctx: LightCanvas2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  radius = 0
-): void {
-  const rr = Math.max(0, Math.min(radius, Math.min(w, h) / 2));
-  ctx.beginPath();
-  if (rr <= 0) {
-    ctx.rect(x, y, w, h);
-    return;
-  }
-  if (typeof ctx.roundRect === "function") {
-    ctx.roundRect(x, y, w, h, rr);
-    return;
-  }
-  ctx.moveTo(x + rr, y);
-  ctx.lineTo(x + w - rr, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-  ctx.lineTo(x + w, y + h - rr);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-  ctx.lineTo(x + rr, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-  ctx.lineTo(x, y + rr);
-  ctx.quadraticCurveTo(x, y, x + rr, y);
-}
-
-function rgbaString(color: RGB, alpha: number): string {
-  return `rgba(${String(color.r)},${String(color.g)},${String(color.b)},${String(clamp01(alpha))})`;
-}
-
 function alphaByte(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(255, Math.round(value)));
 }
-
-export { mixRgb } from "../../shared/math";
 
 export function createSceneLightContext(opts: LightContextOpts): SceneLightContext | null {
   const { lightItem, darkMode, canvasW, canvasH, ...projection } = opts;
@@ -297,46 +245,6 @@ export function paintPixelLightBands(
 
   p.fill(opts.shadowColor.r, opts.shadowColor.g, opts.shadowColor.b, shadowAlpha);
   p.rect(shadowX, y + 1, shadowW, Math.max(0, h - 2), Math.round(shadowW * 0.35));
-}
-
-export function paintEdgeGradientRect(
-  ctx: LightCanvas2D | null | undefined,
-  rect: PixelRect,
-  edge: "left" | "right" | "top" | "bottom",
-  color: RGB,
-  edgeAlpha: number,
-  radius = 0
-): void {
-  const { x, y, w, h } = rect;
-  if (!ctx || w <= 0 || h <= 0 || edgeAlpha <= 0) return;
-
-  let gradient: CanvasGradient;
-  switch (edge) {
-    case "left":
-      gradient = ctx.createLinearGradient(x, y, x + w, y);
-      break;
-    case "right":
-      gradient = ctx.createLinearGradient(x + w, y, x, y);
-      break;
-    case "top":
-      gradient = ctx.createLinearGradient(x, y, x, y + h);
-      break;
-    default:
-      gradient = ctx.createLinearGradient(x, y + h, x, y);
-      break;
-  }
-
-  gradient.addColorStop(0, rgbaString(color, edgeAlpha));
-  gradient.addColorStop(0.30, rgbaString(color, edgeAlpha * 0.55));
-  gradient.addColorStop(0.68, rgbaString(color, edgeAlpha * 0.12));
-  gradient.addColorStop(1, rgbaString(color, 0));
-
-  ctx.save();
-  addRoundedRectPath(ctx, x, y, w, h, radius);
-  ctx.clip();
-  ctx.fillStyle = gradient;
-  ctx.fillRect(x, y, w, h);
-  ctx.restore();
 }
 
 export function paintDirectionalTriangleBands(

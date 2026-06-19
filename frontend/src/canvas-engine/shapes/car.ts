@@ -602,4 +602,3 @@ export function drawCar(
   p.pop();
 }
 
-export default drawCar;

@@ -117,21 +117,3 @@ export function drawBackground(
   }
 }
 
-// Live star pass. The background cache skips stars because their alpha changes every frame.
-export function drawBackgroundStarsOnly(
-  p: PLike,
-  sceneLookup: SceneLookupKey,
-  override: BackgroundSpec | null = null,
-  alpha = 1,
-  liveAvg = 0.5,
-  getStars: ReturnType<typeof createStarGeometryCache>
-) {
-  const spec = resolveBackgroundSpec(sceneLookup, override);
-  if (!spec.stars) return;
-  const ctx = p.drawingContext;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  drawStars(p, ctx, spec.stars, liveAvg, getStars);
-  ctx.restore();
-}
-

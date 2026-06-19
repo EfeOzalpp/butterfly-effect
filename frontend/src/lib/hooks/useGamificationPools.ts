@@ -282,12 +282,6 @@ function createPool(schemaName: 'gamificationGeneralCopy' | 'gamificationPersona
 const generalPool = createPool('gamificationGeneralCopy');
 const personalizedPool = createPool('gamificationPersonalizedCopy');
 
-/** Public: start both early (call once in a preloader) */
-export function startGamificationCopyPreload() {
-  generalPool.start();
-  personalizedPool.start();
-}
-
 /** Hooks for components: they only subscribe; they do not start fetch if not started yet */
 export function useGeneralPools() {
   // Soft guarantee: if nothing started them yet, start once here as a safety net.

@@ -8,7 +8,7 @@ import {
   shapeStyle,
 } from "../../../../../shapes/options";
 
-export interface ShapeBitmapKeyBounds {
+interface ShapeBitmapKeyBounds {
   x: number;
   y: number;
   w: number;

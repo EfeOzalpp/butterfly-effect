@@ -12,7 +12,7 @@ import {
   makeRandomId,
 } from './edgeFunction';
 
-export interface SavedUserResponse {
+interface SavedUserResponse {
   _id: string;
   section?: string;
   q1?: number;

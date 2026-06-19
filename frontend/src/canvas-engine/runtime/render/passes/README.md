@@ -4,11 +4,12 @@ Render passes own visual layers. Draw files describe how a layer is made; adjace
 
 ## Important Files
 
-- `background/` - base color, gradients, background anchors, live stars, and background cache. Upstream: `engine/loop.ts`; authored by `scene-rules/backgrounds`.
-- `atmosphere/` - fog state/layer cache and star geometry. Upstream: `engine/loop.ts`; authored by `scene-rules/fog`.
+- `background/` - base color, gradients, background anchors, and background cache. Upstream: `engine/loop.ts`; authored by `scene-rules/backgrounds`.
+- `atmosphere/` - fog state/layer cache, live stars, and star geometry. Upstream: `engine/loop.ts`; authored by `scene-rules/fog` and background star specs.
 - `foliage/` - plant-detail draw and cache layer. Upstream: `engine/loop.ts`; authored by `scene-rules/foliage`.
-- `light/` - scene-wide row light overlay and cache. Upstream: `engine/loop.ts`; input: `SceneLightContext`.
-- `shape/` - item order, item lifecycle draw pass, palette cache, shape render cache, and depth overlays. Upstream: `engine/loop.ts`; downstream: `shape-adapter`.
+- `light/` - scene light source resolution, scene-wide row light overlay, and cache. Upstream: `engine/loop.ts`; input: `SceneLightContext`.
+- `depth/` - depth tint calculation and per-shape depth mask overlay. Upstream: `engine/loop.ts`; downstream: `shape-adapter`.
+- `shape/` - item order, item lifecycle draw pass, palette cache, and shape render cache. Upstream: `engine/loop.ts`; downstream: `shape-adapter`.
 - `ambient-particles/` - live scene particles. Upstream: `engine/loop.ts`; authored by `scene-rules/ambient-particles`.
 - `shared/` - helpers used by multiple passes.
 
@@ -20,7 +21,7 @@ engine/loop.ts
      hit: blit base layer
      miss: background.ts draws base/gradient layer once
 
-  -> background.drawBackgroundStarsOnly
+  -> atmosphere/stars.drawBackgroundStarsOnly
      live every frame
 
   -> foliage/cache.ts
@@ -40,6 +41,9 @@ engine/loop.ts
      adds per-item runtime options
      asks shape cache or shape adapter to draw each item
 
+  -> depth/shapeDepthOverlay.ts
+     draws or reuses shape depth masks after the color pass
+
   -> ambient-particles
      live every frame because particle positions are time-based
 ```
@@ -50,11 +54,24 @@ External API:
 
 ```ts
 createBgCache()
+createBackgroundAnchorContext()
 createFogLayerCache()
+createFogStateCache()
+createStarGeometryCache()
+drawBackgroundStarsOnly()
 createFoliageLayerCache()
+createEnvironmentLightResolver()
 createRowLightCache()
 createShapeRenderCache(getPolicy)
+createShapeDepthOverlayRenderer(getPolicy)
+sortItemsForRenderInto(...)
+createPaletteCache()
+getGradientRGB(...)
+createRuntimeShapeBaseOptions(...)
+resolveShapeLightItem(...)
+resolveShapeDepthTint(...)
 drawItems(params)
+drawAmbientParticles(...)
 ```
 
 Internal cache contract:

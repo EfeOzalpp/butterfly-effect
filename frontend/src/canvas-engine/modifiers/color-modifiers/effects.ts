@@ -48,12 +48,6 @@ export function driveSaturation(base: RGB, t: number, s0: number, s1: number): R
   return hslToRgb({ h, s: sTarget, l });
 }
 
-export function driveBrightness(base: RGB, t: number, l0: number, l1: number): RGB {
-  const { h, s } = rgbToHsl(base);
-  const lTarget = clamp01(l0 + (l1 - l0) * clamp01(t));
-  return hslToRgb({ h, s, l: lTarget });
-}
-
 export function scaleRgb({ r, g, b }: RGB, k: number): RGB {
   const scale = (value: number) => Math.max(0, Math.min(255, Math.round(value * k)));
   return { r: scale(r), g: scale(g), b: scale(b) };

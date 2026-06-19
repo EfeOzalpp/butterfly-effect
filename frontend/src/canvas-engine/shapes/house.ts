@@ -506,7 +506,7 @@ export function drawHouse(
         sideLeft = !sideLeft; // avoid chimney side
       }
 
-      // link tilt angle to side (±30°)
+      // link tilt angle to side (+/-30deg)
       const angle = compactRoof ? 0 : (sideLeft ? -1 : 1) * (Math.PI / 6);
 
       // slightly bigger base sizes than before
@@ -532,7 +532,7 @@ export function drawHouse(
       const maxPW = Math.max(smallScale ? 4 : 8, (sideW / panelCount) * 0.95);
       pW = Math.min(pW, maxPW);
 
-      // height clamp so they don’t dwarf small roofs
+      // height clamp so they don't dwarf small roofs
       pH = Math.min(pH, Math.max(compactRoof ? 2 : (smallScale ? 2 : 6), roofH * 0.9));
 
       // Y: slightly above the roof top line (roofY is the top edge)

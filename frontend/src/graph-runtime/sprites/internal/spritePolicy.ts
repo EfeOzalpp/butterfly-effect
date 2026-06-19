@@ -15,7 +15,7 @@ import {
 
 // Sprite policy turns score data into stable cacheable sprite identity:
 // shape, color bucket, and visual variant.
-export const SPRITE_TINT_BUCKETS = 10;
+const SPRITE_TINT_BUCKETS = 10;
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
@@ -59,8 +59,9 @@ export function quantizeAvgWithDownshift(avg: number) {
 // Variant slots let repeated shapes share the same drawer while still looking varied.
 export const DEFAULT_VARIANT_SLOTS = 8;
 
-export function resolveSpriteAvgForDebug(avg: number) {
-  return forcedSpriteAvg() ?? avg;
+export function resolveSpriteAvgForDebug(avg: number | undefined) {
+  const fallbackAvg = typeof avg === 'number' && Number.isFinite(avg) ? avg : 0.5;
+  return forcedSpriteAvg() ?? fallbackAvg;
 }
 
 function hash01(s: string) {
