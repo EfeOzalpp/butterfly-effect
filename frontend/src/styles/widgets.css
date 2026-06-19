@@ -105,8 +105,10 @@
 .widgets-panel { display: flex; flex-direction: column; }
 .widgets-panel.bar-graph { padding: 1rem 0.3rem 0 0.3rem; }
 .widgets-panel.bar-graph .bar-graph-container { width: 100%; }
+.widgets-panel.bar-graph .bar-graph-empty { min-height: 280px; align-items: center; }
 .widgets-panel.bar-graph .bar-graph-bar { padding: 0 0.3rem; width: 33%; }
 .widgets-panel.bar-graph .bar-graph-fill { max-width: 60px; }
+.widgets-panel.bar-graph .bar-graph-fill-placeholder { background: var(--ui-border); border-color: var(--ui-border); opacity: 0.68; }
 .widgets-panel.bar-graph .percentage-section { left: 50%; right: auto; width: 58px; transform: translateX(-50%); }
 .bar-graph-nav { padding: 0.55rem 0.6rem 0.25rem 0.4rem; }
 .bar-graph-label { text-align: center; margin-bottom: 1rem; }
@@ -238,6 +240,7 @@
 .compact-tools-modal .logs-table-wrap { min-height: 260px; max-height: min(56svh, 480px); }
 .compact-tools-modal .widgets-panel.bar-graph { padding: 0.5rem 0.8rem 0.8rem; }
 .compact-tools-modal .widgets-panel.bar-graph .bar-graph-container { min-height: 280px; height: min(44svh, 360px); max-height: 360px; }
+.compact-tools-modal .widgets-panel.bar-graph .bar-graph-empty { min-height: 280px; }
 .compact-tools-modal .widgets-panel.bar-graph .bar-graph-fill { max-width: 88px; }
 .compact-tools-modal .widgets-panel.bar-graph .percentage-section { width: 88px; }
 .compact-tools-widget-panel { min-height: 0; }
@@ -260,6 +263,7 @@
  .widgets-panel.bar-graph .bar-graph-container {
   min-height: 360px; max-height: 360px; height: 360px;
  }
+ .widgets-panel.bar-graph .bar-graph-empty { min-height: 360px; }
  .widgets-popover-clip { margin-left: -1px; }
  .widgets-wrap { margin-left: -0.2rem; }
  .widgets-popover-shell { width: calc(45vw - 1.8rem); }
@@ -269,6 +273,7 @@
  .widgets-panel.bar-graph .bar-graph-container {
   min-height: 360px; max-height: 360px; height: 360px;
  }
+ .widgets-panel.bar-graph .bar-graph-empty { min-height: 360px; }
  .widgets-popover-clip { margin-left: -1px; }
  .widgets-wrap { margin-left: -0.2rem; }
  .widgets-popover-shell { width: min(290px, calc(100vw - 6.4rem)); }

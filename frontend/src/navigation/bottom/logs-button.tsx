@@ -94,6 +94,7 @@ export function LogsPanel({
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterFocused, setFilterFocused] = useState(false);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
   const tableWrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -181,6 +182,11 @@ export function LogsPanel({
   const safePage = Math.min(page, totalPages - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
   const highlightPattern = query.trim();
+
+  useEffect(() => {
+    if (!activeRowId) return;
+    if (!pageRows.some((row) => row._id === activeRowId)) setActiveRowId(null);
+  }, [activeRowId, pageRows]);
 
   function renderHighlighted(text: string) {
     if (!highlightPattern) return text;
@@ -286,7 +292,19 @@ export function LogsPanel({
                 <td className="logs-empty" colSpan={4}>couldn't find that one.</td>
               </tr>
             ) : pageRows.map((row) => (
-              <tr key={row._id} className="logs-row">
+              <tr
+                key={row._id}
+                className={`logs-row${activeRowId === row._id ? " is-active" : ""}`}
+                tabIndex={0}
+                aria-selected={activeRowId === row._id}
+                onPointerDown={() => { setActiveRowId(row._id); }}
+                onClick={() => { setActiveRowId(row._id); }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  setActiveRowId(row._id);
+                }}
+              >
                 <td className="logs-td logs-td--section">{renderHighlighted(formatSectionLabel(row.section))}</td>
                 <td className="logs-td logs-td--avg">{renderHighlighted(fmt(row.avgWeight))}</td>
                 <td className="logs-td logs-td--rank">{renderHighlighted(String(rankById.get(row._id) ?? 0))}</td>
