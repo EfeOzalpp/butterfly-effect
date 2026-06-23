@@ -17,6 +17,7 @@ coverage/
 build/
 dist/
 dist-server/
+dist-ssr
 
 CLAUDE.md
 
