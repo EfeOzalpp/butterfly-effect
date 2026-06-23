@@ -175,7 +175,7 @@ export function useSceneField(
       // The RAF fires only once both the compute and the delay have completed.
       engineControls.setFieldVisible(false);
       const delayState = fieldDelayStateRef.current;
-      composeFieldAsync({
+      void composeFieldAsync({
         padding: fieldArgs.padding,
         placements: fieldArgs.placements,
         liveAvg,
@@ -214,7 +214,7 @@ export function useSceneField(
       return;
     }
 
-    composeAndApplyField(engineControls, fieldArgs);
+    void composeAndApplyField(engineControls, fieldArgs);
 
     return () => {
       cancelled = true;
