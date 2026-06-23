@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": false,
+    "outDir": "dist-server",
+    "types": ["node", "express"],
+    "isolatedModules": false
+  },
+  "include": [
+    "src/server",
+    "src/server-rendering",
+    "src/domain/survey/sections.ts",
+    "src/onboarding/questionnaire/button-input/button-questions.ts"
+  ],
+  "exclude": [
+    "src/server-rendering/entry-server.tsx"
+  ]
+}

@@ -1,0 +1,51 @@
+import express from "express";
+import { join } from "node:path";
+import { streamDocument } from "../server-rendering/streamDocument";
+import { gamificationCopyRoute } from "./routes/gamificationCopy";
+import { saveSoloMessageRoute } from "./routes/saveSoloMessage";
+import { saveUserResponseRoute } from "./routes/saveUserResponse";
+import { surveyResponsesRoute } from "./routes/surveyResponses";
+
+const app = express();
+
+const port = Number(process.env.PORT ?? 3000);
+const host = process.env.HOST ?? "127.0.0.1";
+
+if (process.env.TRUST_PROXY === "1") {
+  app.set("trust proxy", 1);
+}
+
+// This parses JSON request bodies and makes them available as req.body for POST handlers.
+app.use(express.json({ limit: "8kb" }));
+
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+// API based route: GET request initiates the function.
+app.get("/api/survey-responses", surveyResponsesRoute);
+app.get("/api/gamification-copy", gamificationCopyRoute);
+app.post("/api/save-user-response", saveUserResponseRoute);
+app.post("/api/save-solo-message", saveSoloMessageRoute);
+
+if (process.env.NODE_ENV === "production") {
+  // process.cwd() is the directory where the Node process was started.
+  const clientDist = join(process.cwd(), "dist");
+
+  // Serve built JS/CSS/image files directly, but do not auto-serve index.html.
+  // App document requests should flow through the streaming SSR document.
+  app.use(express.static(clientDist, { index: false }));
+
+  // Fallback page route: any non-API/static GET request receives the app HTML.
+  // This stays last so specific API routes and static assets get first chance.
+  app.get("*", (_req, res, next) => {
+    void streamDocument({
+      clientDist,
+      next,
+      res,
+    }).catch(next);
+  });
+}
+
+app.listen(port, host, () => {
+  console.log(`Server listening on http://${host}:${String(port)}`);
+});

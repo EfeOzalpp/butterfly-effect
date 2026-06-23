@@ -1,0 +1,171 @@
+import type { Request, Response } from "express";
+import { optionalEnv } from "../env";
+import { consumeRateLimits, type RateRule } from "../security/rateLimiter";
+import { getClientAddress } from "../security/requestIdentity";
+import { sanityWriteClient } from "../upstreams/sanity/writeClient";
+import { editTokenHash, sha256 } from "../utils/hash";
+import { isRecord, readOptionalId, rejectDisallowedOrigin } from "./shared";
+
+interface ValidPayload {
+  responseId: string;
+  editToken: string;
+  message: string;
+  clientId: string | null;
+  clientRequestId: string | null;
+}
+
+interface StoredResponse {
+  _id: string;
+  editTokenHash?: string;
+}
+
+interface SavedMessageResponse {
+  _id: string;
+  soloMessage?: string;
+  soloMessageUpdatedAt?: string;
+}
+
+const MAX_MESSAGE_LENGTH = 160;
+const TOP_LEVEL_KEYS = new Set([
+  "responseId",
+  "editToken",
+  "message",
+  "clientId",
+  "clientRequestId",
+  "website",
+]);
+
+function readResponseId(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^[a-zA-Z0-9._-]{8,128}$/.test(trimmed) ? trimmed : null;
+}
+
+function readEditToken(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^[a-zA-Z0-9_-]{32,128}$/.test(trimmed) ? trimmed : null;
+}
+
+function readMessage(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  if (trimmed.length > MAX_MESSAGE_LENGTH) return null;
+  return trimmed;
+}
+
+function validatePayload(value: unknown): { ok: true; payload: ValidPayload } | { ok: false; error: string } {
+  if (!isRecord(value)) return { ok: false, error: "Invalid payload" };
+
+  const unknownTopLevel = Object.keys(value).filter((key) => !TOP_LEVEL_KEYS.has(key));
+  if (unknownTopLevel.length > 0) return { ok: false, error: "Unexpected payload fields" };
+
+  if (typeof value.website === "string" && value.website.trim().length > 0) {
+    return { ok: false, error: "Invalid payload" };
+  }
+
+  const responseId = readResponseId(value.responseId);
+  if (!responseId) return { ok: false, error: "Invalid response id" };
+
+  const editToken = readEditToken(value.editToken);
+  if (!editToken) return { ok: false, error: "Invalid edit token" };
+
+  const message = readMessage(value.message);
+  if (message === null) return { ok: false, error: "Invalid message" };
+
+  return {
+    ok: true,
+    payload: {
+      responseId,
+      editToken,
+      message,
+      clientId: readOptionalId(value.clientId),
+      clientRequestId: readOptionalId(value.clientRequestId),
+    },
+  };
+}
+
+function buildRateRules(req: Request, payload: ValidPayload): RateRule[] {
+  const salt = optionalEnv("RATE_LIMIT_SALT", "butterfly-effect-save-solo-message");
+  const ipHash = sha256(`${salt}:ip:${getClientAddress(req)}`);
+  const responseHash = sha256(`${salt}:response:${payload.responseId}`);
+  const rules: RateRule[] = [
+    { key: `save-solo-message:ip:${ipHash}:10m`, max: 20, windowSeconds: 10 * 60 },
+    { key: `save-solo-message:ip:${ipHash}:day`, max: 80, windowSeconds: 24 * 60 * 60 },
+    { key: `save-solo-message:response:${responseHash}:10m`, max: 8, windowSeconds: 10 * 60 },
+  ];
+
+  if (payload.clientId) {
+    const clientHash = sha256(`${salt}:client:${payload.clientId}`);
+    rules.push({ key: `save-solo-message:client:${clientHash}:10m`, max: 10, windowSeconds: 10 * 60 });
+  }
+
+  if (payload.clientId && payload.clientRequestId) {
+    const requestHash = sha256(`${salt}:request:${payload.clientId}:${payload.clientRequestId}`);
+    rules.push({ key: `save-solo-message:request:${requestHash}`, max: 1, windowSeconds: 24 * 60 * 60 });
+  }
+
+  return rules;
+}
+
+export async function saveSoloMessageRoute(req: Request, res: Response) {
+  if (rejectDisallowedOrigin(req, res)) return;
+
+  const validation = validatePayload(req.body);
+  if (!validation.ok) {
+    res.status(400).json({ error: validation.error, code: "INVALID_SOLO_MESSAGE" });
+    return;
+  }
+
+  const rateLimit = consumeRateLimits(buildRateRules(req, validation.payload));
+  if (!rateLimit.allowed) {
+    res.status(429).json({
+      error: "Too many message updates",
+      code: "RATE_LIMITED",
+      ...(rateLimit.resetAt ? { resetAt: rateLimit.resetAt } : {}),
+    });
+    return;
+  }
+
+  try {
+    const existing = await sanityWriteClient.fetch<StoredResponse | null>(
+      `*[!(_id in path("drafts.**")) && _type == "userResponseV4" && _id == $id][0]{ _id, editTokenHash }`,
+      { id: validation.payload.responseId },
+    );
+
+    if (!existing) {
+      res.status(404).json({ error: "Response not found", code: "RESPONSE_NOT_FOUND" });
+      return;
+    }
+
+    const expectedHash = editTokenHash(validation.payload.editToken);
+    if (!existing.editTokenHash || existing.editTokenHash !== expectedHash) {
+      res.status(403).json({ error: "Not allowed to edit this response", code: "EDIT_TOKEN_MISMATCH" });
+      return;
+    }
+
+    const patch = sanityWriteClient.patch(existing._id);
+    if (validation.payload.message.length > 0) {
+      patch.set({
+        soloMessage: validation.payload.message,
+        soloMessageUpdatedAt: new Date().toISOString(),
+      });
+    } else {
+      patch.unset(["soloMessage", "soloMessageUpdatedAt"]);
+    }
+
+    const updated = await patch.commit<SavedMessageResponse>({
+      returnDocuments: true,
+      visibility: "sync",
+    });
+
+    res.status(200).json({
+      _id: updated._id,
+      ...(updated.soloMessage ? { soloMessage: updated.soloMessage } : {}),
+      ...(updated.soloMessageUpdatedAt ? { soloMessageUpdatedAt: updated.soloMessageUpdatedAt } : {}),
+    });
+  } catch (error) {
+    console.error("[save-solo-message] failed:", error);
+    res.status(500).json({ error: "Unable to save message", code: "SERVER_ERROR" });
+  }
+}

@@ -1,0 +1,36 @@
+import type { SceneLightContext } from "../../../canvas-engine/modifiers/lighting";
+
+// Sprite textures are drawn offscreen, so they need their own light context
+// instead of reading the main canvas runtime's scene lighting.
+const SPRITE_PALETTE_CLOSENESS_K = 0.6;
+const SPRITE_LIGHT_SOURCE = { xK: 0.5, yK: -0.12 } as const;
+const SPRITE_LIGHT_INTENSITY = {
+  sun: 0.95,
+  moon: 0.72,
+} as const;
+
+export function makeSpritePaletteLightContext(
+  sceneW: number,
+  sceneH: number,
+  darkMode: boolean
+): SceneLightContext {
+  const w = Math.max(1, sceneW);
+  const h = Math.max(1, sceneH);
+
+  return {
+    sourceX: w * SPRITE_LIGHT_SOURCE.xK,
+    sourceY: h * SPRITE_LIGHT_SOURCE.yK,
+    kind: darkMode ? "moon" : "sun",
+    intensity: darkMode ? SPRITE_LIGHT_INTENSITY.moon : SPRITE_LIGHT_INTENSITY.sun,
+    paletteClosenessK: SPRITE_PALETTE_CLOSENESS_K,
+    sceneW: w,
+    sceneH: h,
+    sceneDiag: Math.max(1, Math.hypot(w, h)),
+    lightColor: darkMode
+      ? { r: 198, g: 220, b: 255 }
+      : { r: 255, g: 222, b: 168 },
+    shadowColor: darkMode
+      ? { r: 58, g: 76, b: 108 }
+      : { r: 88, g: 114, b: 150 },
+  };
+}

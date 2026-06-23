@@ -1,0 +1,256 @@
+// src/navigation/graph-picker.tsx
+import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import "../styles/graph-picker.css";
+
+import {
+  useGraphPickerData,
+  CHOOSE_STUDENT, CHOOSE_STAFF, GO_BACK,
+  titleFromId,
+} from "./gp-data";
+import ExpandIcon from "../assets/svg/expand/ExpandIcon";
+
+export default function GraphPicker({
+  value = "all",
+  onChange,
+  onOpenChange,
+}: {
+  value?: string;
+  onChange?: (id: string) => void;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const { yourIdsSet, ALL_LABELS, STUDENT_OPTS, STAFF_OPTS, MAIN_OPTS, studentIdSet, staffIdSet, counts } =
+    useGraphPickerData(value);
+
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<null | "student" | "staff">(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [placement, setPlacement] = useState("down");
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // The picker owns submenu state; parents only get the selected section id.
+  const VISIBLE_OPTS = useMemo(() => {
+    if (mode === "student") return [{ id: GO_BACK, label: "Back" }, ...STUDENT_OPTS];
+    if (mode === "staff") return [{ id: GO_BACK, label: "Back" }, ...STAFF_OPTS];
+    return MAIN_OPTS;
+  }, [mode, MAIN_OPTS, STUDENT_OPTS, STAFF_OPTS]);
+
+  const triggerCoreLabel = useMemo(() => {
+    if (open && mode === "student") return "Student Departments";
+    if (open && mode === "staff") return "Institutional Departments";
+    const base = ALL_LABELS.get(value) ?? "Everyone";
+    return base;
+  }, [open, mode, value, ALL_LABELS]);
+
+  const maxActiveIndex = Math.max(0, VISIBLE_OPTS.length - 1);
+  const safeActiveIndex = Math.min(Math.max(activeIndex, 0), maxActiveIndex);
+
+  const closePicker = useCallback(() => {
+    setOpen(false);
+    setMode(null);
+  }, []);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
+  // NavRight uses this one lifted signal to offset the top controls while open.
+  useEffect(() => {
+    if (!open) return;
+    const onDocPointerDown = (e: PointerEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) closePicker();
+    };
+    document.addEventListener("pointerdown", onDocPointerDown, true);
+    return () => { document.removeEventListener("pointerdown", onDocPointerDown, true); };
+  }, [closePicker, open]);
+
+  useEffect(() => {
+    const computePlacement = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      const viewportH = window.innerHeight || document.documentElement.clientHeight;
+      const spaceBelow = viewportH - rect.bottom;
+      const estimatedListHeight = Math.min(300, VISIBLE_OPTS.length * 44 + 12);
+      setPlacement(spaceBelow >= estimatedListHeight ? "down" : "up");
+    };
+
+    if (open) computePlacement();
+
+    const onWin = () => {
+      if (open) computePlacement();
+    };
+    window.addEventListener("resize", onWin);
+    window.addEventListener("scroll", onWin, true);
+    return () => {
+      window.removeEventListener("resize", onWin);
+      window.removeEventListener("scroll", onWin, true);
+    };
+  }, [open, VISIBLE_OPTS.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current;
+    if (!el) return;
+    const stopProp = (e: Event) => { e.stopPropagation(); };
+    el.addEventListener("wheel", stopProp, { passive: true });
+    el.addEventListener("touchstart", stopProp, { passive: true });
+    el.addEventListener("touchmove", stopProp, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", stopProp);
+      el.removeEventListener("touchstart", stopProp);
+      el.removeEventListener("touchmove", stopProp);
+    };
+  }, [open]);
+
+  const moveActive = useCallback(
+    (delta: number) => { setActiveIndex((idx) => (idx + delta + VISIBLE_OPTS.length) % VISIBLE_OPTS.length); },
+    [VISIBLE_OPTS.length]
+  );
+
+  const chooseIndex = useCallback(
+    (idx: number) => {
+      if (idx < 0 || idx >= VISIBLE_OPTS.length) return;
+      const opt = VISIBLE_OPTS[idx];
+      if (opt.id === CHOOSE_STUDENT) { setMode("student"); return; }
+      if (opt.id === CHOOSE_STAFF) { setMode("staff"); return; }
+      if (opt.id === GO_BACK) { setMode(null); return; }
+      setMode(null);
+      setOpen(false);
+      onChange?.(opt.id);
+      buttonRef.current?.focus();
+    },
+    [VISIBLE_OPTS, onChange]
+  );
+
+  const onTriggerKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); if (!open) setOpen(true); moveActive(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); if (!open) setOpen(true); moveActive(-1); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!open) setOpen(true); else chooseIndex(safeActiveIndex); }
+    else if (e.key === "Escape") { closePicker(); }
+  };
+
+  const onListKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
+    else if (e.key === "Home") { e.preventDefault(); setActiveIndex(0); }
+    else if (e.key === "End") { e.preventDefault(); setActiveIndex(VISIBLE_OPTS.length - 1); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); chooseIndex(safeActiveIndex); }
+    else if (e.key === "Escape") { e.preventDefault(); closePicker(); buttonRef.current?.focus(); }
+  };
+
+  const listboxId = "listbox";
+
+  return (
+    <div ref={wrapperRef} className="picker">
+      <div
+        ref={buttonRef}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-owns={listboxId}
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-activedescendant={VISIBLE_OPTS[safeActiveIndex] ? `opt-${VISIBLE_OPTS[safeActiveIndex].id}` : undefined}
+        className={`trigger ${open ? "is-open" : ""}`}
+        onClick={() => { if (open) closePicker(); else setOpen(true); }}
+        onKeyDown={onTriggerKeyDown}
+        tabIndex={0}
+      >
+        <span className="trigger-label">
+          <h4>{triggerCoreLabel}</h4>
+        </span>
+        <span className="trigger-chevron" aria-hidden>
+          <ExpandIcon expanded={open} className="section-chevron-svg ui-icon" />
+        </span>
+      </div>
+
+      <div
+        className={`listbox-shell ${placement === "down" ? "drop-down" : "drop-up"}${open ? " is-open" : ""}`}
+        aria-hidden={!open}
+      >
+        <div className="listbox-clip">
+          <div
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            className="listbox"
+            tabIndex={-1}
+            onKeyDown={onListKeyDown}
+          >
+            {VISIBLE_OPTS.map((opt, idx) => {
+              const active = idx === safeActiveIndex;
+              const isBack = opt.id === GO_BACK;
+              const isChooser = opt.id === CHOOSE_STUDENT || opt.id === CHOOSE_STAFF;
+              const isStudentChooser = opt.id === CHOOSE_STUDENT;
+              const isStaffChooser = opt.id === CHOOSE_STAFF;
+              const showCount = !(isBack || isChooser);
+              const n = counts[opt.id] ?? 0;
+              const isPersonal = yourIdsSet.has(opt.id);
+              const countLabel = `${String(n)} ${n === 1 ? "person" : "people"}`;
+
+              return (
+                <div
+                  id={`opt-${opt.id}`}
+                  key={opt.id}
+                  role="option"
+                  aria-selected={value === opt.id}
+                  className={`option${active ? " is-active" : ""}${value === opt.id ? " is-selected" : ""}${isStudentChooser ? " option--student-chooser" : ""}${isStaffChooser ? " option--staff-chooser" : ""}${isBack ? " option--back" : ""}`}
+                  onMouseEnter={() => { setActiveIndex(idx); }}
+                  onMouseDown={(e) => { e.preventDefault(); }}
+                  onClick={() => { chooseIndex(idx); }}
+                >
+                  {isBack ? (
+                    <>
+                      <span className="back-icon" aria-hidden>
+                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M15 18L9 12L15 6" />
+                        </svg>
+                      </span>
+                      <span className="label">Back</span>
+                    </>
+                  ) : isChooser ? (
+                    <>
+                      <span className="label-wrap">
+                        <span className="label">{opt.label}</span>
+                        {(() => {
+                          const sectionSet = opt.id === CHOOSE_STUDENT ? studentIdSet : staffIdSet;
+                          if (!sectionSet.has(value)) return null;
+                          return (
+                            <span className="selected-child">
+                              {ALL_LABELS.get(value) ?? titleFromId(value)}
+                            </span>
+                          );
+                        })()}
+                      </span>
+                      <span className="chooser-icon" aria-hidden>
+                        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18L15 12L9 6" />
+                        </svg>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="label option-label">
+                        {opt.id === "visitor" && <span className="explorer-emoji" aria-hidden>🌍</span>}
+                        {ALL_LABELS.get(opt.id) ?? titleFromId(opt.id)}
+                      </span>
+                      <span className="picker-labels">
+                        {isPersonal && <span className="ui-label picker-you">you</span>}
+                        {showCount && (
+                          <span className="ui-label picker-count" aria-label={countLabel} title={countLabel}>
+                            {n}
+                          </span>
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
