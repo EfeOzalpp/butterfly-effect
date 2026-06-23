@@ -44,8 +44,9 @@ Graph runtime
   -> Three.js scene
 
 Backend/data
-  -> Supabase Edge Functions
-  -> Sanity reads/subscriptions
+  -> Express write API
+  -> Express read API
+  -> server Sanity upstream reads/writes
   -> validation and mock fallback paths
 ```
 
@@ -53,17 +54,19 @@ Backend/data
 
 | Path | What It Owns |
 | --- | --- |
-| `frontend/src/app` | App providers, session state, runtime signals, preferences |
-| `frontend/src/onboarding` | Role flow, questionnaire flow, Canvas Engine information section |
-| `frontend/src/canvas-engine` | Canvas runtime, scene rules, placement, render passes, shape drawers |
-| `frontend/src/canvas-engine/scene-rules` | Authored backgrounds, padding, placement, fog, spotlight slides |
-| `frontend/src/canvas-engine/runtime/render/cache-policy` | Runtime shape bitmap/depth-mask cache policy |
-| `frontend/src/canvas-engine/runtime/engine/loop.ts` | Main Canvas2D frame pipeline |
-| `frontend/src/graph-runtime` | Results graph, dot graph UI, sprite runtime, visible-row shaping |
-| `frontend/src/graph-runtime/sprites` | Sprite texture generation, quality policy, cache/runtime internals |
-| `frontend/src/navigation/bottom/widgets` | Aggregate result widgets and bar graphs |
-| `frontend/src/services/sanity` | Sanity reads, subscriptions, request reuse, fallback behavior |
-| `supabase/functions` | Edge Function write path and payload validation |
+| `app/src/app` | App providers, session state, runtime signals, preferences |
+| `app/src/onboarding` | Role flow, questionnaire flow, Canvas Engine information section |
+| `app/src/canvas-engine` | Canvas runtime, scene rules, placement, render passes, shape drawers |
+| `app/src/canvas-engine/scene-rules` | Authored backgrounds, padding, placement, fog, spotlight slides |
+| `app/src/canvas-engine/runtime/render/cache-policy` | Runtime shape bitmap/depth-mask cache policy |
+| `app/src/canvas-engine/runtime/engine/loop.ts` | Main Canvas2D frame pipeline |
+| `app/src/graph-runtime` | Results graph, dot graph UI, sprite runtime, visible-row shaping |
+| `app/src/graph-runtime/sprites` | Sprite texture generation, quality policy, cache/runtime internals |
+| `app/src/navigation/bottom/widgets` | Aggregate result widgets and bar graphs |
+| `app/src/domain/survey` | Shared survey row types and section groupings used by app and server |
+| `app/src/client-api/read-api` | Browser wrappers for same-origin Express read endpoints and mock fallback |
+| `app/src/client-api/response-api` | Browser wrappers for same-origin Express write endpoints |
+| `app/src/server` | Express API routes, validation, in-memory rate limiting, Sanity upstream access |
 
 ## Engineering Highlights
 
@@ -72,7 +75,7 @@ Backend/data
 - Implemented procedural zone placement so authored communities can spawn multiple shape types around shared anchors while respecting horizon bands and occupancy.
 - Built a Three.js sprite pipeline with quantized visual inputs, texture caching, quality budgets, visible-row limits, and prioritized personalized sprites.
 - Reduced duplicate rendering work by removing stale frozen texture paths and relying on active particle starts plus runtime texture scheduling.
-- Added production data boundaries with Sanity reads, Supabase Edge Function writes, validation, mock fallback, Sentry, and PostHog.
+- Added production data boundaries with Express read/write APIs, Sanity upstream access, validation, mock fallback, Sentry, and PostHog.
 - Kept performance work tied to real stress cases: mobile sprite ceilings, repeated filter switching, zooming, local session recovery, and jitter/flicker audits.
 
 ## Tradeoffs And Decisions
@@ -87,27 +90,43 @@ Backend/data
 ## Setup
 
 ```bash
-cd frontend
+cd app
 npm install
 npm run dev
 ```
 
+Run the local API server separately when testing real writes:
+
+```bash
+cd app
+npm run dev:server
+```
+
+Server-only Sanity variables:
+
+```bash
+SANITY_READ=...
+SANITY_WRITE=...
+```
+
+Do not prefix Sanity tokens with `VITE_`; Vite env names are intended for browser-exposed values.
+
 ## Verification
 
 ```bash
-cd frontend
+cd app
 npm run typecheck
 npm run lint:ci
-npm run build
+npm run build:all
 ```
 
 ## Reference Docs
 
-- [Canvas runtime](./frontend/src/canvas-engine/runtime/README.md)
-- [Canvas shape drawers](./frontend/src/canvas-engine/shapes/README.md)
-- [Canvas modifiers](./frontend/src/canvas-engine/modifiers/README.md)
-- [Scene rule backgrounds](./frontend/src/canvas-engine/scene-rules/backgrounds/README.md)
-- [Scene rule placement](./frontend/src/canvas-engine/scene-rules/placement-rules/README.md)
-- [Spotlight scene rules](./frontend/src/canvas-engine/scene-rules/spotlight/README.md)
-- [Graph runtime](./frontend/src/graph-runtime/README.md)
-- [Dot graph](./frontend/src/graph-runtime/dotgraph/README.md)
+- [Canvas runtime](./app/src/canvas-engine/runtime/README.md)
+- [Canvas shape drawers](./app/src/canvas-engine/shapes/README.md)
+- [Canvas modifiers](./app/src/canvas-engine/modifiers/README.md)
+- [Scene rule backgrounds](./app/src/canvas-engine/scene-rules/backgrounds/README.md)
+- [Scene rule placement](./app/src/canvas-engine/scene-rules/placement-rules/README.md)
+- [Spotlight scene rules](./app/src/canvas-engine/scene-rules/spotlight/README.md)
+- [Graph runtime](./app/src/graph-runtime/README.md)
+- [Dot graph](./app/src/graph-runtime/dotgraph/README.md)

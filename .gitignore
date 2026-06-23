@@ -16,6 +16,7 @@ coverage/
 # production
 build/
 dist/
+dist-server/
 
 CLAUDE.md
 
@@ -29,7 +30,4 @@ CLAUDE.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/dev-server.log
-
-# Supabase
-supabase/.temp/
+app/dev-server.log

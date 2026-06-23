@@ -1,1 +1,0 @@
-export { drawAmbientParticles } from "./ambientParticles";
