@@ -1,3 +1,4 @@
+// graceful error handling for modules, so they don't break the whole app
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {

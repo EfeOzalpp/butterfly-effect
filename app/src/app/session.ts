@@ -1,3 +1,4 @@
+// Session stored information
 import type { Mode } from "./state/ui-context";
 
 const LOCAL_BACKED_KEYS = new Set([
