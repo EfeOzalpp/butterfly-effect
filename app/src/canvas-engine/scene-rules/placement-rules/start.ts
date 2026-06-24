@@ -862,7 +862,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 6, xDistort: 3, yDistort: 0.6 },
         shapes: {
           sea: { count: count(0, 1, 1), quota: FLAT_QUOTA },
-          villa: { count: count(1, 0, 2), quota: S.villa },
+          villa: { count: count(0, 0, 2), quota: S.villa },
           trees: { count: count(1, 2, 2), quota: S.trees },
           car: { count: count(0, 1, 1), quota: S.car },
           power: { count: count(1, 0, 1), quota: FLAT_QUOTA },
@@ -925,8 +925,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.33, y: 0.7 },
         radius: { tiles: 6, xDistort: 4, yDistort: 1 },
         shapes: {
-          villa: { count: count(0, 0, 2), quota: S.villa },
-          trees: { count: count(0, 0, 4), quota: S.trees },
+          villa: { count: count(1, 0, 2), quota: S.villa },
+          trees: { count: count(2, 0, 4), quota: S.trees },
         },
       },
       {
