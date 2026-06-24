@@ -41,3 +41,23 @@ jobs:
         run: npm run build:all
         env:
           VITE_USE_MOCK_DATA: "true"
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            cd ~/butterfly-effect
+            git pull origin main
+            cd app
+            npm install --include=dev
+            npm run build:all
+            pm2 restart all
