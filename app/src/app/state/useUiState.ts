@@ -114,12 +114,18 @@ export default function useUiState() {
   const [spotlightRequest, setSpotlightRequest] = useState<SpotlightRequest | null>(null);
 
   // -- Persisted preferences --------------------------------------------------
-  const [mode, setMode] = useState<Mode>(() => readStoredMode('absolute'));
+  const [mode, setMode] = useState<Mode>('absolute');
+  useEffect(() => {
+    setMode(readStoredMode('absolute'));
+  }, []);
   useEffect(() => {
     setSessionItem('be.mode', mode);
   }, [mode]);
 
-  const [radarMode, setRadarMode] = useState<boolean>(() => getSessionItem('be.radarMode') === '1');
+  const [radarMode, setRadarMode] = useState<boolean>(false);
+  useEffect(() => {
+    setRadarMode(getSessionItem('be.radarMode') === '1');
+  }, []);
   useEffect(() => {
     setSessionItem('be.radarMode', radarMode ? '1' : '0');
   }, [radarMode]);

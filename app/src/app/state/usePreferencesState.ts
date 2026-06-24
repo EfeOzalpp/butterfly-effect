@@ -9,7 +9,10 @@ import {
   setSessionItem,
 } from '../session';
 export default function usePreferencesState() {
-  const [darkMode, setDarkMode] = useState<boolean>(() => readStoredDarkMode(true));
+  const [darkMode, setDarkMode] = useState<boolean>(true);
+  useEffect(() => {
+    setDarkMode(readStoredDarkMode(true));
+  }, []);
   const didInitThemeRef = useRef(false);
   useEffect(() => {
     setSessionItem('be.darkMode', String(darkMode));
