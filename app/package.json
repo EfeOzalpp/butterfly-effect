@@ -52,7 +52,7 @@
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@types/three": "0.171.0",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.3",
     "dependency-cruiser": "^17.3.6",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -64,6 +64,6 @@
     "tsx": "^4.19.2",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.59.3",
-    "vite": "^8.0.1"
+    "vite": "^8.1.0"
   }
 }

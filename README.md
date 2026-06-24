@@ -95,6 +95,8 @@ npm install
 npm run dev
 ```
 
+> **Note:** `npm run dev` currently does not work with Vite 8 (Fast Refresh regression in v8.0.1). Awaiting a patch. Use Vite 7 locally if you need hot reload: `npm install vite@^7 @vitejs/plugin-react@^4 --save-dev`. Production builds run on Vite 8.
+
 Run the local API server separately when testing real writes:
 
 ```bash
@@ -122,11 +124,5 @@ npm run build:all
 
 ## Reference Docs
 
-- [Canvas runtime](./app/src/canvas-engine/runtime/README.md)
-- [Canvas shape drawers](./app/src/canvas-engine/shapes/README.md)
-- [Canvas modifiers](./app/src/canvas-engine/modifiers/README.md)
-- [Scene rule backgrounds](./app/src/canvas-engine/scene-rules/backgrounds/README.md)
-- [Scene rule placement](./app/src/canvas-engine/scene-rules/placement-rules/README.md)
-- [Spotlight scene rules](./app/src/canvas-engine/scene-rules/spotlight/README.md)
+- [Canvas engine](./app/src/canvas-engine/README.md)
 - [Graph runtime](./app/src/graph-runtime/README.md)
-- [Dot graph](./app/src/graph-runtime/dotgraph/README.md)
