@@ -20,7 +20,7 @@ export const BUTTON_QUESTIONS: ButtonQuestion[] = [
     id: 'q2',
     prompt: "What's your usual commute?",
     options: [
-      { key: 'A', label: 'By walk',    weight: 1.0  },
+      { key: 'A', label: 'Walking',    weight: 1.0  },
       { key: 'B', label: 'Bike',    weight: 0.95 },
       { key: 'C', label: 'Public Transportation', weight: 0.8 },
       { key: 'D', label: 'Rideshare', weight: 0.6 },
