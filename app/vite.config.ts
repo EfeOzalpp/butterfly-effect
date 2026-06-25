@@ -36,6 +36,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // React must stay out of three-vendor to prevent duplicate instances causing hydration errors.
+          if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) {
+            return undefined;
+          }
           if (id.includes('node_modules/three/build/three.core.js')) {
             return 'three-core';
           }
