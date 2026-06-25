@@ -435,7 +435,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         shapes: {
           villa: { count: count(0, 3, 2), quota: Q.villa },
           car: { count: count(1, 1, 1), quota: Q.car },
-          house: { count: count(0, 1, 0), quota: Q.house },
+          house: { count: count(1, 1, 0), quota: Q.house },
           trees: { count: count(1, 3, 6), quota: Q.trees },
         },
       },
@@ -460,7 +460,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           villa: { count: count(0, 2, 2), quota: Q.villa },
           car: { count: count(1, 2, 0), quota: Q.car },
           bus: { count: count(0, 2, 0), quota: Q.bus },
-          trees: { count: count(4, 4, 6), quota: Q.trees },
+          trees: { count: count(2, 4, 6), quota: Q.trees },
           carFactory: { count: count(1, 1, 1), quota: Q.carFactory },
         },
       },
@@ -532,7 +532,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.4, y: 0.1 },
         radius: { tiles: 3, xDistort: 3, yDistort: 2 },
         shapes: {
-          trees: { count: count(8, 3, 5), quota: Q.trees },
+          trees: { count: count(5, 3, 5), quota: Q.trees },
           villa: { count: count(6, 1, 2), quota: Q.villa },
           power: { count: count(2, 1, 1), quota: Q.power },
         },
@@ -543,7 +543,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.5, y: 0.208 },
         radius: { tiles: 8, xDistort: 4, yDistort: 1 },
         shapes: {
-          trees: { count: count(3, 3, 2), quota: Q.trees },
+          trees: { count: count(1, 3, 2), quota: Q.trees },
           car: { count: count(0, 0, 1), quota: Q.car },
         },
       },
@@ -554,9 +554,9 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 4, xDistort: 6, yDistort: 3 },
         shapes: {
           trees: { count: count(3, 5, 2), quota: Q.trees },
-          villa: { count: count(3, 2, 2), quota: Q.house },
-          car: { count: count(0, 0, 3), quota: Q.car },
-          house: { count: count(0, 1, 1), quota: Q.house },
+          villa: { count: count(2, 2, 2), quota: Q.house },
+          car: { count: count(1, 0, 3), quota: Q.car },
+          house: { count: count(1, 1, 1), quota: Q.house },
         },
       },
       {
@@ -565,7 +565,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.5, y: 0.4 },
         radius: { tiles: 4, xDistort: 3, yDistort: 1 },
         shapes: {
-          trees: { count: count(3, 3, 5), quota: Q.trees },
+          trees: { count: count(1, 3, 5), quota: Q.trees },
         },
       },
       {
@@ -574,10 +574,10 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.65, y: 0.6 },
         radius: { tiles: 4, xDistort: 3, yDistort: 1 },
         shapes: {
-          villa: { count: count(2, 1, 1), quota: Q.villa },
+          villa: { count: count(1, 1, 1), quota: Q.villa },
           car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(0, 0, 0), quota: Q.bus },
-          trees: { count: count(3, 2, 3), quota: Q.trees },
+          trees: { count: count(1, 2, 3), quota: Q.trees },
           carFactory: { count: count(0, 1, 1), quota: Q.carFactory },
         },
       },
@@ -597,7 +597,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 4, xDistort: 3, yDistort: 1 },
         shapes: {
           villa: { count: count(1, 1, 1), quota: Q.villa },
-          trees: { count: count(3, 2, 5), quota: Q.trees },
+          trees: { count: count(1, 2, 5), quota: Q.trees },
         },
       },
             {
@@ -637,7 +637,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.9, y: 0.4 },
         radius: { tiles: 6, xDistort: 2, yDistort: 1 },
         shapes: {
-          trees: { count: count(3, 2, 0), quota: Q.trees },
+          trees: { count: count(1, 2, 0), quota: Q.trees },
           villa: { count: count(2, 2, 0), quota: Q.villa },
           car: { count: count(1, 2, 0), quota: Q.car },
           bus: { count: count(0, 2, 0), quota: Q.bus },
@@ -655,16 +655,28 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           bus: { count: count(0, 2, 1), quota: Q.bus },
         },
       },
-            {
-        id: "mixed-05.92-tablet",
+      {
+        id: "mixed-05.92",
         band: "ground",
         center: { x: 0.65, y: 0.3 },
         radius: { tiles: 6, xDistort: 2, yDistort: 1 },
         shapes: {
-          trees: { count: count(0, 4, 3), quota: Q.trees },
-          villa: { count: count(0, 2, 1), quota: Q.villa },
-          car: { count: count(0, 2, 1), quota: Q.car },
-          bus: { count: count(0, 2, 0), quota: Q.bus },
+          trees: { count: count(1, 4, 3), quota: Q.trees },
+          villa: { count: count(1, 2, 1), quota: Q.villa },
+          car: { count: count(1, 2, 1), quota: Q.car },
+          bus: { count: count(1, 2, 0), quota: Q.bus },
+        },
+      },
+      {
+        id: "mixed-05.93",
+        band: "ground",
+        center: { x: 0.75, y: 0.55 },
+        radius: { tiles: 6, xDistort: 2, yDistort: 1 },
+        shapes: {
+          trees: { count: count(3, 0, 0), quota: Q.trees },
+          car: { count: count(2, 0, 0), quota: Q.car },
+          bus: { count: count(2, 0, 0), quota: Q.bus },
+          carFactory: { count: count(1, 0, 0), quota: Q.carFactory },
         },
       },
       {
@@ -703,7 +715,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 4, xDistort: 3, yDistort: 1 },
         shapes: {
           house: { count: count(1, 1, 1), quota: Q.house },
-          villa: { count: count(2, 1, 1), quota: Q.villa },
+          villa: { count: count(1, 1, 1), quota: Q.villa },
           car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(0, 1, 0), quota: Q.bus },
           trees: { count: count(2, 3, 6), quota: Q.trees },
@@ -746,7 +758,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
           villa: { count: count(1, 1, 3), quota: Q.villa },
           car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(1, 0, 0), quota: Q.bus },
-          trees: { count: count(3, 5, 4), quota: Q.trees },
+          trees: { count: count(2, 5, 4), quota: Q.trees },
           sea: { count: count(1, 0, 1), quota: Q.sea },
         },
       },
@@ -766,7 +778,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         id: "mixed-10.6",
         band: "ground",
         center: { x: 0.8, y: 0.1 },
-        radius: { tiles: 12, xDistort: 6, yDistort: 1 },
+        radius: { tiles: 6, xDistort: 8, yDistort: 0.8 },
         shapes: {
           villa: { count: count(0, 0, 2), quota: Q.villa },
           trees: { count: count(0, 0, 6), quota: Q.trees },
@@ -794,11 +806,11 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 4, xDistort: 3, yDistort: 2 },
         shapes: {
           house: { count: count(1, 1, 1), quota: Q.house },
-          villa: { count: count(2, 2, 2), quota: Q.villa },
-          car: { count: count(1, 1, 0), quota: Q.car },
+          villa: { count: count(2, 2, 3), quota: Q.villa },
+          car: { count: count(1, 1, 1), quota: Q.car },
           bus: { count: count(1, 1, 0), quota: Q.bus },
-          trees: { count: count(6, 4, 2), quota: Q.trees },
-          power: { count: count(1, 1, 1), quota: Q.power },
+          trees: { count: count(3, 4, 4), quota: Q.trees },
+          power: { count: count(1, 1, 2), quota: Q.power },
         },
       },
       {
@@ -834,9 +846,9 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 4, xDistort: 3, yDistort: 1 },
         shapes: {
           house: { count: count(1, 1, 1), quota: Q.house },
-          villa: { count: count(1, 1, 2), quota: Q.villa },
-          car: { count: count(1, 1, 0), quota: Q.car },
-          bus: { count: count(1, 1, 0), quota: Q.bus },
+          villa: { count: count(1, 1, 3), quota: Q.villa },
+          car: { count: count(1, 1, 2), quota: Q.car },
+          bus: { count: count(1, 1, 1), quota: Q.bus },
           trees: { count: count(3, 2, 4), quota: Q.trees },
         },
       },
@@ -961,7 +973,7 @@ export const QUESTIONNAIRE_PLACEMENTS: ScenePlacementRules = {
         shapes: {
           villa: { count: count(1, 3, 2), quota: Q.villa },
           car: { count: count(2, 1, 2), quota: Q.car },
-          trees: { count: count(3, 4, 4), quota: Q.trees },
+          trees: { count: count(4, 4, 4), quota: Q.trees },
           house: { count: count(1, 2, 1), quota: Q.house },
         },
       },
