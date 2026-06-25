@@ -84,7 +84,7 @@
   .onboarding-canvas { height: 640px; }
   .welcome-title-layer { height: 640px; }
   .radio-group { width: 90%; }
-  .onboarding-info.canvas-info { padding: 1.6rem 1.2rem 3.2rem; }
+  .onboarding-info.canvas-info { padding: 0rem 1.2rem 3.2rem; }
   .canvas-info__spotlight-frame { height: min(72vw, 360px); }
   .canvas-info__slider-controls { right: 0.25rem; bottom: 0.25rem; }
 }
