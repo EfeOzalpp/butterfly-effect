@@ -191,7 +191,7 @@ export function drawCarAsset(
   const windowTint = applySrgbExposureContrast(pal.window, ex, ct);
 
   const w = r * 3.2;
-  const wheelR = Math.max(2, r * 0.52);
+  const wheelR = Math.max(1, r * 0.52);
 
   if (opts.useAppear !== false) {
     const m = applyShapeMods({
