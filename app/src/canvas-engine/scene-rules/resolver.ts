@@ -32,7 +32,7 @@ type SceneRules = Pick<SceneProfile, "padding" | "placements">;
 const LANDSCAPE_COUNT_SCALE: Record<SceneLookupKey, DeviceCountScale> = {
   start: { mobile: 1.6, tablet: 1.4 },
   questionnaire: { mobile: 2, tablet: 0.8 },
-  city: {},
+  city: { mobile: 1.2, tablet: 1.2 },
   spotlight: {},
 };
 
