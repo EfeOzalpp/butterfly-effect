@@ -458,8 +458,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.54, y: 0.3 },
         radius: { tiles: 6, xDistort: 4, yDistort: 2 },
         shapes: {
-          trees: { count: count(4, 3, 6), quota: S.trees },
-          villa: { count: count(3, 1, 2), quota: S.villa },
+          trees: { count: count(4, 3, 8), quota: S.trees },
+          villa: { count: count(3, 1, 1), quota: S.villa },
           bus: { count: count(0, 0, 1), quota: S.bus },
         },
       },
@@ -642,7 +642,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.65, y: 0.5 },
         radius: { tiles: 4, xDistort: 2, yDistort: 1 },
         shapes: {
-          house: { count: count(0, 1, 1), quota: S.house },
+          house: { count: count(0, 1, 0), quota: S.house },
           villa: { count: count(0, 1, 1), quota: S.villa },
           trees: { count: count(3, 3, 5), quota: S.trees },
           car: { count: count(0, 1, 2), quota: S.car },
@@ -653,14 +653,13 @@ export const START_PLACEMENTS: ScenePlacementRules = {
       {
         id: "mid-close-community",
         band: "ground",
-        center: { x: 0.55, y: 0.65 },
+        center: { x: 0.5, y: 0.7 },
         radius: { tiles: 4, xDistort: 6, yDistort: 2 },
         shapes: {
           villa: { count: count(0, 1, 0), quota: S.villa },
-          trees: { count: count(1, 2, 3), quota: S.trees },
-          car: { count: count(1, 1, 0), quota: S.car },
-          house: { count: count(0, 1, 0), quota: S.house },
-          bus: { count: count(0, 0, 1), quota: S.bus },
+          trees: { count: count(1, 2, 4), quota: S.trees },
+          car: { count: count(1, 1, 1), quota: S.car },
+          house: { count: count(0, 1, 1), quota: S.house },
           carFactory: { count: count(1, 1, 1), quota: S.carFactory },
           sea: { count: count(0, 0, 1), quota: FLAT_QUOTA },
         },
@@ -671,7 +670,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.55, y: 0.8 },
         radius: { tiles: 4, xDistort: 6, yDistort: 1 },
         shapes: {
-          villa: { count: count(0, 1, 1), quota: S.villa },
+          villa: { count: count(0, 1, 0), quota: S.villa },
           trees: { count: count(1, 3, 3), quota: S.trees },
           car: { count: count(1, 1, 0), quota: S.car },
           power: { count: count(0, 0, 1), quota: FLAT_QUOTA },
@@ -756,7 +755,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 1, y: 0.5 },
         radius: { tiles: 8, xDistort: 6, yDistort: 0.3 },
         shapes: {
-          trees: { count: count(0, 6, 3), quota: S.trees },
+          trees: { count: count(0, 6, 2), quota: S.trees },
         },
       },
       {
@@ -765,7 +764,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.35, y: 0.9 },
         radius: { tiles: 5, xDistort: 6, yDistort: 0.3 },
         shapes: {
-          trees: { count: count(1, 2, 2), quota: S.trees },
+          trees: { count: count(1, 2, 1), quota: S.trees },
         },
       },
       {
@@ -774,7 +773,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.5, y: 0.9 },
         radius: { tiles: 3, xDistort: 6, yDistort: 0.6 },
         shapes: {
-          trees: { count: count(0, 0, 3), quota: S.trees },
+          trees: { count: count(0, 0, 1), quota: S.trees },
         },
       },
       {
@@ -866,19 +865,19 @@ export const START_PLACEMENTS: ScenePlacementRules = {
           villa: { count: count(0, 0, 2), quota: S.villa },
           trees: { count: count(1, 2, 2), quota: S.trees },
           car: { count: count(0, 1, 1), quota: S.car },
-          power: { count: count(1, 0, 1), quota: FLAT_QUOTA },
+          power: { count: count(1, 0, 0), quota: FLAT_QUOTA },
         },
       },
       {
         id: "mid-community",
         band: "ground",
-        center: { x: 0.4, y: 0.5 },
+        center: { x: 0.45, y: 0.5 },
         radius: { tiles: 5, xDistort: 2, yDistort: 1 },
         shapes: {
           sea: { count: count(0, 1, 1), quota: FLAT_QUOTA },
           carFactory: { count: count(1, 1, 1), quota: FLAT_QUOTA },
           house: { count: count(0, 0, 0), quota: S.house },
-          villa: { count: count(2, 1, 4), quota: S.villa },
+          villa: { count: count(2, 1, 2), quota: S.villa },
           trees: { count: count(1, 2, 6), quota: S.trees },
           car: { count: count(1, 0, 0), quota: S.car },
           bus: { count: count(0, 0, 1), quota: S.bus },
@@ -905,9 +904,20 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 6, xDistort: 4, yDistort: 1 },
         shapes: {
           villa: { count: count(0, 2, 4), quota: S.villa },
-          house: { count: count(0, 0, 1), quota: S.house },
           trees: { count: count(0, 2, 6), quota: S.trees },
           car: { count: count(0, 2, 3), quota: S.car },
+        },
+      },
+            {
+        id: "left-far-community-3",
+        band: "ground",
+        center: { x: 0.35, y: 0.2 },
+        radius: { tiles: 3, xDistort: 3, yDistort: 1 },
+        shapes: {
+          villa: { count: count(0, 2, 4), quota: S.villa },
+          house: { count: count(0, 0, 1), quota: S.house },
+          trees: { count: count(0, 2, 4), quota: S.trees },
+          car: { count: count(0, 2, 2), quota: S.car },
         },
       },
       {
@@ -965,6 +975,28 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         },
       },
       {
+        id: "mid-close-community-71",
+        band: "ground",
+        center: { x: 0.3, y: 0.75 },
+        radius: { tiles: 3, xDistort: 4, yDistort: 1 },
+        shapes: {
+          house: { count: count(0, 0, 1), quota: S.house },
+          trees: { count: count(0, 0, 12), quota: S.trees },
+          car: { count: count(0, 0, 2), quota: S.car },
+        },
+      },
+      {
+        id: "mid-close-community-72",
+        band: "ground",
+        center: { x: 0.48, y: 0.3 },
+        radius: { tiles: 2, xDistort: 3, yDistort: 1 },
+        shapes: {
+          villa: { count: count(0, 0, 1), quota: S.villa },
+          trees: { count: count(0, 0, 4), quota: S.trees },
+          car: { count: count(0, 0, 2), quota: S.car },
+        },
+      },
+      {
         id: "left-far-community-8",
         band: "ground",
         center: { x: 0.02, y: 0.4 },
@@ -1002,7 +1034,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.55, y: 0.2 },
         radius: { tiles: 6, xDistort: 4, yDistort: 1 },
         shapes: {
-          villa: { count: count(1, 1, 4), quota: S.villa },
+          villa: { count: count(1, 1, 3), quota: S.villa },
           house: { count: count(1, 0, 2), quota: S.house },
           trees: { count: count(1, 2, 6), quota: S.trees },
           car: { count: count(1, 1, 3), quota: S.car },
@@ -1027,7 +1059,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.75, y: 0.4 },
         radius: { tiles: 6, xDistort: 4, yDistort: 1 },
         shapes: {
-          villa: { count: count(1, 2, 3), quota: S.villa },
+          villa: { count: count(1, 2, 1), quota: S.villa },
           trees: { count: count(2, 1, 3), quota: S.trees },
           car: { count: count(1, 1, 3), quota: S.car },
           bus: { count: count(1, 1, 1), quota: S.bus },
@@ -1053,7 +1085,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         radius: { tiles: 6, xDistort: 3, yDistort: 1 },
         shapes: {
           villa: { count: count(1, 0, 2), quota: S.villa },
-          bus: { count: count(1, 0, 1), quota: S.bus },
+          bus: { count: count(1, 0, 0), quota: S.bus },
           car: { count: count(0, 0, 1), quota: S.car },
         },
       },
@@ -1063,8 +1095,8 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.4, y: 1 },
         radius: { tiles: 4, xDistort: 3, yDistort: 1 },
         shapes: {
-          villa: { count: count(0, 0, 1), quota: S.villa },
-          bus: { count: count(0, 0, 1), quota: S.bus },
+          villa: { count: count(0, 0, 0), quota: S.villa },
+          bus: { count: count(0, 0, 0), quota: S.bus },
           car: { count: count(0, 0, 1), quota: S.car },
         },
       },

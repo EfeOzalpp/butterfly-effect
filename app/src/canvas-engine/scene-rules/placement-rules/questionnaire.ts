@@ -17,8 +17,8 @@ const Q = {
     { t: 1, pct: 80 },
   ],
   villa: [
-    { t: 0, pct: 55 },
-    { t: 1, pct: 65 },
+    { t: 0, pct: 60 },
+    { t: 1, pct: 75 },
   ],
   house: [
     { t: 0, pct: 65 },
@@ -33,8 +33,8 @@ const Q = {
     { t: 1, pct: 20 },
   ],
   trees: [
-    { t: 0, pct: 50 },
-    { t: 1, pct: 70 },
+    { t: 0, pct: 40 },
+    { t: 1, pct: 65 },
   ],
   bus: [
     { t: 0, pct: 30 },
