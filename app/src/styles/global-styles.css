@@ -301,6 +301,11 @@ html {
   scrollbar-width: thin;
 }
 
+html.questionnaire-scroll-lock {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
 body {
   background: var(--ui-bg-page);
   color: var(--ui-text);

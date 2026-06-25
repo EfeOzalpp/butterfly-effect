@@ -130,6 +130,16 @@ export function AppBrowserPolicies({
     };
   }, [vizVisible]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (questionnaireOpen) {
+      document.documentElement.classList.add("questionnaire-scroll-lock");
+    }
+    return () => {
+      document.documentElement.classList.remove("questionnaire-scroll-lock");
+    };
+  }, [questionnaireOpen]);
+
   return null;
 }
 
