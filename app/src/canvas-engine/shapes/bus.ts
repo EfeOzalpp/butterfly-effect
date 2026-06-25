@@ -277,7 +277,7 @@ export function drawBus(
     const busShadow = mixRgb(litBodyTint, bodyLight.shadowColor, 0.28);
 
     if (shouldDrawColorDetails) {
-      const wheelD = Math.max(3, designUnit * 0.85);
+      const wheelD = Math.max(1, designUnit * 0.85);
       fillRgb(p, pal.wheel, 255);
       p.circle(busX + w * 0.22, wheelY, wheelD);
       p.circle(busX + w * 0.38, wheelY, wheelD);
