@@ -188,16 +188,6 @@ export default function useDotGraphSceneState({
       : baseMinRadius;
 
   // Compute dot positions before orbit controller so they can drive rotation sensitivity.
-  const spread = useMemo(() => {
-    const n = safeData.length;
-    const MIN_SPREAD = 28;
-    const MAX_SPREAD = 220;
-    const REF_N = 50;
-    const CURVE = 0.5;
-    const t = n <= 1 ? 0 : Math.min(1, Math.pow(n / REF_N, CURVE));
-    return MIN_SPREAD + (MAX_SPREAD - MIN_SPREAD) * t;
-  }, [safeData.length]);
-
   const colorForAverage = useMemo(
     () => (avg: number) => rgbString(sampleStops(avg)),
     []
@@ -205,7 +195,7 @@ export default function useDotGraphSceneState({
 
   const dotPointOptions = useMemo<DotPointsOptions>(() => {
     return {
-      spreadOverride: spread,
+      spreadOverride: 220,
       minDistance: 2.1,
       seed: 1337,
       relaxPasses: 1,
@@ -214,7 +204,7 @@ export default function useDotGraphSceneState({
       personalizedEntryId,
       showPersonalized,
     };
-  }, [spread, colorForAverage, personalizedEntryId, showPersonalized]);
+  }, [colorForAverage, personalizedEntryId, showPersonalized]);
 
   const shapes = useDotPoints(safeData, dotPointOptions);
   const dotPositions = useMemo(() => shapes.map(s => s.position), [shapes]);
