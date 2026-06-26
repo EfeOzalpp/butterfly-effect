@@ -47,6 +47,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     surveyResetKey, incrementSurveyResetKey,
   } = useUiState();
   const {
+    hoveredShapeState,
+    setHoveredShape,
+    clickedShapeState,
+    setClickedShape,
     liveAvgState,
     setLiveAvg,
     spotlightLiveAvgState,
@@ -182,6 +186,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const canvasRuntimeValue = useMemo<CanvasRuntimeState>(
     () => ({
+      hoveredShape: hoveredShapeState,
+      setHoveredShape,
+      clickedShape: clickedShapeState,
+      setClickedShape,
       liveAvg: liveAvgState,
       setLiveAvg,
       spotlightLiveAvg: spotlightLiveAvgState,
@@ -195,6 +203,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       toggleSpotlightPaused,
     }),
     [
+      hoveredShapeState,
+      setHoveredShape,
+      clickedShapeState,
+      setClickedShape,
       liveAvgState,
       setLiveAvg,
       spotlightLiveAvgState,

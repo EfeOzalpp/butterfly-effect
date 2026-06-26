@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import { DEFAULT_AVG, DEFAULT_SPOTLIGHT_SIGNAL } from './canvas-runtime-context';
 import { getSessionItem } from '../session';
 import type { Place } from '../../canvas-engine/grid-layout/occupancy';
+import type { EngineFieldItem } from '../../canvas-engine/runtime/engine/field';
 
 function normalizeAvg(avg: unknown) {
   return typeof avg === 'number' && Number.isFinite(avg) ? avg : DEFAULT_AVG;
@@ -25,6 +26,17 @@ function sameFootprints(a: Place[], b: Place[]) {
 }
 
 export default function useCanvasRuntimeState() {
+  const [hoveredShapeState, _setHoveredShapeState] = useState<EngineFieldItem | null>(null);
+  const [clickedShapeState, _setClickedShapeState] = useState<EngineFieldItem | null>(null);
+
+  const setHoveredShape = useCallback((item: EngineFieldItem | null) => {
+    _setHoveredShapeState(item);
+  }, []);
+
+  const setClickedShape = useCallback((item: EngineFieldItem | null) => {
+    _setClickedShapeState(item);
+  }, []);
+
   const [liveAvgState, _setLiveAvgState] = useState<number>(() => {
     const stored = getSessionItem('be.myAvg');
     if (stored === null) return DEFAULT_AVG;
@@ -76,10 +88,16 @@ export default function useCanvasRuntimeState() {
     _setLiveAvgState(DEFAULT_AVG);
     _setSpotlightLiveAvgState(DEFAULT_AVG);
     _setReservedFootprintsState([]);
+    _setHoveredShapeState(null);
+    _setClickedShapeState(null);
     setSpotlightState(DEFAULT_SPOTLIGHT_SIGNAL);
   }, []);
 
   return {
+    hoveredShapeState,
+    setHoveredShape,
+    clickedShapeState,
+    setClickedShape,
     liveAvgState,
     setLiveAvg,
     spotlightLiveAvgState,

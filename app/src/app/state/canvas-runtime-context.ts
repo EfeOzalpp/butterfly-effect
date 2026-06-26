@@ -4,6 +4,7 @@
 import { createContext, useContext } from "react";
 import type { Place } from "../../canvas-engine/grid-layout/occupancy";
 import type { SpotlightSignal } from "../../canvas-engine/hooks/signals";
+import type { EngineFieldItem } from "../../canvas-engine/runtime/engine/field";
 
 export const DEFAULT_AVG = 0.5;
 export const DEFAULT_SPOTLIGHT_SIGNAL: SpotlightSignal = {
@@ -12,6 +13,12 @@ export const DEFAULT_SPOTLIGHT_SIGNAL: SpotlightSignal = {
 };
 
 export interface CanvasRuntimeState {
+  // Shape currently under the pointer (desktop hover).
+  hoveredShape: EngineFieldItem | null;
+  setHoveredShape: (item: EngineFieldItem | null) => void;
+  // Shape selected by click/tap (toggles off on second tap).
+  clickedShape: EngineFieldItem | null;
+  setClickedShape: (item: EngineFieldItem | null) => void;
   // Continuous signal updated on every survey interaction; drives canvas visuals and composition.
   liveAvg: number;
   setLiveAvg: (avg?: number) => void;

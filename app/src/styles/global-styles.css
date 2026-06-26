@@ -380,3 +380,4 @@ html::-webkit-scrollbar-thumb:hover {
 .graph-wrapper:not(.visible) {
   pointer-events: none;
 }
+
