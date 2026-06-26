@@ -18,6 +18,7 @@ interface HostDefBase {
   initialFieldDelayMs?: number;
   canvasDimensions?: CanvasBounds;
   stopOnOpen?: readonly string[];
+  pointerHit?: boolean;
   scene?: {
     lookupKey: SceneLookupKey;
     ruleset: SceneRuleSet;
@@ -39,6 +40,7 @@ export const HOST_DEFS = defineHosts({
     dprMode: "cap2",
     fpsCap: 60,
     canvasDimensions: { kind: "parent" },
+    pointerHit: true,
     scene: { lookupKey: "start", ruleset: SCENE_RULESETS.intro },
   },
 
@@ -50,6 +52,7 @@ export const HOST_DEFS = defineHosts({
     stopOnOpen: ["start"],
     initialFieldDelayMs: 100,
     canvasDimensions: { kind: "parent" },
+    pointerHit: false,
     scene: { lookupKey: "questionnaire", ruleset: SCENE_RULESETS.intro },
   },
 
@@ -60,6 +63,7 @@ export const HOST_DEFS = defineHosts({
     fpsCap: 60,
     initialFieldDelayMs: 50,
     canvasDimensions: { kind: "viewport" },
+    pointerHit: true,
     scene: { lookupKey: "city", ruleset: SCENE_RULESETS.city },
   },
 

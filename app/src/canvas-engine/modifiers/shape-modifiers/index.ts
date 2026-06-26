@@ -19,5 +19,4 @@ export {
 export { clamp01, lerpNumber, resolveRangeValue } from "./ranges";
 export type { NumberRange } from "./ranges";
 
-export { applyShapeMods } from "./apply";
 export type { ShapeMods } from "./types";

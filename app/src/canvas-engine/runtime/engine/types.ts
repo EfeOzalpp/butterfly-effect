@@ -12,14 +12,18 @@ import type { ShapeRegistry } from "../shape-adapter/registry";
 import type { DebugFlags } from "../debug";
 import type { RGB } from "../../shared/math";
 import type { EngineFieldItem } from "./field";
+import type { EngineField } from "./state";
 import type { SpotlightSignal } from "../../hooks/signals";
 import type { EngineShapeLightSource } from "./state";
+import type { GridCacheState } from "../geometry/gridCache";
 
 export type { EngineFieldItem } from "./field";
 
 export interface EngineInputsPayload {
   liveAvg?: number;
   spotlight?: SpotlightSignal;
+  hoveredItemId?: string | null;
+  selectedItemId?: string | null;
 }
 
 // Partial style updates; defaults live in engine/state.ts.
@@ -68,7 +72,12 @@ export interface EngineControls {
 
   stop: () => void;
 
+  sampleShapeHitMask?: (itemId: string, cssX: number, cssY: number) => boolean | null;
+  getSortedFieldItems?: () => EngineFieldItem[];
+
   readonly canvas: HTMLCanvasElement | null;
+  readonly field: EngineField;
+  readonly layout: GridCacheState;
 }
 
 export interface StartCanvasEngineOpts {

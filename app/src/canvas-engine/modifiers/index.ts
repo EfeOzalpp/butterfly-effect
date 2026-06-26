@@ -38,7 +38,7 @@ export {
   shapeHash32,
 } from "./shape-modifiers";
 export { resolveRangeValue } from "./shape-modifiers";
-export { applyShapeMods } from "./shape-modifiers";
+export { applyShapeMods } from "./global-event-driven/apply";
 export type { ShapeMods, NumberRange } from "./shape-modifiers";
 export { clampMinMax, finiteNumber, smoothstep01 } from "../shared/math";
 export {

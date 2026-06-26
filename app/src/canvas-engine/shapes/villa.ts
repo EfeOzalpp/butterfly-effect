@@ -112,7 +112,7 @@ const VILLA: VillaTuning = {
   },
   roof: {
     triFracFront: [0.20, 0.24],
-    triFracSide: [0.24, 0.36],
+    triFracSide: [0.15, 0.21],
   },
   sideVolume: {
     heightK: 0.84,
@@ -418,8 +418,8 @@ export function drawVilla(
     opts: {
       alpha: baseAlpha,
       timeMs: lifecycle.timeMs,
-      liveAvg: style.liveAvg,
       rootAppearK: lifecycle.rootAppearK,
+      selectK: lifecycle.selectK,
     },
   });
   const drawAlpha = (typeof m.alpha === 'number') ? m.alpha : baseAlpha;
@@ -544,14 +544,14 @@ export function drawVilla(
     const roofHRaw = Math.round(localTileH * resolveRangeValue(roofFrac, u));
     const roofH = clampMinMax(
       roofHRaw,
-      smallScale ? 1 : 2,
+      2,
       Math.max(1, Math.floor(availH * (isSideCol ? 0.38 : 0.45)))
     );
     const minBodyH = isSideCol
       ? (smallScale ? Math.max(2, Math.round(localTileH * 0.7)) : Math.max(4, Math.round(localTileH * 0.82)))
       : (smallScale ? Math.max(2, Math.round(localTileH * 0.9)) : Math.max(6, Math.round(localTileH * 1.15)));
-    const maxBodyH = Math.max(minBodyH, availH - roofH);
-    const bodyH = clampMinMax(desiredBodyH, minBodyH, maxBodyH);
+    const maxBodyH = Math.max(1, availH - roofH);
+    const bodyH = clampMinMax(desiredBodyH, Math.min(minBodyH, maxBodyH), maxBodyH);
 
     return { roofH, bodyH, minBodyH, maxBodyH };
   });
@@ -691,8 +691,9 @@ export function drawVilla(
         : pal.window.dark;
       const winColor = applySrgbExposureContrast(frontBaseColor, ex, ct);
 
-      const wW = Math.max(smallScale ? 2 : 3, Math.round(iColW * fCfg.W_FRAC));
-      const wH = Math.max(smallScale ? 2 : 4, Math.round(bodyH * fCfg.H_FRAC));
+      const winMinPx = Math.max(1, Math.round(localTile * 0.1));
+      const wW = Math.max(winMinPx, Math.round(iColW * fCfg.W_FRAC));
+      const wH = Math.max(winMinPx, Math.round(bodyH * fCfg.H_FRAC));
 
       const bandTop = iBodyY + Math.round(bodyH * (fCfg.TOP_FRAC ?? 0));
       const bandBot = Math.max(bandTop + 1, doorY - (fCfg.BOT_MARGIN ?? 0));
@@ -738,8 +739,9 @@ export function drawVilla(
       const c0 = applySrgbExposureContrast(sideBase0, ex, ct);
       const c1 = applySrgbExposureContrast(sideBase1, ex, ct);
 
-      const wW = Math.max(smallScale ? 2 : 3, Math.round(iColW * sCfg.W_FRAC));
-      const wH = Math.max(smallScale ? 2 : 3, Math.round(bodyH * sCfg.H_FRAC));
+      const sideWinMinPx = Math.max(1, Math.round(localTile * 0.1));
+      const wW = Math.max(sideWinMinPx, Math.round(iColW * sCfg.W_FRAC));
+      const wH = Math.max(sideWinMinPx, Math.round(bodyH * sCfg.H_FRAC));
 
       const yCenter = iBodyY + Math.round(bodyH * (sCfg.Y_OFF_FRAC ?? 0));
       const y = Math.round(yCenter - wH / 2);
@@ -772,7 +774,7 @@ export function drawVilla(
       const phase = rBush * F.wind.phaseJitter;
 
       const { x: bx, scaleX, scaleY, rotation } = applyShapeMods({
-        p, x: cx, y: cy, r: baseH, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
+        p, x: cx, y: cy, r: baseH, opts: { timeMs: lifecycle.timeMs },
         mods: {
           scale2D:    { x: s, y: s, anchor: 'bottom-center' },
           scale2DOsc: { mode:'relative', biasX:1, ampX:F.wind.xShearAmp, biasY:1, ampY:0, speed, phaseX:phase, anchor:'bottom-center' },
@@ -829,11 +831,13 @@ export function drawVilla(
       p.noStroke();
       drawPart(true, (isMaskPass) => {
       // Roofs are part of the depth mask. Strokes and side foliage are color-only.
+      // Keep the mask footprint locked to the body; color overdraw hides roof/body seams.
+      const roofPaintOverlapPx = isMaskPass ? 0 : 1;
       if (!isSide) {
-        const ridgeY = Math.round(Math.max(pxY, bodyY - roofH));
+        const ridgeY = Math.max(Math.ceil(pxY), iBodyY - roofH);
         const apexX = ix + iColW / 2;
-        const baseY = iBodyY + Math.min(2, Math.max(1, Math.floor(bodyH * 0.14)));
-        const safeRidgeY = Math.min(ridgeY, baseY - 1);
+        const baseY = iBodyY + roofPaintOverlapPx;
+        const safeRidgeY = Math.min(ridgeY, iBodyY - 1);
 
         p.noStroke();
         fillRgb(p, shapeColorForRenderPass(renderPass, bodyTint, maskColor), maskAlpha);
@@ -870,8 +874,8 @@ export function drawVilla(
       }
 
       const roofTint = mixRgb(applySrgbExposureContrast(scaleRgb(bodyTint, 0.72), ex, ct), colLight.lightColor, 0.18 * colLight.overallK);
-      const roofRectH = Math.max(1, Math.round(roofH - Math.max(0.5, localTileH * 0.08)));
-      const topY = Math.max(pxY, iBodyY - roofRectH);
+      const topY = Math.max(pxY, iBodyY - roofH);
+      const roofRectH = Math.max(1, iBodyY + roofPaintOverlapPx - topY);
 
       // Side roof is the column's roof cap. Earlier versions extended it under
       // the front volume, which made the visible width depend on draw order.
@@ -896,7 +900,7 @@ export function drawVilla(
       const phase = rBush * F.wind.phaseJitter;
 
       const lowRes = applyShapeMods({
-        p, x: baseCX, y: baseCY, r: baseTriH, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
+        p, x: baseCX, y: baseCY, r: baseTriH, opts: { timeMs: lifecycle.timeMs },
         mods: {
           scale2D:    { x: s, y: s, anchor: 'bottom-center' },
           scale2DOsc: { mode:'relative', biasX:1, ampX:F.wind.xShearAmp, biasY:1, ampY:0, speed, phaseX:phase, anchor:'bottom-center' },
@@ -905,7 +909,7 @@ export function drawVilla(
       });
 
       const topRes = applyShapeMods({
-        p, x: baseCX, y: baseCY, r: baseTriH, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
+        p, x: baseCX, y: baseCY, r: baseTriH, opts: { timeMs: lifecycle.timeMs },
         mods: {
           scale2D:    { x: s, y: s, anchor: 'bottom-center' },
           scale2DOsc: { mode:'relative', biasX:1, ampX:F.wind.xShearAmp*1.1, biasY:1, ampY:0, speed, phaseX:phase + 0.6, anchor:'bottom-center' },

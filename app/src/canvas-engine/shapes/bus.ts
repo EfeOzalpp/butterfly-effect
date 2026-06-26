@@ -200,7 +200,7 @@ export function drawBus(
     x: tileCx,
     y: baseY,
     r,
-    opts: { alpha, timeMs: lifecycle.timeMs, liveAvg: style.liveAvg, rootAppearK: lifecycle.rootAppearK },
+    opts: { alpha, timeMs: lifecycle.timeMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
   });
 
   p.push();

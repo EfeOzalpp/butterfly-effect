@@ -36,6 +36,8 @@ export interface ShapeLifecycleOptions {
   timeMs?: number;
   dtSec?: number;
   rootAppearK?: number;
+  hoverK?: number;
+  selectK?: number;
 }
 
 export interface ShapeIdentityOptions {

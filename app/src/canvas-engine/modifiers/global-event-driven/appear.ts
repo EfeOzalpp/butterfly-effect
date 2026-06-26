@@ -1,5 +1,4 @@
-// Shared entry animation envelope for root shape draws.
-import type { ShapeMods } from "./types";
+import type { ShapeMods } from "../shape-modifiers/types";
 
 type AppearConfig = Exclude<ShapeMods["appear"], false | undefined>;
 type ResolvedAppear = Required<AppearConfig>;

@@ -34,9 +34,11 @@ import {
 } from "../render/passes/shape";
 import { resolveShapeDepthTint } from "../render/passes/depth";
 import { createSceneLightContext } from "../../modifiers/index";
+import { hoverBrightnessAdd } from "../../modifiers/global-event-driven/hover";
+import { selectBrightnessAdd } from "../../modifiers/global-event-driven/select";
 
 import { drawItemFromRegistry } from "../shape-adapter/draw";
-import type { RuntimeShapeServices } from "../shape-adapter/registry";
+import { shapeRegistrySupportsRenderPass, type RuntimeShapeServices } from "../shape-adapter/registry";
 import type { RuntimeShapeOptions } from "../shape-adapter/types";
 import type { RuntimeSurface } from "../p/makeP";
 import {
@@ -46,6 +48,7 @@ import {
 } from "./runtimeSceneVariants";
 import { resolveSceneSurfaceFrame } from "./sceneSurfaceLifecycle";
 import type { EngineFieldItem } from "./field";
+import type { LiveState } from "./itemLifecycle";
 import type { EngineEffectState, EngineRuntimeState } from "./state";
 import type { EngineSceneSource } from "./types";
 
@@ -96,6 +99,49 @@ export function createEngineTicker(deps: LoopDeps) {
 
   let sortedItemsSource: EngineFieldItem[] | null = null;
   let sortedItemsMetrics: GridMetrics | null = null;
+
+  let lastHoveredId: string | null = null;
+  let lastSelectedId: string | null = null;
+
+  function getOrCreateLiveState(itemId: string, nowMs: number): LiveState {
+    let state = effects.liveStates.get(itemId);
+    if (!state) {
+      state = { bornAtMs: nowMs };
+      effects.liveStates.set(itemId, state);
+    }
+    return state;
+  }
+
+  function updateInteractionStates(nowMs: number) {
+    const hoveredId = engine.inputs.hoveredItemId;
+    const selectedId = engine.inputs.selectedItemId;
+
+    if (hoveredId !== lastHoveredId) {
+      if (lastHoveredId) {
+        const s = effects.liveStates.get(lastHoveredId);
+        if (s) s.hoverEndMs = nowMs;
+      }
+      if (hoveredId) {
+        const s = getOrCreateLiveState(hoveredId, nowMs);
+        s.hoverStartMs = nowMs;
+        s.hoverEndMs = undefined;
+      }
+      lastHoveredId = hoveredId;
+    }
+
+    if (selectedId !== lastSelectedId) {
+      if (lastSelectedId) {
+        const s = effects.liveStates.get(lastSelectedId);
+        if (s) s.selectEndMs = nowMs;
+      }
+      if (selectedId) {
+        const s = getOrCreateLiveState(selectedId, nowMs);
+        s.selectStartMs = nowMs;
+        s.selectEndMs = undefined;
+      }
+      lastSelectedId = selectedId;
+    }
+  }
 
   function clearRenderCaches() {
     bgCache.clear();
@@ -167,6 +213,24 @@ export function createEngineTicker(deps: LoopDeps) {
 
       }
 
+      // Hover/select effects.
+      const lc = opts.lifecycle ?? {};
+      const hoverK = lc.hoverK ?? 0;
+      const selectK = lc.selectK ?? 0;
+      const darkMode = styleOpts.darkMode === true;
+      const brightnessDelta = hoverBrightnessAdd(hoverK, darkMode) + selectBrightnessAdd(selectK, darkMode);
+      const brightnessBoost = 1 + brightnessDelta;
+
+      const hasBrightness = Math.abs(brightnessDelta) > 0.001;
+      const supportsDepthMask = shapeRegistrySupportsRenderPass(shapes.registry, it.shape, "depthMask");
+      const brightnessOverlayAlpha = hasBrightness && supportsDepthMask && brightnessDelta > 0.001
+        ? Math.min(0.5, brightnessDelta)
+        : 0;
+
+      if (hasBrightness && !supportsDepthMask) {
+        surface.p.drawingContext.filter = `brightness(${brightnessBoost.toFixed(3)})`;
+      }
+
       // Downstream draw path: far bitmap cache first, live draw fallback, then depth overlay.
       const drewCachedShape = shapeRenderCache.drawFarShapeBitmap({
         p: surface.p,
@@ -175,9 +239,17 @@ export function createEngineTicker(deps: LoopDeps) {
         rEff,
         opts,
         gridMetrics: layout.gridCache.metrics,
+        brightnessAlpha: brightnessOverlayAlpha,
       });
       if (!drewCachedShape) {
+        const useLiveBrightnessFilter = hasBrightness && supportsDepthMask;
+        if (useLiveBrightnessFilter) {
+          surface.p.drawingContext.filter = `brightness(${brightnessBoost.toFixed(3)})`;
+        }
         drawItemFromRegistry(shapes.registry, surface.p, it, rEff, opts);
+        if (useLiveBrightnessFilter) {
+          surface.p.drawingContext.filter = "none";
+        }
       }
 
       shapeRenderCache.drawShapeDepthOverlay({
@@ -393,6 +465,7 @@ export function createEngineTicker(deps: LoopDeps) {
       nowMs: frame.tMs,
       appearMs: engine.style.appearMs,
       appearStaggerMs: engine.style.appearStaggerMs,
+      selectedItemId: engine.inputs.selectedItemId,
       liveStates: effects.liveStates,
       perShapeScale: engine.style.perShapeScale,
       baseR: engine.style.r,
@@ -407,6 +480,7 @@ export function createEngineTicker(deps: LoopDeps) {
   function tick(now: number) {
     if (!running) return;
 
+    updateInteractionStates(now);
     const sceneFrame = prepareSceneFrame(now);
     if (sceneFrame.sceneSurface.appearing) clearSceneSurfaceToUnderpaint(surface.p);
     renderBackgroundPass(sceneFrame);
@@ -426,6 +500,10 @@ export function createEngineTicker(deps: LoopDeps) {
     stop() {
       running = false;
       clearRenderCaches();
+    },
+    sampleShapeHitMask: shapeRenderCache.sampleShapeHitMask,
+    getSortedItems(): EngineFieldItem[] {
+      return sortedItemsScratch;
     },
   };
 }

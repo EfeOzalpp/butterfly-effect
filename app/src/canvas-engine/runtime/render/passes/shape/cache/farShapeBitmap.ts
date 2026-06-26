@@ -1,6 +1,6 @@
 import type { EngineFieldItem } from "../../../../engine/field";
 import type { PLike } from "../../../../p/makeP";
-import type { ShapeRegistry } from "../../../../shape-adapter/registry";
+import { shapeRegistrySupportsRenderPass, type ShapeRegistry } from "../../../../shape-adapter/registry";
 import { copyRuntimeShapeOptionsInto } from "../../../../shape-adapter/options";
 import type { RuntimeShapeOptions } from "../../../../shape-adapter/types";
 import type { GridMetrics } from "../../../../geometry/gridCache";
@@ -12,6 +12,7 @@ import {
   VIVID_COLOR_STOPS,
   type SceneLightContext,
 } from "../../../../../modifiers/index";
+import { selectScale } from "../../../../../modifiers/global-event-driven/select";
 import { finiteNumber, type RGB } from "../../../../../shared/math";
 import { hashString32 } from "../../../../../shared/hash32";
 import {
@@ -518,7 +519,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       overlay,
     } = args;
     const key = `${stampKey}|mask:${rgbKey(overlay.color)}`;
-    const fallbackKey = `${stampFallbackKey}|mask`;
+    const fallbackKey = `${stampFallbackKey}|mask:${rgbKey(overlay.color)}`;
     let entry = treeStampMaskCache.get(key);
 
     if (!entry) {
@@ -598,6 +599,30 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     updateDebugState();
   }
 
+  function drawCachedBitmapBrightnessOverlay(args: {
+    p: PLike;
+    canvas: HTMLCanvasElement;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    alpha: number;
+    alphaScale?: number;
+  }) {
+    const alpha = Math.max(0, Math.min(0.5, args.alpha)) *
+      Math.max(0, Math.min(1, args.alphaScale ?? 1));
+    if (alpha <= 0.001) return;
+
+    // Cached far shapes are frozen bitmaps. Reusing the same bitmap guarantees
+    // hover cannot redraw a different seeded or time-animated variant.
+    const ctx = args.p.drawingContext;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(args.canvas, args.x, args.y, args.w, args.h);
+    ctx.restore();
+  }
+
   function drawSharedFarTreeStamp(args: {
     p: PLike;
     shapeRegistry: ShapeRegistry;
@@ -607,6 +632,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     bounds: ShapeBitmapBounds;
     dpr: number;
     policy: FarShapeBitmapCachePolicy;
+    brightnessAlpha: number;
   }): boolean {
     const { p, shapeRegistry, item, rEff, opts, bounds, dpr, policy } = args;
     if (!isSharedFarStampShape(item)) return false;
@@ -641,6 +667,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
         return true;
       }
       if (bakesThisFrame >= policy.maxBakesPerFrame) {
+        let staleDrawEntry: CachedShapeBitmap | null = null;
         const staleKey = treeStampFallbackKeys.get(fallbackKey);
         if (staleKey) {
           const staleEntry = treeStampCache.get(staleKey);
@@ -648,12 +675,13 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
             treeStampCache.touch(staleKey, staleEntry);
             p.drawingContext.drawImage(staleEntry.canvas, bounds.x, bounds.y, bounds.w, bounds.h);
             debug.markStampStaleDrawn();
+            staleDrawEntry = staleEntry;
             drewColor = true;
           } else {
             treeStampFallbackKeys.delete(fallbackKey);
           }
         }
-        if (drewColor) {
+        if (drewColor && staleDrawEntry) {
           const overlay = depthOverlayFromOptions(opts);
           if (overlay) {
             drawTreeStampMask({
@@ -672,6 +700,15 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
               overlay,
             });
           }
+          drawCachedBitmapBrightnessOverlay({
+            p,
+            canvas: staleDrawEntry.canvas,
+            x: bounds.x,
+            y: bounds.y,
+            w: bounds.w,
+            h: bounds.h,
+            alpha: args.brightnessAlpha,
+          });
         }
         if (!drewColor) debug.markStampBudgetSkip();
         if (drewColor) debug.markStampDrawn();
@@ -725,6 +762,15 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
         overlay,
       });
     }
+    drawCachedBitmapBrightnessOverlay({
+      p,
+      canvas: entry.canvas,
+      x: bounds.x,
+      y: bounds.y,
+      w: bounds.w,
+      h: bounds.h,
+      alpha: args.brightnessAlpha,
+    });
     // The shared stamp uses a canonical variant seed. The normal depth overlay
     // would redraw this item's original randomized tree geometry on top of it.
     suppressCurrentDepthOverlay(opts);
@@ -780,9 +826,10 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     rEff: number;
     opts: RuntimeShapeOptions;
     gridMetrics?: GridMetrics;
-    // End params. Returns true when this cache handled the color pass.
+    brightnessAlpha?: number;
+    // End params.
   }): boolean {
-    const { p, shapeRegistry, item, rEff, opts, gridMetrics } = args;
+    const { p, shapeRegistry, item, rEff, opts, gridMetrics, brightnessAlpha = 0 } = args;
     debug.markCall();
     const policy = getPolicy();
     if (!policy.enabled) {
@@ -803,6 +850,9 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       return false;
     }
 
+    const lc = shapeLifecycle(opts);
+    const selectK = lc.selectK ?? 0;
+
     const dpr = canvasDpr(p);
     const target = cache.syncRenderTarget(p, dpr);
     if (target.changed) {
@@ -820,69 +870,122 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     }
     const bounds = snapBoundsToDevicePixels(roughBounds, dpr);
 
-    trimCacheToPolicy(p, policy);
-    const isSharedStampCandidate = isFarCacheCandidate(
-      item,
-      gridMetrics,
-      Math.min(policy.farSizeK, SHARED_FAR_STAMP_SIZE_K)
-    );
-    if (isSharedStampCandidate && drawSharedFarTreeStamp({ p, shapeRegistry, item, rEff, opts, bounds, dpr, policy })) {
-      return true;
+    // Scale the cached bitmap via canvas transform when selected, rather than
+    // bypassing to a live render. This keeps the visual variant (stamp seed or
+    // baked key) identical to the unselected state; no pop on click.
+    // try/finally guarantees the restore on every return path inside.
+    if (selectK > 0) {
+      const s = selectScale(selectK);
+      const rect = resolveShapeRect(item, rEff, opts);
+      const pivotX = rect.x + rect.w / 2;
+      const pivotY = rect.y + rect.h;
+      p.drawingContext.save();
+      p.drawingContext.translate(pivotX, pivotY);
+      p.drawingContext.scale(s, s);
+      p.drawingContext.translate(-pivotX, -pivotY);
     }
-
-    const appearK = shapeLifecycle(opts).rootAppearK ?? 1;
-
-    const key = shapeBitmapCacheKey({ item, rEff, opts, bounds, dpr });
-    const fallbackKey = shapeBitmapFallbackKey({ item, rEff, opts, bounds, dpr });
-    let entry = cache.get(key);
-
-    if (!entry) {
-      debug.markGenericMiss();
-      const bitmapPixels = pixelSizeForBounds(bounds, dpr).pixels;
-      const maxPixels = maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel);
-      if (bitmapPixels > maxPixels) {
-        debug.markGenericTooLarge();
-        updateDebugState();
-        return false;
+    try {
+      trimCacheToPolicy(p, policy);
+      const isSharedStampCandidate = isFarCacheCandidate(
+        item,
+        gridMetrics,
+        Math.min(policy.farSizeK, SHARED_FAR_STAMP_SIZE_K)
+      );
+      if (isSharedStampCandidate) {
+        const drewSharedStamp = drawSharedFarTreeStamp({
+          p,
+          shapeRegistry,
+          item,
+          rEff,
+          opts,
+          bounds,
+          dpr,
+          policy,
+          brightnessAlpha,
+        });
+        if (drewSharedStamp) return true;
       }
 
-      if (bakesThisFrame >= policy.maxBakesPerFrame) {
-        const staleKey = fallbackKeys.get(fallbackKey);
-        const staleEntry = staleKey ? cache.get(staleKey) : undefined;
-        if (staleKey && staleEntry) {
-          cache.touch(staleKey, staleEntry);
-          debug.markGenericStaleDrawn();
-          debug.markGenericDrawn();
-          blitWithAppear(p.drawingContext, appearK, staleEntry.canvas, staleEntry.bounds.x, staleEntry.bounds.y, staleEntry.bounds.w, staleEntry.bounds.h);
+      const appearK = shapeLifecycle(opts).rootAppearK ?? 1;
+
+      const key = shapeBitmapCacheKey({ item, rEff, opts, bounds, dpr });
+      const fallbackKey = shapeBitmapFallbackKey({ item, rEff, opts, bounds, dpr });
+      let entry = cache.get(key);
+
+      if (!entry) {
+        debug.markGenericMiss();
+        const bitmapPixels = pixelSizeForBounds(bounds, dpr).pixels;
+        const maxPixels = maxCachePixelsForCanvas(p, policy.maxPixelsPerCanvasPixel);
+        if (bitmapPixels > maxPixels) {
+          debug.markGenericTooLarge();
           updateDebugState();
-          return true;
+          return false;
         }
 
-        if (staleKey) fallbackKeys.delete(fallbackKey);
-        debug.markGenericBudgetSkip();
+        if (bakesThisFrame >= policy.maxBakesPerFrame) {
+          const staleKey = fallbackKeys.get(fallbackKey);
+          const staleEntry = staleKey ? cache.get(staleKey) : undefined;
+          if (staleKey && staleEntry) {
+            cache.touch(staleKey, staleEntry);
+            debug.markGenericStaleDrawn();
+            debug.markGenericDrawn();
+            blitWithAppear(p.drawingContext, appearK, staleEntry.canvas, staleEntry.bounds.x, staleEntry.bounds.y, staleEntry.bounds.w, staleEntry.bounds.h);
+            if (shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
+              drawCachedBitmapBrightnessOverlay({
+                p,
+                canvas: staleEntry.canvas,
+                x: staleEntry.bounds.x,
+                y: staleEntry.bounds.y,
+                w: staleEntry.bounds.w,
+                h: staleEntry.bounds.h,
+                alpha: brightnessAlpha,
+                alphaScale: appearK,
+              });
+            }
+            updateDebugState();
+            return true;
+          }
+
+          if (staleKey) fallbackKeys.delete(fallbackKey);
+          debug.markGenericBudgetSkip();
+          updateDebugState();
+          return false;
+        }
+
+        entry = cache.createEntry(bounds, dpr);
+        bakesThisFrame += 1;
+        debug.markGenericCreated(entry.pixels);
+        debug.markGenericBake();
+        bakeShape({ entry, shapeRegistry, item, rEff, opts, dpr });
+        cache.set(key, entry);
+        fallbackKeys.set(fallbackKey, key);
+        debug.markTrimmed(cache.trim(maxPixels));
         updateDebugState();
-        return false;
+      } else {
+        debug.markGenericHit();
+        cache.touch(key, entry);
+        fallbackKeys.set(fallbackKey, key);
       }
 
-      entry = cache.createEntry(bounds, dpr);
-      bakesThisFrame += 1;
-      debug.markGenericCreated(entry.pixels);
-      debug.markGenericBake();
-      bakeShape({ entry, shapeRegistry, item, rEff, opts, dpr });
-      cache.set(key, entry);
-      fallbackKeys.set(fallbackKey, key);
-      debug.markTrimmed(cache.trim(maxPixels));
+      blitWithAppear(p.drawingContext, appearK, entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
+      if (shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
+        drawCachedBitmapBrightnessOverlay({
+          p,
+          canvas: entry.canvas,
+          x: entry.bounds.x,
+          y: entry.bounds.y,
+          w: entry.bounds.w,
+          h: entry.bounds.h,
+          alpha: brightnessAlpha,
+          alphaScale: appearK,
+        });
+      }
+      debug.markGenericDrawn();
       updateDebugState();
-    } else {
-      debug.markGenericHit();
-      cache.touch(key, entry);
-      fallbackKeys.set(fallbackKey, key);
+      return true;
+    } finally {
+      if (selectK > 0) p.drawingContext.restore();
     }
-
-    blitWithAppear(p.drawingContext, appearK, entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
-    debug.markGenericDrawn();
-    updateDebugState();
-    return true;
   };
 
   return Object.assign(drawFarShapeBitmap, {

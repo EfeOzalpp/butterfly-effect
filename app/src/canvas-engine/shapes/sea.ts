@@ -310,7 +310,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     x: cx,
     y: bottomY,
     r: Math.min(w, h),
-    opts: { alpha: baseAlpha * alphaMulGlobal, timeMs: lifecycle.timeMs, liveAvg: u, rootAppearK: lifecycle.rootAppearK },
+    opts: { alpha: baseAlpha * alphaMulGlobal, timeMs: lifecycle.timeMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
     mods: { appear: { ease: (T.appear.easing === 'linear') ? 'linear' : 'cubic' } }
   });
 
@@ -500,7 +500,7 @@ export function drawSea(p: ShapeCanvas, _x: number, _y: number, _r: number, opts
     const postsTopY = bowlPostsTopY;
     const colW = bowlColW;
     const postR       = Math.max(0, (T.bowl.pieceRadiusPx ?? 0) | 0);
-    const baseOverlap = Math.max(0, T.bowl.baseOverlapPx ?? 2);
+    const baseOverlap = Math.max(0, T.bowl.baseOverlapPx ?? 0);
     const postBottomY = baseY + baseOverlap;
     const postDrawH   = Math.max(1, postBottomY - postsTopY - Math.max(0, T.bowl.postBottomLiftPx ?? Math.ceil(postR)));
 

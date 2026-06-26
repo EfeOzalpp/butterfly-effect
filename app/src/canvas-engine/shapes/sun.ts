@@ -121,8 +121,8 @@ function drawCrescentMoon(
     opts: {
       alpha: finiteNumber(style.alpha, 235),
       timeMs: lifecycle.timeMs,
-      liveAvg: style.liveAvg,
       rootAppearK: lifecycle.rootAppearK,
+      selectK: lifecycle.selectK,
     },
     mods: {
       appear: { anchor: 'center', ease: 'back', backOvershoot: 1.6 },
@@ -272,8 +272,8 @@ export function drawSun(
     opts: {
       alpha: finiteNumber(style.alpha, 235),
       timeMs: lifecycle.timeMs,
-      liveAvg: style.liveAvg,
       rootAppearK: lifecycle.rootAppearK,
+      selectK: lifecycle.selectK,
     },
     mods: {
       appear: { anchor: 'center', ease: 'back', backOvershoot: 1.6 },

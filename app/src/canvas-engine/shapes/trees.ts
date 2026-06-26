@@ -359,7 +359,16 @@ export function drawTrees(
     x: anchorX,
     y: anchorY,
     r: Math.min(w, h),
-    opts: { alpha, timeMs: lifecycle.timeMs, liveAvg: u, rootAppearK: lifecycle.rootAppearK },
+    opts: { alpha, timeMs: lifecycle.timeMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
+  });
+  // Ground gets selectK scale but not rootAppearK — it shouldn't shrink during
+  // the appear animation, but should move with the cluster when selected.
+  const groundAppear = applyShapeMods({
+    p,
+    x: anchorX,
+    y: anchorY,
+    r: Math.min(w, h),
+    opts: { alpha, timeMs: lifecycle.timeMs, selectK: lifecycle.selectK },
   });
   const drawAlpha = (typeof appear.alpha === 'number') ? appear.alpha : alpha;
   const maskAlpha = isDepthMaskPass
@@ -373,7 +382,6 @@ export function drawTrees(
   const clampRand = 0.96 + (rFromKey(seedKey, 'clusterClamp') * 0.035); // ~0.96..0.995
   const sClamp = Math.max(clampK0, Math.min(clampK1, clampRand * (0.96 + u * 0.08)));
 
-  // Ground: grass and asphalt stay untransformed so they never shrink.
   const grassH = h * 0.55;
   const grassY = y0 + h - grassH;
   const grassLight = sampleDirectionalLightRect(
@@ -403,12 +411,6 @@ export function drawTrees(
   }
 
   // The depth mask pass includes the grass pad and tree cluster. The asphalt strip is road.
-  if (shouldDrawMass) {
-    p.noStroke();
-    fillRgb(p, shapeColorForRenderPass(renderPass, grassTint, maskColor), massAlpha);
-    p.rect(x0, grassY, w, grassH, Math.round(cell * 0.04));
-  }
-
   let asp = applySrgbExposureContrast(pal.asphalt, ex, ct);
   asp = clampBrightness(asp, resolveRangeValue(TREES.asphalt.min, u), resolveRangeValue(TREES.asphalt.max, u));
   const aspH = grassH * 0.28;
@@ -416,6 +418,15 @@ export function drawTrees(
   const roadYOffset = Math.max(1, grassH * 0.14);
   const aspY = Math.min(grassY + grassH - aspH, baseAspY + roadYOffset);
 
+  p.push();
+  p.translate(groundAppear.x, groundAppear.y);
+  p.scale(groundAppear.scaleX, groundAppear.scaleY);
+  p.translate(-anchorX, -anchorY);
+  if (shouldDrawMass) {
+    p.noStroke();
+    fillRgb(p, shapeColorForRenderPass(renderPass, grassTint, maskColor), massAlpha);
+    p.rect(x0, grassY, w, grassH, Math.round(cell * 0.04));
+  }
   if (shouldDrawColorDetails) {
     // left-anchored X-scale on asphalt
     const sx = resolveRangeValue(TREES.asphalt.xScaleRange, u);
@@ -427,6 +438,7 @@ export function drawTrees(
     p.rect(x0, aspY, w, aspH, Math.round(cell * 0.16));
     p.pop();
   }
+  p.pop();
 
   const groundY = baseAspY + aspH * 0.6;
 
@@ -500,7 +512,7 @@ export function drawTrees(
       const trunkLit = mixRgb(trunkTint, treeLight.lightColor, 0.14 * treeLight.overallK);
 
       const m = applyShapeMods({
-        p, x: baseX, y: baseY + heightBoost, r: fh, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
+        p, x: baseX, y: baseY + heightBoost, r: fh, opts: { timeMs: lifecycle.timeMs },
         mods: {
           scale2D:    { x: 1, y: 1, anchor: 'bottom-center' },
           scale2DOsc: { mode:'relative', biasX:1, ampX:shearAmp, biasY:1, ampY:0, speed: windSpeed, phaseX: phase, anchor:'bottom-center' },
@@ -552,7 +564,7 @@ export function drawTrees(
         (TREES.conifer.levelHk[1] - TREES.conifer.levelHk[0]) * rFromKey(k, 'levelH')) * cell * 1.0 * scaleBias * sClamp;
 
       const mRoot = applyShapeMods({
-        p, x: baseX, y: baseY + heightBoost, r: levelH * levels, opts: { timeMs: lifecycle.timeMs, liveAvg: u },
+        p, x: baseX, y: baseY + heightBoost, r: levelH * levels, opts: { timeMs: lifecycle.timeMs },
         mods: {
           scale2D:    { x: 1, y: 1, anchor: 'bottom-center' },
           scale2DOsc: { mode:'relative', biasX:1, ampX:shearAmp, biasY:1, ampY:0, speed: windSpeed, phaseX: phase, anchor:'bottom-center' },

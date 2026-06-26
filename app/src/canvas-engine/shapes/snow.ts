@@ -23,6 +23,7 @@ import {
   mixRgb,
   paintPixelLightBands,
   applyDepthTint,
+  applyShapeMods,
 } from "../modifiers/index";
 import type { LightClosenessBandMap, NumberRange, RGB } from "../modifiers/index";
 import type { ShapeCanvas, ShapeDrawOptions, ShapePalette } from "./types";
@@ -221,7 +222,17 @@ export function drawSnow(
   const cx = footprintCx;
   const cy = y0 + hTop * 0.62;
 
-  const drawAlpha = typeof style.alpha === "number" && Number.isFinite(style.alpha) ? style.alpha : 235;
+  const baseAlpha = typeof style.alpha === "number" && Number.isFinite(style.alpha) ? style.alpha : 235;
+  const anchorX = footprintCx;
+  const anchorY = y0 + fpH;
+  const appear = applyShapeMods({
+    p,
+    x: anchorX,
+    y: anchorY,
+    r: Math.min(fpW, fpH),
+    opts: { alpha: baseAlpha, timeMs: lifecycle.timeMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
+  });
+  const drawAlpha = typeof appear.alpha === "number" ? appear.alpha : baseAlpha;
 
   // Resolve ground visibility from the row/bucket knobs the runtime actually passes.
   let showGround = opts.showGround !== false; // default true
@@ -263,6 +274,9 @@ export function drawSnow(
     const rTop = Math.round(cell * 0.06);
 
     p.push();
+    p.translate(appear.x, appear.y);
+    p.scale(appear.scaleX, appear.scaleY);
+    p.translate(-anchorX, -anchorY);
     p.translate(cx, cy);
     p.noStroke();
     p.fill(clamped.r, clamped.g, clamped.b, drawAlpha);
@@ -438,6 +452,9 @@ export function drawSnow(
 
   // Cloud body.
   p.push();
+  p.translate(appear.x, appear.y);
+  p.scale(appear.scaleX, appear.scaleY);
+  p.translate(-anchorX, -anchorY);
   p.translate(cx, cy);
   p.noStroke();
   p.fill(cloudRgb.r, cloudRgb.g, cloudRgb.b, drawAlpha);

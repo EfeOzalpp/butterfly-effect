@@ -40,6 +40,8 @@ export interface EngineStyle {
 export interface EngineInputs {
   liveAvg: number;
   spotlight: SpotlightSignal | null;
+  hoveredItemId: string | null;
+  selectedItemId: string | null;
 }
 
 // Field is the current payload of things the canvas should draw.
@@ -95,6 +97,8 @@ export function createEngineInputs(): EngineInputs {
   return {
     liveAvg: 0.5,
     spotlight: null,
+    hoveredItemId: null,
+    selectedItemId: null,
   };
 }
 

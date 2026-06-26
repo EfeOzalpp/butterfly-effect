@@ -16,6 +16,7 @@ import {
 } from "../../../../shapes/options";
 import { createDepthMaskDebugTracker } from "../../../debug";
 import { drawItemFromRegistry } from "../../../shape-adapter/draw";
+import { liveAvgBucketAvg, liveAvgBucketId } from "../shape/cache/bitmapKeys";
 import {
   canvasDpr,
   createOffscreenCache,
@@ -93,6 +94,7 @@ function maskCacheKey(args: {
     rounded(projection.cellW),
     rounded(projection.cellH),
     String(identity.shapeOccurrenceIndex ?? 0),
+    String(liveAvgBucketId(style.liveAvg)),
     String(style.darkMode ? 1 : 0),
     rounded(bounds.x),
     rounded(bounds.y),
@@ -127,17 +129,33 @@ function isAlwaysLiveDepthMask(policy: ShapeDepthMaskCachePolicy, shape: string)
   return policy.alwaysLiveShapes.includes(shape);
 }
 
+// Secondary map keyed by item.id so the hit-test path can look up any cached mask
+// without knowing the full cache key (colour, dpr, bounds, etc.).
+interface HitMaskEntry {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  bounds: OffscreenBounds;
+  dpr: number;
+}
+
 export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskCachePolicy) {
   const cache = createOffscreenCache<MaskBounds>();
   const fallbackKeys = new Map<string, string>();
+  const hitMasks = new Map<string, HitMaskEntry>();
   const bakeOpts: RuntimeShapeOptions = {};
   const debug = createDepthMaskDebugTracker();
   let frameTimeMs = Number.NaN;
   let bakesThisFrame = 0;
 
+  function registerHitMask(itemId: string, entry: OffscreenCacheEntry<MaskBounds>) {
+    const dpr = entry.canvas.width / Math.max(1, entry.bounds.w);
+    hitMasks.set(itemId, { canvas: entry.canvas, ctx: entry.ctx, bounds: entry.bounds, dpr });
+  }
+
   function clearCache() {
     const clearedCount = cache.clear();
     fallbackKeys.clear();
+    hitMasks.clear();
     debug.markCleared(clearedCount);
   }
 
@@ -145,7 +163,24 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     const result = cache.syncRenderTarget(p, dpr);
     if (result.changed) {
       fallbackKeys.clear();
+      hitMasks.clear();
       debug.markCleared(result.cleared);
+    }
+  }
+
+  // Returns true if (cssX, cssY) falls on an opaque pixel of the shape's mask,
+  // false if it's transparent, or null if no mask is cached yet (caller should
+  // fall back to rect-based hit detection).
+  function sampleHitMask(itemId: string, cssX: number, cssY: number): boolean | null {
+    const mask = hitMasks.get(itemId);
+    if (!mask) return null;
+    const cx = Math.round((cssX - mask.bounds.x) * mask.dpr);
+    const cy = Math.round((cssY - mask.bounds.y) * mask.dpr);
+    if (cx < 0 || cy < 0 || cx >= mask.canvas.width || cy >= mask.canvas.height) return false;
+    try {
+      return mask.ctx.getImageData(cx, cy, 1, 1).data[3] > 0;
+    } catch {
+      return null;
     }
   }
 
@@ -183,6 +218,11 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     const lifecycle = bakeOpts.lifecycle ?? (bakeOpts.lifecycle = {});
     const particles = bakeOpts.particles ?? (bakeOpts.particles = {});
     const pass = bakeOpts.pass ?? (bakeOpts.pass = {});
+    // Match the far-bitmap cache: bake with the quantized liveAvg so the mask
+    // silhouette always corresponds to the same variant as the visible bitmap.
+    if (!style.gradientRGBOverrideActive) {
+      style.liveAvg = liveAvgBucketAvg(style.liveAvg);
+    }
     style.alpha = 255;
     lifecycle.rootAppearK = 1;
     particles.particleStore = undefined;
@@ -223,6 +263,11 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     }
     if ((shapeLifecycle(opts).rootAppearK ?? 1) < 0.995) {
       debug.markSkippedAppear();
+      debug.maybeLog(cache.size, cache.pixels);
+      return;
+    }
+    const lc = shapeLifecycle(opts);
+    if ((lc.selectK ?? 0) > 0) {
       debug.maybeLog(cache.size, cache.pixels);
       return;
     }
@@ -310,6 +355,7 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
       fallbackKeys.set(fallbackKey, key);
     }
 
+    registerHitMask(item.id, entry);
     const ctx = p.drawingContext;
     ctx.save();
     ctx.globalAlpha = overlay.blend;
@@ -319,7 +365,9 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     debug.maybeLog(cache.size, cache.pixels);
   };
 
-  return Object.assign(drawShapeDepthOverlay, {
+  return {
+    draw: drawShapeDepthOverlay,
+    sampleHitMask,
     clear: clearCache,
-  });
+  };
 }

@@ -161,9 +161,9 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
 
   function setInputs(args: EngineInputsPayload = {}) {
     if (typeof args.liveAvg === "number") inputs.liveAvg = clamp01(args.liveAvg);
-    if ("spotlight" in args) {
-      inputs.spotlight = args.spotlight ?? null;
-    }
+    if ("spotlight" in args) inputs.spotlight = args.spotlight ?? null;
+    if ("hoveredItemId" in args) inputs.hoveredItemId = args.hoveredItemId ?? null;
+    if ("selectedItemId" in args) inputs.selectedItemId = args.selectedItemId ?? null;
   }
 
   function setFieldItems(nextItems: EngineFieldItem[] = [], options: EngineSetFieldItemsOptions = {}) {
@@ -275,9 +275,13 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     setVisible: setVisibleCanvas,
     setSceneProfile,
     stop,
+    sampleShapeHitMask: ticker.sampleShapeHitMask,
+    getSortedFieldItems: ticker.getSortedItems,
     get canvas() {
       return canvasEl;
     },
+    field,
+    layout: gridCache,
   };
 
   // Register this engine instance (stops any previous one for same mount/element)

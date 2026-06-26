@@ -334,8 +334,8 @@ export function drawClouds(
     opts: {
       alpha: finiteNumber(opts.cloudAlpha, 235),
       timeMs: lifecycle.timeMs,
-      liveAvg: style.liveAvg,
       rootAppearK: lifecycle.rootAppearK,
+      selectK: lifecycle.selectK,
     },
     mods: {
       appear: { anchor: 'center', ease: 'back', backOvershoot: 1.2 },

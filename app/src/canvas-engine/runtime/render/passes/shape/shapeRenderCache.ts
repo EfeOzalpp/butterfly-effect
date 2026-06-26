@@ -4,14 +4,15 @@ import { createShapeDepthOverlayRenderer } from "../depth";
 
 export function createShapeRenderCache(getPolicy: () => RenderCachePolicy) {
   const drawFarShapeBitmap = createFarShapeBitmapRenderer(() => getPolicy().farShapeBitmap);
-  const drawShapeDepthOverlay = createShapeDepthOverlayRenderer(() => getPolicy().shapeDepthMask);
+  const depthOverlay = createShapeDepthOverlayRenderer(() => getPolicy().shapeDepthMask);
 
   return {
     drawFarShapeBitmap,
-    drawShapeDepthOverlay,
+    drawShapeDepthOverlay: depthOverlay.draw,
+    sampleShapeHitMask: depthOverlay.sampleHitMask,
     clear() {
       drawFarShapeBitmap.clear();
-      drawShapeDepthOverlay.clear();
+      depthOverlay.clear();
     },
   };
 }

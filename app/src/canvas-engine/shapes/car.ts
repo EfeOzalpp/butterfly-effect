@@ -199,7 +199,7 @@ export function drawCarAsset(
       x: cx,
       y: wheelY,
       r,
-      opts: { alpha, timeMs: lifecycle.timeMs ?? p.millis(), liveAvg: u, rootAppearK: lifecycle.rootAppearK },
+      opts: { alpha, timeMs: lifecycle.timeMs ?? p.millis(), rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
     });
     p.push();
     p.translate(m.x, m.y);
@@ -226,7 +226,7 @@ export function drawCarAsset(
     x: cx,
     y: 0,
     r,
-    opts: { timeMs: lifecycle.timeMs ?? p.millis(), liveAvg: u },
+    opts: { timeMs: lifecycle.timeMs ?? p.millis() },
     mods: { translateOscY: { amp: oscAmp, speed: oscHz, phase: oscPhase } },
   });
   const bodyYOffset = isDepthMaskPass ? 0 : mBody.y;
@@ -530,7 +530,7 @@ export function drawCar(
     x: cx0,
     y: baseY,
     r,
-    opts: { alpha, timeMs: lifecycle.timeMs, liveAvg: style.liveAvg, rootAppearK: lifecycle.rootAppearK },
+    opts: { alpha, timeMs: lifecycle.timeMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
   });
 
   p.push();

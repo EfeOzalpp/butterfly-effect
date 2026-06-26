@@ -11,6 +11,8 @@ import type { SpotlightSignal } from "./hooks/signals";
 import type { EngineShapeLightSource } from "./runtime/engine/state";
 
 import { getHostDef, HOST_DEFS, type CanvasBounds, type HostId } from "./multi-canvas-setup/hostDefs";
+import { useCanvasPointerHit } from "./hooks/useCanvasPointerHit";
+import type { EngineFieldItem } from "./runtime/engine/field";
 
 export function EngineHost({
   id,
@@ -21,6 +23,8 @@ export function EngineHost({
   spotlight,
   fog,
   shapeLightSource,
+  onShapeHover,
+  onShapeClick,
 }: {
   id: HostId;
   open?: boolean;
@@ -30,6 +34,8 @@ export function EngineHost({
   spotlight?: SpotlightSignal;
   fog?: boolean;
   shapeLightSource?: EngineShapeLightSource | null;
+  onShapeHover?: (item: EngineFieldItem | null) => void;
+  onShapeClick?: (item: EngineFieldItem | null) => void;
 }) {
   const hostDef = React.useMemo(() => getHostDef(id), [id]);
 
@@ -106,6 +112,13 @@ export function EngineHost({
     if (!engine.ready.current) return;
     engine.controls.current?.setInputs({ liveAvg, spotlight });
   }, [engine, liveAvg, spotlight]);
+
+  useCanvasPointerHit(
+    engine,
+    onShapeHover ?? (() => {}),
+    onShapeClick ?? (() => {}),
+    { enabled: hostDef.pointerHit ?? false }
+  );
 
   return null;
 }

@@ -357,7 +357,7 @@ export function drawPower(
     x: anchorX,
     y: anchorY,
     r: Math.min(pxW, pxH),
-    opts: { alpha: baseAlpha, timeMs: lifecycle.timeMs, liveAvg: style.liveAvg, rootAppearK: lifecycle.rootAppearK },
+    opts: { alpha: baseAlpha, timeMs: lifecycle.timeMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
   });
 
   const alpha = (typeof m.alpha === 'number') ? m.alpha : baseAlpha;
@@ -408,7 +408,7 @@ export function drawPower(
     const bodyH = Math.max(Math.round(pxH * 0.16), Math.round(localTileH * 0.9));
     const bodyX = pxX + bodyMarginX;
     const bodyTop = platY - bodyH;
-    const roofRise = Math.round(Math.min(pxH * 0.10, localTileH * roofVar));
+    const roofRise = Math.round(Math.min(pxH * 0.07, localTileH * roofVar));
 
     p.noStroke();
     if (shouldDrawMass) {
@@ -416,7 +416,7 @@ export function drawPower(
       p.rect(bodyX, bodyTop, bodyW, bodyH);
     }
 
-    const xL = bodyX, xR = bodyX + bodyW, yTop = bodyTop + 1;
+    const xL = bodyX, xR = bodyX + bodyW, yTop = bodyTop;
     const highX = isLeftChimney ? xL : xR;
     const lowX  = isLeftChimney ? xR : xL;
 
@@ -709,7 +709,7 @@ export function drawPower(
 
     const rotorMods = applyShapeMods({
       p, x: hubCx, y: hubCy, r: hubR,
-      opts: { timeMs: lifecycle.timeMs, liveAvg: style.liveAvg },
+      opts: { timeMs: lifecycle.timeMs },
       mods: {
         rotation: { speed, phase },
         scale2D:  {

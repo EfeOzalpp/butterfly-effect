@@ -5,6 +5,10 @@ export interface LiveState {
   bornAtMs: number;
   appearMs?: number;
   appearStaggerMs?: number;
+  hoverStartMs?: number;
+  hoverEndMs?: number;
+  selectStartMs?: number;
+  selectEndMs?: number;
 }
 
 function footprintKey(footprint?: GridFootprint): string {

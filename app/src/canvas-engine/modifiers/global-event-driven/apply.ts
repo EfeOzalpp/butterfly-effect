@@ -1,10 +1,8 @@
-// Applies shape-level transforms before a shape draws itself.
-// This is the central runtime for appear, scale, translation, rotation, and opacity modifiers.
-
-import { clamp01 } from "./ranges";
+import { clamp01 } from "../shape-modifiers/ranges";
+import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "../shape-modifiers/transformMath";
+import type { ShapeMods } from "../shape-modifiers/types";
 import { resolveAppear } from "./appear";
-import type { ShapeMods } from "./types";
-import { applyAnchorShiftForScale, easeOutBack, easeOutCubic } from "./transformMath";
+import { selectScale } from "./select";
 
 interface ShapeModifierClock {
   millis(): number;
@@ -18,8 +16,8 @@ interface ApplyShapeModsOpts {
   opts?: {
     alpha?: number;
     timeMs?: number;
-    liveAvg?: number;
     rootAppearK?: number;
+    selectK?: number;
   };
   mods?: ShapeMods;
 }
@@ -28,7 +26,6 @@ function finiteOr(value: number | undefined, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-// Returns a resolved transform envelope. The shape still owns the actual drawing.
 export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeModsOpts) {
   const t = (typeof opts.timeMs === "number" ? opts.timeMs : p.millis()) / 1000;
 
@@ -203,6 +200,17 @@ export function applyShapeMods({ p, x, y, r, opts = {}, mods = {} }: ApplyShapeM
   if (mods.saturationOsc) {
     const { amp = 0.1, speed = 0.2, phase = 0 } = mods.saturationOsc;
     satFactor = 1 + amp * Math.sin(t * speed * Math.PI * 2 + phase);
+  }
+
+  const selectK = opts.selectK ?? 0;
+  if (selectK > 0) {
+    const s = selectScale(selectK);
+    const delta = r * (s - 1);
+    const { offX, offY } = applyAnchorShiftForScale("bottom-center", delta, delta);
+    mx += offX;
+    my += offY;
+    scaleX *= s;
+    scaleY *= s;
   }
 
   return { x: mx, y: my, r: mr, alpha, rotation, satFactor, scaleX, scaleY };

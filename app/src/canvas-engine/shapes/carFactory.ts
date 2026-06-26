@@ -181,7 +181,7 @@ const CF: CarFactoryTuning = {
   chimScaleYRange: [1, 0],
 
   // Roof
-  roofHk: 0.12,
+  roofHk: 0.08,
   roofOverhangK: 0.06,
   roofRadiusPx: 6,
 
@@ -328,7 +328,7 @@ export function drawCarFactory(
   const anchorY = y0 + H;
   const env = applyShapeMods({
     p, x: anchorX, y: anchorY, r: Math.min(W, H),
-    opts: { alpha: a, timeMs: tMs, liveAvg: u, rootAppearK: lifecycle.rootAppearK },
+    opts: { alpha: a, timeMs: tMs, rootAppearK: lifecycle.rootAppearK, selectK: lifecycle.selectK },
   });
   const alpha = (typeof env.alpha === 'number') ? env.alpha : a;
   const appearAlphaK = a > 0 ? clamp01(alpha / a) : 1;
@@ -394,11 +394,9 @@ export function drawCarFactory(
   const sideLeft  = ((f.c0 + f.r0) % 2) === 0; // true -> factory left, chimney right
   const bodyX     = sideLeft ? leftStart : (leftStart + chimW + gap);
 
-  // slight inward offset to pull chimney toward the body
-  const chimInset = detailUnit * 0.05;
   const chimX = sideLeft
-    ? (bodyX + factoryW + gap - chimInset)
-    : (leftStart + chimInset);
+    ? (bodyX + factoryW + gap)
+    : leftStart;
 
   // frame/window pads (larger window)
   const framePadPx  = Math.round(Math.max(2, Math.min(12, detailUnit * CF.framePadK)));
@@ -675,7 +673,7 @@ export function drawCarFactory(
           x: cx,
           y: wheelBaselineY,
           r: rBase,
-          opts: { alpha: Math.round(alpha * alphaK), timeMs: tMs, liveAvg: u },
+          opts: { alpha: Math.round(alpha * alphaK), timeMs: tMs },
           mods: { scale: { value: scaleK, anchor: 'bottom-center' } },
         });
 

@@ -18,6 +18,7 @@ export function drawItems(params: {
   nowMs: number;
   appearMs: number;
   appearStaggerMs: number;
+  selectedItemId: string | null;
   // Persistent per-item state lives outside this function so appear animation
   // does not restart every frame.
   liveStates: Map<string, LiveState>;
@@ -40,6 +41,7 @@ export function drawItems(params: {
     nowMs,
     appearMs,
     appearStaggerMs,
+    selectedItemId,
     liveStates,
     perShapeScale,
     baseR,
@@ -56,13 +58,54 @@ export function drawItems(params: {
   const opts = optsScratch ?? {};
   const staggerDenom = Math.max(1, items.length - 1);
 
+  const SELECT_MS = 10;
+
+  // selectedItem is rendered last so it draws on top of all other shapes.
+  let selectedItem: EngineFieldItem | null = null;
+  let selectedEasedK = 1;
+  let selectedReff = baseR;
+  let selectedOccurrenceIndex = 0;
+
+  function renderItem(it: EngineFieldItem, itemIndex: number, easedK: number, alphaK: number, rEff: number, occurrenceIndex: number) {
+    const state = liveStates.get(it.id)!;
+    copyRuntimeShapeOptionsInto(opts, baseOpts);
+
+    const projection = opts.projection ?? (opts.projection = {});
+    const style = opts.style ?? (opts.style = {});
+    const lifecycle = opts.lifecycle ?? (opts.lifecycle = {});
+    const identity = opts.identity ?? (opts.identity = {});
+    const pass = opts.pass ?? (opts.pass = {});
+
+    projection.footprint = it.footprint;
+    projection.pixelFootprint = it.pixelFootprint;
+    style.alpha = Math.round(235 * alphaK);
+    identity.seedKey = `${it.shape}|${it.id}`;
+    identity.shapeOccurrenceIndex = occurrenceIndex;
+    pass.renderPass = "color";
+    pass.maskColor = undefined;
+    pass.maskAlpha = undefined;
+    pass.depthTintColor = undefined;
+    pass.depthTintK = undefined;
+
+    let hoverK = 0;
+    let selectK = 0;
+    hoverK = state.hoverStartMs !== undefined && state.hoverEndMs === undefined ? 1 : 0;
+    if (state.selectStartMs !== undefined) {
+      selectK = state.selectEndMs !== undefined
+        ? 1 - clamp01((nowMs - state.selectEndMs) / SELECT_MS)
+        : clamp01((nowMs - state.selectStartMs) / SELECT_MS);
+    }
+    lifecycle.hoverK = hoverK;
+    lifecycle.selectK = selectK;
+
+    renderOne(it, rEff, opts, easedK);
+  }
+
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
     const it = items[itemIndex];
     let state = liveStates.get(it.id);
     if (!state) {
-      state = {
-        bornAtMs: nowMs,
-      };
+      state = { bornAtMs: nowMs };
       liveStates.set(it.id, state);
     }
 
@@ -93,26 +136,20 @@ export function drawItems(params: {
     const occurrenceIndex = shapeOccurrence.get(it.shape) ?? 0;
     shapeOccurrence.set(it.shape, occurrenceIndex + 1);
 
-    // Reuse one options object through the item pass. Shapes draw synchronously,
-    // so this avoids allocating a new options object for every item every frame.
-    copyRuntimeShapeOptionsInto(opts, baseOpts);
+    if (it.id === selectedItemId) {
+      // Defer to after all other items so it renders on top.
+      selectedItem = it;
+      selectedEasedK = easedK;
+      selectedReff = rEff;
+      selectedOccurrenceIndex = occurrenceIndex;
+      continue;
+    }
 
-    const projection = opts.projection ?? (opts.projection = {});
-    const style = opts.style ?? (opts.style = {});
-    const identity = opts.identity ?? (opts.identity = {});
-    const pass = opts.pass ?? (opts.pass = {});
+    renderItem(it, itemIndex, easedK, alphaK, rEff, occurrenceIndex);
+  }
 
-    projection.footprint = it.footprint;
-    projection.pixelFootprint = it.pixelFootprint;
-    style.alpha = Math.round(235 * alphaK);
-    identity.seedKey = `${it.shape}|${it.id}`;
-    identity.shapeOccurrenceIndex = occurrenceIndex;
-    pass.renderPass = "color";
-    pass.maskColor = undefined;
-    pass.maskAlpha = undefined;
-    pass.depthTintColor = undefined;
-    pass.depthTintK = undefined;
-
-    renderOne(it, rEff, opts, easedK);
+  // Render selected item last so it always appears above all other shapes.
+  if (selectedItem) {
+    renderItem(selectedItem, items.length - 1, selectedEasedK, 1, selectedReff, selectedOccurrenceIndex);
   }
 }

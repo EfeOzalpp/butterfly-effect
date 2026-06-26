@@ -345,8 +345,8 @@ export function drawHouse(
     opts: {
       alpha: baseAlpha,
       timeMs: lifecycle.timeMs,
-      liveAvg: style.liveAvg,
       rootAppearK: lifecycle.rootAppearK,
+      selectK: lifecycle.selectK,
     },
   });
 
@@ -414,17 +414,17 @@ export function drawHouse(
   const r8 = rand01(seed ^ 0x1f83d9ab); // panels: side
 
   const desiredBodyH = Math.round(availH * (0.5 + 0.4 * r1));
-  const roofHRaw = Math.round(localTileH * 0.15);
+  const roofHRaw = Math.round(localTileH * 0.10);
   const roofH = clampMinMax(
     roofHRaw,
     smallScale ? 1 : 2,
-    Math.max(1, Math.floor(availH * 0.28))
+    Math.max(1, Math.floor(availH * 0.20))
   );
   const minBodyH = smallScale
     ? Math.max(2, Math.round(localTileH * 0.9))
     : Math.max(5, Math.round(localTileH * 1.1));
-  const maxBodyH = Math.max(minBodyH, availH - roofH);
-  const bodyH = clampMinMax(desiredBodyH, minBodyH, maxBodyH);
+  const maxBodyH = Math.max(1, availH - roofH);
+  const bodyH = clampMinMax(desiredBodyH, Math.min(minBodyH, maxBodyH), maxBodyH);
   const bodyY = grassY - bodyH;
   const roofY = Math.max(pxY, bodyY - roofH);
 
