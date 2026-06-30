@@ -5,8 +5,8 @@ import { useCallback, useState } from 'react';
 
 import { DEFAULT_AVG, DEFAULT_SPOTLIGHT_SIGNAL } from './canvas-runtime-context';
 import { getSessionItem } from '../session';
-import type { Place } from '../../canvas-engine/grid-layout/occupancy';
-import type { EngineFieldItem } from '../../canvas-engine/runtime/engine/field';
+import type { Place } from '../../scene-canvas/grid-layout/occupancy';
+import type { EngineFieldItem } from '../../scene-canvas/runtime/engine/field';
 
 function normalizeAvg(avg: unknown) {
   return typeof avg === 'number' && Number.isFinite(avg) ? avg : DEFAULT_AVG;

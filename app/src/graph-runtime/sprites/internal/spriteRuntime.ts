@@ -1,7 +1,7 @@
 // graph-runtime/sprites/internal/spriteRuntime.ts
 import type { CanvasTexture } from '../../three';
 
-import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
+import { computeVisualStyle } from "../../../scene-canvas/modifiers/color-modifiers/style";
 
 import { DRAWERS } from '../selection/drawers';
 import {
@@ -10,7 +10,7 @@ import {
   PARTICLE_SHAPES,
   resolveParticleScaleBoost,
 } from '../api/shapeProfiles';
-import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
+import { deviceType, getViewportSize } from '../../../scene-canvas/shared/responsiveness';
 
 import { textureRegistry, type MakeArgs } from '../textures/cache/registry';
 

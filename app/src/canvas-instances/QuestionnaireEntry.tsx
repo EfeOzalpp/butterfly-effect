@@ -1,7 +1,7 @@
 // src/canvas-instances/QuestionnaireEntry.tsx
 
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
-import { EngineHost } from "../canvas-engine/EngineHost";
+import { EngineHost } from "../scene-canvas/EngineHost";
 
 export default function QuestionnaireEntry({ visible = true }: { visible?: boolean }) {
   const { liveAvg, reservedFootprints } = useCanvasRuntime();

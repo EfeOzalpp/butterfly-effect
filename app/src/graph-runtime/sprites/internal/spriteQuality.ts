@@ -1,4 +1,4 @@
-import type { DeviceType } from '../../../canvas-engine/shared/responsiveness';
+import type { DeviceType } from '../../../scene-canvas/shared/responsiveness';
 
 const MAX_TILE_BY_DEVICE: Record<DeviceType, number> = {
   mobile: 96,

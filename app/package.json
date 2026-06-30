@@ -29,7 +29,7 @@
     "start": "node -e \"process.env.NODE_ENV='production'; require('./dist-server/server/index.js')\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "lint:ci": "eslint src/canvas-engine src/graph-runtime/sprites",
+    "lint:ci": "eslint src/scene-canvas src/graph-runtime/sprites",
     "lint:all": "eslint .",
     "test": "jest"
   },

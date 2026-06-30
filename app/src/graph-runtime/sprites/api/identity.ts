@@ -1,5 +1,5 @@
-import { houseHasChimney } from '../../../canvas-engine/shapes/house';
-import { resolvePowerVisualKind, type PowerVisualKind } from '../../../canvas-engine/shapes/power';
+import { houseHasChimney } from '../../../scene-canvas/shapes/house';
+import { resolvePowerVisualKind, type PowerVisualKind } from '../../../scene-canvas/shapes/power';
 import { makeSpriteSeedKey } from '../internal/spritePolicy';
 import type { ShapeKey, SpriteAssignment, SpriteShapeProps } from '../types';
 

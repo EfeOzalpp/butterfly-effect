@@ -2,7 +2,7 @@
 // Global round-robin epoch scheduler. Allocates refresh ticks only to
 // visible shapes so the budget concentrates on what the camera sees.
 
-import { deviceType, getViewportSize } from "../../../canvas-engine/shared/responsiveness";
+import { deviceType, getViewportSize } from "../../../scene-canvas/shared/responsiveness";
 import { isConstrainedSpriteDevice } from "./spriteQuality";
 
 const TICK_MS = 120;        // scheduler fires every 120ms

@@ -12,7 +12,7 @@ import type { SpriteBleed, SpriteFootprint } from '../types';
 import {
   createParticleStore,
   type ParticleStore,
-} from '../../../canvas-engine/modifiers/particles';
+} from '../../../scene-canvas/modifiers/particles';
 
 // Static bridge: run a canvas-engine drawer into an offscreen canvas, then hand
 // that canvas to Three as a CanvasTexture.

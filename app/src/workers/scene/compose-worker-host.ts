@@ -2,9 +2,9 @@
 // placePoolItems (candidate scoring, occupancy, sorting) runs off the main thread.
 // Uses a requestId/Promise pattern since composition is on-demand, not per-frame.
 
-import type { ComposeOpts, PlacedItem } from "../../canvas-engine/scene-logic/types";
-import { buildFieldPrelude } from "../../canvas-engine/scene-logic/composeField";
-import { composeField } from "../../canvas-engine/scene-logic/composeField";
+import type { ComposeOpts, PlacedItem } from "../../scene-canvas/scene-logic/types";
+import { buildFieldPrelude } from "../../scene-canvas/scene-logic/composeField";
+import { composeField } from "../../scene-canvas/scene-logic/composeField";
 
 let instance: Worker | null = null;
 let nextRequestId = 0;

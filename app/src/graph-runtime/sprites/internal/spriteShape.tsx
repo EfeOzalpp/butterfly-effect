@@ -12,7 +12,7 @@ import {
 } from '../../three';
 import { useFrame } from '../../r3f';
 
-import { computeVisualStyle } from "../../../canvas-engine/modifiers/color-modifiers/style";
+import { computeVisualStyle } from "../../../scene-canvas/modifiers/color-modifiers/style";
 
 import type { ShapeKey, SpriteShapeProps, SpriteVec3 } from '../types';
 import {
@@ -27,20 +27,20 @@ import {
 } from '../internal/spritePolicy';
 
 import { DRAWERS } from '../selection/drawers';
-import { houseHasChimney } from '../../../canvas-engine/shapes/house';
+import { houseHasChimney } from '../../../scene-canvas/shapes/house';
 import {
   FOOTPRINTS,
   BLEED,
   PARTICLE_SHAPES,
   resolveParticleScaleBoost,
 } from '../api/shapeProfiles';
-import { deviceType, getViewportSize } from '../../../canvas-engine/shared/responsiveness';
+import { deviceType, getViewportSize } from '../../../scene-canvas/shared/responsiveness';
 
 import { makeTextureFromDrawer } from '../textures/makeTextureFromDrawer';
 import {
   createParticleStore,
   type ParticleStore,
-} from '../../../canvas-engine/modifiers/particles';
+} from '../../../scene-canvas/modifiers/particles';
 
 import {
   getStaticTexture,

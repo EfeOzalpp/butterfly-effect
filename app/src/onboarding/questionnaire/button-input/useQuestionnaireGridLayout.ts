@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useUiFlow } from "../../../app/state/ui-context";
 
-import { CANVAS_PADDING, resolvePaddingSpec } from "../../../canvas-engine/scene-rules/canvas-padding";
+import { CANVAS_PADDING, resolvePaddingSpec } from "../../../scene-canvas/scene-rules/canvas-padding";
 import {
   deviceType,
   getViewportSize,
-} from "../../../canvas-engine/shared/responsiveness";
+} from "../../../scene-canvas/shared/responsiveness";
 import {
   justifyContentForUiPlacement,
   makeCenteredSquareGrid,
@@ -15,7 +15,7 @@ import {
   type UiGridPlacementInput,
   uiGridPlacementToPx,
   usedRowsFromSpec,
-} from "../../../canvas-engine/grid-layout";
+} from "../../../scene-canvas/grid-layout";
 
 interface CanvasBox {
   width: number;

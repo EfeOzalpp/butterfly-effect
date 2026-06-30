@@ -2,9 +2,9 @@
 // Live canvas signals shared by questionnaire controls and canvas instances.
 
 import { createContext, useContext } from "react";
-import type { Place } from "../../canvas-engine/grid-layout/occupancy";
-import type { SpotlightSignal } from "../../canvas-engine/hooks/signals";
-import type { EngineFieldItem } from "../../canvas-engine/runtime/engine/field";
+import type { Place } from "../../scene-canvas/grid-layout/occupancy";
+import type { SpotlightSignal } from "../../scene-canvas/hooks/signals";
+import type { EngineFieldItem } from "../../scene-canvas/runtime/engine/field";
 
 export const DEFAULT_AVG = 0.5;
 export const DEFAULT_SPOTLIGHT_SIGNAL: SpotlightSignal = {

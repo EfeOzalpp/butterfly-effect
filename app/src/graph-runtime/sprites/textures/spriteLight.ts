@@ -1,4 +1,4 @@
-import type { SceneLightContext } from "../../../canvas-engine/modifiers/lighting";
+import type { SceneLightContext } from "../../../scene-canvas/modifiers/lighting";
 
 // Sprite textures are drawn offscreen, so they need their own light context
 // instead of reading the main canvas runtime's scene lighting.

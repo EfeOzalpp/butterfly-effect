@@ -1,7 +1,7 @@
 // src/canvas-instances/OnboardingEntry.tsx
 
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
-import { EngineHost } from "../canvas-engine/EngineHost";
+import { EngineHost } from "../scene-canvas/EngineHost";
 
 export default function CanvasEntry({ visible = true }: { visible?: boolean }) {
   const { liveAvg, reservedFootprints } = useCanvasRuntime();

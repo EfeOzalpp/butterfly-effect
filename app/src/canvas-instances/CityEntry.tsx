@@ -1,6 +1,6 @@
 // src/canvas-instances/CityEntry.tsx
 import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
-import { EngineHost } from "../canvas-engine/EngineHost";
+import { EngineHost } from "../scene-canvas/EngineHost";
 
 export default function CityOverlay({ open }: { open: boolean }) {
   const { liveAvg, reservedFootprints, setClickedShape } = useCanvasRuntime();

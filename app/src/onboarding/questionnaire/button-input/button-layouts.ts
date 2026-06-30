@@ -1,5 +1,5 @@
-import type { PlacementZone } from "../../../canvas-engine/scene-rules/placement-rules";
-import type { DeviceType } from "../../../canvas-engine/shared/responsiveness";
+import type { PlacementZone } from "../../../scene-canvas/scene-rules/placement-rules";
+import type { DeviceType } from "../../../scene-canvas/shared/responsiveness";
 
 type QuestionButtonPlacement = Omit<PlacementZone, "count"> & {
   w: number;

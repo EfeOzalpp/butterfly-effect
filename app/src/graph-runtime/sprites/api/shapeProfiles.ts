@@ -1,4 +1,4 @@
-﻿import { deviceType, getViewportSize, type DeviceType } from '../../../canvas-engine/shared/responsiveness';
+﻿import { deviceType, getViewportSize, type DeviceType } from '../../../scene-canvas/shared/responsiveness';
 import type { ShapeKey, SpriteBleed, SpriteBoundsPaddingSpec, SpriteFootprint } from '../types';
 
 // Per-shape sprite facts. Keep object/texture geometry here; camera-specific

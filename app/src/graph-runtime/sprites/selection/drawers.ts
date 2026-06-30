@@ -1,6 +1,6 @@
 // graph-runtime/sprites/selection/drawers.ts
 import type { ShapeKey } from './types';
-import type { ShapeDrawFn, ShapeDrawOptions, ShapeStyleOptions } from '../../../canvas-engine/shapes/types';
+import type { ShapeDrawFn, ShapeDrawOptions, ShapeStyleOptions } from '../../../scene-canvas/shapes/types';
 
 import {
   drawClouds,
@@ -14,7 +14,7 @@ import {
   drawSea,
   drawBus,
   drawTrees,
-} from '../../../canvas-engine/shapes/index';
+} from '../../../scene-canvas/shapes/index';
 
 // Sprites pass the shared timing/layout options, but not shape-specific palettes.
 // Keeping palette out of this contract lets each shape keep its own internal palette type.

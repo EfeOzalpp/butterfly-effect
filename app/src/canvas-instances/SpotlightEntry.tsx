@@ -1,5 +1,5 @@
-import { EngineHost } from "../canvas-engine/EngineHost";
-import type { SpotlightSignal } from "../canvas-engine/hooks/signals";
+import { EngineHost } from "../scene-canvas/EngineHost";
+import type { SpotlightSignal } from "../scene-canvas/hooks/signals";
 
 export default function SpotlightEntry({
   visible = true,

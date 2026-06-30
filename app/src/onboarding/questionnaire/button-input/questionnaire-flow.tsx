@@ -6,7 +6,7 @@ import CheckIcon from "../../../assets/svg/check/CheckIcon";
 import { BUTTON_QUESTIONS } from "./button-questions";
 import { getQuestionButtonPlacement } from "./button-layouts";
 import { useQuestionnaireGridLayout } from "./useQuestionnaireGridLayout";
-import type { Place } from "../../../canvas-engine/grid-layout/occupancy";
+import type { Place } from "../../../scene-canvas/grid-layout/occupancy";
 
 function reserveSingleTile(footprint: Place): Place {
   const bottomRow = footprint.r0 + footprint.h - 1;

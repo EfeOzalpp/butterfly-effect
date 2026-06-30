@@ -2,7 +2,7 @@
 import {
   makeOffscreenShapeSurface,
   type OffscreenShapeSurface,
-} from '../../../canvas-engine/offscreen-shape-surface';
+} from '../../../scene-canvas/offscreen-shape-surface';
 
 type CanvasFacade = OffscreenShapeSurface;
 

@@ -1,7 +1,7 @@
-import { placePoolItems } from "../../canvas-engine/scene-logic/place";
-import type { FieldPrelude } from "../../canvas-engine/scene-logic/composeField";
-import type { PlacedItem } from "../../canvas-engine/scene-logic/types";
-import type { CanvasPaddingSpec } from "../../canvas-engine/scene-rules/canvas-padding";
+import { placePoolItems } from "../../scene-canvas/scene-logic/place";
+import type { FieldPrelude } from "../../scene-canvas/scene-logic/composeField";
+import type { PlacedItem } from "../../scene-canvas/scene-logic/types";
+import type { CanvasPaddingSpec } from "../../scene-canvas/scene-rules/canvas-padding";
 
 type SerialSpec = Omit<CanvasPaddingSpec, "forbidden">;
 

@@ -2,7 +2,7 @@
 // Owns emitter state; receives step commands per frame; posts back serialized particle buffers.
 // Draw logic stays on the main thread — only pure math runs here.
 
-import { clamp01, hzLerp, makePRNG, mix, randRange } from "../../canvas-engine/modifiers/particles/utils";
+import { clamp01, hzLerp, makePRNG, mix, randRange } from "../../scene-canvas/modifiers/particles/utils";
 
 // Float layout per particle in output buffer: x y vx vy size len tLife
 // len is always 0 for particle-2 (dot-only).
