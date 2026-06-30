@@ -26,7 +26,7 @@
     "build:all": "npm run build && npm run build:ssr && npm run build:server",
     "build:analyze": "vite build --config vite.analyze.ts && start dist/stats.html",
     "preview": "vite preview",
-    "start": "node dist-server/server/index.js",
+    "start": "node -e \"process.env.NODE_ENV='production'; require('./dist-server/server/index.js')\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "lint:ci": "eslint src/canvas-engine src/graph-runtime/sprites",

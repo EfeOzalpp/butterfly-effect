@@ -115,9 +115,9 @@ export function EngineHost({
 
   useCanvasPointerHit(
     engine,
-    onShapeHover ?? (() => {}),
-    onShapeClick ?? (() => {}),
-    { enabled: hostDef.pointerHit ?? false }
+    onShapeHover,
+    onShapeClick,
+    { enabled: hostDef.pointerHit ?? false, hoverSignalEnabled: false, hoverCursor: "pointer" }
   );
 
   return null;

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { hitTestFieldItem } from "../grid-layout/viewportCoords";
 import type { EngineFieldItem } from "../runtime/engine/field";
 import type { useCanvasEngine } from "./useCanvasEngine";
@@ -16,12 +16,12 @@ let cursorOwnerSeq = 0;
 const pickingCursorOwners = new Set<number>();
 let savedDocumentCursor: string | null = null;
 
-function setDocumentPickingCursor(ownerId: number, active: boolean) {
+function setDocumentPickingCursor(ownerId: number, active: boolean, cursor: string) {
   const root = document.documentElement;
   if (active) {
     if (pickingCursorOwners.size === 0) savedDocumentCursor = root.style.cursor;
     pickingCursorOwners.add(ownerId);
-    root.style.cursor = "pointer";
+    root.style.cursor = cursor;
     return;
   }
 
@@ -56,15 +56,15 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 
 export function useCanvasPointerHit(
   engine: Engine,
-  onHover: (item: EngineFieldItem | null) => void,
-  onHit: (item: EngineFieldItem | null) => void,
-  { enabled = true }: { enabled?: boolean } = {}
+  onHover?: (item: EngineFieldItem | null) => void,
+  onHit?: (item: EngineFieldItem | null) => void,
+  {
+    enabled = true,
+    hoverSignalEnabled = true,
+    hoverCursor = "pointer",
+  }: { enabled?: boolean; hoverSignalEnabled?: boolean; hoverCursor?: string | null } = {}
 ) {
   const { ready, controls, readyTick } = engine;
-  const onHoverRef = useRef(onHover);
-  const onHitRef = useRef(onHit);
-  onHoverRef.current = onHover;
-  onHitRef.current = onHit;
 
   useEffect(() => {
     if (!enabled) return;
@@ -87,18 +87,27 @@ export function useCanvasPointerHit(
     let lastMoveY = 0;
     let lastMoveTime = 0;
 
+    const hoverCursorEnabled = hoverCursor !== null;
+    const shouldTrackHover = hoverSignalEnabled || hoverCursorEnabled;
+
+    if (!hoverSignalEnabled) {
+      engineControls.setInputs({ hoveredItemId: null });
+      onHover?.(null);
+    }
+
     const setHoverCursor = (active: boolean) => {
-      canvas.style.cursor = active ? "pointer" : "";
-      setDocumentPickingCursor(cursorOwnerId, active);
+      if (!hoverCursorEnabled) return;
+      canvas.style.cursor = active ? hoverCursor : "";
+      setDocumentPickingCursor(cursorOwnerId, active, hoverCursor);
     };
 
     const clearHover = () => {
       const hadHover = lastHoverId !== null;
       lastHoverId = null;
       setHoverCursor(false);
-      if (hadHover) {
+      if (hadHover && hoverSignalEnabled) {
         engineControls.setInputs({ hoveredItemId: null });
-        onHoverRef.current(null);
+        onHover?.(null);
       }
     };
 
@@ -147,6 +156,7 @@ export function useCanvasPointerHit(
     };
 
     const handlePointerMove = (e: PointerEvent) => {
+      if (!shouldTrackHover) return;
       if (isScrolling) return;
       if (isInteractiveTarget(e.target)) {
         clearHover();
@@ -171,8 +181,10 @@ export function useCanvasPointerHit(
       if (hitId !== lastHoverId) {
         lastHoverId = hitId;
         setHoverCursor(hit !== null);
-        engineControls.setInputs({ hoveredItemId: hitId });
-        onHoverRef.current(hit);
+        if (hoverSignalEnabled) {
+          engineControls.setInputs({ hoveredItemId: hitId });
+          onHover?.(hit);
+        }
       }
     };
 
@@ -181,7 +193,7 @@ export function useCanvasPointerHit(
       if (isInteractiveTarget(e.target)) {
         lastClickedId = null;
         engineControls.setInputs({ selectedItemId: null });
-        onHitRef.current(null);
+        onHit?.(null);
         return;
       }
 
@@ -190,11 +202,11 @@ export function useCanvasPointerHit(
       if (hitId !== null && hitId === lastClickedId) {
         lastClickedId = null;
         engineControls.setInputs({ selectedItemId: null });
-        onHitRef.current(null);
+        onHit?.(null);
       } else {
         lastClickedId = hitId;
         engineControls.setInputs({ selectedItemId: hitId });
-        onHitRef.current(hit);
+        onHit?.(hit);
       }
     };
 
@@ -202,17 +214,21 @@ export function useCanvasPointerHit(
       suppressCanvasDefault(e);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    if (shouldTrackHover) {
+      window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+      window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    }
     window.addEventListener("pointerdown", handlePointerDown, { capture: true });
     window.addEventListener("dblclick", handleDoubleClick, { capture: true });
     return () => {
-      window.removeEventListener("scroll", handleScroll, { capture: true });
-      window.removeEventListener("pointermove", handlePointerMove);
+      if (shouldTrackHover) {
+        window.removeEventListener("scroll", handleScroll, { capture: true });
+        window.removeEventListener("pointermove", handlePointerMove);
+      }
       window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
       window.removeEventListener("dblclick", handleDoubleClick, { capture: true });
       if (scrollCooldownId !== null) clearTimeout(scrollCooldownId);
       setHoverCursor(false);
     };
-  }, [enabled, ready, controls, readyTick]);
+  }, [enabled, hoverSignalEnabled, hoverCursor, onHover, onHit, ready, controls, readyTick]);
 }

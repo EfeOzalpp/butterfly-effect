@@ -276,7 +276,7 @@ export function startCanvasEngine(opts: StartCanvasEngineOpts = {}): EngineContr
     setSceneProfile,
     stop,
     sampleShapeHitMask: ticker.sampleShapeHitMask,
-    getSortedFieldItems: ticker.getSortedItems,
+    getSortedFieldItems: () => ticker.getSortedItems(),
     get canvas() {
       return canvasEl;
     },

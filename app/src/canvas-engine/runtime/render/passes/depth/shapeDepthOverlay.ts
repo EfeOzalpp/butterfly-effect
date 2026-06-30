@@ -147,7 +147,7 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
   let frameTimeMs = Number.NaN;
   let bakesThisFrame = 0;
 
-  function registerHitMask(itemId: string, entry: OffscreenCacheEntry<MaskBounds>) {
+  function registerHitMask(itemId: string, entry: OffscreenCacheEntry) {
     const dpr = entry.canvas.width / Math.max(1, entry.bounds.w);
     hitMasks.set(itemId, { canvas: entry.canvas, ctx: entry.ctx, bounds: entry.bounds, dpr });
   }

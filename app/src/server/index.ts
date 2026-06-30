@@ -46,6 +46,18 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(port, host, () => {
+const server = app.listen(port, host, () => {
   console.log(`Server listening on http://${host}:${String(port)}`);
+});
+
+server.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(
+      `Cannot start server: http://${host}:${String(port)} is already in use. ` +
+        "Stop the existing process or set PORT to another value before running npm start."
+    );
+    process.exit(1);
+  }
+
+  throw error;
 });

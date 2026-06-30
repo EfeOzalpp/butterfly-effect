@@ -67,7 +67,11 @@ export function drawItems(params: {
   let selectedOccurrenceIndex = 0;
 
   function renderItem(it: EngineFieldItem, itemIndex: number, easedK: number, alphaK: number, rEff: number, occurrenceIndex: number) {
-    const state = liveStates.get(it.id)!;
+    let state = liveStates.get(it.id);
+    if (!state) {
+      state = { bornAtMs: nowMs };
+      liveStates.set(it.id, state);
+    }
     copyRuntimeShapeOptionsInto(opts, baseOpts);
 
     const projection = opts.projection ?? (opts.projection = {});

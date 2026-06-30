@@ -344,7 +344,8 @@ html.theme-switching *::after {
 canvas { touch-action: none !important; }
 
 html::-webkit-scrollbar {
-  width: 8px;
+  width: 0;
+  height: 0;
 }
 
 html::-webkit-scrollbar-track {
