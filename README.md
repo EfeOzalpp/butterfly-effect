@@ -1,128 +1,55 @@
-# Butterfly Effect
+## Butterfly Effect, Gamified City Simulation
 
-A runtime-heavy sustainability app where survey answers shape an animated Canvas2D world and a shared WebGL results graph.
+Butterfly Effect features a custom 2.5D implementation on the Canvas2D API to render city scenery. Same system computes offscreen sprites for a Three.js (WebGL) instance for collective visualizations in 3D space.
 
-[Live site](https://butterflyeff3ct.online/)
+[![Live App](https://img.shields.io/badge/Live%20App-%23845f87?style=for-the-badge)](https://butterflyeff3ct.online/)
 
-## What The Product Does
+<p align="left">
+  <img src="gif/desktop-onboarding.gif" alt="Onboarding: Desktop view of the landing page and call to actions." width="64%" />
+  <img src="gif/tablet-questionnaire.gif" alt="Questionnaire: Tablet view of step with multi-select inputs changing city." width="34%" />
+</p>
 
-Butterfly Effect lets people answer a short sustainability questionnaire, then turns those responses into visual feedback:
+<br>
 
-- the onboarding canvas reacts to answer averages while the questionnaire is in progress
-- completed submissions are persisted through a backend write boundary
-- the shared graph view renders community results as interactive Three.js sprites
-- logs and widgets expose aggregate scores, rankings, and question-level trends
+- Users simulate changes in the scene based on multi-select input signals.
+- Once completed, individual results are added to the UI layer with `solo/team` toggle, tooltips and section filters.
+- Every previous user is part of the collective visualization with their (optional) messages.
+- Features a logs table, bar graphs with a personal anchor, and per question comparisons.
 
-The product goal is simple: make sustainability data feel immediate, visual, and inspectable without turning the interface into a dashboard-only experience.
+<br>
 
-## Why The Architecture Exists
+<p align="left">
+  <img src="gif/mobile-graph.gif" alt="Graph: Mobile view of the personalized gamification note, other users sprites, and logs panel." width="25%" />
+  <img src="gif/desktop-graph.gif" alt="Graph: Desktop view of the visualization, dropdown feature, logs and lightmode switch." width="73%" />
+</p>
 
-The app has two rendering jobs with different constraints.
+<br>
 
-The onboarding experience needs an authored animated world. It uses a custom Canvas2D engine with scene rules, placement rules, particle modifiers, fog, lighting, and shape drawers. This keeps the visual system editable while avoiding hardcoded one-off canvas scenes.
+## What would I do differently? 
+Although this version of the scene engine performed well on desktop and iOS devices, testing on lower-end Android hardware showed that some visual effects and redraw patterns were too expensive across the full device range.
 
-The results experience needs many crisp, animated representations of Sanity submissions. It uses a sprite pipeline over Three.js/WebGL. The pipeline quantizes visual inputs, reuses cached textures, budgets quality upgrades, and caps visible rows so desktop and mobile stay within memory limits.
+From that hands-on experience, I started building `Canvas Engine`: a specialized, renderer-agnostic system. The new engine separates draw instructions from the renderer through a rich `.txt`-based declarative notation, keeps renderer lifecycle and cache invalidation tightly controlled, and prevents the main loop from overreaching into application logic. It targets WebGPU first, with WebGL fallback support for older devices.
 
-React owns product state and UI transitions. The canvas engine and graph runtime receive explicit signals and prepared scene data instead of reading app intent directly.
+### Repository for the new system
+[![Canvas Engine](https://img.shields.io/badge/Canvas%20Engine-%236d976c?style=for-the-badge)](https://github.com/EfeOzalpp/canvas-engine)
 
-## System Overview
+<br>
 
-```txt
-React app state
-  -> onboarding, navigation, preferences, session state
+### Architecture
+| | |
+| :--- | :--- |
+| **Scene Canvas** | Grid layout, scene rules, shape modifiers parameterize `Canvas2D` draw arguments (transforms, colors, particles) from live input signals, and multi-canvas orchestration through a single requestAnimationFrame instance | 
+| **Sprite Pipeline** | Epoch texture update scheduler, quality upgrade scheduler, quantizes value that drives shape uniqueness for higher cache performance *(consumes scene canvas and Three.js)* |
+| **Three.js / WebGL** | Culling, 3D math, distance-based rotation speed and hitbox scaling with debounce during zoom, tooltip anchoring, and camera orchestration for the community graph *(consumes sprites)* |
+| **React + SSR API** | `renderToPipeableStream` for server-side rendering, client hydration and state management |
+| **Node.js** | Parses Vite build manifest, dynamically imports compiled SSR bundle |
+| **Express** | Routes to data validation before Sanity writes, rate limiter, serving index HTML, and streaming React components |
+| **Web Worker** | offloads scene placement computation, removing latency during user-input recomputation |
+| **Sanity CMS** | Anonymous document writes for survey responses; dataset reads for community graph and gamification copy |
+| **AWS EC2** | Production deployment |
 
-Canvas engine
-  -> scene rules
-  -> field composition
-  -> render loop
-  -> Canvas2D shape drawers
+<br>
 
-Graph runtime
-  -> Sanity rows
-  -> visible row budget
-  -> sprite texture cache
-  -> Three.js scene
+### 📬 Contact & Questions
 
-Backend/data
-  -> Express write API
-  -> Express read API
-  -> server Sanity upstream reads/writes
-  -> validation and mock fallback paths
-```
-
-## Key Folders To Inspect
-
-| Path | What It Owns |
-| --- | --- |
-| `app/src/app` | App providers, session state, runtime signals, preferences |
-| `app/src/onboarding` | Role flow, questionnaire flow, Canvas Engine information section |
-| `app/src/canvas-engine` | Canvas runtime, scene rules, placement, render passes, shape drawers |
-| `app/src/canvas-engine/scene-rules` | Authored backgrounds, padding, placement, fog, spotlight slides |
-| `app/src/canvas-engine/runtime/render/cache-policy` | Runtime shape bitmap/depth-mask cache policy |
-| `app/src/canvas-engine/runtime/engine/loop.ts` | Main Canvas2D frame pipeline |
-| `app/src/graph-runtime` | Results graph, dot graph UI, sprite runtime, visible-row shaping |
-| `app/src/graph-runtime/sprites` | Sprite texture generation, quality policy, cache/runtime internals |
-| `app/src/navigation/bottom/widgets` | Aggregate result widgets and bar graphs |
-| `app/src/domain/survey` | Shared survey row types and section groupings used by app and server |
-| `app/src/client-api/read-api` | Browser wrappers for same-origin Express read endpoints and mock fallback |
-| `app/src/client-api/response-api` | Browser wrappers for same-origin Express write endpoints |
-| `app/src/server` | Express API routes, validation, in-memory rate limiting, Sanity upstream access |
-
-## Engineering Highlights
-
-- Built a custom Canvas2D scene engine with multi-canvas hosts, scene profiles, responsive grid projection, authored placement presets, and reusable shape drawers.
-- Added scene-rule contracts for backgrounds, canvas padding, fog, placement, spotlight slides, foliage, and ambient particles, with runtime cache policy for shape bitmap/depth-mask reuse.
-- Implemented procedural zone placement so authored communities can spawn multiple shape types around shared anchors while respecting horizon bands and occupancy.
-- Built a Three.js sprite pipeline with quantized visual inputs, texture caching, quality budgets, visible-row limits, and prioritized personalized sprites.
-- Reduced duplicate rendering work by removing stale frozen texture paths and relying on active particle starts plus runtime texture scheduling.
-- Added production data boundaries with Express read/write APIs, Sanity upstream access, validation, mock fallback, Sentry, and PostHog.
-- Kept performance work tied to real stress cases: mobile sprite ceilings, repeated filter switching, zooming, local session recovery, and jitter/flicker audits.
-
-## Tradeoffs And Decisions
-
-- Canvas2D remains the shape authoring layer because the project depends on direct procedural drawing, small visual variations, and a p-like drawing facade.
-- Three.js/WebGL is used where many textured sprites need transforms, zooming, and graph interaction.
-- The engine uses explicit scene rules instead of embedding placement and atmosphere logic inside shape files.
-- Spotlight slides are authored as presets that compile into normal background, placement, padding, and particle variants. The runtime does not need to understand slides as a product concept.
-- Placement communities currently support tile-based radius controls. `radius.shape: "rect"` exists for authored bands; the default ellipse mode remains available for softer clusters.
-- The graph runtime caps visible rows rather than rendering every submission. New rows can enter the visible set without forcing all historical rows through the sprite pipeline.
-
-## Setup
-
-```bash
-cd app
-npm install
-npm run dev
-```
-
-> **Note:** `npm run dev` currently does not work with Vite 8 (Fast Refresh regression in v8.0.1). Awaiting a patch. Use Vite 7 locally if you need hot reload: `npm install vite@^7 @vitejs/plugin-react@^4 --save-dev`. Production builds run on Vite 8.
-
-Run the local API server separately when testing real writes:
-
-```bash
-cd app
-npm run dev:server
-```
-
-Server-only Sanity variables:
-
-```bash
-SANITY_READ=...
-SANITY_WRITE=...
-```
-
-Do not prefix Sanity tokens with `VITE_`; Vite env names are intended for browser-exposed values.
-
-## Verification
-
-```bash
-cd app
-npm run typecheck
-npm run lint:ci
-npm run build:all
-```
-
-## Reference Docs
-
-- [Canvas engine](./app/src/canvas-engine/README.md)
-- [Graph runtime](./app/src/graph-runtime/README.md)
+If you have any questions, feel free to reach out to me at: **eozalp.efe@gmail.com**
