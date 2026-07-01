@@ -11,7 +11,7 @@ Butterfly Effect features a custom 2.5D implementation on the Canvas2D API to re
 
 <br>
 
-- Users simulate changes in the scene based on multi-select input signals.
+- Users simulate changes in the scene by clicking or tapping multi-select input signals.
 - Once completed, individual results are added to the UI layer with `solo/team` toggle, tooltips and section filters.
 - Every previous user is part of the collective visualization with their (optional) messages.
 - Features a logs table, bar graphs with a personal anchor, and per question comparisons.
@@ -28,7 +28,9 @@ Butterfly Effect features a custom 2.5D implementation on the Canvas2D API to re
 ## What would I do differently? 
 Although this version of the scene engine performed well on desktop and iOS devices, testing on lower-end Android hardware showed that some visual effects and redraw patterns were too expensive across the full device range.
 
-From that hands-on experience, I started building `Canvas Engine`: a specialized, renderer-agnostic system. The new engine separates draw instructions from the renderer through a rich `.txt`-based declarative notation, keeps renderer lifecycle and cache invalidation tightly controlled, and prevents the main loop from overreaching into application logic. It targets WebGPU first, with WebGL fallback support for older devices.
+From that hands-on experience, I started building `Canvas Engine`: an unopinionated rendering engine. It separates draw instructions from the renderer through a rich `.txt`-based declarative notation, keeps renderer lifecycle and cache invalidation tightly controlled, and prevents the main loop from overreaching into application logic. It targets WebGPU first, with WebGL fallback support for older devices.
+
+<br>
 
 ### Repository for the new system
 [![Canvas Engine](https://img.shields.io/badge/Canvas%20Engine-%236d976c?style=for-the-badge)](https://github.com/EfeOzalpp/canvas-engine)
