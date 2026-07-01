@@ -11,7 +11,7 @@ Butterfly Effect features a custom 2.5D implementation on the Canvas2D API to re
 
 <br>
 
-- Users simulate changes in the scene based on multi-select input signals.
+- Users simulate changes in the scene by clicking or tapping multi-select input signals.
 - Once completed, individual results are added to the UI layer with `solo/team` toggle, tooltips and section filters.
 - Every previous user is part of the collective visualization with their (optional) messages.
 - Features a logs table, bar graphs with a personal anchor, and per question comparisons.
