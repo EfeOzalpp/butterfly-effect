@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { getSessionItem } from '../session';
 
 export default function useIdentityState() {
-  const [mySection, setMySection] = useState<string | null>(() => getSessionItem('be.mySection'));
-  const [myEntryId, setMyEntryId] = useState<string | null>(() => getSessionItem('be.myEntryId'));
-  const [myRole, setMyRole] = useState<string | null>(() => getSessionItem('be.myRole'));
+  const [mySection, setMySection] = useState<string | null>(null);
+  const [myEntryId, setMyEntryId] = useState<string | null>(null);
+  const [myRole, setMyRole] = useState<string | null>(null);
 
   useEffect(() => {
     const onStorageSync = () => {
@@ -17,6 +17,8 @@ export default function useIdentityState() {
         console.warn('[useIdentityState] Failed to sync identity from storage:', err);
       }
     };
+
+    onStorageSync();
 
     // Keep storage listener for cross-tab sync only
     window.addEventListener('storage', onStorageSync);

@@ -49,8 +49,8 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const showPicker = (observerMode || hasCompletedSurvey) && !isSurveyActive;
   const showObserverButton = !isSurveyActive || observerMode || hasCompletedSurvey;
   const observerLabel = observerMode || hasCompletedSurvey ? "Back" : "View now";
-  const savedEntryId = myEntryId ?? getSessionItem("be.myEntryId");
-  const savedSection = mySection ?? getSessionItem("be.mySection");
+  const savedEntryId = myEntryId;
+  const savedSection = mySection;
   const hasSavedSubmission = Boolean(savedEntryId && savedSection);
   const showSavedCityButton =
     hasSavedSubmission &&

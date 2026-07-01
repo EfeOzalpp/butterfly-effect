@@ -5,7 +5,6 @@ import NavBottom from "./bottom/nav-bottom";
 import { usePreferences } from "../app/state/preferences-context";
 import { useIdentity } from "../app/state/identity-context";
 import { useUiFlow } from "../app/state/ui-context";
-import { getSessionItem } from "../app/session";
 import "../styles/navigation.css";
 
 const PLACEMENT_TRANSITION_MS = 220;
@@ -28,8 +27,8 @@ const Navigation = () => {
   const transitionFrameRef = React.useRef<number | null>(null);
   const transitionTimeoutRef = React.useRef<number | null>(null);
 
-  const savedEntryId = myEntryId ?? getSessionItem("be.myEntryId");
-  const savedSection = mySection ?? getSessionItem("be.mySection");
+  const savedEntryId = myEntryId;
+  const savedSection = mySection;
   const savedHomeCityOpen =
     cityPanelOpen &&
     !!savedEntryId &&
