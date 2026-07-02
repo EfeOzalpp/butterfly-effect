@@ -5,8 +5,8 @@ An application that uses a custom 2.5D Canvas2D implementation to render an inte
 [![Live App](https://img.shields.io/badge/Live%20App-%23845f87?style=for-the-badge)](https://butterflyeff3ct.online/)
 
 <p align="left">
-  <img src="gif/desktop-onboarding.gif" alt="Onboarding: Desktop view of the landing page and call to actions." width="64%" />
-  <img src="gif/tablet-questionnaire.gif" alt="Questionnaire: Tablet view of step with multi-select inputs changing city." width="34%" />
+  <img src="gifs+images/desktop-onboarding.gif" alt="Onboarding: Desktop view of the landing page and call to actions." width="64%" />
+  <img src="gifs+images/tablet-questionnaire.gif" alt="Questionnaire: Tablet view of step with multi-select inputs changing city." width="34%" />
 </p>
 
 <br>
@@ -19,8 +19,9 @@ An application that uses a custom 2.5D Canvas2D implementation to render an inte
 <br>
 
 <p align="left">
-  <img src="gif/mobile-graph.gif" alt="Graph: Mobile view of the personalized gamification note, other users sprites, and logs panel." width="25%" />
-  <img src="gif/desktop-graph.gif" alt="Graph: Desktop view of the visualization, dropdown feature, logs and lightmode switch." width="73%" />
+  <img src="gifs+images/mobile-graph.gif" alt="Graph: Mobile view of the personalized gamification note, other users sprites, and logs panel." width="20.6%" />
+  <img src="gifs+images/mobile-city.png" alt="Graph: Desktop view of the visualization, dropdown feature, logs and lightmode switch." width="23%" />
+  <img src="gifs+images/desktop-graph.gif" alt="Graph: Desktop view of the visualization, dropdown feature, logs and lightmode switch." width="49.2%" />
 </p>
 
 <br>
