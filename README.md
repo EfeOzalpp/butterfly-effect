@@ -1,6 +1,6 @@
 ## Butterfly Effect, Gamified City Simulation
 
-Butterfly Effect features a custom 2.5D implementation on the Canvas2D API to render city scenery. Same system computes offscreen sprites for a Three.js (WebGL) instance for collective visualizations in 3D space.
+An application that uses a custom 2.5D Canvas2D implementation to render an interactive city scene. The same scene functions compute draw arguments and generate offscreen sprites for a Three.js/WebGL collective visualization in 3D space.
 
 [![Live App](https://img.shields.io/badge/Live%20App-%23845f87?style=for-the-badge)](https://butterflyeff3ct.online/)
 
