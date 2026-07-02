@@ -1,7 +1,7 @@
 // src/app/state/useSurveyDataState.ts
 // Owns Sanity survey rows plus the active section filter used by graph views.
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 
 import { getSessionItem, removeSessionItems, setSessionItem } from '../session';
 import { parentAggregateForSection } from '../../domain/survey/sections';
@@ -66,7 +66,9 @@ export default function useSurveyDataState({
   }, [mySection, setSection]);
 
   const subscribeToSurveyData = useCallback(() => {
-    setLoading(true);
+    startTransition(() => {
+      setLoading(true);
+    });
     let unsub = noopUnsubscribe;
     let closed = false;
 
@@ -78,16 +80,20 @@ export default function useSurveyDataState({
           limit: ALL_ROWS_LIMIT,
           onData: (rows: SurveyRow[]) => {
             const nextRows = mergeLocalRows(rows);
-            setAllRows(nextRows);
-            setLoading(false);
-            // Run redirect from fresh rows instead of waiting for a separate state effect.
-            applyPostSubmitRedirect(deriveSectionCounts(nextRows));
+            startTransition(() => {
+              setAllRows(nextRows);
+              setLoading(false);
+              // Run redirect from fresh rows instead of waiting for a separate state effect.
+              applyPostSubmitRedirect(deriveSectionCounts(nextRows));
+            });
           },
         });
       })
       .catch((error: unknown) => {
         if (closed) return;
-        setLoading(false);
+        startTransition(() => {
+          setLoading(false);
+        });
         console.error('[useSurveyDataState] failed to load survey data API:', error);
       });
 

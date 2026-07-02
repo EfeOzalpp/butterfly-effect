@@ -13,7 +13,9 @@ export default function ClientOnly({
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
+    React.startTransition(() => {
+      setMounted(true);
+    });
   }, []);
 
   return mounted ? <>{children}</> : <>{fallback}</>;

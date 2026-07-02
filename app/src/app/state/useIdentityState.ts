@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 
 import { getSessionItem } from '../session';
 
@@ -10,9 +10,15 @@ export default function useIdentityState() {
   useEffect(() => {
     const onStorageSync = () => {
       try {
-        setMyEntryId(getSessionItem('be.myEntryId'));
-        setMySection(getSessionItem('be.mySection'));
-        setMyRole(getSessionItem('be.myRole'));
+        const nextEntryId = getSessionItem('be.myEntryId');
+        const nextSection = getSessionItem('be.mySection');
+        const nextRole = getSessionItem('be.myRole');
+
+        startTransition(() => {
+          setMyEntryId(nextEntryId);
+          setMySection(nextSection);
+          setMyRole(nextRole);
+        });
       } catch (err) {
         console.warn('[useIdentityState] Failed to sync identity from storage:', err);
       }

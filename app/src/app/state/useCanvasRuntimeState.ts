@@ -1,7 +1,7 @@
 // src/app/state/useCanvasRuntimeState.ts
 // Stores the live score signal and reserved UI footprint data for the Canvas 2D scene.
 
-import { useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 
 import { DEFAULT_AVG, DEFAULT_SPOTLIGHT_SIGNAL } from './canvas-runtime-context';
 import { getSessionItem } from '../session';
@@ -44,7 +44,9 @@ export default function useCanvasRuntimeState() {
     if (stored === null) return;
     const parsed = parseFloat(stored);
     if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) {
-      _setLiveAvgState(parsed);
+      startTransition(() => {
+        _setLiveAvgState(parsed);
+      });
     }
   }, []);
 

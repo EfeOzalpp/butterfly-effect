@@ -1,7 +1,7 @@
 // src/app/state/useUiState.ts
 // Keeps UI-only state together so app-provider can focus on wiring contexts.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 import { getSessionItem, readStoredMode, setSessionItem } from '../session';
 
 import type { Mode, QuestionnaireNavState, SpotlightRequest } from './ui-context';
@@ -116,7 +116,9 @@ export default function useUiState() {
   // -- Persisted preferences --------------------------------------------------
   const [mode, setMode] = useState<Mode>('absolute');
   useEffect(() => {
-    setMode(readStoredMode('absolute'));
+    startTransition(() => {
+      setMode(readStoredMode('absolute'));
+    });
   }, []);
   useEffect(() => {
     setSessionItem('be.mode', mode);
@@ -124,7 +126,9 @@ export default function useUiState() {
 
   const [radarMode, setRadarMode] = useState<boolean>(false);
   useEffect(() => {
-    setRadarMode(getSessionItem('be.radarMode') === '1');
+    startTransition(() => {
+      setRadarMode(getSessionItem('be.radarMode') === '1');
+    });
   }, []);
   useEffect(() => {
     setSessionItem('be.radarMode', radarMode ? '1' : '0');

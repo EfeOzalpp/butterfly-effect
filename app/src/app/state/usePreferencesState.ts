@@ -1,7 +1,7 @@
 // src/app/state/usePreferencesState.ts
 // Theme preference is app state; sprite invalidation is hidden behind the sprite API.
 
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 
 import {
   applyThemeToDocument,
@@ -11,7 +11,9 @@ import {
 export default function usePreferencesState() {
   const [darkMode, setDarkMode] = useState<boolean>(true);
   useEffect(() => {
-    setDarkMode(readStoredDarkMode(true));
+    startTransition(() => {
+      setDarkMode(readStoredDarkMode(true));
+    });
   }, []);
   const didInitThemeRef = useRef(false);
   useEffect(() => {
