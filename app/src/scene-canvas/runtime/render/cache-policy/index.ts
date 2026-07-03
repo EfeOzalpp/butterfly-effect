@@ -16,6 +16,7 @@ const FAR_SHAPE_BITMAP_ALWAYS_LIVE = [
   "sun",
   "house",
   "sea",
+  "clouds",
   "carFactory",
 ] as const;
 
@@ -25,6 +26,7 @@ const SHAPE_DEPTH_MASK_ALWAYS_LIVE = [
   "power",
   "sea",
   "carFactory",
+  "clouds",
 ] as const;
 
 // Cache policy for runtime-rendered shape bitmaps and depth masks.
