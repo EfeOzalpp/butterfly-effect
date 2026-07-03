@@ -4,7 +4,7 @@ import { streamDocument } from "../server-rendering/streamDocument";
 import { gamificationCopyRoute } from "./routes/gamificationCopy";
 import { saveSoloMessageRoute } from "./routes/saveSoloMessage";
 import { saveUserResponseRoute } from "./routes/saveUserResponse";
-import { surveyResponsesRoute } from "./routes/surveyResponses";
+import { surveyResponseStreamRoute } from "./routes/surveyResponseStream";
 
 const app = express();
 
@@ -21,8 +21,7 @@ app.use(express.json({ limit: "8kb" }));
 app.get("/api/health", (_req, res) => {
   res.status(200).json({ ok: true });
 });
-// API based route: GET request initiates the function.
-app.get("/api/survey-responses", surveyResponsesRoute);
+app.get("/api/survey-responses/stream", surveyResponseStreamRoute);
 app.get("/api/gamification-copy", gamificationCopyRoute);
 app.post("/api/save-user-response", saveUserResponseRoute);
 app.post("/api/save-solo-message", saveSoloMessageRoute);

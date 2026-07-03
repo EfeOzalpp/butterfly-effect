@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { optionalEnv } from "../env";
 import { consumeRateLimits, type RateRule } from "../security/rateLimiter";
 import { getClientAddress } from "../security/requestIdentity";
+import { patchSurveyResponseRowMessage } from "../services/surveyResponseFeed";
 import { sanityWriteClient } from "../upstreams/sanity/writeClient";
 import { editTokenHash, sha256 } from "../utils/hash";
 import { isRecord, readOptionalId, rejectDisallowedOrigin } from "./shared";
@@ -159,10 +160,17 @@ export async function saveSoloMessageRoute(req: Request, res: Response) {
       visibility: "sync",
     });
 
-    res.status(200).json({
+    const responseBody = {
       _id: updated._id,
       ...(updated.soloMessage ? { soloMessage: updated.soloMessage } : {}),
       ...(updated.soloMessageUpdatedAt ? { soloMessageUpdatedAt: updated.soloMessageUpdatedAt } : {}),
+    };
+
+    res.status(200).json(responseBody);
+    patchSurveyResponseRowMessage({
+      responseId: updated._id,
+      soloMessage: updated.soloMessage,
+      soloMessageUpdatedAt: updated.soloMessageUpdatedAt,
     });
   } catch (error) {
     console.error("[save-solo-message] failed:", error);

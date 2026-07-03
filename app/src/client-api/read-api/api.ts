@@ -1,5 +1,5 @@
 // src/client-api/read-api/api.ts
-// Survey reads through the same-origin backend, with mock-data fallback when reads are unavailable.
+// Survey reads through the same-origin backend SSE stream, with mock-data fallback when reads are unavailable.
 
 import {
   enableMockReadFallback,
@@ -14,18 +14,8 @@ interface SubscribeSurveyDataArgs {
   onData: (rows: SurveyRow[]) => void;
 }
 
-interface SurveyResponsesBody {
+interface SurveyResponsesEvent {
   rows?: unknown;
-}
-
-class ReadApiError extends Error {
-  readonly status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = 'ReadApiError';
-    this.status = status;
-  }
 }
 
 function isSurveyRows(value: unknown): value is SurveyRow[] {
@@ -36,35 +26,19 @@ function isSurveyRows(value: unknown): value is SurveyRow[] {
   });
 }
 
-function shouldFallbackToMock(error: unknown) {
-  if (!(error instanceof ReadApiError)) return false;
-  return error.status === 403 || error.status === 429 || error.status >= 500;
+function readRowsFromEvent(event: MessageEvent) {
+  const body = JSON.parse(event.data as string) as SurveyResponsesEvent;
+  if (!isSurveyRows(body.rows)) {
+    throw new Error('Survey stream returned an invalid snapshot');
+  }
+  return body.rows;
 }
 
-async function fetchSurveyRows(section: string, limit: number): Promise<SurveyRow[]> {
-  const url = new URL('/api/survey-responses', window.location.origin);
+function streamUrl(section: string, limit: number) {
+  const url = new URL('/api/survey-responses/stream', window.location.origin);
   url.searchParams.set('section', section);
   url.searchParams.set('limit', String(limit));
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-    },
-  });
-  const body: SurveyResponsesBody = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new ReadApiError(
-      `Survey read API failed with status ${String(response.status)}`,
-      response.status
-    );
-  }
-
-  if (!isSurveyRows(body.rows)) {
-    throw new ReadApiError('Survey read API returned an invalid response', 502);
-  }
-
-  return body.rows;
+  return url;
 }
 
 export function subscribeSurveyData({
@@ -78,51 +52,38 @@ export function subscribeSurveyData({
 
   let closed = false;
   let mockUnsub: Unsubscribe | null = null;
-  let timer: number | null = null;
-
-  const clearTimer = () => {
-    if (timer === null) return;
-    window.clearTimeout(timer);
-    timer = null;
-  };
+  let source: EventSource | null = new EventSource(streamUrl(section, limit));
 
   const switchToMock = (error: unknown) => {
     if (closed || mockUnsub) return;
-    clearTimer();
+    source?.close();
+    source = null;
     enableMockReadFallback(error);
     mockUnsub = subscribeMockSurveyData({ section, limit, onData });
   };
 
-  const schedule = () => {
-    clearTimer();
+  source.addEventListener('snapshot', (event) => {
     if (closed || mockUnsub) return;
-    timer = window.setTimeout(() => {
-      void refresh();
-    }, 6000);
-  };
-
-  const refresh = async () => {
     try {
-      const rows = await fetchSurveyRows(section, limit);
-      if (closed || mockUnsub) return;
-      onData(rows);
-      schedule();
+      onData(readRowsFromEvent(event as MessageEvent));
     } catch (error) {
-      if (closed) return;
-      if (shouldFallbackToMock(error)) {
-        switchToMock(error);
-        return;
-      }
-      console.error('[read-api] survey rows', error);
-      schedule();
+      switchToMock(error);
     }
-  };
+  });
 
-  void refresh();
+  source.addEventListener('stream-error', (event) => {
+    if (closed || mockUnsub) return;
+    switchToMock(new Error((event as MessageEvent).data as string));
+  });
+
+  source.onerror = (error) => {
+    if (closed || mockUnsub) return;
+    console.error('[read-api] survey response stream', error);
+  };
 
   return () => {
     closed = true;
-    clearTimer();
+    source?.close();
     mockUnsub?.();
   };
 }

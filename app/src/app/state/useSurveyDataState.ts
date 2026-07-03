@@ -16,6 +16,35 @@ const ALL_ROWS_LIMIT = 5000;
 const VISIBLE_ROWS_LIMIT = 300;
 const FIRST_SECTION_SUBMISSION_COUNT = 1;
 const noopUnsubscribe: () => void = () => undefined;
+const OPTIMISTIC_MATCH_WINDOW_MS = 5 * 60 * 1000;
+
+function closeNumber(a?: number, b?: number) {
+  if (a === undefined || b === undefined) return a === b;
+  return Math.abs(a - b) < 0.0005;
+}
+
+function rowTimestamp(row: SurveyRow) {
+  const raw = row.submittedAt ?? row._createdAt;
+  const timestamp = Date.parse(raw);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function matchesOptimisticRow(remote: SurveyRow, optimistic: SurveyRow) {
+  if (remote._id.startsWith('pending-')) return false;
+  if (!optimistic._id.startsWith('pending-')) return false;
+  if (remote.section !== optimistic.section) return false;
+  if (!closeNumber(remote.q1, optimistic.q1)) return false;
+  if (!closeNumber(remote.q2, optimistic.q2)) return false;
+  if (!closeNumber(remote.q3, optimistic.q3)) return false;
+  if (!closeNumber(remote.q4, optimistic.q4)) return false;
+  if (!closeNumber(remote.q5, optimistic.q5)) return false;
+  if (!closeNumber(remote.avgWeight, optimistic.avgWeight)) return false;
+
+  const remoteTime = rowTimestamp(remote);
+  const optimisticTime = rowTimestamp(optimistic);
+  if (!remoteTime || !optimisticTime) return true;
+  return Math.abs(remoteTime - optimisticTime) <= OPTIMISTIC_MATCH_WINDOW_MS;
+}
 
 export default function useSurveyDataState({
   mySection,
@@ -37,7 +66,13 @@ export default function useSurveyDataState({
 
     const remoteIds = new Set(rows.map((row) => row._id));
     return localRows.reduce(
-      (nextRows, row) => remoteIds.has(row._id) ? nextRows : upsertSurveyRow(nextRows, row),
+      (nextRows, row) => {
+        if (remoteIds.has(row._id)) return nextRows;
+        if (row._id.startsWith('pending-') && rows.some((remote) => matchesOptimisticRow(remote, row))) {
+          return nextRows;
+        }
+        return upsertSurveyRow(nextRows, row);
+      },
       rows
     );
   }, []);
