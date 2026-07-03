@@ -5,7 +5,7 @@ import type { RoleValue } from ".";
 const DISPLAY: Record<RoleValue, string> = {
   student: "Step In",
   staff: "Step In",
-  visitor: "Let's Begin",
+  visitor: "Start Survey",
 };
 
 interface RoleStepProps {
