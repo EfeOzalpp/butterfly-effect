@@ -1,4 +1,4 @@
-## Butterfly Effect, Gamified City Simulation
+## Butterfly Effect: Gamified City Simulation
 
 An application that uses a custom 2.5D Canvas2D implementation to render an interactive city scene. The same scene functions compute draw arguments and generate offscreen sprites for a Three.js/WebGL collective visualization in 3D space.
 
@@ -26,7 +26,7 @@ An application that uses a custom 2.5D Canvas2D implementation to render an inte
 
 <br>
 
-## What would I do differently? 
+## What would I improve further?
 Although this version of the scene engine performed well on desktop and iOS devices, testing on lower-end Android hardware showed that some visual effects and redraw patterns were too expensive across the full device range.
 
 From that hands-on experience, I started building `Canvas Engine`: an unopinionated rendering engine. It separates draw instructions from the renderer through a rich `.txt`-based declarative notation, keeps renderer lifecycle and cache invalidation tightly controlled, and prevents the main loop from overreaching into application logic. It targets WebGPU first, with WebGL fallback support for older devices.
@@ -49,7 +49,14 @@ From that hands-on experience, I started building `Canvas Engine`: an unopiniona
 | **Express** | Routes to data validation before Sanity writes, rate limiter, serving index HTML, and streaming React components |
 | **Web Worker** | offloads scene placement computation, removing latency during user-input recomputation |
 | **Sanity CMS** | Anonymous document writes for survey responses; dataset reads for community graph and gamification copy |
-| **AWS EC2** | Production deployment |
+| **AWS EC2** | Production deployment with automated deploys |
+
+<br>
+
+### Navigation
+
+- [Scene Canvas](app/src/scene-canvas)
+- [Graph Runtime](app/src/graph-runtime)
 
 <br>
 
