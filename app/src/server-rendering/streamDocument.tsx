@@ -71,6 +71,7 @@ function HtmlDocument({
           name="description"
           content="Butterfly Effect is a playful project shaped by quick questions and shared responses."
         />
+        <link rel="canonical" href="https://butterflyeff3ct.online/" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8f3ef" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222227" />
         <meta name="mobile-web-app-capable" content="yes" />
