@@ -344,6 +344,7 @@ export default function GamificationPersonalized({
             ) : null}
             {mode === 'absolute' ? (
               <>
+                <p className="solo-map-note">Your shape is added amongst others</p>
                 {shapeCopy ? (
                   <h4 className="gam-subline">{shapeCopy}</h4>
                 ) : normalizedSavedMessage ? (

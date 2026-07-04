@@ -33,6 +33,14 @@
 .gam-copy {
   margin: 0.2rem 0;
 }
+.solo-map-note {
+  width: 100%;
+  margin: 0 0 -0.1rem;
+  color: var(--ui-text-muted);
+  font-size: var(--type-label-size);
+  line-height: var(--type-body-line);
+  text-align: left;
+}
 .gam-team-story {
   margin: 0;
   color: var(--ui-text);
