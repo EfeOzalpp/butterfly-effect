@@ -23,7 +23,7 @@ export default function RoleStep({ value, onChange, onNext, error }: RoleStepPro
   return (
     <section className="survey survey-step role-select">
         <div className="onboarding">
-          <h2 className="welcome-text">The city scene changes as you select your answers.</h2>
+          <h2 className="welcome-text">City scenery changes as you select your answers.</h2>
 
           <RolePicker value={value} onChange={onChange} errorId={errorId} />
 
