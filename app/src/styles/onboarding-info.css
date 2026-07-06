@@ -21,7 +21,7 @@
 }
 
 .survey-section, .survey-step, .onboarding { width: 100%; }
-.user-flow { width: 100%; display: flex; inset: 0; align-items: center; pointer-events: none; z-index: 6; }
+.user-flow { width: 100%; display: flex; inset: 0; align-items: center; z-index: 6; }
 .user-flow.questionnaire-active { max-width: 100vw; overflow: hidden; overflow: clip; }
 .button-wrap { display: flex; justify-content: center; align-self: stretch; }
 .error-container, .error-container h2, .error-container p { color: var(--ui-error); width: 100%; text-align: center; }

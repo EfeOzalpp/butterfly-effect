@@ -23,7 +23,7 @@ export default function RoleStep({ value, onChange, onNext, error }: RoleStepPro
   return (
     <section className="survey survey-step role-select">
         <div className="onboarding">
-          <h2 className="welcome-text">See your answers shape the scenery, then receive a shape that joins the others.</h2>
+          <h2 className="welcome-text">See your answers change the scenery, then receive a shape that joins the others.</h2>
 
           <RolePicker value={value} onChange={onChange} errorId={errorId} />
 

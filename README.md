@@ -5,8 +5,8 @@ An application that uses a custom 2.5D Canvas2D implementation to render an inte
 [![Live App](https://img.shields.io/badge/Live%20App-%23845f87?style=for-the-badge)](https://butterflyeff3ct.online/)
 
 <p align="left">
-  <img src="gifs+images/desktop-onboarding.gif" alt="Onboarding: Desktop view of the landing page and call to actions." width="64%" />
-  <img src="gifs+images/tablet-questionnaire.gif" alt="Questionnaire: Tablet view of step with multi-select inputs changing city." width="34%" />
+  <img src="gifs+images/desktop-onboarding.gif" alt="Onboarding: Desktop view of the landing page and call to actions." width="58%" />
+  <img src="gifs+images/tablet-questionnaire.gif" alt="Questionnaire: Tablet view of step with multi-select inputs changing city." width="30%" />
 </p>
 
 <br>

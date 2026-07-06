@@ -656,7 +656,7 @@ export const START_PLACEMENTS: ScenePlacementRules = {
         center: { x: 0.5, y: 0.7 },
         radius: { tiles: 4, xDistort: 6, yDistort: 2 },
         shapes: {
-          villa: { count: count(0, 1, 1), quota: S.villa },
+          villa: { count: count(0, 1, 3), quota: S.villa },
           trees: { count: count(1, 2, 6), quota: S.trees },
           car: { count: count(1, 1, 1), quota: S.car },
           house: { count: count(0, 1, 0), quota: S.house },
