@@ -46,11 +46,11 @@ export default function CanvasInfo() {
   }, [nextSpotlight, spotlight.index, spotlight.paused, inView]);
 
   return (
-    <aside ref={asideRef} className="onboarding-info canvas-info" aria-label="Canvas Engine information">
-      <section className="canvas-info__slider" aria-label="Canvas Engine preview">
+    <aside ref={asideRef} className="onboarding-info canvas-info" aria-label="Scene Canvas information">
+      <section className="canvas-info__slider" aria-label="Scene Canvas preview">
         <div className="canvas-info__spotlight-frame">
           <SpotlightEntry spotlight={spotlight} liveAvg={spotlightLiveAvg} />
-          <div className="ui-icon-nav canvas-info__slider-controls" aria-label="Canvas Engine preview controls">
+          <div className="ui-icon-nav canvas-info__slider-controls" aria-label="Scene Canvas preview controls">
             <div className="canvas-info__liveavg-control">
               <div className="canvas-info__liveavg-track" aria-hidden="true" />
               <input
@@ -91,10 +91,10 @@ export default function CanvasInfo() {
 
       <section className="canvas-info__information">
         <div className="canvas-info-div">
-          <h3 className="canvas-info__eyebrow">A custom engine for living scenes.</h3>
+          <h3 className="canvas-info__eyebrow">Like the scene system?</h3>
           <p className="canvas-info__copy">
-            <span>Butterfly Effect uses a Canvas2D rendering engine built for compositions with depth and motion.</span>
-            <span>Try it out for yourself in your projects, contribute on GitHub or feel free to reach out at efe.ozalp@canvas-engine.com.</span>
+            <span>Butterfly Effect's city is powered by Scene Canvas, the custom Canvas2D system behind the live scenery and shape previews.</span>
+            <span>I'm turning those lessons into Canvas Engine: a cleaner, reusable renderer for interactive visual tools. Contribute on GitHub or reach out at efe.ozalp@canvas-engine.com.</span>
           </p>
           <div className="canvas-info__actions">
             <a
@@ -102,10 +102,11 @@ export default function CanvasInfo() {
               href="https://github.com/EfeOzalpp/canvas-engine"
               target="_blank"
               rel="noreferrer"
-              data-label="Repository"
+              aria-label="Open Canvas Engine repository"
+              data-label="View Canvas Engine"
             >
-              <span className="canvas-engine-link__ghost" aria-hidden="true">Repository</span>
-              <span className="canvas-engine-link__inner">Repository</span>
+              <span className="canvas-engine-link__ghost" aria-hidden="true">View Canvas Engine</span>
+              <span className="canvas-engine-link__inner">View Canvas Engine</span>
             </a>
           </div>
         </div>
