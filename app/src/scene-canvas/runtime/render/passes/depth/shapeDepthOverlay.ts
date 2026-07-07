@@ -30,6 +30,11 @@ import {
 type MaskBounds = OffscreenBounds;
 type CachedMask = OffscreenCacheEntry;
 
+interface ShapeDepthOverlay {
+  color: RGB;
+  blend: number;
+}
+
 function resolveMaskBounds(item: EngineFieldItem, rEff: number, opts: RuntimeShapeOptions): MaskBounds | null {
   const projection = shapeProjection(opts);
   const cell = finiteNumber(projection.cell, rEff);
@@ -65,7 +70,7 @@ function colorKey(color: RGB) {
   return `${String(color.r)},${String(color.g)},${String(color.b)}`;
 }
 
-function depthOverlayFromOptions(opts: RuntimeShapeOptions) {
+function depthOverlayFromOptions(opts: RuntimeShapeOptions): ShapeDepthOverlay | null {
   const pass = shapePass(opts);
   const color = pass.depthTintColor;
   const blend = pass.depthTintK;
@@ -249,8 +254,9 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     rEff: number;
     opts: RuntimeShapeOptions;
     shapeWasDrawnLive: boolean;
+    overlayOverride?: ShapeDepthOverlay;
   }) {
-    const { p, shapeRegistry, item, rEff, opts, shapeWasDrawnLive } = args;
+    const { p, shapeRegistry, item, rEff, opts, shapeWasDrawnLive, overlayOverride } = args;
     const policy = getPolicy();
     const timeMs = shapeLifecycle(opts).timeMs ?? performance.now();
     syncFrameBudget(timeMs);
@@ -267,12 +273,12 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
       return;
     }
     const lc = shapeLifecycle(opts);
-    if ((lc.selectK ?? 0) > 0) {
+    if ((lc.selectK ?? 0) > 0 && !overlayOverride) {
       debug.maybeLog(cache.size, cache.pixels);
       return;
     }
 
-    const overlay = depthOverlayFromOptions(opts);
+    const overlay = overlayOverride ?? depthOverlayFromOptions(opts);
     if (!overlay) return;
     if (overlay.blend < policy.minBlend) {
       debug.markSkippedBlend();
@@ -295,7 +301,7 @@ export function createShapeDepthOverlayRenderer(getPolicy: () => ShapeDepthMaskC
     const fallbackKey = maskFallbackKey({ item, bounds, dpr, color: overlay.color });
     // Keep the mask animation policy matched to the visible shape.
     // If far-shape LOD froze the color pass, the depth mask must freeze too.
-    const alwaysLiveMask = shapeWasDrawnLive && isAlwaysLiveDepthMask(policy, item.shape);
+    const alwaysLiveMask = overlayOverride != null || (shapeWasDrawnLive && isAlwaysLiveDepthMask(policy, item.shape));
     let entry = cache.get(key);
 
     if (!entry) {

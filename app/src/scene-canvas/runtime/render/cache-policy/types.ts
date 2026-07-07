@@ -6,6 +6,7 @@ export interface FarShapeBitmapCachePolicy {
   maxPixelsPerCanvasPixel: number;
   maxBakesPerFrame: number;
   alwaysLiveShapes: readonly string[];
+  cacheBelowSizeK?: Partial<Record<string, number>>;
 }
 
 export interface ShapeDepthMaskCachePolicy {

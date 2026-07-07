@@ -40,6 +40,14 @@ export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
     maxBakesPerFrame: 48,
     // These shapes keep moving or emitting particles, so distance caching would freeze them.
     alwaysLiveShapes: FAR_SHAPE_BITMAP_ALWAYS_LIVE,
+    // Clouds stay animated while readable, but tiny horizon clouds can freeze.
+    cacheBelowSizeK: {
+      clouds: 0.4,
+      snow: 0.2,
+      power: 0.25,
+      house: 0.25,
+      carFactory: 0.25,
+    },
   },
   shapeDepthMask: {
     // Total cached mask backing pixels scale with the visible canvas.

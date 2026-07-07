@@ -35,7 +35,6 @@ import {
 import { resolveShapeDepthTint } from "../render/passes/depth";
 import { createSceneLightContext } from "../../modifiers/index";
 import { hoverBrightnessAdd } from "../../modifiers/global-event-driven/hover";
-import { selectBrightnessAdd } from "../../modifiers/global-event-driven/select";
 
 import { drawItemFromRegistry } from "../shape-adapter/draw";
 import { shapeRegistrySupportsRenderPass, type RuntimeShapeServices } from "../shape-adapter/registry";
@@ -51,6 +50,11 @@ import type { EngineFieldItem } from "./field";
 import type { LiveState } from "./itemLifecycle";
 import type { EngineEffectState, EngineRuntimeState } from "./state";
 import type { EngineSceneSource } from "./types";
+
+const SELECTED_SHAPE_DEPTH_OVERLAY = {
+  color: { r: 255, g: 255, b: 255 },
+  blend: 0.2,
+};
 
 export interface LoopDeps {
   // runtime/p: live canvas draw facade and timing surface created by runtime/index.
@@ -218,11 +222,14 @@ export function createEngineTicker(deps: LoopDeps) {
       const hoverK = lc.hoverK ?? 0;
       const selectK = lc.selectK ?? 0;
       const darkMode = styleOpts.darkMode === true;
-      const brightnessDelta = hoverBrightnessAdd(hoverK, darkMode) + selectBrightnessAdd(selectK, darkMode);
+      const brightnessDelta = selectK > 0 ? 0 : hoverBrightnessAdd(hoverK, darkMode);
       const brightnessBoost = 1 + brightnessDelta;
 
       const hasBrightness = Math.abs(brightnessDelta) > 0.001;
       const supportsDepthMask = shapeRegistrySupportsRenderPass(shapes.registry, it.shape, "depthMask");
+      const selectedDepthOverlay = selectK > 0 && supportsDepthMask
+        ? SELECTED_SHAPE_DEPTH_OVERLAY
+        : undefined;
       const brightnessOverlayAlpha = hasBrightness && supportsDepthMask && brightnessDelta > 0.001
         ? Math.min(0.5, brightnessDelta)
         : 0;
@@ -259,6 +266,7 @@ export function createEngineTicker(deps: LoopDeps) {
         rEff,
         opts,
         shapeWasDrawnLive: !drewCachedShape,
+        overlayOverride: selectedDepthOverlay,
       });
     } finally {
       surface.p.pop();

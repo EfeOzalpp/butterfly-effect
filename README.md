@@ -29,6 +29,8 @@ An application that uses a custom 2.5D Canvas2D implementation to render an inte
 ## What would I improve further?
 Although this version of the scene engine performed well on desktop and iOS devices, testing on lower-end Android hardware showed that some visual effects and redraw patterns were too expensive across the full device range.
 
+Recent profiling also led to replacing live Canvas2D brightness filters with a cheaper depth-mask overlay path and tuning distance-based bitmap caching.
+
 From that hands-on experience, I started building `Canvas Engine`: an unopinionated rendering engine. It separates draw instructions from the renderer through a rich `.txt`-based declarative notation, keeps renderer lifecycle and cache invalidation tightly controlled, and prevents the main loop from overreaching into application logic. It targets WebGPU first, with WebGL fallback support for older devices.
 
 <br>

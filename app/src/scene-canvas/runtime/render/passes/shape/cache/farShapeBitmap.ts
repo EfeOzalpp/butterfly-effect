@@ -837,7 +837,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       updateDebugState();
       return false;
     }
-    if (!allowsFarShapeBitmapCache(item, policy)) {
+    if (!allowsFarShapeBitmapCache(item, policy, gridMetrics)) {
       debug.markSkippedPolicy();
       updateDebugState();
       return false;

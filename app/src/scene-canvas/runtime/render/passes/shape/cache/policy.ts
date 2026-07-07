@@ -15,20 +15,35 @@ export function isFarCacheCandidate(
   gridMetrics: GridMetrics | undefined,
   farSizeK: number
 ) {
+  const sizeK = itemSizeK(item, gridMetrics);
+  return sizeK !== null && sizeK <= farSizeK;
+}
+
+function itemSizeK(
+  item: EngineFieldItem,
+  gridMetrics: GridMetrics | undefined
+) {
   const f = item.footprint;
-  if (!f || !gridMetrics || gridMetrics.rowHeights.length === 0) return false;
+  if (!f || !gridMetrics || gridMetrics.rowHeights.length === 0) return null;
 
   const bottomRow = f.r0 + f.h - 1;
   const rowH = gridMetrics.rowHeights[bottomRow] ?? 0;
   const maxRowH = Math.max(...gridMetrics.rowHeights);
-  if (rowH <= 0 || maxRowH <= 0) return false;
+  if (rowH <= 0 || maxRowH <= 0) return null;
 
-  return rowH / maxRowH <= farSizeK;
+  return rowH / maxRowH;
 }
 
 export function allowsFarShapeBitmapCache(
   item: EngineFieldItem,
-  policy: FarShapeBitmapCachePolicy
+  policy: FarShapeBitmapCachePolicy,
+  gridMetrics?: GridMetrics
 ) {
-  return !policy.alwaysLiveShapes.includes(item.shape);
+  if (!policy.alwaysLiveShapes.includes(item.shape)) return true;
+
+  const cacheBelowSizeK = policy.cacheBelowSizeK?.[item.shape];
+  if (cacheBelowSizeK === undefined) return false;
+
+  const sizeK = itemSizeK(item, gridMetrics);
+  return sizeK !== null && sizeK <= cacheBelowSizeK;
 }
