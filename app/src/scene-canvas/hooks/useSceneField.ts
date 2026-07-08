@@ -36,7 +36,8 @@ export function useSceneField(
   spotlightIndex?: number,
   fog?: boolean,
   shapeLightSource?: EngineShapeLightSource | null,
-  initialFieldDelayMs = 0
+  initialFieldDelayMs = 0,
+  initialComposeDelayMs = 0
 ) {
   const fieldDelayStateRef = useRef<{ generation: number; untilMs: number } | null>(null);
   const fieldApplyStateRef = useRef<{
@@ -59,6 +60,14 @@ export function useSceneField(
     let cancelled = false;
     let fieldRafId: number | null = null;
     let fieldTimerId: number | null = null;
+    let composeTimerId: number | null = null;
+
+    const cleanupScheduledField = () => {
+      cancelled = true;
+      if (fieldRafId !== null) cancelAnimationFrame(fieldRafId);
+      if (fieldTimerId !== null) window.clearTimeout(fieldTimerId);
+      if (composeTimerId !== null) window.clearTimeout(composeTimerId);
+    };
 
     const readyGeneration = readyTick;
     const nowMs = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -171,56 +180,62 @@ export function useSceneField(
     };
 
     if (fieldDelayMs > 0) {
-      // Start worker computation immediately while the delay timer runs in parallel.
-      // The RAF fires only once both the compute and the delay have completed.
       engineControls.setFieldVisible(false);
       const delayState = fieldDelayStateRef.current;
-      void composeFieldAsync({
-        padding: fieldArgs.padding,
-        placements: fieldArgs.placements,
-        liveAvg,
-        reservedFootprints,
-        landscapeCountScale: fieldArgs.landscapeCountScale,
-        ruleWidthPx: fieldArgs.ruleWidthPx,
-        canvas: fieldArgs.canvas,
-      }).then((placed) => {
-        if (cancelled) return;
-        const remainingMs = Math.max(
-          0,
-          (delayState?.untilMs ?? 0) - performance.now(),
-        );
-        const applyInRaf = () => {
-          fieldRafId = requestAnimationFrame(() => {
-            fieldRafId = null;
-            if (cancelled) return;
-            engineControls.setFieldItems(placed, { replayAppear: true });
-            engineControls.setFieldVisible(placed.length > 0);
-            fieldApplyStateRef.current = {
-              liveAvg,
-              signature: fieldArgs.refreshSignature,
-              itemCount: placed.length,
-            };
-          });
-        };
-        if (remainingMs > 0) {
-          fieldTimerId = window.setTimeout(() => {
-            fieldTimerId = null;
+      const composeAndScheduleApply = () => {
+        void composeFieldAsync({
+          padding: fieldArgs.padding,
+          placements: fieldArgs.placements,
+          liveAvg,
+          reservedFootprints,
+          landscapeCountScale: fieldArgs.landscapeCountScale,
+          ruleWidthPx: fieldArgs.ruleWidthPx,
+          canvas: fieldArgs.canvas,
+        }).then((placed) => {
+          if (cancelled) return;
+          const remainingMs = Math.max(
+            0,
+            (delayState?.untilMs ?? 0) - performance.now(),
+          );
+          const applyInRaf = () => {
+            fieldRafId = requestAnimationFrame(() => {
+              fieldRafId = null;
+              if (cancelled) return;
+              engineControls.setFieldItems(placed, { replayAppear: true });
+              engineControls.setFieldVisible(placed.length > 0);
+              fieldApplyStateRef.current = {
+                liveAvg,
+                signature: fieldArgs.refreshSignature,
+                itemCount: placed.length,
+              };
+            });
+          };
+          if (remainingMs > 0) {
+            fieldTimerId = window.setTimeout(() => {
+              fieldTimerId = null;
+              applyInRaf();
+            }, remainingMs);
+          } else {
             applyInRaf();
-          }, remainingMs);
-        } else {
-          applyInRaf();
-        }
-      });
-      return;
+          }
+        });
+      };
+
+      const composeDelayMs = Math.max(0, Math.min(initialComposeDelayMs, fieldDelayMs));
+      if (composeDelayMs > 0) {
+        composeTimerId = window.setTimeout(() => {
+          composeTimerId = null;
+          composeAndScheduleApply();
+        }, composeDelayMs);
+      } else {
+        composeAndScheduleApply();
+      }
+      return cleanupScheduledField;
     }
 
     void composeAndApplyField(engineControls, fieldArgs);
 
-    return () => {
-      cancelled = true;
-      if (fieldRafId !== null) cancelAnimationFrame(fieldRafId);
-      if (fieldTimerId !== null) window.clearTimeout(fieldTimerId);
-    };
+    return cleanupScheduledField;
   }, [
     ready,
     controls,
@@ -237,5 +252,6 @@ export function useSceneField(
     reservedFootprints,
     darkMode,
     initialFieldDelayMs,
+    initialComposeDelayMs,
   ]);
 }

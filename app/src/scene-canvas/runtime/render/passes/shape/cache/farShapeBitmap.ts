@@ -50,6 +50,10 @@ import {
 
 type ShapeBitmapBounds = OffscreenBounds;
 type CachedShapeBitmap = OffscreenCacheEntry;
+interface ShapeBitmapOverlay {
+  color: RGB;
+  blend: number;
+}
 const TREE_STAMP_VARIANTS = 8;
 const TREE_STAMP_SIZE_BUCKET_PX = 8;
 const TREE_STAMP_LIGHT_COORD_BUCKETS = 8;
@@ -231,6 +235,8 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
   const bakeOpts: RuntimeShapeOptions = {};
   const stampBakeOpts: RuntimeShapeOptions = {};
   const stampPrewarmOpts: RuntimeShapeOptions = {};
+  let tintScratchCanvas: HTMLCanvasElement | null = null;
+  let tintScratchCtx: CanvasRenderingContext2D | null = null;
   const debug = createFarShapeCacheDebugTracker();
   let frameTimeMs = Number.NaN;
   let bakesThisFrame = 0;
@@ -384,6 +390,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     const identity = stampBakeOpts.identity ?? (stampBakeOpts.identity = {});
     const sprite = stampBakeOpts.sprite ?? (stampBakeOpts.sprite = {});
     lifecycle.rootAppearK = 1;
+    lifecycle.selectK = 0;
     particles.particleStore = undefined;
     pass.renderPass = renderPass;
     pass.maskColor = renderPass === "depthMask" ? maskColor : undefined;
@@ -623,6 +630,57 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     ctx.restore();
   }
 
+  function getTintScratch(source: HTMLCanvasElement) {
+    if (typeof document === "undefined") return null;
+    if (!tintScratchCanvas || !tintScratchCtx) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      tintScratchCanvas = canvas;
+      tintScratchCtx = ctx;
+    }
+    if (tintScratchCanvas.width !== source.width || tintScratchCanvas.height !== source.height) {
+      tintScratchCanvas.width = source.width;
+      tintScratchCanvas.height = source.height;
+    }
+    return { canvas: tintScratchCanvas, ctx: tintScratchCtx };
+  }
+
+  function drawCachedBitmapTintOverlay(args: {
+    p: PLike;
+    canvas: HTMLCanvasElement;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    overlay: ShapeBitmapOverlay;
+    alphaScale?: number;
+  }) {
+    const alpha = Math.max(0, Math.min(1, args.overlay.blend)) *
+      Math.max(0, Math.min(1, args.alphaScale ?? 1));
+    if (alpha <= 0.001) return;
+
+    const scratch = getTintScratch(args.canvas);
+    if (!scratch) return;
+
+    const { canvas, ctx } = scratch;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(args.canvas, 0, 0);
+    ctx.globalCompositeOperation = "source-in";
+    ctx.fillStyle = `rgb(${String(args.overlay.color.r)}, ${String(args.overlay.color.g)}, ${String(args.overlay.color.b)})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "source-over";
+
+    const target = args.p.drawingContext;
+    target.save();
+    target.globalAlpha = alpha;
+    target.drawImage(canvas, args.x, args.y, args.w, args.h);
+    target.restore();
+  }
+
   function drawSharedFarTreeStamp(args: {
     p: PLike;
     shapeRegistry: ShapeRegistry;
@@ -633,6 +691,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     dpr: number;
     policy: FarShapeBitmapCachePolicy;
     brightnessAlpha: number;
+    selectedOverlay?: ShapeBitmapOverlay;
   }): boolean {
     const { p, shapeRegistry, item, rEff, opts, bounds, dpr, policy } = args;
     if (!isSharedFarStampShape(item)) return false;
@@ -682,7 +741,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
           }
         }
         if (drewColor && staleDrawEntry) {
-          const overlay = depthOverlayFromOptions(opts);
+          const overlay = args.selectedOverlay ?? depthOverlayFromOptions(opts);
           if (overlay) {
             drawTreeStampMask({
               p,
@@ -744,7 +803,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
 
     p.drawingContext.drawImage(entry.canvas, bounds.x, bounds.y, bounds.w, bounds.h);
     debug.markStampDrawn();
-    const overlay = depthOverlayFromOptions(opts);
+    const overlay = args.selectedOverlay ?? depthOverlayFromOptions(opts);
     if (overlay) {
       drawTreeStampMask({
         p,
@@ -807,6 +866,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       style.gradientRGB = gradientColor(VIVID_COLOR_STOPS, bucketAvg).rgb;
     }
     lifecycle.rootAppearK = 1;
+    lifecycle.selectK = 0;
     particles.particleStore = undefined;
     pass.renderPass = "color";
     pass.maskColor = undefined;
@@ -827,9 +887,10 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
     opts: RuntimeShapeOptions;
     gridMetrics?: GridMetrics;
     brightnessAlpha?: number;
+    selectedOverlay?: ShapeBitmapOverlay;
     // End params.
   }): boolean {
-    const { p, shapeRegistry, item, rEff, opts, gridMetrics, brightnessAlpha = 0 } = args;
+    const { p, shapeRegistry, item, rEff, opts, gridMetrics, brightnessAlpha = 0, selectedOverlay } = args;
     debug.markCall();
     const policy = getPolicy();
     if (!policy.enabled) {
@@ -902,6 +963,7 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
           dpr,
           policy,
           brightnessAlpha,
+          selectedOverlay,
         });
         if (drewSharedStamp) return true;
       }
@@ -930,7 +992,18 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
             debug.markGenericStaleDrawn();
             debug.markGenericDrawn();
             blitWithAppear(p.drawingContext, appearK, staleEntry.canvas, staleEntry.bounds.x, staleEntry.bounds.y, staleEntry.bounds.w, staleEntry.bounds.h);
-            if (shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
+            if (selectedOverlay) {
+              drawCachedBitmapTintOverlay({
+                p,
+                canvas: staleEntry.canvas,
+                x: staleEntry.bounds.x,
+                y: staleEntry.bounds.y,
+                w: staleEntry.bounds.w,
+                h: staleEntry.bounds.h,
+                overlay: selectedOverlay,
+                alphaScale: appearK,
+              });
+            } else if (shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
               drawCachedBitmapBrightnessOverlay({
                 p,
                 canvas: staleEntry.canvas,
@@ -968,7 +1041,18 @@ export function createFarShapeBitmapRenderer(getPolicy: () => FarShapeBitmapCach
       }
 
       blitWithAppear(p.drawingContext, appearK, entry.canvas, entry.bounds.x, entry.bounds.y, entry.bounds.w, entry.bounds.h);
-      if (shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
+      if (selectedOverlay) {
+        drawCachedBitmapTintOverlay({
+          p,
+          canvas: entry.canvas,
+          x: entry.bounds.x,
+          y: entry.bounds.y,
+          w: entry.bounds.w,
+          h: entry.bounds.h,
+          overlay: selectedOverlay,
+          alphaScale: appearK,
+        });
+      } else if (shapeRegistrySupportsRenderPass(shapeRegistry, item.shape, "depthMask")) {
         drawCachedBitmapBrightnessOverlay({
           p,
           canvas: entry.canvas,

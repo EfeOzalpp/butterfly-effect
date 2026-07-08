@@ -33,7 +33,7 @@ const SHAPE_DEPTH_MASK_ALWAYS_LIVE = [
 export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
   farShapeBitmap: {
     enabled: true,
-    farSizeK: 0.65,
+    farSizeK: 0.7,
     // Far-shape bitmap memory scales with the canvas instead of a fixed item count.
     maxPixelsPerCanvasPixel: 5,
     // Avoid click-time liveAvg changes rebaking every distant desktop shape in one frame.
@@ -43,8 +43,8 @@ export const DEFAULT_RENDER_CACHE_POLICY: RenderCachePolicy = {
     // Clouds stay animated while readable, but tiny horizon clouds can freeze.
     cacheBelowSizeK: {
       clouds: 0.4,
-      snow: 0.2,
-      power: 0.25,
+      snow: 0.3,
+      power: 0.4,
       house: 0.25,
       carFactory: 0.25,
     },

@@ -247,6 +247,7 @@ export function createEngineTicker(deps: LoopDeps) {
         opts,
         gridMetrics: layout.gridCache.metrics,
         brightnessAlpha: brightnessOverlayAlpha,
+        selectedOverlay: selectedDepthOverlay,
       });
       if (!drewCachedShape) {
         const useLiveBrightnessFilter = hasBrightness && supportsDepthMask;
@@ -259,15 +260,18 @@ export function createEngineTicker(deps: LoopDeps) {
         }
       }
 
-      shapeRenderCache.drawShapeDepthOverlay({
-        p: surface.p,
-        shapeRegistry: shapes.registry,
-        item: it,
-        rEff,
-        opts,
-        shapeWasDrawnLive: !drewCachedShape,
-        overlayOverride: selectedDepthOverlay,
-      });
+      const cachedSelectionOverlayHandled = drewCachedShape && selectedDepthOverlay != null;
+      if (!cachedSelectionOverlayHandled) {
+        shapeRenderCache.drawShapeDepthOverlay({
+          p: surface.p,
+          shapeRegistry: shapes.registry,
+          item: it,
+          rEff,
+          opts,
+          shapeWasDrawnLive: !drewCachedShape,
+          overlayOverride: selectedDepthOverlay,
+        });
+      }
     } finally {
       surface.p.pop();
       reassertDprTransformIfMutated(surface.p);

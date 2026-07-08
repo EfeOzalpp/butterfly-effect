@@ -16,6 +16,7 @@ interface HostDefBase {
   dprMode: DprMode;
   fpsCap?: number;
   initialFieldDelayMs?: number;
+  initialComposeDelayMs?: number;
   canvasDimensions?: CanvasBounds;
   stopOnOpen?: readonly string[];
   pointerHit?: boolean;
@@ -39,6 +40,8 @@ export const HOST_DEFS = defineHosts({
     zIndex: 2,
     dprMode: "cap2",
     fpsCap: 60,
+    initialFieldDelayMs: 140,
+    initialComposeDelayMs: 60,
     canvasDimensions: { kind: "parent" },
     pointerHit: true,
     scene: { lookupKey: "start", ruleset: SCENE_RULESETS.intro },

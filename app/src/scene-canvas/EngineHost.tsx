@@ -80,7 +80,8 @@ export function EngineHost({
     spotlight?.index,
     fog,
     shapeLightSource,
-    hostDef.initialFieldDelayMs
+    hostDef.initialFieldDelayMs,
+    hostDef.initialComposeDelayMs
   );
 
   React.useEffect(() => {
