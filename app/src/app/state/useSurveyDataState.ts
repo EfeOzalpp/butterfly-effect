@@ -1,7 +1,7 @@
 // src/app/state/useSurveyDataState.ts
 // Owns Sanity survey rows plus the active section filter used by graph views.
 
-import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getSessionItem, removeSessionItems, setSessionItem } from '../session';
 import { parentAggregateForSection } from '../../domain/survey/sections';
@@ -54,6 +54,11 @@ export default function useSurveyDataState({
   const [allRows, setAllRows] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const localRowsRef = useRef<SurveyRow[]>([]);
+  const mySectionRef = useRef(mySection);
+
+  useEffect(() => {
+    mySectionRef.current = mySection;
+  }, [mySection]);
 
   const setSection = useCallback((nextSection: string) => {
     setSectionValue(nextSection);
@@ -81,7 +86,7 @@ export default function useSurveyDataState({
     const justSubmitted = getSessionItem('be.justSubmitted') === '1';
     if (!justSubmitted) return;
 
-    const effectiveMySection = mySection ?? getSessionItem('be.mySection') ?? '';
+    const effectiveMySection = mySectionRef.current ?? getSessionItem('be.mySection') ?? '';
     if (!effectiveMySection) return;
 
     if (effectiveMySection === 'visitor') {
@@ -98,7 +103,7 @@ export default function useSurveyDataState({
     }
 
     removeSessionItems(['be.justSubmitted']);
-  }, [mySection, setSection]);
+  }, [setSection]);
 
   const subscribeToSurveyData = useCallback(() => {
     startTransition(() => {
