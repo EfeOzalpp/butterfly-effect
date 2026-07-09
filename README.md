@@ -42,7 +42,8 @@ From that hands-on experience, I started building `Canvas Engine`: an unopiniona
 
 ### Architecture
 
-- Survey results are delivered through a single server-managed SSE stream, with client-side filtering for graph, logs, and section views.
+- Survey results are delivered through a server-managed SSE stream: newest-first snapshot chunks load history, then patch events carry live changes.
+- Graph views stay client-capped for rendering, while logs and section counts use the streamed history loaded so far.
 - Gamification copy is fetched through a cached Express endpoint that batches related Sanity CMS reads into one request.
 - Survey submissions stay on separate Express POST endpoints, keeping writes explicit while live updates flow back through SSE.
 
@@ -53,9 +54,9 @@ From that hands-on experience, I started building `Canvas Engine`: an unopiniona
 | **Three.js / WebGL** | Culling, 3D math, distance-based rotation speed and hitbox scaling with debounce during zoom, tooltip anchoring, and camera orchestration for the community graph *(consumes sprites)* |
 | **React + SSR API** | `renderToPipeableStream` for server-side rendering, client hydration and state management |
 | **Node.js** | Parses Vite build manifest, dynamically imports compiled SSR bundle |
-| **Express** | Validates write requests before Sanity mutations, batches cached CMS reads, rate-limits API routes, serves the SSR document, and streams survey updates over SSE |
+| **Express** | Validates write requests before Sanity mutations, batches cached CMS reads, rate-limits API routes, serves the SSR document, and streams chunked survey snapshots plus live SSE patches |
 | **Web Worker** | offloads scene placement computation, removing latency during user-input recomputation |
-| **Sanity CMS** | Anonymous document writes for survey responses; dataset reads and change events for community graph and gamification copy |
+| **Sanity CMS** | Anonymous document writes for survey responses; paged dataset reads and change events for community graph, logs, and gamification copy |
 | **AWS EC2** | Production deployment with automated deploys |
 
 <br>
