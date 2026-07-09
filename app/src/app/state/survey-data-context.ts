@@ -9,11 +9,9 @@ export interface SurveyDataState {
   sectionSelectionVersion: number;
   // Response counts keyed by section - includes aggregates: 'all', 'all-students', 'all-staff', 'all-massart'
   counts: Record<string, number>;
-  // All rows from Sanity, up to 5,000 - unfiltered
+  // All streamed survey rows loaded so far - unfiltered and used by logs/counts
   allRows: SurveyRow[];
-  // Filtered rows sliced to 300 - what the graph actually renders
-  data: SurveyRow[];
-  // Filtered rows before the 300 slice - used for counts and personalization logic
+  // Filtered rows before the graph slice - used for logs and personalization lookup
   allFilteredRows: SurveyRow[];
   // True while the initial Sanity fetch is in flight
   loading: boolean;

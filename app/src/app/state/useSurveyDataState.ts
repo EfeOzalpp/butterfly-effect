@@ -12,8 +12,7 @@ interface UseSurveyDataStateParams {
   mySection: string | null;
 }
 
-const ALL_ROWS_LIMIT = 5000;
-const VISIBLE_ROWS_LIMIT = 300;
+const ALL_ROWS_LIMIT = 'all';
 const FIRST_SECTION_SUBMISSION_COUNT = 1;
 const noopUnsubscribe: () => void = () => undefined;
 const OPTIMISTIC_MATCH_WINDOW_MS = 5 * 60 * 1000;
@@ -158,15 +157,12 @@ export default function useSurveyDataState({
     [allRows, section]
   );
 
-  const data = useMemo(() => filteredRows.slice(0, VISIBLE_ROWS_LIMIT), [filteredRows]);
-
   return {
     section,
     setSection,
     sectionSelectionVersion,
     counts,
     allRows,
-    data,
     allFilteredRows: filteredRows,
     loading,
     upsertLocalSurveyRow,

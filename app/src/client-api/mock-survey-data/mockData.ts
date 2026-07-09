@@ -99,7 +99,7 @@ const STAFF_SECTIONS = new Set(STAFF_IDS);
 
 interface SurveySubscriber {
   section: string;
-  limit: number;
+  limit: number | 'all';
   onData: (rows: SurveyRow[]) => void;
 }
 
@@ -157,7 +157,7 @@ function allRows() {
   return [...BASE_ROWS, ...readStoredRows()].sort(sortNewestFirst);
 }
 
-function filterRows(section: string, limit: number): SurveyRow[] {
+function filterRows(section: string, limit: number | 'all'): SurveyRow[] {
   let rows = allRows();
   if (section && section !== 'all') {
     if (section === 'all-massart') {
@@ -170,7 +170,8 @@ function filterRows(section: string, limit: number): SurveyRow[] {
       rows = rows.filter((row) => row.section === section);
     }
   }
-  return rows.slice(0, limit).map(normalizeSurveyRow);
+  const limitedRows = limit === 'all' ? rows : rows.slice(0, limit);
+  return limitedRows.map(normalizeSurveyRow);
 }
 
 function notifyAllSubscribers() {
@@ -185,7 +186,7 @@ export function subscribeMockSurveyData({
   onData,
 }: {
   section: string;
-  limit?: number;
+  limit?: number | 'all';
   onData: (rows: SurveyRow[]) => void;
 }): Unsubscribe {
   const subscriber: SurveySubscriber = { section, limit, onData };

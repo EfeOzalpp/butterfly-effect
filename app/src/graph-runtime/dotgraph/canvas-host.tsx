@@ -232,7 +232,7 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
 // App-level gate around Canvas mount/unmount so reopening the graph does not reuse stale GPU work.
 const DotGraphCanvasHost = () => {
   const { vizVisible, logsOpen, widgetsOpen } = useUiFlow();
-  const { data: surveyData, loading, section } = useSurveyData();
+  const { allFilteredRows: surveyData, loading, section } = useSurveyData();
   const isRealMobile = useRealMobileViewport();
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : DEFAULT_VIEWPORT_WIDTH;
   const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;

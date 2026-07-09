@@ -20,7 +20,7 @@ function ToggleCheckIcon() {
 
 export default function ModeToggle() {
   const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest, personalPanelOpen } = useUiFlow();
-  const { data } = useSurveyData();
+  const { allFilteredRows: data } = useSurveyData();
   const { myEntryId } = useIdentity();
 
   const poolValues = useMemo(

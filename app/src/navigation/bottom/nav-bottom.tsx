@@ -31,7 +31,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     questionnaireNav,
     requestQuestionnaireAdvance,
   } = useUiFlow();
-  const { data } = useSurveyData();
+  const { allFilteredRows } = useSurveyData();
   const windowWidth = useWindowWidth();
   const useCompactGraphNav = isMobileWidth(windowWidth);
   const showSeparatedGraphTools = vizVisible && !useCompactGraphNav;
@@ -171,7 +171,7 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
               <div className="widgets-popover-clip">
                 <div ref={widgetsDialogRef} className="widgets-popover" role="dialog" aria-label="Widgets" aria-modal="true">
                   {activeWidgetView === "bar" && (
-                    <GraphDataProvider data={data}>
+                    <GraphDataProvider data={allFilteredRows}>
                       <Suspense fallback={null}>
                         <BarGraph
                           navOutsidePanel

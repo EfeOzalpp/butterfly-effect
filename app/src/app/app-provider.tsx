@@ -70,7 +70,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     sectionSelectionVersion,
     counts,
     allRows,
-    data,
     allFilteredRows,
     loading,
     upsertLocalSurveyRow,
@@ -233,12 +232,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       sectionSelectionVersion,
       counts,
       allRows,
-      data,
       allFilteredRows,
       loading,
       upsertLocalSurveyRow,
     }),
-    [section, setSection, sectionSelectionVersion, counts, allRows, data, allFilteredRows, loading, upsertLocalSurveyRow]
+    [section, setSection, sectionSelectionVersion, counts, allRows, allFilteredRows, loading, upsertLocalSurveyRow]
   );
 
   return (

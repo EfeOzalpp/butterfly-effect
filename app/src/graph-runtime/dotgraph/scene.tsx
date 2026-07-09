@@ -27,7 +27,7 @@ export default function DotGraph() {
   const { darkMode } = usePreferences();
   const { observerMode, mode, setPersonalPanelOpen } = useUiFlow();
   const { myEntryId, mySection } = useIdentity();
-  const { section, data: fullSurveyData, loading } = useSurveyData();
+  const { section, allFilteredRows: fullSurveyData, loading } = useSurveyData();
 
   const {
     safeData,

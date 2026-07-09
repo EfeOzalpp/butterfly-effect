@@ -38,7 +38,7 @@ function ToolsGridIcon() {
 }
 
 export default function CompactGraphTools() {
-  const { data } = useSurveyData();
+  const { allFilteredRows } = useSurveyData();
   const { open, openDisclosure, closeDisclosure } = useDisclosure(false);
   const [activeTool, setActiveTool] = useState<CompactTool>("logs");
   const [widgetAutoplayPaused, setWidgetAutoplayPaused] = useState(true);
@@ -84,7 +84,7 @@ export default function CompactGraphTools() {
             )}
 
             {activeTool === "bar" && (
-              <GraphDataProvider data={data}>
+              <GraphDataProvider data={allFilteredRows}>
                 <Suspense fallback={null}>
                   <BarGraph
                     navOutsidePanel

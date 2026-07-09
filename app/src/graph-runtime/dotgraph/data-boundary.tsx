@@ -7,6 +7,7 @@ import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
 import type { SurveyRow } from "../../domain/survey/types";
 import { GraphDataProvider } from "../GraphDataContext";
 import DotGraphCanvasHost from "./canvas-host";
+import { resolvePersonalEntryId } from "./personal-entry";
 import {
   allowPersonalInSection,
   deriveRoleFromSectionId,
@@ -19,7 +20,6 @@ interface VisibleRowsSnapshot {
   scopeKey: string;
   capacity: number;
   rows: SlottedSurveyRow[];
-  knownIds: Set<string>;
 }
 
 type SlottedSurveyRow = SurveyRow & {
@@ -112,61 +112,46 @@ function buildVisibleRowsSnapshot(
   scopeKey: string,
   previous: VisibleRowsSnapshot | null
 ): VisibleRowsSnapshot {
-  const nextKnownIds = new Set(
-    rows
-      .map((row) => row._id)
-      .filter((id): id is string => Boolean(id))
-  );
+  const targetRows = rows.slice(0, limit);
 
   if (previous?.scopeKey !== scopeKey || previous.capacity !== limit) {
-    const visibleRows = rows
-      .slice(0, limit)
+    const visibleRows = targetRows
       .map((row, slotIndex) => withDotSlot(row, slotIndex, limit));
 
     return {
       scopeKey,
       capacity: limit,
       rows: visibleRows,
-      knownIds: nextKnownIds,
     };
   }
 
-  const latestById = new Map(rows.map((row) => [row._id, row]));
-  const stillVisible: SlottedSurveyRow[] = [];
-  const freedSlots: number[] = [];
+  const previousById = new Map(previous.rows.map((row) => [row._id, row]));
+  const targetIds = new Set(targetRows.map((row) => row._id));
+  const usedSlots = new Set(
+    previous.rows
+      .filter((row) => targetIds.has(row._id))
+      .map((row) => row.__dotSlotIndex)
+  );
+  const availableSlots = uniqueSlots(
+    previous.rows
+      .filter((row) => !targetIds.has(row._id))
+      .map((row) => row.__dotSlotIndex)
+  );
 
-  for (const row of previous.rows) {
-    if (!row._id) continue;
-    const latest = latestById.get(row._id);
-    if (latest) {
-      stillVisible.push(withDotSlot(latest, row.__dotSlotIndex, limit));
-    } else {
-      freedSlots.push(row.__dotSlotIndex);
-    }
-  }
+  const nextRows = targetRows.map((row) => {
+    const previousRow = previousById.get(row._id);
+    if (previousRow) return withDotSlot(row, previousRow.__dotSlotIndex, limit);
 
-  const incoming = rows.filter((row) => row._id && !previous.knownIds.has(row._id));
-  const keepCount = Math.max(0, limit - incoming.length);
-  const keptVisible = stillVisible.slice(0, keepCount);
-  for (const evicted of stillVisible.slice(keepCount)) {
-    freedSlots.push(evicted.__dotSlotIndex);
-  }
-
-  const usedSlots = new Set(keptVisible.map((row) => row.__dotSlotIndex));
-  const availableSlots = uniqueSlots(freedSlots).filter((slot) => !usedSlots.has(slot));
-  const slottedIncoming = incoming.slice(0, limit).map((row) => {
     const freedSlot = availableSlots.shift();
     const slotIndex = freedSlot ?? nextUnusedSlot(usedSlots, limit);
     usedSlots.add(slotIndex);
     return withDotSlot(row, slotIndex, limit);
   });
-  const nextRows = [...slottedIncoming, ...keptVisible].slice(0, limit);
 
   return {
     scopeKey,
     capacity: limit,
     rows: nextRows,
-    knownIds: nextKnownIds,
   };
 }
 
@@ -194,7 +179,7 @@ export default function DotGraphDataBoundary() {
   const { myEntryId, mySection } = useIdentity();
   const isRealMobile = useRealMobileViewport();
   const dataLimit = isRealMobile ? Math.min(MOBILE_DATA_LIMIT, MAX_GRAPH_SPRITES) : MAX_GRAPH_SPRITES;
-  const personalEntryId = myEntryId ?? getSessionItem("be.myEntryId");
+  const personalEntryId = resolvePersonalEntryId(myEntryId);
   const effectiveMySection = mySection ?? getSessionItem("be.mySection") ?? "";
 
   const personalRow = useMemo(() => {

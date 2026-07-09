@@ -17,8 +17,15 @@ const PROJECTION = `
 `;
 
 const LISTEN_FILTER = `!(_id in path("drafts.**")) && _type == "userResponseV4"`;
-const SNAPSHOT_QUERY = `*[${LISTEN_FILTER}] | order(coalesce(submittedAt, _createdAt) desc)[0...$limit]{ ${PROJECTION} }`;
-const MAX_ROWS = 500;
+const SNAPSHOT_PAGE_QUERY = `*[${LISTEN_FILTER} && (
+  !defined($cursorTime) ||
+  coalesce(submittedAt, _createdAt) < $cursorTime ||
+  (coalesce(submittedAt, _createdAt) == $cursorTime && _id < $cursorId)
+)] | order(coalesce(submittedAt, _createdAt) desc, _id desc)[0...$limit]{ ${PROJECTION} }`;
+const DEFAULT_ROWS_LIMIT = 300;
+const MAX_NUMERIC_ROWS_LIMIT = 5000;
+const SNAPSHOT_CHUNK_SIZE = 250;
+const PATCH_COALESCE_MS = 750;
 const HEARTBEAT_MS = 25_000;
 const RECONNECT_DELAY_MS = 15_000;
 
@@ -33,9 +40,16 @@ const ALLOWED_SECTIONS = new Set<string>([
 interface StreamClient {
   id: number;
   section: string;
-  limit: number;
+  limit: SurveyResponseLimit;
   res: Response;
   heartbeat: NodeJS.Timeout;
+}
+
+type SurveyResponseLimit = number | "all";
+
+interface SnapshotCursor {
+  time: string;
+  id: string;
 }
 
 let nextClientId = 1;
@@ -44,13 +58,17 @@ let hasSnapshot = false;
 let snapshotPromise: Promise<void> | null = null;
 let listenerSubscription: { unsubscribe: () => void } | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
+let patchTimer: NodeJS.Timeout | null = null;
+const pendingUpserts = new Map<string, SurveyRow>();
+const pendingDeletes = new Set<string>();
 
 const clients = new Map<number, StreamClient>();
 
-export function readSurveyResponseLimit(value: unknown) {
+export function readSurveyResponseLimit(value: unknown): SurveyResponseLimit {
+  if (value === "all") return "all";
   const parsed = typeof value === "string" ? Number(value) : NaN;
-  if (!Number.isInteger(parsed)) return 300;
-  return Math.max(1, Math.min(parsed, MAX_ROWS));
+  if (!Number.isInteger(parsed)) return DEFAULT_ROWS_LIMIT;
+  return Math.max(1, Math.min(parsed, MAX_NUMERIC_ROWS_LIMIT));
 }
 
 export function readSurveyResponseSection(value: unknown) {
@@ -72,7 +90,13 @@ function sortNewestFirst(rows: SurveyRow[]) {
 }
 
 function upsertRow(rows: SurveyRow[], row: SurveyRow) {
-  return sortNewestFirst([row, ...rows.filter((item) => item._id !== row._id)]).slice(0, MAX_ROWS);
+  return sortNewestFirst([row, ...rows.filter((item) => item._id !== row._id)]);
+}
+
+function mergeRows(rows: SurveyRow[], nextRows: SurveyRow[]) {
+  const byId = new Map(rows.map((row) => [row._id, row]));
+  for (const row of nextRows) byId.set(row._id, row);
+  return sortNewestFirst([...byId.values()]);
 }
 
 function filterRowsForSection(rows: SurveyRow[], section: string) {
@@ -93,7 +117,8 @@ function filterRowsForSection(rows: SurveyRow[], section: string) {
 }
 
 function rowsForClient(client: StreamClient) {
-  return filterRowsForSection(rowsCache, client.section).slice(0, client.limit);
+  const rows = filterRowsForSection(rowsCache, client.section);
+  return client.limit === "all" ? rows : rows.slice(0, client.limit);
 }
 
 function writeEvent(client: StreamClient, event: string, data: unknown) {
@@ -117,19 +142,54 @@ function writeComment(client: StreamClient, comment: string) {
   }
 }
 
-function sendSnapshot(client: StreamClient) {
-  return writeEvent(client, "snapshot", { rows: rowsForClient(client) });
-}
-
 function sendStreamError(client: StreamClient, error: unknown) {
   return writeEvent(client, "stream-error", {
     message: error instanceof Error ? error.message : "Survey response stream failed",
   });
 }
 
-function broadcastSnapshot() {
+function sendSnapshotChunk(
+  client: StreamClient,
+  rows: SurveyRow[],
+  {
+    reset = false,
+    complete = false,
+  }: {
+    reset?: boolean;
+    complete?: boolean;
+  } = {}
+) {
+  return writeEvent(client, "snapshot", { rows, reset, complete });
+}
+
+function sendCachedSnapshot(client: StreamClient, completeWhenDone: boolean) {
+  const rows = rowsForClient(client);
+  if (!rows.length) {
+    return sendSnapshotChunk(client, [], { reset: true, complete: completeWhenDone });
+  }
+
+  for (let index = 0; index < rows.length; index += SNAPSHOT_CHUNK_SIZE) {
+    const chunk = rows.slice(index, index + SNAPSHOT_CHUNK_SIZE);
+    const complete = completeWhenDone && index + SNAPSHOT_CHUNK_SIZE >= rows.length;
+    if (!sendSnapshotChunk(client, chunk, { reset: index === 0, complete })) return false;
+  }
+
+  return true;
+}
+
+function broadcastSnapshotChunk(
+  rows: SurveyRow[],
+  {
+    reset = false,
+    complete = false,
+  }: {
+    reset?: boolean;
+    complete?: boolean;
+  } = {}
+) {
   for (const client of clients.values()) {
-    if (!sendSnapshot(client)) removeClient(client.id);
+    const clientRows = filterRowsForSection(rows, client.section);
+    if (!sendSnapshotChunk(client, clientRows, { reset, complete })) removeClient(client.id);
   }
 }
 
@@ -140,10 +200,40 @@ function broadcastStreamError(error: unknown) {
 }
 
 async function refreshSnapshot() {
-  const rawRows = await sanityReadClient.fetch<RawSurveyRow[]>(SNAPSHOT_QUERY, { limit: MAX_ROWS });
-  rowsCache = sortNewestFirst(rawRows.map(normalizeSurveyRow));
+  rowsCache = [];
+  hasSnapshot = false;
+
+  let cursor: SnapshotCursor | null = null;
+  let sentAnyChunk = false;
+
+  while (clients.size > 0) {
+    const rawRows: RawSurveyRow[] = await sanityReadClient.fetch<RawSurveyRow[]>(SNAPSHOT_PAGE_QUERY, {
+      limit: SNAPSHOT_CHUNK_SIZE,
+      cursorTime: cursor?.time ?? null,
+      cursorId: cursor?.id ?? null,
+    });
+    const rows: SurveyRow[] = rawRows.map(normalizeSurveyRow);
+    const complete = rows.length < SNAPSHOT_CHUNK_SIZE;
+
+    rowsCache = mergeRows(rowsCache, rows);
+    broadcastSnapshotChunk(rows, { reset: !sentAnyChunk, complete });
+    sentAnyChunk = true;
+
+    if (complete || rows.length === 0) break;
+
+    const last: SurveyRow = rows[rows.length - 1];
+    cursor = {
+      time: last.submittedAt ?? last._createdAt,
+      id: last._id,
+    };
+  }
+
+  if (!sentAnyChunk) {
+    broadcastSnapshotChunk([], { reset: true, complete: true });
+  }
+
   hasSnapshot = true;
-  broadcastSnapshot();
+  flushPendingPatch();
 }
 
 function ensureSnapshot() {
@@ -172,20 +262,57 @@ function scheduleListenerRestart() {
   }, RECONNECT_DELAY_MS);
 }
 
+function flushPendingPatch() {
+  if (patchTimer) {
+    clearTimeout(patchTimer);
+    patchTimer = null;
+  }
+
+  const upserts = [...pendingUpserts.values()];
+  const deletes = [...pendingDeletes];
+  pendingUpserts.clear();
+  pendingDeletes.clear();
+
+  if (!upserts.length && !deletes.length) return;
+
+  for (const client of clients.values()) {
+    const clientUpserts = filterRowsForSection(upserts, client.section);
+    const payload = {
+      ...(clientUpserts.length ? { upserts: clientUpserts } : {}),
+      ...(deletes.length ? { deletes } : {}),
+    };
+    if (!clientUpserts.length && !deletes.length) continue;
+    if (!writeEvent(client, "patch", payload)) removeClient(client.id);
+  }
+}
+
+function queuePatch({
+  upserts = [],
+  deletes = [],
+}: {
+  upserts?: SurveyRow[];
+  deletes?: string[];
+}) {
+  for (const id of deletes) {
+    pendingUpserts.delete(id);
+    pendingDeletes.add(id);
+  }
+
+  for (const row of upserts) {
+    pendingDeletes.delete(row._id);
+    pendingUpserts.set(row._id, row);
+  }
+
+  if (patchTimer || clients.size === 0 || snapshotPromise || !hasSnapshot) return;
+  patchTimer = setTimeout(flushPendingPatch, PATCH_COALESCE_MS);
+}
+
 function handleSanityEvent(event: ListenEvent<RawSurveyRow>) {
   if (event.type !== "mutation") return;
 
-  if (!hasSnapshot) {
-    void ensureSnapshot().catch((error: unknown) => {
-      console.error("[surveyResponseFeed] snapshot refresh failed:", error);
-      broadcastStreamError(error);
-    });
-    return;
-  }
-
   if (event.transition === "disappear") {
     rowsCache = rowsCache.filter((row) => row._id !== event.documentId);
-    broadcastSnapshot();
+    queuePatch({ deletes: [event.documentId] });
     return;
   }
 
@@ -197,8 +324,9 @@ function handleSanityEvent(event: ListenEvent<RawSurveyRow>) {
     return;
   }
 
-  rowsCache = upsertRow(rowsCache, normalizeSurveyRow(event.result));
-  broadcastSnapshot();
+  const row = normalizeSurveyRow(event.result);
+  rowsCache = upsertRow(rowsCache, row);
+  queuePatch({ upserts: [row] });
 }
 
 function startSanityListener() {
@@ -229,6 +357,7 @@ function startSanityListener() {
 function stopSanityListenerIfIdle() {
   if (clients.size > 0) return;
   clearReconnectTimer();
+  flushPendingPatch();
   listenerSubscription?.unsubscribe();
   listenerSubscription = null;
 }
@@ -247,7 +376,7 @@ export function openSurveyResponseStream({
   res,
 }: {
   section: string;
-  limit: number;
+  limit: SurveyResponseLimit;
   res: Response;
 }) {
   const id = nextClientId;
@@ -258,7 +387,7 @@ export function openSurveyResponseStream({
   res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
-  res.flushHeaders?.();
+  res.flushHeaders();
 
   const client: StreamClient = {
     id,
@@ -273,10 +402,13 @@ export function openSurveyResponseStream({
   clients.set(id, client);
   writeComment(client, "connected");
 
-  if (hasSnapshot) sendSnapshot(client);
+  const isFirstClient = clients.size === 1;
+  if (!isFirstClient && (hasSnapshot || rowsCache.length > 0)) {
+    sendCachedSnapshot(client, !snapshotPromise);
+  }
 
   startSanityListener();
-  if (!hasSnapshot || clients.size === 1) {
+  if (!hasSnapshot || isFirstClient) {
     void ensureSnapshot().catch((error: unknown) => {
       console.error("[surveyResponseFeed] initial snapshot failed:", error);
       sendStreamError(client, error);
@@ -289,9 +421,8 @@ export function openSurveyResponseStream({
 }
 
 export function upsertSurveyResponseRow(row: SurveyRow) {
-  if (!hasSnapshot) return;
   rowsCache = upsertRow(rowsCache, row);
-  broadcastSnapshot();
+  queuePatch({ upserts: [row] });
 }
 
 export function patchSurveyResponseRowMessage({
@@ -303,23 +434,22 @@ export function patchSurveyResponseRowMessage({
   soloMessage?: string;
   soloMessageUpdatedAt?: string;
 }) {
-  if (!hasSnapshot) return;
+  const index = rowsCache.findIndex((row) => row._id === responseId);
+  if (index < 0) return;
 
-  let changed = false;
-  rowsCache = rowsCache.map((row) => {
-    if (row._id !== responseId) return row;
+  const next = { ...rowsCache[index] };
+  if (soloMessage) {
+    next.soloMessage = soloMessage;
+    next.soloMessageUpdatedAt = soloMessageUpdatedAt;
+  } else {
+    delete next.soloMessage;
+    delete next.soloMessageUpdatedAt;
+  }
 
-    changed = true;
-    const next = { ...row };
-    if (soloMessage) {
-      next.soloMessage = soloMessage;
-      next.soloMessageUpdatedAt = soloMessageUpdatedAt;
-    } else {
-      delete next.soloMessage;
-      delete next.soloMessageUpdatedAt;
-    }
-    return next;
-  });
-
-  if (changed) broadcastSnapshot();
+  rowsCache = [
+    ...rowsCache.slice(0, index),
+    next,
+    ...rowsCache.slice(index + 1),
+  ];
+  queuePatch({ upserts: [next] });
 }
