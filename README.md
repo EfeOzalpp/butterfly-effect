@@ -41,6 +41,11 @@ From that hands-on experience, I started building `Canvas Engine`: an unopiniona
 <br>
 
 ### Architecture
+
+- Survey results are delivered through a single server-managed SSE stream, with client-side filtering for graph, logs, and section views.
+- Gamification copy is fetched through a cached Express endpoint that batches related Sanity CMS reads into one request.
+- Survey submissions stay on separate Express POST endpoints, keeping writes explicit while live updates flow back through SSE.
+
 | | |
 | :--- | :--- |
 | **Scene Canvas** | Grid layout, scene rules, shape modifiers parameterize `Canvas2D` draw arguments (transforms, colors, particles) from live input signals, and multi-canvas orchestration through a single requestAnimationFrame instance | 
@@ -48,9 +53,9 @@ From that hands-on experience, I started building `Canvas Engine`: an unopiniona
 | **Three.js / WebGL** | Culling, 3D math, distance-based rotation speed and hitbox scaling with debounce during zoom, tooltip anchoring, and camera orchestration for the community graph *(consumes sprites)* |
 | **React + SSR API** | `renderToPipeableStream` for server-side rendering, client hydration and state management |
 | **Node.js** | Parses Vite build manifest, dynamically imports compiled SSR bundle |
-| **Express** | Routes to data validation before Sanity writes, rate limiter, serving index HTML, and streaming React components |
+| **Express** | Validates write requests before Sanity mutations, batches cached CMS reads, rate-limits API routes, serves the SSR document, and streams survey updates over SSE |
 | **Web Worker** | offloads scene placement computation, removing latency during user-input recomputation |
-| **Sanity CMS** | Anonymous document writes for survey responses; dataset reads for community graph and gamification copy |
+| **Sanity CMS** | Anonymous document writes for survey responses; dataset reads and change events for community graph and gamification copy |
 | **AWS EC2** | Production deployment with automated deploys |
 
 <br>
