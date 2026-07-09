@@ -2,7 +2,7 @@
 import { useGeneralPools, usePersonalizedPools } from './useGamificationPools';
 
 export default function GamificationCopyPreloader() {
-  // just mounting these hooks triggers the initial Sanity fetch + live subscription
+  // Mounting both hooks starts one shared cached fetch for all gamification copy.
   useGeneralPools();
   usePersonalizedPools();
 

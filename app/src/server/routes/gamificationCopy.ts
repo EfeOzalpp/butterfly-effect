@@ -17,29 +17,77 @@ interface CopyDoc {
 }
 
 type CopyType = "general" | "personalized";
+type CopyGroups = Record<CopyType, CopyDoc[]>;
+
+interface SanityCopyDoc extends CopyDoc {
+  _type: string;
+}
 
 const SCHEMA_BY_TYPE: Record<CopyType, string> = {
   general: "gamificationGeneralCopy",
   personalized: "gamificationPersonalizedCopy",
 };
 
-const cache = new Map<string, { expiresAtMs: number; docs: CopyDoc[] }>();
+const TYPE_BY_SCHEMA: Record<string, CopyType | undefined> = Object.fromEntries(
+  Object.entries(SCHEMA_BY_TYPE).map(([type, schema]) => [schema, type as CopyType])
+);
 
-function readCopyType(value: unknown): CopyType | null {
-  if (value === "general" || value === "personalized") return value;
-  return null;
+let cache: { expiresAtMs: number; groups: CopyGroups } | null = null;
+
+function emptyGroups(): CopyGroups {
+  return {
+    general: [],
+    personalized: [],
+  };
 }
 
-function buildQuery(schemaName: string) {
+function copyDocFromSanity(row: SanityCopyDoc): CopyDoc {
+  return {
+    _id: row._id,
+    _updatedAt: row._updatedAt,
+    range: row.range,
+    titles: row.titles,
+    secondary: row.secondary,
+    enabled: row.enabled,
+  };
+}
+
+function groupCopyDocs(rows: SanityCopyDoc[]): CopyGroups {
+  return rows.reduce<CopyGroups>((groups, row) => {
+    const type = TYPE_BY_SCHEMA[row._type];
+    if (!type) return groups;
+    groups[type].push(copyDocFromSanity(row));
+    return groups;
+  }, emptyGroups());
+}
+
+function buildQuery() {
   return `
 *[
   !(_id in path('drafts.**')) &&
-  _type == $schemaName &&
+  _type in $schemaNames &&
   enabled == true
 ]{
-  _id, _updatedAt, range, titles, secondary
+  _id, _type, _updatedAt, range, titles, secondary
 }
 `;
+}
+
+async function fetchCopyGroups() {
+  const docs = await sanityReadClient.fetch<SanityCopyDoc[]>(
+    buildQuery(),
+    { schemaNames: Object.values(SCHEMA_BY_TYPE) }
+  );
+  const groups = groupCopyDocs(docs);
+  cache = { groups, expiresAtMs: Date.now() + 60_000 };
+  return { groups, cached: false };
+}
+
+async function readCopyGroups() {
+  if (cache && cache.expiresAtMs > Date.now()) {
+    return { groups: cache.groups, cached: true };
+  }
+  return fetchCopyGroups();
 }
 
 function buildRateRules(req: Request): RateRule[] {
@@ -54,9 +102,11 @@ function buildRateRules(req: Request): RateRule[] {
 export async function gamificationCopyRoute(req: Request, res: Response) {
   if (rejectDisallowedOrigin(req, res)) return;
 
-  const type = readCopyType(req.query.type);
-  if (!type) {
-    res.status(400).json({ error: "Invalid copy type", code: "INVALID_COPY_TYPE" });
+  if (req.query.type !== undefined) {
+    res.status(400).json({
+      error: "Typed gamification copy reads are no longer supported",
+      code: "INVALID_COPY_QUERY",
+    });
     return;
   }
 
@@ -70,19 +120,12 @@ export async function gamificationCopyRoute(req: Request, res: Response) {
     return;
   }
 
-  const cached = cache.get(type);
-  if (cached && cached.expiresAtMs > Date.now()) {
-    res.status(200).json({ docs: cached.docs, cached: true });
-    return;
-  }
-
   try {
-    const docs = await sanityReadClient.fetch<CopyDoc[]>(
-      buildQuery(SCHEMA_BY_TYPE[type]),
-      { schemaName: SCHEMA_BY_TYPE[type] }
-    );
-    cache.set(type, { docs, expiresAtMs: Date.now() + 60_000 });
-    res.status(200).json({ docs, cached: false });
+    const { groups, cached } = await readCopyGroups();
+    res.status(200).json({
+      docs: groups,
+      cached,
+    });
   } catch (error) {
     console.error("[gamification-copy] Sanity read failed:", error);
     res.status(503).json({

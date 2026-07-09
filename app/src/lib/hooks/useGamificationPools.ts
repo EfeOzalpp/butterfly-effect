@@ -38,6 +38,9 @@ interface QueueState {
   cursor: number;
 }
 
+type CopyType = 'general' | 'personalized';
+type CopyGroups = Record<CopyType, CopyDoc[]>;
+
 const isReadyCopyDoc = (doc: CopyDoc): doc is ReadyCopyDoc =>
   !!doc.range &&
   Array.isArray(doc.titles) &&
@@ -63,21 +66,32 @@ function isCopyDocs(value: unknown): value is CopyDoc[] {
   });
 }
 
+function isCopyGroups(value: unknown): value is CopyGroups {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return isCopyDocs(record.general) && isCopyDocs(record.personalized);
+}
+
 function shouldFallbackToMock(error: unknown) {
   if (!(error instanceof ReadApiError)) return false;
   return error.status === 403 || error.status === 429 || error.status >= 500;
 }
 
-async function fetchCopyDocs(type: 'general' | 'personalized'): Promise<CopyDoc[]> {
+function readDocsFromBody(value: unknown) {
+  if (!value || typeof value !== 'object') return undefined;
+  return (value as Record<string, unknown>).docs;
+}
+
+async function fetchCopyGroups(): Promise<CopyGroups> {
   const url = new URL('/api/gamification-copy', window.location.origin);
-  url.searchParams.set('type', type);
 
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
     },
   });
-  const body: { docs?: unknown } = await response.json().catch(() => ({}));
+  const body = await response.json().catch((): unknown => ({})) as unknown;
+  const docs = readDocsFromBody(body);
 
   if (!response.ok) {
     throw new ReadApiError(
@@ -86,11 +100,11 @@ async function fetchCopyDocs(type: 'general' | 'personalized'): Promise<CopyDoc[
     );
   }
 
-  if (!isCopyDocs(body.docs)) {
+  if (!isCopyGroups(docs)) {
     throw new ReadApiError('Gamification copy API returned an invalid response', 502);
   }
 
-  return body.docs;
+  return docs;
 }
 
 /** Simple store util */
@@ -115,73 +129,19 @@ function createStore(initial: PoolState) {
 }
 
 /** One singleton per copy type */
-function createPool(copyType: 'general' | 'personalized') {
+function createPool(copyType: CopyType) {
   const store = createStore({ docs: [], rev: 'v0', loaded: false });
-  let started = false;
-  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const stop = () => {
-    if (refreshTimer) {
-      clearTimeout(refreshTimer);
-      refreshTimer = null;
-    }
-  };
 
   const setFallbackReady = () => {
-    stop();
     // When CMS copy is unavailable or mock reads are active, let the
     // consuming component's local fallback buckets provide the text.
     store.set({ docs: [], rev: 'fallback', loaded: true });
   };
 
-  subscribeMockReadMode(() => {
-    if (!started) return;
-    if (shouldUseMockReads()) setFallbackReady();
-  });
-
-  const start = () => {
-    if (started) return;
-    started = true;
-
-    if (shouldUseMockReads()) {
-      setFallbackReady();
-      return;
-    }
-
-    const pump = (rows: CopyDoc[]) => {
-      const docs = rows;
-      const latest = docs.reduce((m, r) => (r._updatedAt > m ? r._updatedAt : m), '');
-      store.set({ docs, rev: latest || 'v1', loaded: true });
-    };
-
-    const scheduleRefresh = () => {
-      if (refreshTimer) clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        void refresh();
-      }, 60_000);
-    };
-
-    const refresh = async () => {
-      try {
-        const docs = await fetchCopyDocs(copyType);
-        if (shouldUseMockReads()) {
-          setFallbackReady();
-          return;
-        }
-        pump(docs);
-        scheduleRefresh();
-      } catch (error: unknown) {
-        if (shouldFallbackToMock(error)) {
-          enableMockReadFallback(error);
-          setFallbackReady();
-          return;
-        }
-        console.error(error);
-        scheduleRefresh();
-      }
-    };
-
-    void refresh();
+  const pump = (rows: CopyDoc[]) => {
+    const docs = rows;
+    const latest = docs.reduce((m, r) => (r._updatedAt > m ? r._updatedAt : m), '');
+    store.set({ docs, rev: latest || 'v1', loaded: true });
   };
 
   const usePool = () => {
@@ -293,21 +253,86 @@ function createPool(copyType: 'general' | 'personalized') {
     return { pick, loaded, hasCMS: docs.length > 0, rev };
   };
 
-  return { start, stop, usePool };
+  return { pump, setFallbackReady, usePool };
 }
 
 /** Two singletons */
 const generalPool = createPool('general');
 const personalizedPool = createPool('personalized');
+const pools: Record<CopyType, ReturnType<typeof createPool>> = {
+  general: generalPool,
+  personalized: personalizedPool,
+};
+
+let sourceStarted = false;
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+const stopSource = () => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
+};
+
+const setAllFallbackReady = () => {
+  stopSource();
+  pools.general.setFallbackReady();
+  pools.personalized.setFallbackReady();
+};
+
+subscribeMockReadMode(() => {
+  if (!sourceStarted) return;
+  if (shouldUseMockReads()) setAllFallbackReady();
+});
+
+function startCopySource() {
+  if (sourceStarted) return;
+  sourceStarted = true;
+
+  if (shouldUseMockReads()) {
+    setAllFallbackReady();
+    return;
+  }
+
+  const scheduleRefresh = () => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      void refresh();
+    }, 60_000);
+  };
+
+  const refresh = async () => {
+    try {
+      const groups = await fetchCopyGroups();
+      if (shouldUseMockReads()) {
+        setAllFallbackReady();
+        return;
+      }
+      pools.general.pump(groups.general);
+      pools.personalized.pump(groups.personalized);
+      scheduleRefresh();
+    } catch (error: unknown) {
+      if (shouldFallbackToMock(error)) {
+        enableMockReadFallback(error);
+        setAllFallbackReady();
+        return;
+      }
+      console.error(error);
+      scheduleRefresh();
+    }
+  };
+
+  void refresh();
+}
 
 /** Hooks for components: they only subscribe; they do not start fetch if not started yet */
 export function useGeneralPools() {
   // Soft guarantee: if nothing started them yet, start once here as a safety net.
-  generalPool.start();
+  startCopySource();
   return generalPool.usePool();
 }
 
 export function usePersonalizedPools() {
-  personalizedPool.start();
+  startCopySource();
   return personalizedPool.usePool();
 }
