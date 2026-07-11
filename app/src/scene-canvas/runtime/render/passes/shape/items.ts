@@ -6,6 +6,21 @@ import type { RuntimeShapeOptions } from "../../../shape-adapter/types";
 import { copyRuntimeShapeOptionsInto } from "../../../shape-adapter/options";
 import { clamp01, easeOutCubic } from "../../../util/easing";
 
+const MAX_APPEAR_FRAME_ADVANCE_MS = 34;
+
+function advanceAppearElapsedMs(state: LiveState, nowMs: number): number {
+  if (state.lastAppearFrameAtMs === undefined) {
+    state.lastAppearFrameAtMs = nowMs;
+    state.appearElapsedMs ??= Math.max(0, nowMs - state.bornAtMs);
+    return state.appearElapsedMs;
+  }
+
+  const frameDeltaMs = Math.max(0, nowMs - state.lastAppearFrameAtMs);
+  state.lastAppearFrameAtMs = nowMs;
+  state.appearElapsedMs = (state.appearElapsedMs ?? 0) + Math.min(frameDeltaMs, MAX_APPEAR_FRAME_ADVANCE_MS);
+  return state.appearElapsedMs;
+}
+
 // drawItems is called by engine/loop.ts during every canvas frame.
 // loop.ts owns the frame-wide context: time, grid metrics, lighting, palette,
 // and the actual "draw one shape" function.
@@ -69,7 +84,7 @@ export function drawItems(params: {
   function renderItem(it: EngineFieldItem, itemIndex: number, easedK: number, alphaK: number, rEff: number, occurrenceIndex: number) {
     let state = liveStates.get(it.id);
     if (!state) {
-      state = { bornAtMs: nowMs };
+      state = { bornAtMs: nowMs, appearElapsedMs: 0, lastAppearFrameAtMs: nowMs };
       liveStates.set(it.id, state);
     }
     copyRuntimeShapeOptionsInto(opts, baseOpts);
@@ -109,11 +124,11 @@ export function drawItems(params: {
     const it = items[itemIndex];
     let state = liveStates.get(it.id);
     if (!state) {
-      state = { bornAtMs: nowMs };
+      state = { bornAtMs: nowMs, appearElapsedMs: 0, lastAppearFrameAtMs: nowMs };
       liveStates.set(it.id, state);
     }
 
-    const bornAt = state.bornAtMs;
+    const appearElapsedMs = advanceAppearElapsedMs(state, nowMs);
     const itemAppearMs = state.appearMs ?? appearMs;
     const itemStaggerMs = state.appearStaggerMs ?? appearStaggerMs;
     const staggerSpan = itemAppearMs > 0 ? Math.max(0, itemStaggerMs) : 0;
@@ -125,7 +140,7 @@ export function drawItems(params: {
       // Stagger follows render order, so distant items resolve before nearer items.
       // It also spreads cache warmup instead of asking every pass to bake at once.
       const delayMs = (staggerSpan * itemIndex) / staggerDenom;
-      const elapsedMs = nowMs - bornAt - delayMs;
+      const elapsedMs = appearElapsedMs - delayMs;
       if (elapsedMs <= 0) continue;
 
       const appearT = clamp01(elapsedMs / itemAppearMs);

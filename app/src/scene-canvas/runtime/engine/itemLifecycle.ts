@@ -3,6 +3,8 @@ import type { EngineFieldItem } from "./field";
 
 export interface LiveState {
   bornAtMs: number;
+  appearElapsedMs?: number;
+  lastAppearFrameAtMs?: number;
   appearMs?: number;
   appearStaggerMs?: number;
   hoverStartMs?: number;
@@ -51,6 +53,8 @@ export function reconcileLiveStatesOnFieldUpdate(args: {
     if (!state || !prev || shouldReplayAppear(prev, next)) {
       liveStates.set(next.id, {
         bornAtMs: nowMs,
+        appearElapsedMs: 0,
+        lastAppearFrameAtMs: nowMs,
         appearMs,
         appearStaggerMs,
       });
