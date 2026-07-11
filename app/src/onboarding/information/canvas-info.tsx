@@ -7,28 +7,8 @@ import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
 
 const SpotlightEntry = React.lazy(() => import("../../canvas-instances/SpotlightEntry"));
 
-function deferAfterPaint(callback: () => void, delayMs = 180) {
-  let cancelled = false;
-  let frameId: number | null = null;
-  let timerId: number | null = null;
-
-  const run = () => {
-    if (cancelled) return;
-    timerId = window.setTimeout(() => {
-      if (!cancelled) callback();
-    }, delayMs);
-  };
-
-  frameId = window.requestAnimationFrame(() => {
-    frameId = window.requestAnimationFrame(run);
-  });
-
-  return () => {
-    cancelled = true;
-    if (frameId !== null) window.cancelAnimationFrame(frameId);
-    if (timerId !== null) window.clearTimeout(timerId);
-  };
-}
+const SPOTLIGHT_LOAD_DELAY_MS = 1500;
+const SPOTLIGHT_INTERSECTION_THRESHOLD = 0.1;
 
 export default function CanvasInfo() {
   const {
@@ -42,6 +22,7 @@ export default function CanvasInfo() {
 
   const asideRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
+  const [loadDelayComplete, setLoadDelayComplete] = useState(false);
   const [spotlightReady, setSpotlightReady] = useState(false);
 
   useEffect(() => {
@@ -51,19 +32,29 @@ export default function CanvasInfo() {
       return;
     }
     const observer = new IntersectionObserver(
-      ([entry]) => { setInView(entry.isIntersecting); },
-      { threshold: 0.6 }
+      ([entry]) => {
+        const visible = entry.isIntersecting && entry.intersectionRatio >= SPOTLIGHT_INTERSECTION_THRESHOLD;
+        setInView(visible);
+      },
+      { threshold: SPOTLIGHT_INTERSECTION_THRESHOLD }
     );
     observer.observe(el);
     return () => { observer.disconnect(); };
   }, []);
 
   useEffect(() => {
-    if (!inView) return;
-    return deferAfterPaint(() => {
-      setSpotlightReady(true);
-    });
-  }, [inView]);
+    const id = window.setTimeout(() => {
+      setLoadDelayComplete(true);
+    }, SPOTLIGHT_LOAD_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loadDelayComplete && inView) setSpotlightReady(true);
+  }, [inView, loadDelayComplete]);
 
   useEffect(() => {
     if (spotlight.paused || !inView) return;
