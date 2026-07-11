@@ -1,10 +1,34 @@
 
 // src/onboarding/information/canvas-info.tsx
 
-import { useEffect, useRef, useState } from "react";
-import SpotlightEntry from "../../canvas-instances/SpotlightEntry";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import PlayPauseIcon from "../../assets/svg/play/PlayPauseIcon";
 import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
+
+const SpotlightEntry = React.lazy(() => import("../../canvas-instances/SpotlightEntry"));
+
+function deferAfterPaint(callback: () => void, delayMs = 180) {
+  let cancelled = false;
+  let frameId: number | null = null;
+  let timerId: number | null = null;
+
+  const run = () => {
+    if (cancelled) return;
+    timerId = window.setTimeout(() => {
+      if (!cancelled) callback();
+    }, delayMs);
+  };
+
+  frameId = window.requestAnimationFrame(() => {
+    frameId = window.requestAnimationFrame(run);
+  });
+
+  return () => {
+    cancelled = true;
+    if (frameId !== null) window.cancelAnimationFrame(frameId);
+    if (timerId !== null) window.clearTimeout(timerId);
+  };
+}
 
 export default function CanvasInfo() {
   const {
@@ -18,6 +42,7 @@ export default function CanvasInfo() {
 
   const asideRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
+  const [spotlightReady, setSpotlightReady] = useState(false);
 
   useEffect(() => {
     const el = asideRef.current;
@@ -34,7 +59,15 @@ export default function CanvasInfo() {
   }, []);
 
   useEffect(() => {
+    if (!inView) return;
+    return deferAfterPaint(() => {
+      setSpotlightReady(true);
+    });
+  }, [inView]);
+
+  useEffect(() => {
     if (spotlight.paused || !inView) return;
+    if (!spotlightReady) return;
 
     const id = window.setInterval(() => {
       nextSpotlight();
@@ -43,13 +76,19 @@ export default function CanvasInfo() {
     return () => {
       window.clearInterval(id);
     };
-  }, [nextSpotlight, spotlight.index, spotlight.paused, inView]);
+  }, [nextSpotlight, spotlight.index, spotlight.paused, inView, spotlightReady]);
 
   return (
     <aside ref={asideRef} className="onboarding-info canvas-info" aria-label="Scene Canvas information">
       <section className="canvas-info__slider" aria-label="Scene Canvas preview">
         <div className="canvas-info__spotlight-frame">
-          <SpotlightEntry spotlight={spotlight} liveAvg={spotlightLiveAvg} />
+          {spotlightReady ? (
+            <Suspense fallback={<div id="spotlight-canvas-root" className="canvas-info__spotlight-canvas" aria-hidden="true" />}>
+              <SpotlightEntry spotlight={spotlight} liveAvg={spotlightLiveAvg} />
+            </Suspense>
+          ) : (
+            <div id="spotlight-canvas-root" className="canvas-info__spotlight-canvas" aria-hidden="true" />
+          )}
           <div className="ui-icon-nav canvas-info__slider-controls" aria-label="Scene Canvas preview controls">
             <div className="canvas-info__liveavg-control">
               <div className="canvas-info__liveavg-track" aria-hidden="true" />

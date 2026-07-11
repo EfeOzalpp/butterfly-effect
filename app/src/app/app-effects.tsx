@@ -39,7 +39,7 @@ function scheduleIdle(callback: () => void, timeout = 1500) {
     };
   }
 
-  const timer = idleWindow.setTimeout(callback, 0);
+  const timer = idleWindow.setTimeout(callback, timeout);
   return () => {
     idleWindow.clearTimeout(timer);
   };

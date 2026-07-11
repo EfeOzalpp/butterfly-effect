@@ -8,6 +8,7 @@ import { useIdentity } from "../../app/state/identity-context";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
+import { useWindowAspectRatio } from "../../lib/hooks/useWindowAspectRatio";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
 import { isDesktopWidth, isTabletWidth } from "../../lib/responsive/breakpoints";
 import { desktopGraphToolsOffsetPx } from "../../lib/responsive/graph-tools-offset";
@@ -38,8 +39,8 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   const { myEntryId, mySection, setMyEntryId, setMySection, setMyRole } = useIdentity();
   const { setLiveAvg } = useCanvasRuntime();
   const windowWidth = useWindowWidth();
+  const aspectRatio = useWindowAspectRatio();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const aspectRatio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 1.78;
   const pickerOffset = isDesktopWidth(windowWidth)
     ? desktopGraphToolsOffsetPx(windowWidth, logsOpen, widgetsOpen, aspectRatio)
     : isTabletWidth(windowWidth)

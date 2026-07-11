@@ -2,6 +2,25 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import AppShell from './app/main';
 import { initPostHog } from './lib/posthog';
 
+interface IdleWindow {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+}
+
+function scheduleStartupWork(callback: () => void, timeout = 2500) {
+  const idleWindow = window as Window & IdleWindow;
+  const runWhenIdle = () => {
+    if (typeof idleWindow.requestIdleCallback === 'function') {
+      idleWindow.requestIdleCallback(callback, { timeout });
+      return;
+    }
+    window.setTimeout(callback, timeout);
+  };
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(runWhenIdle);
+  });
+}
+
 const container = document.getElementById('butterfly-effect');
 if (!container) {
   throw new Error('Missing #butterfly-effect root element');
@@ -15,10 +34,12 @@ if (container.hasChildNodes()) {
   createRoot(container).render(<AppShell />);
 }
 
-void import('./lib/sentry').then(({ initSentry }) => {
-  initSentry();
-}).catch((error: unknown) => {
-  console.warn('[sentry] init import failed:', error);
-});
+scheduleStartupWork(() => {
+  void import('./lib/sentry').then(({ initSentry }) => {
+    initSentry();
+  }).catch((error: unknown) => {
+    console.warn('[sentry] init import failed:', error);
+  });
 
-void initPostHog();
+  void initPostHog();
+});
