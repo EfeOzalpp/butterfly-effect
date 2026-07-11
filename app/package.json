@@ -59,6 +59,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jest": "^30.4.2",
+    "playwright": "^1.61.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "ts-jest": "^29.4.11",
     "tsx": "^4.19.2",
