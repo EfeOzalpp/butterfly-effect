@@ -19,7 +19,7 @@ function ToggleCheckIcon() {
   );
 }
 
-export default function ModeToggle() {
+function ModeToggle() {
   const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest, personalPanelOpen } = useUiStore(
     useShallow((s) => ({
       mode: s.mode,
@@ -132,3 +132,5 @@ export default function ModeToggle() {
     </div>
   );
 }
+
+export default React.memo(ModeToggle);

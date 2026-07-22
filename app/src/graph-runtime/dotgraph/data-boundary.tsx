@@ -1,6 +1,5 @@
-import { Profiler, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { profilerOnRenderGraph } from "../../dev/renderProfilerStatsGraph";
 import { useIdentity } from "../../app/state/identity-context";
 import { getSessionItem } from "../../app/session";
 import { useSurveyData } from "../../app/state/survey-data-context";
@@ -83,9 +82,7 @@ export default function DotGraphDataBoundary() {
 
   return (
     <GraphDataProvider data={cappedData}>
-      <Profiler id="DotGraphCanvasHost" onRender={profilerOnRenderGraph}>
-        <DotGraphCanvasHost />
-      </Profiler>
+      <DotGraphCanvasHost />
     </GraphDataProvider>
   );
 }

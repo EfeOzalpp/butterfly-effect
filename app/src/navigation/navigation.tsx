@@ -1,4 +1,4 @@
-import React, { Profiler } from "react";
+import React from "react";
 import NavLeft from "./left/nav-left";
 import NavRight from "./right/nav-right";
 import NavBottom from "./bottom/nav-bottom";
@@ -6,7 +6,6 @@ import { usePreferences } from "../app/state/preferences-context";
 import { useIdentity } from "../app/state/identity-context";
 import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../app/state/ui-store";
-import { profilerOnRender } from "../dev/renderProfilerStats";
 import "../styles/navigation.css";
 
 const PLACEMENT_TRANSITION_MS = 220;
@@ -154,15 +153,11 @@ const Navigation = () => {
         className={`navigation${isLandingState ? " is-landing-centered" : ""}`}
       >
         <NavLeft introActive={introActive} />
-        <Profiler id="NavRight" onRender={profilerOnRender}>
-          <NavRight isDark={darkMode} introActive={introActive} />
-        </Profiler>
+        <NavRight isDark={darkMode} introActive={introActive} />
       </nav>
-      <Profiler id="NavBottom" onRender={profilerOnRender}>
-        <NavBottom introActive={introActive} />
-      </Profiler>
+      <NavBottom introActive={introActive} />
     </>
   );
 };
 
-export default Navigation;
+export default React.memo(Navigation);

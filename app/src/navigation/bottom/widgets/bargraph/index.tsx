@@ -1,7 +1,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { usePreferences } from "../../../../app/state/preferences-context";
 import { useUiStore } from "../../../../app/state/ui-store";
@@ -75,7 +75,7 @@ function markerFractionInBucket(rank: number, categories: Categories) {
   };
 }
 
-export default function BarGraph({
+function BarGraph({
   navOutsidePanel = false,
   panelClassName,
   paused,
@@ -413,3 +413,5 @@ export default function BarGraph({
     </>
   );
 }
+
+export default memo(BarGraph);

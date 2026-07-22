@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useUiStore } from "../../app/state/ui-store";
 
 const Logo = () => {
@@ -13,4 +14,4 @@ const Logo = () => {
   );
 };
 
-export default Logo;
+export default memo(Logo);

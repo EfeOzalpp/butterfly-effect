@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import ColorToggle from "./color-toggle";
 import GraphPicker from "../graph-picker";
@@ -18,7 +18,7 @@ const DEFAULT_SECTION = "fine-arts";
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
 type PickerOffsetStyle = CSSProperties & { "--picker-offset": string };
 
-export default function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
+function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
   const {
     isSurveyActive,
     setSurveyActive,
@@ -171,3 +171,5 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
     </>
   );
 }
+
+export default memo(NavRight);

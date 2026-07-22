@@ -1,6 +1,5 @@
 // src/onboarding/index.tsx
-import React, { Profiler, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { profilerOnRender } from '../dev/renderProfilerStats';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../app/state/ui-store";
@@ -36,7 +35,24 @@ const SectionPickerIntro = React.lazy(
   () => import("./section-picker")
 );
 
-export default function Survey({
+// Module scope (not a Survey-local closure) so its reference stays stable
+// across renders — handleSubmitFromQuestions's useCallback depends on it.
+function answersToWeights(answers: Record<string, number | null>) {
+  const getVal = (i: number) => {
+    const id = BUTTON_QUESTIONS[i]?.id;
+    const v = id ? answers[id] : undefined;
+    return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+  };
+  return {
+    q1: getVal(0),
+    q2: getVal(1),
+    q3: getVal(2),
+    q4: getVal(3),
+    q5: getVal(4),
+  };
+}
+
+function Survey({
   onAnswersUpdate,
 }: {
   onAnswersUpdate?: (answers: Record<string, number | null>) => void;
@@ -240,23 +256,7 @@ export default function Survey({
     transitionTo('questions', () => { setAnimationVisible(false); });
   };
 
-  // Map answers{id->value} into q1..q5 by original question order
-  function answersToWeights(answers: Record<string, number | null>) {
-    const getVal = (i: number) => {
-      const id = BUTTON_QUESTIONS[i]?.id;
-      const v = id ? answers[id] : undefined;
-      return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
-    };
-    return {
-      q1: getVal(0),
-      q2: getVal(1),
-      q3: getVal(2),
-      q4: getVal(3),
-      q5: getVal(4),
-    };
-  }
-
-  const handleSubmitFromQuestions = async (answers: Record<string, number | null>) => {
+  const handleSubmitFromQuestions = useCallback(async (answers: Record<string, number | null>) => {
     if (submitting) return;
 
     const savedEntryId = getSessionItem('be.myEntryId');
@@ -354,7 +354,33 @@ export default function Survey({
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [
+    submitting,
+    resetToStart,
+    setSubmitting,
+    setError,
+    setFinished,
+    setQuestionnaireOpen,
+    surveySection,
+    setLiveAvg,
+    counts,
+    setSection,
+    upsertLocalSurveyRow,
+    setMySection,
+    setMyEntryId,
+    setMyRole,
+    setHasCompletedSurvey,
+    openGraph,
+    setSurveyActive,
+    setAnimationVisible,
+    audience,
+    closeGraph,
+  ]);
+
+  const handleSubmit = useCallback(
+    (answers: Record<string, number | null>) => { void handleSubmitFromQuestions(answers); },
+    [handleSubmitFromQuestions]
+  );
 
   const handleAudienceChange = (role: Audience) => {
     setAudience(role);
@@ -386,9 +412,7 @@ export default function Survey({
           {stage === 'role' && (
             <>
               <RoleStep value={audience} onChange={handleAudienceChange} onNext={handleRoleNext} error={error} />
-              <Profiler id="CanvasInfo" onRender={profilerOnRender}>
-                <CanvasInfo />
-              </Profiler>
+              <CanvasInfo />
             </>
           )}
 
@@ -406,16 +430,16 @@ export default function Survey({
           )}
 
           {stage === 'questions' && !finished && (
-            <Profiler id="ButtonQuestionnaireFlow" onRender={profilerOnRender}>
-              <ButtonQuestionnaireFlow
-                onAnswersUpdate={onAnswersUpdate}
-                onSubmit={(answers) => { void handleSubmitFromQuestions(answers); }}
-                submitting={submitting}
-              />
-            </Profiler>
+            <ButtonQuestionnaireFlow
+              onAnswersUpdate={onAnswersUpdate}
+              onSubmit={handleSubmit}
+              submitting={submitting}
+            />
           )}
         </Suspense>
       )}
     </div>
   );
 }
+
+export default React.memo(Survey);

@@ -1,5 +1,4 @@
-import { Profiler, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { profilerOnRender } from "../../dev/renderProfilerStats";
+import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import "../../styles/widgets.css";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
 import { useShallow } from "zustand/react/shallow";
@@ -21,7 +20,7 @@ import CompactGraphTools from "./widgets/compact-graph-tools";
 const BarGraph = lazy(() => import("./widgets/bargraph/index"));
 type WidgetView = "bar" | "questions";
 
-export default function NavBottom({ introActive = false }: { introActive?: boolean }) {
+function NavBottom({ introActive = false }: { introActive?: boolean }) {
   const {
     cityPanelOpen,
     setCityPanelOpen,
@@ -189,14 +188,12 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
                   {activeWidgetView === "bar" && (
                     <GraphDataProvider data={allFilteredRows}>
                       <Suspense fallback={null}>
-                        <Profiler id="BarGraph:nav-bottom" onRender={profilerOnRender}>
-                          <BarGraph
-                            navOutsidePanel
-                            panelClassName="widgets-view widgets-panel bar-graph"
-                            paused={widgetAutoplayPaused}
-                            onPausedChange={setWidgetAutoplayPaused}
-                          />
-                        </Profiler>
+                        <BarGraph
+                          navOutsidePanel
+                          panelClassName="widgets-view widgets-panel bar-graph"
+                          paused={widgetAutoplayPaused}
+                          onPausedChange={setWidgetAutoplayPaused}
+                        />
                       </Suspense>
                     </GraphDataProvider>
                   )}
@@ -314,12 +311,12 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
               : { transform: `translateX(calc(-50% + ${String(modeToggleShiftPx)}px))`, transition: "transform 0.2s ease" }
           }
         >
-          <Profiler id="ModeToggle" onRender={profilerOnRender}>
-            <ModeToggle />
-          </Profiler>
+          <ModeToggle />
           {useCompactGraphNav && <CompactGraphTools />}
         </div>
       )}
     </>
   );
 }
+
+export default memo(NavBottom);

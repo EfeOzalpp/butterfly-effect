@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { DEFAULT_AVG, useCanvasRuntimeStore } from "../../../app/state/canvas-runtime-store";
 import { useUiStore } from "../../../app/state/ui-store";
@@ -69,7 +69,7 @@ function ButtonQuestionnaireOption({
   );
 }
 
-export default function ButtonQuestionnaireFlow({
+function ButtonQuestionnaireFlow({
   onAnswersUpdate,
   onSubmit,
   submitting,
@@ -251,3 +251,5 @@ export default function ButtonQuestionnaireFlow({
     </section>
   );
 }
+
+export default memo(ButtonQuestionnaireFlow);
