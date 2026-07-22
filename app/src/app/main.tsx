@@ -1,14 +1,13 @@
 // src/app/main.tsx
 
-import React, { Profiler, Suspense } from "react";
+import React, { Suspense } from "react";
 
 import { AppProvider } from "./app-provider";
 import ClientOnly from "./client-only"; // wrapper to exclude certain files from server-side rendering.
 import { useUiStore } from "./state/ui-store";
-import { profilerOnRender, recordOwnRender } from "../dev/renderProfilerStats";
 
 import Survey from "../onboarding"; // survey is included in server-side.
-import Navigation from "../navigation/navigation"; // navigation is included in server-side. 
+import Navigation from "../navigation/navigation"; // navigation is included in server-side.
 
 // gated via ClientOnly
 import DataVisualization from "../graph-runtime";
@@ -32,7 +31,6 @@ import "../styles/ui-system.css";
 const QuestionnaireEntry = React.lazy(() => import("../canvas-instances/QuestionnaireEntry"));
 const GraphBGDark = React.lazy(() => import("../navigation/right/system-color"));
 const AppInner: React.FC = () => {
-  recordOwnRender("AppInner");
   const vizVisible = useUiStore((s) => s.vizVisible);
   const questionnaireOpen = useUiStore((s) => s.questionnaireOpen);
   const cityPanelOpen = useUiStore((s) => s.cityPanelOpen);
@@ -57,9 +55,7 @@ const AppInner: React.FC = () => {
         </ClientOnly>
       )}
 
-      <Profiler id="Navigation" onRender={profilerOnRender}>
-        <Navigation />
-      </Profiler>
+      <Navigation />
 
       {!vizVisible && !animationVisible && !cityPanelOpen && !questionnaireOpen && (
         <div className="welcome-title-layer">
@@ -70,9 +66,7 @@ const AppInner: React.FC = () => {
       {!vizVisible && !animationVisible && !cityPanelOpen && !questionnaireOpen && (
         <ClientOnly>
           <ErrorBoundary name="CanvasEntry">
-            <Profiler id="CanvasEntry" onRender={profilerOnRender}>
-              <CanvasEntry visible={true} />
-            </Profiler>
+            <CanvasEntry visible={true} />
           </ErrorBoundary>
         </ClientOnly>
       )}
@@ -81,9 +75,7 @@ const AppInner: React.FC = () => {
         <ClientOnly>
           <ErrorBoundary name="QuestionnaireEntry">
             <Suspense fallback={null}>
-              <Profiler id="QuestionnaireEntry" onRender={profilerOnRender}>
-                <QuestionnaireEntry visible={true} />
-              </Profiler>
+              <QuestionnaireEntry visible={true} />
             </Suspense>
           </ErrorBoundary>
         </ClientOnly>
@@ -92,9 +84,7 @@ const AppInner: React.FC = () => {
       {cityPanelOpen && (
         <ClientOnly>
           <ErrorBoundary name="CityOverlay">
-            <Profiler id="CityOverlay" onRender={profilerOnRender}>
-              <CityOverlay open={true} />
-            </Profiler>
+            <CityOverlay open={true} />
           </ErrorBoundary>
         </ClientOnly>
       )}
@@ -111,9 +101,7 @@ const AppInner: React.FC = () => {
 
       <div className={`user-flow${questionnaireOpen ? " questionnaire-active" : ""}${vizVisible ? " graph-active" : ""}`}>
         <ErrorBoundary name="Survey">
-          <Profiler id="Survey" onRender={profilerOnRender}>
-            <Survey />
-          </Profiler>
+          <Survey />
         </ErrorBoundary>
       </div>
     </main>
@@ -122,9 +110,7 @@ const AppInner: React.FC = () => {
 
 const AppShell: React.FC = () => (
   <AppProvider>
-    <Profiler id="AppInner" onRender={profilerOnRender}>
-      <AppInner />
-    </Profiler>
+    <AppInner />
   </AppProvider>
 );
 

@@ -32,9 +32,7 @@
     "lint": "eslint",
     "lint:ci": "eslint src/scene-canvas src/graph-runtime/sprites",
     "lint:all": "eslint .",
-    "test": "jest",
-    "bench:zustand": "tsx src/dev/rerenderBenchmark.ts --metric=subtree",
-    "bench:memo": "tsx src/dev/rerenderBenchmark.ts --metric=own"
+    "test": "jest"
   },
   "jest": {
     "preset": "ts-jest",

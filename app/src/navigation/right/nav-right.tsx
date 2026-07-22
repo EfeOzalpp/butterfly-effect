@@ -13,14 +13,12 @@ import { useWindowAspectRatio } from "../../lib/hooks/useWindowAspectRatio";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
 import { isDesktopWidth, isTabletWidth } from "../../lib/responsive/breakpoints";
 import { desktopGraphToolsOffsetPx } from "../../lib/responsive/graph-tools-offset";
-import { recordOwnRender } from "../../dev/renderProfilerStats";
 
 const DEFAULT_SECTION = "fine-arts";
 const cx = (...parts: (string | boolean | undefined)[]) => parts.filter(Boolean).join(" ");
 type PickerOffsetStyle = CSSProperties & { "--picker-offset": string };
 
 function NavRight({ isDark, introActive = false }: { isDark: boolean; introActive?: boolean }) {
-  recordOwnRender("NavRight");
   const {
     isSurveyActive,
     setSurveyActive,
