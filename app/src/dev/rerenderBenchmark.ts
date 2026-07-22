@@ -2,10 +2,20 @@
 // Benchmarking script for the Context re-render comparison.
 // Requires the dev server already running (npm run dev) at BENCH_URL below.
 // Run with: npx tsx src/dev/rerenderBenchmark.ts
+// Or via npm run bench:zustand (subtree-commit table only) / npm run bench:memo (own-render table only)
 
 import { chromium, type Page } from "playwright";
 
 const APP_URL = process.env.BENCH_URL ?? "http://localhost:5173";
+
+// --metric=subtree prints only the <Profiler> subtree-commit table (what moves
+// with Context vs Zustand). --metric=own prints only the own-render table
+// (what moves with memo). Default prints both, as before.
+type Metric = "subtree" | "own" | "both";
+const METRIC: Metric = (() => {
+  const raw = process.argv.find((a) => a.startsWith("--metric="))?.split("=")[1];
+  return raw === "subtree" || raw === "own" ? raw : "both";
+})();
 
 // One entry per question in BUTTON_QUESTIONS (button-questions.ts), each value
 // is how many distinct answer options to select for that question.
@@ -56,23 +66,29 @@ async function logSection(page: Page, label: string) {
       (window as unknown as { __renderStats: { log: () => { total: number; rows: RenderRow[] } } })
         .__renderStats.log()
   );
-  console.log(`\n=== ${label} ===`);
-  console.table([...rows].sort((a, b) => b.renders - a.renders));
-  console.log(`${label} total:`, total);
-
   const { rows: ownRows } = await page.evaluate(
     () =>
       (window as unknown as { __ownRenderStats: { log: () => { rows: OwnRenderRow[] } } })
         .__ownRenderStats.log()
   );
-  console.log(`--- ${label}: own-render counts (component's own body only) ---`);
-  console.table(ownRows);
+  const ownTotal = ownRows.reduce((sum, row) => sum + row.renders, 0);
+
+  if (METRIC !== "own") {
+    console.log(`\n=== ${label} ===`);
+    console.table([...rows].sort((a, b) => b.renders - a.renders));
+    console.log(`${label} total:`, total);
+  }
+  if (METRIC !== "subtree") {
+    console.log(`${METRIC === "own" ? "\n===" : "---"} ${label}: own-render counts (component's own body only) ${METRIC === "own" ? "===" : "---"}`);
+    console.table(ownRows);
+    if (METRIC === "own") console.log(`${label} own-render total:`, ownTotal);
+  }
 
   await page.evaluate(() => {
     (window as unknown as { __renderStats: { reset: () => void } }).__renderStats.reset();
     (window as unknown as { __ownRenderStats: { reset: () => void } }).__ownRenderStats.reset();
   });
-  return total;
+  return { subtreeTotal: total, ownTotal };
 }
 
 async function run() {
@@ -90,7 +106,7 @@ async function run() {
   });
   await page.waitForTimeout(1000);
 
-  const sectionTotals: Record<string, number> = {};
+  const sectionTotals: Record<string, { subtreeTotal: number; ownTotal: number }> = {};
 
   // --- Theme toggle: light, then back to dark after 1s, before anything else ---
   await page.getByRole("button", { name: "Switch to light mode", exact: true }).click();
@@ -108,7 +124,7 @@ async function run() {
   sectionTotals["Pre-survey graph view toggle"] = await logSection(page, "Pre-survey graph view toggle");
 
   // --- Scroll down to the CanvasInfo spotlight controls ---
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); });
   await page.waitForTimeout(1000);
 
   await page.locator(".canvas-info__slider-button--pause").waitFor();
@@ -173,7 +189,7 @@ async function run() {
     await page.getByRole("button", { name: "Next question", exact: true }).click();
     await page.locator(".button-questionnaire__button").first().waitFor();
   }
-  sectionTotals["Questionnaire"] = await logSection(page, "Questionnaire");
+  sectionTotals.Questionnaire = await logSection(page, "Questionnaire");
 
   // --- Graph runtime area (post-submit) ---
   await page.waitForTimeout(1000);
@@ -203,10 +219,23 @@ async function run() {
   await page.getByRole("button", { name: "Close widgets", exact: true }).click();
   sectionTotals["Graph runtime (post-submit)"] = await logSection(page, "Graph runtime (post-submit)");
 
-  const grandTotal = Object.values(sectionTotals).reduce((sum, n) => sum + n, 0);
+  const totals = Object.values(sectionTotals);
+  const grandSubtreeTotal = totals.reduce((sum, t) => sum + t.subtreeTotal, 0);
+  const grandOwnTotal = totals.reduce((sum, t) => sum + t.ownTotal, 0);
+
   console.log("\n=== Section totals ===");
-  console.table(sectionTotals);
-  console.log("Grand total across all sections:", grandTotal);
+  if (METRIC !== "own") {
+    console.table(
+      Object.fromEntries(Object.entries(sectionTotals).map(([k, v]) => [k, v.subtreeTotal]))
+    );
+    console.log("Grand total across all sections (subtree commits):", grandSubtreeTotal);
+  }
+  if (METRIC !== "subtree") {
+    console.table(
+      Object.fromEntries(Object.entries(sectionTotals).map(([k, v]) => [k, v.ownTotal]))
+    );
+    console.log("Grand total across all sections (own-renders):", grandOwnTotal);
+  }
 
   await browser.close();
 }
