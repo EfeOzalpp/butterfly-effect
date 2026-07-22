@@ -24,7 +24,7 @@ export function logRenderStats() {
   console.table(rows);
   const total = rows.reduce((sum, row) => sum + row.renders, 0);
   console.log("Total renders across profiled components:", total);
-  return total;
+  return { total, rows };
 }
 
 export function resetRenderStats() {

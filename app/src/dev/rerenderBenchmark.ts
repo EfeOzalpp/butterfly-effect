@@ -47,6 +47,23 @@ async function cycleWidgetSectionNav(page: Page) {
   await pauseButton.click();
 }
 
+interface RenderRow { id: string; renders: number; totalMs: number }
+
+async function logSection(page: Page, label: string) {
+  const { total, rows } = await page.evaluate(
+    () =>
+      (window as unknown as { __renderStats: { log: () => { total: number; rows: RenderRow[] } } })
+        .__renderStats.log()
+  );
+  console.log(`\n=== ${label} ===`);
+  console.table([...rows].sort((a, b) => b.renders - a.renders));
+  console.log(`${label} total:`, total);
+  await page.evaluate(() => {
+    (window as unknown as { __renderStats: { reset: () => void } }).__renderStats.reset();
+  });
+  return total;
+}
+
 async function run() {
   const browser = await chromium.launch({ headless: process.env.HEADLESS === "true" });
   const page = await browser.newPage(); // fresh, disposable context every run
@@ -61,11 +78,14 @@ async function run() {
   });
   await page.waitForTimeout(1000);
 
+  const sectionTotals: Record<string, number> = {};
+
   // --- Theme toggle: light, then back to dark after 1s, before anything else ---
   await page.getByRole("button", { name: "Switch to light mode", exact: true }).click();
   await page.waitForTimeout(1000);
   await page.getByRole("button", { name: "Switch to dark mode", exact: true }).click();
   await page.waitForTimeout(1000);
+  sectionTotals["Theme toggle"] = await logSection(page, "Theme toggle");
 
   // --- Observer/graph view: open, then close after 3s ---
   // Reachable here because isSurveyActive is still false pre-survey.
@@ -73,6 +93,7 @@ async function run() {
   await page.waitForTimeout(3000);
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.waitForTimeout(1000);
+  sectionTotals["Pre-survey graph view toggle"] = await logSection(page, "Pre-survey graph view toggle");
 
   // --- Scroll down to the CanvasInfo spotlight controls ---
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -92,6 +113,7 @@ async function run() {
 
   await dragRangeSlider(page, ".canvas-info__liveavg-slider", 0.5, 1, 10, 1000);
   await page.waitForTimeout(1000);
+  sectionTotals["CanvasInfo spotlight controls"] = await logSection(page, "CanvasInfo spotlight controls");
 
   // --- Scroll back up to the role picker ---
   await page.locator(".role-select").scrollIntoViewIfNeeded();
@@ -108,6 +130,7 @@ async function run() {
   await page.locator('[role="option"]').first().click();
   await page.waitForTimeout(1000);
   await page.locator(".section-continue-button").click();
+  sectionTotals["Role + section pick"] = await logSection(page, "Role + section pick");
 
   // --- Questionnaire: answer per ANSWERS_PER_QUESTION, city toggle between q2/q3 ---
   await page.locator(".button-questionnaire__button").first().waitFor();
@@ -138,6 +161,7 @@ async function run() {
     await page.getByRole("button", { name: "Next question", exact: true }).click();
     await page.locator(".button-questionnaire__button").first().waitFor();
   }
+  sectionTotals["Questionnaire"] = await logSection(page, "Questionnaire");
 
   // --- Graph runtime area (post-submit) ---
   await page.waitForTimeout(1000);
@@ -165,15 +189,12 @@ async function run() {
   await cycleWidgetSectionNav(page);
 
   await page.getByRole("button", { name: "Close widgets", exact: true }).click();
+  sectionTotals["Graph runtime (post-submit)"] = await logSection(page, "Graph runtime (post-submit)");
 
-  const total = await page.evaluate(
-    () => (window as unknown as { __renderStats: { log: () => number } }).__renderStats.log()
-  );
-
-  console.log("Fixed script complete: theme toggle, view toggle, spotlight controls,");
-  console.log(`role/section pick, answers [${ANSWERS_PER_QUESTION.join(", ")}] with city toggle, finished submit,`);
-  console.log("mode toggle, graph picker, logs, and widgets (both tabs).");
-  console.log("Total renders across all profiled components:", total);
+  const grandTotal = Object.values(sectionTotals).reduce((sum, n) => sum + n, 0);
+  console.log("\n=== Section totals ===");
+  console.table(sectionTotals);
+  console.log("Grand total across all sections:", grandTotal);
 
   await browser.close();
 }
