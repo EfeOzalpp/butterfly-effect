@@ -2,8 +2,9 @@
 
 import React, { useMemo } from "react";
 
-import { useUiFlow } from "../../app/state/ui-context";
-import type { Mode } from "../../app/state/ui-context";
+import { useShallow } from "zustand/react/shallow";
+import { useUiStore } from "../../app/state/ui-store";
+import type { Mode } from "../../app/state/ui-store";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useIdentity } from "../../app/state/identity-context";
 import { avgWeightOf } from "../../lib/utils/score";
@@ -19,7 +20,16 @@ function ToggleCheckIcon() {
 }
 
 export default function ModeToggle() {
-  const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest, personalPanelOpen } = useUiFlow();
+  const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest, personalPanelOpen } = useUiStore(
+    useShallow((s) => ({
+      mode: s.mode,
+      setMode: s.setMode,
+      observerMode: s.observerMode,
+      setOpenPersonalized: s.setOpenPersonalized,
+      setSpotlightRequest: s.setSpotlightRequest,
+      personalPanelOpen: s.personalPanelOpen,
+    }))
+  );
   const { allFilteredRows: data } = useSurveyData();
   const { myEntryId } = useIdentity();
 

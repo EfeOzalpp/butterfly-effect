@@ -265,17 +265,8 @@ const pools: Record<CopyType, ReturnType<typeof createPool>> = {
 };
 
 let sourceStarted = false;
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-
-const stopSource = () => {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-    refreshTimer = null;
-  }
-};
 
 const setAllFallbackReady = () => {
-  stopSource();
   pools.general.setFallbackReady();
   pools.personalized.setFallbackReady();
 };
@@ -294,13 +285,6 @@ function startCopySource() {
     return;
   }
 
-  const scheduleRefresh = () => {
-    if (refreshTimer) clearTimeout(refreshTimer);
-    refreshTimer = setTimeout(() => {
-      void refresh();
-    }, 60_000);
-  };
-
   const refresh = async () => {
     try {
       const groups = await fetchCopyGroups();
@@ -310,7 +294,6 @@ function startCopySource() {
       }
       pools.general.pump(groups.general);
       pools.personalized.pump(groups.personalized);
-      scheduleRefresh();
     } catch (error: unknown) {
       if (shouldFallbackToMock(error)) {
         enableMockReadFallback(error);
@@ -318,7 +301,6 @@ function startCopySource() {
         return;
       }
       console.error(error);
-      scheduleRefresh();
     }
   };
 
@@ -327,7 +309,7 @@ function startCopySource() {
 
 /** Hooks for components: they only subscribe; they do not start fetch if not started yet */
 export function useGeneralPools() {
-  // Soft guarantee: if nothing started them yet, start once here as a safety net.
+  // if nothing started them yet, start once here as a safety net.
   startCopySource();
   return generalPool.usePool();
 }

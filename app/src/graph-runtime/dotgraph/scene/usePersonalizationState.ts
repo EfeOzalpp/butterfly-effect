@@ -11,7 +11,7 @@ import {
   type SpriteAssignment,
   type SpriteIdentity,
 } from '../../sprites/entry';
-import { useOptionalUiFlow } from '../../../app/state/ui-context';
+import { useUiStore } from '../../../app/state/ui-store';
 import { getSessionItem, removeSessionItems } from '../../../app/session';
 import type {
   DotGraphEntry,
@@ -70,7 +70,7 @@ export default function usePersonalizationState({
     [dataById, personalizedEntryId]
   );
 
-  const ui = useOptionalUiFlow();
+  const setOpenPersonalized = useUiStore((s) => s.setOpenPersonalized);
 
   const mySnapshot = useMemo(() => {
     if (myEntry) return null;
@@ -185,8 +185,8 @@ export default function usePersonalizationState({
     if (!wantOpen) return;
     if (!shouldRenderPersonalUI) return;
     removeSessionItems(['be.openPersonalOnNext']);
-    ui?.setOpenPersonalized(true);
-  }, [shouldRenderPersonalUI, ui]);
+    setOpenPersonalized(true);
+  }, [shouldRenderPersonalUI, setOpenPersonalized]);
 
   return {
     myEntry,

@@ -7,7 +7,7 @@ import "../../styles/gamification.css";
 
 import { getSessionItem } from "../../app/session";
 import { useOptionalPreferences } from "../../app/state/preferences-context";
-import { useOptionalUiFlow } from "../../app/state/ui-context";
+import { useUiStore } from "../../app/state/ui-store";
 import HintBanner from "../../app/ui/HintBanner";
 import { useTransientFlag } from "../../lib/hooks/useTransientFlag";
 import { saveSoloMessage } from "../../client-api/response-api/saveSoloMessage";
@@ -113,9 +113,8 @@ export default function GamificationPersonalized({
   zoomFraction,
 }: GamificationPersonalizedProps) {
   const darkMode = !!useOptionalPreferences()?.darkMode;
-  const ui = useOptionalUiFlow();
-  const openPersonalized = ui?.openPersonalized;
-  const setOpenPersonalized = ui?.setOpenPersonalized;
+  const openPersonalized = useUiStore((s) => s.openPersonalized);
+  const setOpenPersonalized = useUiStore((s) => s.setOpenPersonalized);
 
   // Title stays in the CMS contract, but this panel only renders the secondary line.
   const [open, setOpen] = useState(true);
@@ -222,7 +221,7 @@ export default function GamificationPersonalized({
     const timerId = window.setTimeout(() => {
       setOpen(true);
     }, 0);
-    setOpenPersonalized?.(false);
+    setOpenPersonalized(false);
     return () => {
       window.clearTimeout(timerId);
     };

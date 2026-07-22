@@ -7,7 +7,7 @@ import { useRealMobileViewport } from '../../../lib/hooks/useRealMobileViewport'
 import { useWindowWidth } from '../../../lib/hooks/useWindowWidth';
 import { isMobileWidth, isTabletWidth } from '../../../lib/responsive/breakpoints';
 import { desktopGraphToolsOffsetPx, tabletGraphToolsYOffsetPx } from '../../../lib/responsive/graph-tools-offset';
-import { useOptionalUiFlow } from '../../../app/state/ui-context';
+import { useUiStore } from '../../../app/state/ui-store';
 import { chooseCameraSpriteTileSize, prewarmSpriteTextures, resolveSpriteVisual } from '../../sprites/entry';
 import { bumpZoomMetric } from '../../debug/zoomMetrics';
 import { useOrbitController } from '../camera';
@@ -144,13 +144,12 @@ export default function useDotGraphSceneState({
 }: UseDotGraphSceneStateParams) {
   const isRealMobile = useRealMobileViewport();
   const windowWidth = useWindowWidth();
-  const ui = useOptionalUiFlow();
   const isSmallScreen = isMobileWidth(windowWidth);
   const isTabletLike = isTabletWidth(windowWidth);
   const useDesktopLayout = !(isSmallScreen || isRealMobile || isTabletLike);
 
-  const logsOpen = Boolean(ui?.logsOpen);
-  const widgetsOpen = Boolean(ui?.widgetsOpen);
+  const logsOpen = useUiStore((s) => s.logsOpen);
+  const widgetsOpen = useUiStore((s) => s.widgetsOpen);
   const graphNavOffsetPx = desktopGraphToolsOffsetPx(windowWidth, logsOpen, widgetsOpen);
   const tabletNavYOffsetPx = tabletGraphToolsYOffsetPx(windowWidth, logsOpen, widgetsOpen);
   const mobilePanelOffsetPx = wantsSkew ? MOBILE_PANEL_X_OFFSET_PX : 0;
