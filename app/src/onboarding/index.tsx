@@ -1,5 +1,6 @@
 // src/onboarding/index.tsx
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Profiler, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { profilerOnRender, recordOwnRender } from '../dev/renderProfilerStats';
 
 import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../app/state/ui-store";
@@ -57,6 +58,7 @@ function Survey({
 }: {
   onAnswersUpdate?: (answers: Record<string, number | null>) => void;
 }) {
+  recordOwnRender("Survey");
   const [stage, setStage] = useState<'role' | 'section' | 'questions'>('role');
   const [audience, setAudience] = useState<Audience>('visitor');
   const [surveySection, setSurveySection] = useState('');
@@ -412,7 +414,9 @@ function Survey({
           {stage === 'role' && (
             <>
               <RoleStep value={audience} onChange={handleAudienceChange} onNext={handleRoleNext} error={error} />
-              <CanvasInfo />
+              <Profiler id="CanvasInfo" onRender={profilerOnRender}>
+                <CanvasInfo />
+              </Profiler>
             </>
           )}
 
@@ -430,11 +434,13 @@ function Survey({
           )}
 
           {stage === 'questions' && !finished && (
-            <ButtonQuestionnaireFlow
-              onAnswersUpdate={onAnswersUpdate}
-              onSubmit={handleSubmit}
-              submitting={submitting}
-            />
+            <Profiler id="ButtonQuestionnaireFlow" onRender={profilerOnRender}>
+              <ButtonQuestionnaireFlow
+                onAnswersUpdate={onAnswersUpdate}
+                onSubmit={handleSubmit}
+                submitting={submitting}
+              />
+            </Profiler>
           )}
         </Suspense>
       )}

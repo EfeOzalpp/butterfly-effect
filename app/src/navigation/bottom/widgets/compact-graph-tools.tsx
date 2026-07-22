@@ -1,5 +1,6 @@
-import { Suspense, lazy, useRef, useState } from "react";
+import { Profiler, Suspense, lazy, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { profilerOnRender } from "../../../dev/renderProfilerStats";
 import CloseIcon from "../../../assets/svg/close/CloseIcon";
 import { useSurveyData } from "../../../app/state/survey-data-context";
 import { GraphDataProvider } from "../../../graph-runtime/GraphDataContext";
@@ -86,12 +87,14 @@ export default function CompactGraphTools() {
             {activeTool === "bar" && (
               <GraphDataProvider data={allFilteredRows}>
                 <Suspense fallback={null}>
-                  <BarGraph
-                    navOutsidePanel
-                    panelClassName="widgets-panel bar-graph compact-tools-widget-panel"
-                    paused={widgetAutoplayPaused}
-                    onPausedChange={setWidgetAutoplayPaused}
-                  />
+                  <Profiler id="BarGraph:compact-tools" onRender={profilerOnRender}>
+                    <BarGraph
+                      navOutsidePanel
+                      panelClassName="widgets-panel bar-graph compact-tools-widget-panel"
+                      paused={widgetAutoplayPaused}
+                      onPausedChange={setWidgetAutoplayPaused}
+                    />
+                  </Profiler>
                 </Suspense>
               </GraphDataProvider>
             )}

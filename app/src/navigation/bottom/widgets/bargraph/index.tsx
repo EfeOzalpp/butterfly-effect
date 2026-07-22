@@ -4,6 +4,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { usePreferences } from "../../../../app/state/preferences-context";
+import { recordOwnRender } from "../../../../dev/renderProfilerStats";
 import { useUiStore } from "../../../../app/state/ui-store";
 import { useIdentity } from "../../../../app/state/identity-context";
 import { useSurveyData } from "../../../../app/state/survey-data-context";
@@ -81,6 +82,7 @@ function BarGraph({
   paused,
   onPausedChange,
 }: BarGraphProps = {}) {
+  recordOwnRender("BarGraph");
   const { darkMode } = usePreferences();
   const hasCompletedSurvey = useUiStore((s) => s.hasCompletedSurvey);
   const { myEntryId } = useIdentity();
