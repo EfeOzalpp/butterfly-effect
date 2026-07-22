@@ -53,7 +53,7 @@ From that hands-on experience, I started building `Canvas Engine`: an unopiniona
 | **Sprite Pipeline** | Epoch texture update scheduler, quality upgrade scheduler, quantizes value that drives shape uniqueness for higher cache performance *(consumes scene canvas and Three.js)* |
 | **Three.js / WebGL** | Culling, 3D math, distance-based rotation speed and hitbox scaling with debounce during zoom, tooltip anchoring, and camera orchestration for the community graph *(consumes sprites)* |
 | **React + SSR API** | `renderToPipeableStream` for server-side rendering and client hydration |
-| **State Management** | Five app-wide slices; `CanvasRuntimeCtx` and `UiCtx` run on Zustand stores with per-field selectors so components re-render only on the fields they actually read, while `IdentityCtx`, `SurveyDataCtx`, and `PreferencesCtx` remain on React Context |
+| **State Management** | Five app-wide slices; `CanvasRuntimeCtx` and `UiCtx` run on Zustand stores with per-field selectors so components re-render only on the fields they actually read, while `IdentityCtx`, `SurveyDataCtx`, and `PreferencesCtx` remain on React Context. Twelve components beneath the render-heavy parents are wrapped in `React.memo` to stop unrelated parent re-renders from cascading into children whose own props are unchanged |
 | **Node.js** | Parses Vite build manifest, dynamically imports compiled SSR bundle |
 | **Express** | Validates write requests before Sanity mutations, batches cached CMS reads, rate-limits API routes, serves the SSR document, and streams chunked survey snapshots plus live SSE patches |
 | **Web Worker** | offloads scene placement computation, removing latency during user-input recomputation |
