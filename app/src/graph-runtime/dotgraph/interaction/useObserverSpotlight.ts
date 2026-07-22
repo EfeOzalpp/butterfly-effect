@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { useThree } from "../../r3f";
 import { Frustum, Matrix4, Vector3, type Group } from "../../three";
 import type { RefObject } from "react";
-import { useOptionalUiFlow } from "../../../app/state/ui-context";
+import { useUiStore } from "../../../app/state/ui-store";
 import { resolveSpriteVisual } from "../../sprites/entry";
 import { hasDotId } from "../types";
 import { makeCenteredTooltipEvent } from "../tooltip/hoverEvent";
@@ -52,9 +52,8 @@ export default function useObserverSpotlight({
   useEffect(() => { cameraRef.current = camera; }, [camera]);
   const glRef = useRef(gl);
   useEffect(() => { glRef.current = gl; }, [gl]);
-  const ui = useOptionalUiFlow();
-  const spotlightRequest = ui?.spotlightRequest ?? null;
-  const setSpotlightRequest = ui?.setSpotlightRequest;
+  const spotlightRequest = useUiStore((s) => s.spotlightRequest);
+  const setSpotlightRequest = useUiStore((s) => s.setSpotlightRequest);
 
   const spotlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spotlightActiveRef = useRef(false);
@@ -76,7 +75,7 @@ export default function useObserverSpotlight({
   }, [points]);
 
   useEffect(() => {
-    if (!spotlightRequest || !setSpotlightRequest) return;
+    if (!spotlightRequest) return;
 
     const durationMs = Math.max(500, spotlightRequest.durationMs);
     const xRatio = Math.max(0, Math.min(1, spotlightRequest.fakeMouseXRatio));

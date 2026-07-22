@@ -2,7 +2,8 @@ import { Profiler, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useR
 import { profilerOnRender } from "../../dev/renderProfilerStats";
 import "../../styles/widgets.css";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
-import { useUiFlow } from "../../app/state/ui-context";
+import { useShallow } from "zustand/react/shallow";
+import { useUiStore } from "../../app/state/ui-store";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { GraphDataProvider } from "../../graph-runtime/GraphDataContext";
 import { useEscapeToClose } from "../../lib/hooks/useEscapeToClose";
@@ -32,7 +33,20 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     setWidgetsOpen,
     questionnaireNav,
     requestQuestionnaireAdvance,
-  } = useUiFlow();
+  } = useUiStore(
+    useShallow((s) => ({
+      cityPanelOpen: s.cityPanelOpen,
+      setCityPanelOpen: s.setCityPanelOpen,
+      questionnaireOpen: s.questionnaireOpen,
+      vizVisible: s.vizVisible,
+      logsOpen: s.logsOpen,
+      setLogsOpen: s.setLogsOpen,
+      widgetsOpen: s.widgetsOpen,
+      setWidgetsOpen: s.setWidgetsOpen,
+      questionnaireNav: s.questionnaireNav,
+      requestQuestionnaireAdvance: s.requestQuestionnaireAdvance,
+    }))
+  );
   const { allFilteredRows } = useSurveyData();
   const windowWidth = useWindowWidth();
   const aspectRatio = useWindowAspectRatio();

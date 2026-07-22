@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { useUiFlow } from "../../../app/state/ui-context";
+import { useUiStore } from "../../../app/state/ui-store";
 
 import { CANVAS_PADDING, resolvePaddingSpec } from "../../../scene-canvas/scene-rules/canvas-padding";
 import {
@@ -69,7 +69,8 @@ function readViewportBox(): CanvasBox | null {
 }
 
 export function useQuestionnaireGridLayout() {
-  const { cityPanelOpen, questionnaireOpen } = useUiFlow();
+  const cityPanelOpen = useUiStore((s) => s.cityPanelOpen);
+  const questionnaireOpen = useUiStore((s) => s.questionnaireOpen);
   const preferCityCanvas = cityPanelOpen && questionnaireOpen;
   const preferQuestionnaireHost = questionnaireOpen && !preferCityCanvas;
   const [canvasBox, setCanvasBox] = useState<CanvasBox | null>(() =>

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { usePreferences } from "../../../../app/state/preferences-context";
-import { useUiFlow } from "../../../../app/state/ui-context";
+import { useUiStore } from "../../../../app/state/ui-store";
 import { useIdentity } from "../../../../app/state/identity-context";
 import { useSurveyData } from "../../../../app/state/survey-data-context";
 import { useRelativeScores } from "../../../../lib/hooks/useRelativeScore";
@@ -82,7 +82,7 @@ export default function BarGraph({
   onPausedChange,
 }: BarGraphProps = {}) {
   const { darkMode } = usePreferences();
-  const { hasCompletedSurvey } = useUiFlow();
+  const hasCompletedSurvey = useUiStore((s) => s.hasCompletedSurvey);
   const { myEntryId } = useIdentity();
   const { allRows, loading, section, sectionSelectionVersion } = useSurveyData();
 

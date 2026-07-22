@@ -166,13 +166,17 @@ async function run() {
 
   await page.getByRole("button", { name: "Close widgets", exact: true }).click();
 
-  const total = await page.evaluate(
-    () => (window as unknown as { __renderStats: { log: () => number } }).__renderStats.log()
+  interface RenderRow { id: string; renders: number; totalMs: number }
+  const { total, rows } = await page.evaluate(
+    () =>
+      (window as unknown as { __renderStats: { log: () => { total: number; rows: RenderRow[] } } })
+        .__renderStats.log()
   );
 
   console.log("Fixed script complete: theme toggle, view toggle, spotlight controls,");
   console.log(`role/section pick, answers [${ANSWERS_PER_QUESTION.join(", ")}] with city toggle, finished submit,`);
   console.log("mode toggle, graph picker, logs, and widgets (both tabs).");
+  console.table([...rows].sort((a, b) => b.renders - a.renders));
   console.log("Total renders across all profiled components:", total);
 
   await browser.close();

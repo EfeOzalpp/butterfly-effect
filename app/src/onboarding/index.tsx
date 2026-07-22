@@ -2,7 +2,8 @@
 import React, { Profiler, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { profilerOnRender } from '../dev/renderProfilerStats';
 
-import { useUiFlow } from "../app/state/ui-context";
+import { useShallow } from "zustand/react/shallow";
+import { useUiStore } from "../app/state/ui-store";
 import { useSurveyData } from "../app/state/survey-data-context";
 import { useIdentity } from "../app/state/identity-context";
 import { useCanvasRuntimeStore } from "../app/state/canvas-runtime-store";
@@ -40,7 +41,6 @@ export default function Survey({
 }: {
   onAnswersUpdate?: (answers: Record<string, number | null>) => void;
 }) {
-  const { setAnimationVisible } = useUiFlow();
   const [stage, setStage] = useState<'role' | 'section' | 'questions'>('role');
   const [audience, setAudience] = useState<Audience>('visitor');
   const [surveySection, setSurveySection] = useState('');
@@ -54,7 +54,33 @@ export default function Survey({
   const [finished, setFinished] = useState(false); // hide questionnaire immediately after submit
   const prevCompletedRef = useRef(false);
 
-  const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey, resetToStart } = useUiFlow();
+  const {
+    setAnimationVisible,
+    setSurveyActive,
+    setHasCompletedSurvey,
+    observerMode,
+    openGraph,
+    closeGraph,
+    hasCompletedSurvey,
+    setQuestionnaireOpen,
+    setSectionOpen,
+    surveyResetKey,
+    resetToStart,
+  } = useUiStore(
+    useShallow((s) => ({
+      setAnimationVisible: s.setAnimationVisible,
+      setSurveyActive: s.setSurveyActive,
+      setHasCompletedSurvey: s.setHasCompletedSurvey,
+      observerMode: s.observerMode,
+      openGraph: s.openGraph,
+      closeGraph: s.closeGraph,
+      hasCompletedSurvey: s.hasCompletedSurvey,
+      setQuestionnaireOpen: s.setQuestionnaireOpen,
+      setSectionOpen: s.setSectionOpen,
+      surveyResetKey: s.surveyResetKey,
+      resetToStart: s.resetToStart,
+    }))
+  );
   const { section, setSection, counts, upsertLocalSurveyRow } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
   const setLiveAvg = useCanvasRuntimeStore((s) => s.setLiveAvg);

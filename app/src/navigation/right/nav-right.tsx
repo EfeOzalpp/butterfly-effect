@@ -5,7 +5,8 @@ import ColorToggle from "./color-toggle";
 import GraphPicker from "../graph-picker";
 import { getSessionItem } from "../../app/session";
 import { useIdentity } from "../../app/state/identity-context";
-import { useUiFlow } from "../../app/state/ui-context";
+import { useShallow } from "zustand/react/shallow";
+import { useUiStore } from "../../app/state/ui-store";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useCanvasRuntimeStore } from "../../app/state/canvas-runtime-store";
 import { useWindowAspectRatio } from "../../lib/hooks/useWindowAspectRatio";
@@ -34,7 +35,25 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
     vizVisible,
     cityPanelOpen,
     setCityPanelOpen,
-  } = useUiFlow();
+  } = useUiStore(
+    useShallow((s) => ({
+      isSurveyActive: s.isSurveyActive,
+      setSurveyActive: s.setSurveyActive,
+      hasCompletedSurvey: s.hasCompletedSurvey,
+      setHasCompletedSurvey: s.setHasCompletedSurvey,
+      observerMode: s.observerMode,
+      setObserverMode: s.setObserverMode,
+      openGraph: s.openGraph,
+      closeGraph: s.closeGraph,
+      resetToStart: s.resetToStart,
+      logsOpen: s.logsOpen,
+      widgetsOpen: s.widgetsOpen,
+      questionnaireOpen: s.questionnaireOpen,
+      vizVisible: s.vizVisible,
+      cityPanelOpen: s.cityPanelOpen,
+      setCityPanelOpen: s.setCityPanelOpen,
+    }))
+  );
   const { section, setSection } = useSurveyData();
   const { myEntryId, mySection, setMyEntryId, setMySection, setMyRole } = useIdentity();
   const setLiveAvg = useCanvasRuntimeStore((s) => s.setLiveAvg);

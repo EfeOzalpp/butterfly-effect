@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 
 import { usePreferences } from '../../app/state/preferences-context';
-import { useUiFlow } from '../../app/state/ui-context';
+import { useUiStore } from '../../app/state/ui-store';
 import { useIdentity } from '../../app/state/identity-context';
 import { useSurveyData } from '../../app/state/survey-data-context';
 import { useSharedGraphData } from '../GraphDataContext';
@@ -25,7 +25,9 @@ import usePersonalizationState from './scene/usePersonalizationState';
 
 export default function DotGraph() {
   const { darkMode } = usePreferences();
-  const { observerMode, mode, setPersonalPanelOpen } = useUiFlow();
+  const observerMode = useUiStore((s) => s.observerMode);
+  const mode = useUiStore((s) => s.mode);
+  const setPersonalPanelOpen = useUiStore((s) => s.setPersonalPanelOpen);
   const { myEntryId, mySection } = useIdentity();
   const { section, allFilteredRows: fullSurveyData, loading } = useSurveyData();
 

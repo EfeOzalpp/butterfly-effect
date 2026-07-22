@@ -15,7 +15,7 @@ import {
 
 import DotGraph from "./scene";
 
-import { useUiFlow } from "../../app/state/ui-context";
+import { useUiStore } from "../../app/state/ui-store";
 import { useSurveyData } from "../../app/state/survey-data-context";
 import { useRealMobileViewport } from "../../lib/hooks/useRealMobileViewport";
 import { DEFAULT_VIEWPORT_WIDTH, isMobileWidth } from "../../lib/responsive/breakpoints";
@@ -234,7 +234,9 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
 
 // App-level gate around Canvas mount/unmount so reopening the graph does not reuse stale GPU work.
 const DotGraphCanvasHost = () => {
-  const { vizVisible, logsOpen, widgetsOpen } = useUiFlow();
+  const vizVisible = useUiStore((s) => s.vizVisible);
+  const logsOpen = useUiStore((s) => s.logsOpen);
+  const widgetsOpen = useUiStore((s) => s.widgetsOpen);
   const { allFilteredRows: surveyData, loading, section } = useSurveyData();
   const isRealMobile = useRealMobileViewport();
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : DEFAULT_VIEWPORT_WIDTH;

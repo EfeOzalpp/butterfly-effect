@@ -1,7 +1,7 @@
-import { useUiFlow } from "../../app/state/ui-context";
+import { useUiStore } from "../../app/state/ui-store";
 
 const Logo = () => {
-  const { resetToStart } = useUiFlow();
+  const resetToStart = useUiStore((s) => s.resetToStart);
 
   return (
     <button
