@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { DEFAULT_AVG, useCanvasRuntime } from "../../../app/state/canvas-runtime-context";
+import { DEFAULT_AVG, useCanvasRuntimeStore } from "../../../app/state/canvas-runtime-store";
 import { useUiFlow } from "../../../app/state/ui-context";
 import CheckIcon from "../../../assets/svg/check/CheckIcon";
 import { BUTTON_QUESTIONS } from "./button-questions";
@@ -78,7 +78,8 @@ export default function ButtonQuestionnaireFlow({
   onSubmit?: (answers: Record<string, number | null>) => void;
   submitting?: boolean;
 }) {
-  const { setLiveAvg, setReservedFootprints } = useCanvasRuntime();
+  const setLiveAvg = useCanvasRuntimeStore((s) => s.setLiveAvg);
+  const setReservedFootprints = useCanvasRuntimeStore((s) => s.setReservedFootprints);
   const {
     questionnaireAdvanceTick,
     setQuestionnaireNav,

@@ -6,14 +6,12 @@ import { unstable_batchedUpdates as batched } from "react-dom";
 
 import { getSessionItem, removeSessionItems } from "./session";
 
-import useCanvasRuntimeState from "./state/useCanvasRuntimeState";
 import useIdentityState from "./state/useIdentityState";
 import usePreferencesState from "./state/usePreferencesState";
 import useSurveyDataState from "./state/useSurveyDataState";
 import useUiState from "./state/useUiState";
 
-import { CanvasRuntimeCtx } from "./state/canvas-runtime-context";
-import type { CanvasRuntimeState } from "./state/canvas-runtime-context";
+import { resetCanvasRuntimeState, useBootstrapLiveAvgFromSession } from "./state/canvas-runtime-store";
 import { IdentityCtx } from "./state/identity-context";
 import type { IdentityState } from "./state/identity-context";
 import { PreferencesCtx } from "./state/preferences-context";
@@ -47,24 +45,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     questionnaireAdvanceTick, requestQuestionnaireAdvance, resetQuestionnaireNav,
     surveyResetKey, incrementSurveyResetKey,
   } = useUiState();
-  const {
-    hoveredShapeState,
-    setHoveredShape,
-    clickedShapeState,
-    setClickedShape,
-    liveAvgState,
-    setLiveAvg,
-    spotlightLiveAvgState,
-    setSpotlightLiveAvg,
-    reservedFootprintsState,
-    setReservedFootprints,
-    spotlightState,
-    previousSpotlight,
-    nextSpotlight,
-    setSpotlightPaused,
-    toggleSpotlightPaused,
-    resetCanvasRuntimeState,
-  } = useCanvasRuntimeState();
+  useBootstrapLiveAvgFromSession();
   const {
     section,
     setSection,
@@ -114,7 +95,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       "be.openPersonalOnNext",
     ]);
   }, [
-    resetCanvasRuntimeState,
     setHasCompletedSurvey,
     setMyEntryId,
     setMyRole,
@@ -184,43 +164,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     ]
   );
 
-  const canvasRuntimeValue = useMemo<CanvasRuntimeState>(
-    () => ({
-      hoveredShape: hoveredShapeState,
-      setHoveredShape,
-      clickedShape: clickedShapeState,
-      setClickedShape,
-      liveAvg: liveAvgState,
-      setLiveAvg,
-      spotlightLiveAvg: spotlightLiveAvgState,
-      setSpotlightLiveAvg,
-      reservedFootprints: reservedFootprintsState,
-      setReservedFootprints,
-      spotlight: spotlightState,
-      previousSpotlight,
-      nextSpotlight,
-      setSpotlightPaused,
-      toggleSpotlightPaused,
-    }),
-    [
-      hoveredShapeState,
-      setHoveredShape,
-      clickedShapeState,
-      setClickedShape,
-      liveAvgState,
-      setLiveAvg,
-      spotlightLiveAvgState,
-      setSpotlightLiveAvg,
-      reservedFootprintsState,
-      setReservedFootprints,
-      spotlightState,
-      previousSpotlight,
-      nextSpotlight,
-      setSpotlightPaused,
-      toggleSpotlightPaused,
-    ]
-  );
-
   const identityValue = useMemo<IdentityState>(
     () => ({ mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole }),
     [mySection, setMySection, myEntryId, setMyEntryId, myRole, setMyRole]
@@ -243,13 +186,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <PreferencesCtx.Provider value={preferencesValue}>
       <UiCtx.Provider value={uiValue}>
-        <CanvasRuntimeCtx.Provider value={canvasRuntimeValue}>
-          <IdentityCtx.Provider value={identityValue}>
-            <SurveyDataCtx.Provider value={surveyDataValue}>
-              {children}
-            </SurveyDataCtx.Provider>
-          </IdentityCtx.Provider>
-        </CanvasRuntimeCtx.Provider>
+        <IdentityCtx.Provider value={identityValue}>
+          <SurveyDataCtx.Provider value={surveyDataValue}>
+            {children}
+          </SurveyDataCtx.Provider>
+        </IdentityCtx.Provider>
       </UiCtx.Provider>
     </PreferencesCtx.Provider>
   );

@@ -7,7 +7,7 @@ import { getSessionItem } from "../../app/session";
 import { useIdentity } from "../../app/state/identity-context";
 import { useUiFlow } from "../../app/state/ui-context";
 import { useSurveyData } from "../../app/state/survey-data-context";
-import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
+import { useCanvasRuntimeStore } from "../../app/state/canvas-runtime-store";
 import { useWindowAspectRatio } from "../../lib/hooks/useWindowAspectRatio";
 import { useWindowWidth } from "../../lib/hooks/useWindowWidth";
 import { isDesktopWidth, isTabletWidth } from "../../lib/responsive/breakpoints";
@@ -37,7 +37,7 @@ export default function NavRight({ isDark, introActive = false }: { isDark: bool
   } = useUiFlow();
   const { section, setSection } = useSurveyData();
   const { myEntryId, mySection, setMyEntryId, setMySection, setMyRole } = useIdentity();
-  const { setLiveAvg } = useCanvasRuntime();
+  const setLiveAvg = useCanvasRuntimeStore((s) => s.setLiveAvg);
   const windowWidth = useWindowWidth();
   const aspectRatio = useWindowAspectRatio();
   const [pickerOpen, setPickerOpen] = useState(false);

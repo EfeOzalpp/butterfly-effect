@@ -5,7 +5,7 @@ import { profilerOnRender } from '../dev/renderProfilerStats';
 import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
 import { useIdentity } from "../app/state/identity-context";
-import { useCanvasRuntime } from "../app/state/canvas-runtime-context";
+import { useCanvasRuntimeStore } from "../app/state/canvas-runtime-store";
 import "../styles/onboarding-info.css";
 import "../styles/section-questionnaire.css";
 
@@ -57,7 +57,7 @@ export default function Survey({
   const { setSurveyActive, setHasCompletedSurvey, observerMode, openGraph, closeGraph, hasCompletedSurvey, setQuestionnaireOpen, setSectionOpen, surveyResetKey, resetToStart } = useUiFlow();
   const { section, setSection, counts, upsertLocalSurveyRow } = useSurveyData();
   const { setMySection, setMyEntryId, setMyRole } = useIdentity();
-  const { setLiveAvg } = useCanvasRuntime();
+  const setLiveAvg = useCanvasRuntimeStore((s) => s.setLiveAvg);
 
   // Keep questionnaireOpen in sync with our stage (and finished latch).
   // No cleanup: the effect body always computes the correct value on re-run,

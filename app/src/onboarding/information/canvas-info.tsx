@@ -2,8 +2,9 @@
 // src/onboarding/information/canvas-info.tsx
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import PlayPauseIcon from "../../assets/svg/play/PlayPauseIcon";
-import { useCanvasRuntime } from "../../app/state/canvas-runtime-context";
+import { useCanvasRuntimeStore } from "../../app/state/canvas-runtime-store";
 
 const SpotlightEntry = React.lazy(() => import("../../canvas-instances/SpotlightEntry"));
 
@@ -18,7 +19,16 @@ export default function CanvasInfo() {
     previousSpotlight,
     nextSpotlight,
     toggleSpotlightPaused,
-  } = useCanvasRuntime();
+  } = useCanvasRuntimeStore(
+    useShallow((s) => ({
+      spotlightLiveAvg: s.spotlightLiveAvg,
+      setSpotlightLiveAvg: s.setSpotlightLiveAvg,
+      spotlight: s.spotlight,
+      previousSpotlight: s.previousSpotlight,
+      nextSpotlight: s.nextSpotlight,
+      toggleSpotlightPaused: s.toggleSpotlightPaused,
+    }))
+  );
 
   const asideRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
