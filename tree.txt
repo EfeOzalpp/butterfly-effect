@@ -1,5 +1,5 @@
 ﻿Folder PATH listing for volume Windows-SSD
-Volume serial number is 0000024B 8829:2B60
+Volume serial number is 0000021F 8829:2B60
 C:\USERS\EFE OZALP\DESKTOP\BUTTERFLY-EFFECT\APP\SRC
 |   index.tsx
 |   vite-env.d.ts
@@ -15,17 +15,15 @@ C:\USERS\EFE OZALP\DESKTOP\BUTTERFLY-EFFECT\APP\SRC
 |   |   useMockBanner.ts
 |   |   
 |   +---state
-|   |   |   canvas-runtime-context.ts
+|   |   |   canvas-runtime-store.ts
 |   |   |   identity-context.ts
 |   |   |   preferences-context.ts
 |   |   |   survey-data-context.ts
 |   |   |   survey-data-utils.ts
-|   |   |   ui-context.ts
-|   |   |   useCanvasRuntimeState.ts
+|   |   |   ui-store.ts
 |   |   |   useIdentityState.ts
 |   |   |   usePreferencesState.ts
 |   |   |   useSurveyDataState.ts
-|   |   |   useUiState.ts
 |   |   |   
 |   |   \---__tests__
 |   |           survey-data-utils.test.ts
