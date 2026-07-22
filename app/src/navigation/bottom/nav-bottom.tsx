@@ -1,4 +1,5 @@
-import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Profiler, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { profilerOnRender } from "../../dev/renderProfilerStats";
 import "../../styles/widgets.css";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
 import { useUiFlow } from "../../app/state/ui-context";
@@ -174,12 +175,14 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
                   {activeWidgetView === "bar" && (
                     <GraphDataProvider data={allFilteredRows}>
                       <Suspense fallback={null}>
-                        <BarGraph
-                          navOutsidePanel
-                          panelClassName="widgets-view widgets-panel bar-graph"
-                          paused={widgetAutoplayPaused}
-                          onPausedChange={setWidgetAutoplayPaused}
-                        />
+                        <Profiler id="BarGraph:nav-bottom" onRender={profilerOnRender}>
+                          <BarGraph
+                            navOutsidePanel
+                            panelClassName="widgets-view widgets-panel bar-graph"
+                            paused={widgetAutoplayPaused}
+                            onPausedChange={setWidgetAutoplayPaused}
+                          />
+                        </Profiler>
                       </Suspense>
                     </GraphDataProvider>
                   )}
@@ -297,7 +300,9 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
               : { transform: `translateX(calc(-50% + ${String(modeToggleShiftPx)}px))`, transition: "transform 0.2s ease" }
           }
         >
-          <ModeToggle />
+          <Profiler id="ModeToggle" onRender={profilerOnRender}>
+            <ModeToggle />
+          </Profiler>
           {useCompactGraphNav && <CompactGraphTools />}
         </div>
       )}

@@ -37,6 +37,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     logsOpen, setLogsOpen,
     widgetsOpen, setWidgetsOpen,
     mode, setMode,
+    // radar mode is included (legacy feature)
     radarMode, setRadarMode,
     spotlightRequest, setSpotlightRequest,
     animationVisible, setAnimationVisible,

@@ -1,5 +1,6 @@
 // src/onboarding/index.tsx
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Profiler, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { profilerOnRender } from '../dev/renderProfilerStats';
 
 import { useUiFlow } from "../app/state/ui-context";
 import { useSurveyData } from "../app/state/survey-data-context";
@@ -359,7 +360,9 @@ export default function Survey({
           {stage === 'role' && (
             <>
               <RoleStep value={audience} onChange={handleAudienceChange} onNext={handleRoleNext} error={error} />
-              <CanvasInfo />
+              <Profiler id="CanvasInfo" onRender={profilerOnRender}>
+                <CanvasInfo />
+              </Profiler>
             </>
           )}
 
@@ -377,11 +380,13 @@ export default function Survey({
           )}
 
           {stage === 'questions' && !finished && (
-            <ButtonQuestionnaireFlow
-              onAnswersUpdate={onAnswersUpdate}
-              onSubmit={(answers) => { void handleSubmitFromQuestions(answers); }}
-              submitting={submitting}
-            />
+            <Profiler id="ButtonQuestionnaireFlow" onRender={profilerOnRender}>
+              <ButtonQuestionnaireFlow
+                onAnswersUpdate={onAnswersUpdate}
+                onSubmit={(answers) => { void handleSubmitFromQuestions(answers); }}
+                submitting={submitting}
+              />
+            </Profiler>
           )}
         </Suspense>
       )}

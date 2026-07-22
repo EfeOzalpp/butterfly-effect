@@ -1,7 +1,8 @@
 // src/graph-runtime/dotgraph/canvas-host.tsx
 // App-facing host for mounting the DotGraph scene and cleaning up WebGL resources.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Profiler, useEffect, useMemo, useRef, useState } from 'react';
+import { profilerOnRenderGraph } from '../../dev/renderProfilerStatsGraph';
 import { Canvas } from '../r3f';
 import { AdaptiveDpr } from '@react-three/drei/core/AdaptiveDpr';
 import { AdaptiveEvents } from '@react-three/drei/core/AdaptiveEvents';
@@ -219,7 +220,9 @@ function WebGLCanvas({ lowFidelity, dpr }: WebGLCanvasProps) {
       />
 
       {/* Graph */}
-      <DotGraph />
+      <Profiler id="DotGraph" onRender={profilerOnRenderGraph}>
+        <DotGraph />
+      </Profiler>
 
       {/* Perf helpers */}
       <AdaptiveDpr />
