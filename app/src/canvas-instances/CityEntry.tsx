@@ -1,8 +1,11 @@
 // src/canvas-instances/CityEntry.tsx
+import { memo } from "react";
 import { useCanvasRuntimeStore } from "../app/state/canvas-runtime-store";
 import { EngineHost } from "../scene-canvas/EngineHost";
+import { recordOwnRender } from "../dev/renderProfilerStats";
 
-export default function CityOverlay({ open }: { open: boolean }) {
+function CityOverlay({ open }: { open: boolean }) {
+  recordOwnRender("CityOverlay");
   const liveAvg = useCanvasRuntimeStore((s) => s.liveAvg);
   const reservedFootprints = useCanvasRuntimeStore((s) => s.reservedFootprints);
   const setClickedShape = useCanvasRuntimeStore((s) => s.setClickedShape);
@@ -24,3 +27,5 @@ export default function CityOverlay({ open }: { open: boolean }) {
     </div>
   );
 }
+
+export default memo(CityOverlay);

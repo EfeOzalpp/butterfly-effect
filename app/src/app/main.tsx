@@ -5,7 +5,7 @@ import React, { Profiler, Suspense } from "react";
 import { AppProvider } from "./app-provider";
 import ClientOnly from "./client-only"; // wrapper to exclude certain files from server-side rendering.
 import { useUiStore } from "./state/ui-store";
-import { profilerOnRender } from "../dev/renderProfilerStats";
+import { profilerOnRender, recordOwnRender } from "../dev/renderProfilerStats";
 
 import Survey from "../onboarding"; // survey is included in server-side.
 import Navigation from "../navigation/navigation"; // navigation is included in server-side. 
@@ -32,6 +32,7 @@ import "../styles/ui-system.css";
 const QuestionnaireEntry = React.lazy(() => import("../canvas-instances/QuestionnaireEntry"));
 const GraphBGDark = React.lazy(() => import("../navigation/right/system-color"));
 const AppInner: React.FC = () => {
+  recordOwnRender("AppInner");
   const vizVisible = useUiStore((s) => s.vizVisible);
   const questionnaireOpen = useUiStore((s) => s.questionnaireOpen);
   const cityPanelOpen = useUiStore((s) => s.cityPanelOpen);

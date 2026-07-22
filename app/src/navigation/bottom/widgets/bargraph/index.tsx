@@ -1,9 +1,10 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { usePreferences } from "../../../../app/state/preferences-context";
+import { recordOwnRender } from "../../../../dev/renderProfilerStats";
 import { useUiStore } from "../../../../app/state/ui-store";
 import { useIdentity } from "../../../../app/state/identity-context";
 import { useSurveyData } from "../../../../app/state/survey-data-context";
@@ -75,12 +76,13 @@ function markerFractionInBucket(rank: number, categories: Categories) {
   };
 }
 
-export default function BarGraph({
+function BarGraph({
   navOutsidePanel = false,
   panelClassName,
   paused,
   onPausedChange,
 }: BarGraphProps = {}) {
+  recordOwnRender("BarGraph");
   const { darkMode } = usePreferences();
   const hasCompletedSurvey = useUiStore((s) => s.hasCompletedSurvey);
   const { myEntryId } = useIdentity();
@@ -413,3 +415,5 @@ export default function BarGraph({
     </>
   );
 }
+
+export default memo(BarGraph);

@@ -10,6 +10,7 @@ import { useIdentity } from "../../app/state/identity-context";
 import { avgWeightOf } from "../../lib/utils/score";
 import { useAbsoluteScore } from "../../lib/hooks/useAbsoluteScore";
 import CheckIcon from "../../assets/svg/check/CheckIcon";
+import { recordOwnRender } from "../../dev/renderProfilerStats";
 
 function ToggleCheckIcon() {
   return (
@@ -19,7 +20,8 @@ function ToggleCheckIcon() {
   );
 }
 
-export default function ModeToggle() {
+function ModeToggle() {
+  recordOwnRender("ModeToggle");
   const { mode, setMode, observerMode, setOpenPersonalized, setSpotlightRequest, personalPanelOpen } = useUiStore(
     useShallow((s) => ({
       mode: s.mode,
@@ -132,3 +134,5 @@ export default function ModeToggle() {
     </div>
   );
 }
+
+export default React.memo(ModeToggle);

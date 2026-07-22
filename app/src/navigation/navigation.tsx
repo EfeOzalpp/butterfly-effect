@@ -6,12 +6,13 @@ import { usePreferences } from "../app/state/preferences-context";
 import { useIdentity } from "../app/state/identity-context";
 import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../app/state/ui-store";
-import { profilerOnRender } from "../dev/renderProfilerStats";
+import { profilerOnRender, recordOwnRender } from "../dev/renderProfilerStats";
 import "../styles/navigation.css";
 
 const PLACEMENT_TRANSITION_MS = 220;
 
 const Navigation = () => {
+  recordOwnRender("Navigation");
   const { darkMode } = usePreferences();
   const {
     vizVisible,
@@ -165,4 +166,4 @@ const Navigation = () => {
   );
 };
 
-export default Navigation;
+export default React.memo(Navigation);

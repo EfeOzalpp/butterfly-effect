@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { DEFAULT_AVG, useCanvasRuntimeStore } from "../../../app/state/canvas-runtime-store";
 import { useUiStore } from "../../../app/state/ui-store";
@@ -7,6 +7,7 @@ import { BUTTON_QUESTIONS } from "./button-questions";
 import { getQuestionButtonPlacement } from "./button-layouts";
 import { useQuestionnaireGridLayout } from "./useQuestionnaireGridLayout";
 import type { Place } from "../../../scene-canvas/grid-layout/occupancy";
+import { recordOwnRender } from "../../../dev/renderProfilerStats";
 
 function reserveSingleTile(footprint: Place): Place {
   const bottomRow = footprint.r0 + footprint.h - 1;
@@ -69,7 +70,7 @@ function ButtonQuestionnaireOption({
   );
 }
 
-export default function ButtonQuestionnaireFlow({
+function ButtonQuestionnaireFlow({
   onAnswersUpdate,
   onSubmit,
   submitting,
@@ -78,6 +79,7 @@ export default function ButtonQuestionnaireFlow({
   onSubmit?: (answers: Record<string, number | null>) => void;
   submitting?: boolean;
 }) {
+  recordOwnRender("ButtonQuestionnaireFlow");
   const setLiveAvg = useCanvasRuntimeStore((s) => s.setLiveAvg);
   const setReservedFootprints = useCanvasRuntimeStore((s) => s.setReservedFootprints);
   const questionnaireAdvanceTick = useUiStore((s) => s.questionnaireAdvanceTick);
@@ -251,3 +253,5 @@ export default function ButtonQuestionnaireFlow({
     </section>
   );
 }
+
+export default memo(ButtonQuestionnaireFlow);

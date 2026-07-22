@@ -1,9 +1,12 @@
 // src/canvas-instances/QuestionnaireEntry.tsx
 
+import { memo } from "react";
 import { useCanvasRuntimeStore } from "../app/state/canvas-runtime-store";
 import { EngineHost } from "../scene-canvas/EngineHost";
+import { recordOwnRender } from "../dev/renderProfilerStats";
 
-export default function QuestionnaireEntry({ visible = true }: { visible?: boolean }) {
+function QuestionnaireEntry({ visible = true }: { visible?: boolean }) {
+  recordOwnRender("QuestionnaireEntry");
   const liveAvg = useCanvasRuntimeStore((s) => s.liveAvg);
   const reservedFootprints = useCanvasRuntimeStore((s) => s.reservedFootprints);
 
@@ -24,3 +27,5 @@ export default function QuestionnaireEntry({ visible = true }: { visible?: boole
     </div>
   );
 }
+
+export default memo(QuestionnaireEntry);

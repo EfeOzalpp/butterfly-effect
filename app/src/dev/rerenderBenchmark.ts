@@ -48,6 +48,7 @@ async function cycleWidgetSectionNav(page: Page) {
 }
 
 interface RenderRow { id: string; renders: number; totalMs: number }
+interface OwnRenderRow { id: string; renders: number }
 
 async function logSection(page: Page, label: string) {
   const { total, rows } = await page.evaluate(
@@ -58,8 +59,18 @@ async function logSection(page: Page, label: string) {
   console.log(`\n=== ${label} ===`);
   console.table([...rows].sort((a, b) => b.renders - a.renders));
   console.log(`${label} total:`, total);
+
+  const { rows: ownRows } = await page.evaluate(
+    () =>
+      (window as unknown as { __ownRenderStats: { log: () => { rows: OwnRenderRow[] } } })
+        .__ownRenderStats.log()
+  );
+  console.log(`--- ${label}: own-render counts (component's own body only) ---`);
+  console.table(ownRows);
+
   await page.evaluate(() => {
     (window as unknown as { __renderStats: { reset: () => void } }).__renderStats.reset();
+    (window as unknown as { __ownRenderStats: { reset: () => void } }).__ownRenderStats.reset();
   });
   return total;
 }
@@ -75,6 +86,7 @@ async function run() {
   );
   await page.evaluate(() => {
     (window as unknown as { __renderStats: { reset: () => void } }).__renderStats.reset();
+    (window as unknown as { __ownRenderStats: { reset: () => void } }).__ownRenderStats.reset();
   });
   await page.waitForTimeout(1000);
 

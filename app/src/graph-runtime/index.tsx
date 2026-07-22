@@ -8,7 +8,7 @@ const Graph = React.lazy(() =>
   import(/* webpackChunkName: "graph" */ "./dotgraph/data-boundary")
 );
 
-export default function VisualizationPage() {
+function VisualizationPage() {
   const pageLoadingFallback = useMemo(
     () => (
       <div
@@ -38,3 +38,5 @@ export default function VisualizationPage() {
     </Suspense>
   );
 }
+
+export default React.memo(VisualizationPage);

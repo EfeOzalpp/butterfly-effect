@@ -32,9 +32,35 @@ export function resetRenderStats() {
   for (const key of Object.keys(durations)) delete durations[key];
 }
 
+// Counts a component's own function body executing, independent of the
+// wrapping <Profiler> (which fires for any commit in its subtree, including
+// descendants that re-render on their own). Call directly in the component
+// body — not via onRender — so this only ticks when THIS function re-runs.
+const ownCounts: Record<string, number> = {};
+
+export function recordOwnRender(id: string) {
+  ownCounts[id] = (ownCounts[id] ?? 0) + 1;
+}
+
+export function logOwnRenderStats() {
+  const rows = Object.keys(ownCounts)
+    .map((id) => ({ id, renders: ownCounts[id] }))
+    .sort((a, b) => b.renders - a.renders);
+  console.table(rows);
+  return { rows };
+}
+
+export function resetOwnRenderStats() {
+  for (const key of Object.keys(ownCounts)) delete ownCounts[key];
+}
+
 if (import.meta.env.DEV) {
   (window as unknown as { __renderStats: unknown }).__renderStats = {
     log: logRenderStats,
     reset: resetRenderStats,
+  };
+  (window as unknown as { __ownRenderStats: unknown }).__ownRenderStats = {
+    log: logOwnRenderStats,
+    reset: resetOwnRenderStats,
   };
 }

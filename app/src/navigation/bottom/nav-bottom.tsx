@@ -1,5 +1,5 @@
-import { Profiler, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { profilerOnRender } from "../../dev/renderProfilerStats";
+import { Profiler, Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { profilerOnRender, recordOwnRender } from "../../dev/renderProfilerStats";
 import "../../styles/widgets.css";
 import CloseIcon from "../../assets/svg/close/CloseIcon";
 import { useShallow } from "zustand/react/shallow";
@@ -21,7 +21,8 @@ import CompactGraphTools from "./widgets/compact-graph-tools";
 const BarGraph = lazy(() => import("./widgets/bargraph/index"));
 type WidgetView = "bar" | "questions";
 
-export default function NavBottom({ introActive = false }: { introActive?: boolean }) {
+function NavBottom({ introActive = false }: { introActive?: boolean }) {
+  recordOwnRender("NavBottom");
   const {
     cityPanelOpen,
     setCityPanelOpen,
@@ -323,3 +324,5 @@ export default function NavBottom({ introActive = false }: { introActive?: boole
     </>
   );
 }
+
+export default memo(NavBottom);
