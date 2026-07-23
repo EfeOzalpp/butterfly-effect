@@ -1,8 +1,8 @@
 // src/dev/renderProfilerStats.ts
 // Benchmarking helper for the Context -> Zustand re-render comparison.
 
-const counts: Record<string, number> = {};
-const durations: Record<string, number> = {};
+let counts: Record<string, number> = {};
+let durations: Record<string, number> = {};
 
 export function recordRender(id: string, actualDuration: number) {
   counts[id] = (counts[id] ?? 0) + 1;
@@ -28,8 +28,8 @@ export function logRenderStats() {
 }
 
 export function resetRenderStats() {
-  for (const key of Object.keys(counts)) delete counts[key];
-  for (const key of Object.keys(durations)) delete durations[key];
+  counts = {};
+  durations = {};
 }
 
 if (import.meta.env.DEV) {

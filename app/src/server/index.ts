@@ -22,9 +22,9 @@ app.get("/api/health", (_req, res) => {
   res.status(200).json({ ok: true });
 });
 app.get("/api/survey-responses/stream", surveyResponseStreamRoute);
-app.get("/api/gamification-copy", gamificationCopyRoute);
-app.post("/api/save-user-response", saveUserResponseRoute);
-app.post("/api/save-solo-message", saveSoloMessageRoute);
+app.get("/api/gamification-copy", (req, res) => { void gamificationCopyRoute(req, res); });
+app.post("/api/save-user-response", (req, res) => { void saveUserResponseRoute(req, res); });
+app.post("/api/save-solo-message", (req, res) => { void saveSoloMessageRoute(req, res); });
 
 if (process.env.NODE_ENV === "production") {
   // process.cwd() is the directory where the Node process was started.

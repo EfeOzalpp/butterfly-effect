@@ -3,8 +3,8 @@
 // (window.__renderStats) and manual graph testing (window.__renderStatsGraph)
 // stay separate.
 
-const counts: Record<string, number> = {};
-const durations: Record<string, number> = {};
+let counts: Record<string, number> = {};
+let durations: Record<string, number> = {};
 
 export function recordGraphRender(id: string, actualDuration: number) {
   counts[id] = (counts[id] ?? 0) + 1;
@@ -28,8 +28,8 @@ export function logGraphRenderStats() {
 }
 
 export function resetGraphRenderStats() {
-  for (const key of Object.keys(counts)) delete counts[key];
-  for (const key of Object.keys(durations)) delete durations[key];
+  counts = {};
+  durations = {};
 }
 
 if (import.meta.env.DEV) {
