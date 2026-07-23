@@ -96,7 +96,7 @@ async function run() {
   sectionTotals["Pre-survey graph view toggle"] = await logSection(page, "Pre-survey graph view toggle");
 
   // --- Scroll down to the CanvasInfo spotlight controls ---
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); });
   await page.waitForTimeout(1000);
 
   await page.locator(".canvas-info__slider-button--pause").waitFor();
@@ -161,7 +161,7 @@ async function run() {
     await page.getByRole("button", { name: "Next question", exact: true }).click();
     await page.locator(".button-questionnaire__button").first().waitFor();
   }
-  sectionTotals["Questionnaire"] = await logSection(page, "Questionnaire");
+  sectionTotals.Questionnaire = await logSection(page, "Questionnaire");
 
   // --- Graph runtime area (post-submit) ---
   await page.waitForTimeout(1000);
