@@ -1,8 +1,8 @@
 // src/dev/renderProfilerStats.ts
 // Benchmarking helper for the Context -> Zustand re-render comparison.
 
-const counts: Record<string, number> = {};
-const durations: Record<string, number> = {};
+let counts: Record<string, number> = {};
+let durations: Record<string, number> = {};
 
 export function recordRender(id: string, actualDuration: number) {
   counts[id] = (counts[id] ?? 0) + 1;
@@ -28,15 +28,15 @@ export function logRenderStats() {
 }
 
 export function resetRenderStats() {
-  for (const key of Object.keys(counts)) delete counts[key];
-  for (const key of Object.keys(durations)) delete durations[key];
+  counts = {};
+  durations = {};
 }
 
 // Counts a component's own function body executing, independent of the
 // wrapping <Profiler> (which fires for any commit in its subtree, including
 // descendants that re-render on their own). Call directly in the component
 // body — not via onRender — so this only ticks when THIS function re-runs.
-const ownCounts: Record<string, number> = {};
+let ownCounts: Record<string, number> = {};
 
 export function recordOwnRender(id: string) {
   ownCounts[id] = (ownCounts[id] ?? 0) + 1;
@@ -51,7 +51,7 @@ export function logOwnRenderStats() {
 }
 
 export function resetOwnRenderStats() {
-  for (const key of Object.keys(ownCounts)) delete ownCounts[key];
+  ownCounts = {};
 }
 
 if (import.meta.env.DEV) {

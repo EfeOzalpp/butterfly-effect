@@ -8,7 +8,7 @@ import { usePreferences } from '../../app/state/preferences-context';
 import { useUiStore } from '../../app/state/ui-store';
 import { useIdentity } from '../../app/state/identity-context';
 import { useSurveyData } from '../../app/state/survey-data-context';
-import { useSharedGraphData } from '../GraphDataContext';
+import { useSharedGraphData } from '../useSharedGraphData';
 import { bumpGeneration, resetQueue } from '../sprites/entry';
 import { DEFAULT_VIEWPORT_WIDTH, isMobileWidth } from '../../lib/responsive/breakpoints';
 

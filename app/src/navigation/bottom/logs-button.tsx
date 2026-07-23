@@ -182,11 +182,9 @@ export function LogsPanel({
   const safePage = Math.min(page, totalPages - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
   const highlightPattern = query.trim();
-
-  useEffect(() => {
-    if (!activeRowId) return;
-    if (!pageRows.some((row) => row._id === activeRowId)) setActiveRowId(null);
-  }, [activeRowId, pageRows]);
+  // A row stops rendering as "active" once it scrolls off the current page,
+  // without needing an effect to null out activeRowId itself.
+  const visibleActiveRowId = pageRows.some((row) => row._id === activeRowId) ? activeRowId : null;
 
   function renderHighlighted(text: string) {
     if (!highlightPattern) return text;
@@ -294,9 +292,9 @@ export function LogsPanel({
             ) : pageRows.map((row) => (
               <tr
                 key={row._id}
-                className={`logs-row${activeRowId === row._id ? " is-active" : ""}`}
+                className={`logs-row${visibleActiveRowId === row._id ? " is-active" : ""}`}
                 tabIndex={0}
-                aria-selected={activeRowId === row._id}
+                aria-selected={visibleActiveRowId === row._id}
                 onPointerDown={() => { setActiveRowId(row._id); }}
                 onClick={() => { setActiveRowId(row._id); }}
                 onKeyDown={(event) => {
